@@ -65,3 +65,16 @@ ui/
 - **React 18.3.1** - Latest stable version of React
 - **Vite 6.0.5** - Fast build tool and development server
 - **Modern JavaScript** - ES modules and latest JavaScript features
+- **Node.js v24.11.1** - Configured with compatibility polyfills
+
+## Troubleshooting
+
+If you encounter any issues (especially with Node.js v24), see the [TROUBLESHOOTING.md](TROUBLESHOOTING.md) guide.
+
+Common fixes:
+```bash
+# Clean install after updates
+cd ui
+rm -rf node_modules package-lock.json
+npm install
+```

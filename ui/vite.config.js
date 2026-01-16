@@ -7,5 +7,22 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true
+  },
+  resolve: {
+    alias: {
+      // Fix for Node.js v24 crypto compatibility
+      crypto: 'crypto-browserify'
+    }
+  },
+  define: {
+    // Provide global for compatibility
+    global: 'globalThis'
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
   }
 })
