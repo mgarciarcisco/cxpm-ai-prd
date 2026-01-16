@@ -4,7 +4,36 @@ A web application built with React 18 and Vite.
 
 ## Quick Start
 
-### For AlmaLinux Systems
+### Option 1: Docker (Recommended)
+
+The easiest way to run the application is using Docker:
+
+```bash
+./docker_run.sh
+```
+
+This will:
+- Build a Docker image with AlmaLinux 9
+- Install Node.js v24.11.1 and npm 11.6.2
+- Start the container and application
+- Enable hot reload for development
+
+The application will be available at `http://localhost:3000`
+
+For detailed Docker documentation, see [DOCKER.md](DOCKER.md)
+
+**Manual Docker commands:**
+
+```bash
+# Using Docker Compose
+docker-compose up --build -d
+
+# Or using plain Docker
+docker build -t cxpm-ai-prd .
+docker run -d -p 3000:3000 --name cxpm-ai-prd-app cxpm-ai-prd
+```
+
+### Option 2: Direct Installation (AlmaLinux)
 
 If you're setting up on a fresh AlmaLinux system, first install system dependencies:
 
@@ -19,9 +48,7 @@ This will install:
 - Required utilities (lsof, curl, wget)
 - EPEL repository
 
-### Running the Application
-
-The easiest way to run the application is using the provided script:
+Then run the application:
 
 ```bash
 ./run_app.sh
@@ -60,10 +87,45 @@ cxpm-ai-prd/
 ├── ui/                              # React application
 │   ├── src/                        # Source files
 │   ├── package.json                # Dependencies
-│   └── vite.config.js              # Vite configuration
-├── run_app.sh                      # Application launcher script
-├── install_dependencies_alma.sh    # AlmaLinux system setup script
-└── README.md                       # This file
+│   ├── vite.config.js              # Vite configuration
+│   └── TROUBLESHOOTING.md          # Troubleshooting guide
+├── Dockerfile                       # Docker image definition
+├── docker-compose.yml               # Docker Compose configuration
+├── .dockerignore                    # Docker ignore patterns
+├── docker_run.sh                    # Docker launcher script
+├── run_app.sh                       # Application launcher script
+├── install_dependencies_alma.sh     # AlmaLinux system setup script
+└── README.md                        # This file
+```
+
+## Docker Management
+
+### View logs:
+```bash
+docker-compose logs -f
+# or
+docker logs -f cxpm-ai-prd-app
+```
+
+### Stop the container:
+```bash
+docker-compose down
+# or
+docker stop cxpm-ai-prd-app
+```
+
+### Restart the container:
+```bash
+docker-compose restart
+# or
+docker restart cxpm-ai-prd-app
+```
+
+### Access container shell:
+```bash
+docker-compose exec cxpm-ai-prd /bin/bash
+# or
+docker exec -it cxpm-ai-prd-app /bin/bash
 ```
 
 ## Technology Stack

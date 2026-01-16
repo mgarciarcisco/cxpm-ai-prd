@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  cxpm-ai-prd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cxpm-ai-prd-app
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for development (hot reload)
+      - ./ui/src:/app/ui/src
+      - ./ui/public:/app/ui/public
+      # Persist node_modules in named volume (better performance)
+      - node_modules:/app/ui/node_modules
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+volumes:
+  node_modules:
