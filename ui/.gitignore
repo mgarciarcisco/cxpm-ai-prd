@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# API Keys / Secrets
+cxpm-ai-prd-key
+
+# Design and Document Files
+*.png
+*.docx
