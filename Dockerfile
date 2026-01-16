@@ -10,8 +10,7 @@ ENV NODE_VERSION=v24.11.1 \
 RUN dnf update -y && \
     dnf install -y epel-release && \
     dnf groupinstall -y "Development Tools" && \
-    dnf remove -y curl-minimal && \
-    dnf install -y \
+    dnf install -y --allowerasing \
     gcc-c++ \
     make \
     git \
