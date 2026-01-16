@@ -13,7 +13,8 @@ sudo ./install_dependencies_alma.sh
 ```
 
 This will install:
-- Node.js 20 LTS (with npm)
+- Node.js v24.11.1 (using nvm)
+- npm 11.6.2
 - Development tools (gcc, make, git)
 - Required utilities (lsof, curl, wget)
 - EPEL repository
