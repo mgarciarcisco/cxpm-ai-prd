@@ -4,6 +4,22 @@ A web application built with React 18 and Vite.
 
 ## Quick Start
 
+### For AlmaLinux Systems
+
+If you're setting up on a fresh AlmaLinux system, first install system dependencies:
+
+```bash
+sudo ./install_dependencies_alma.sh
+```
+
+This will install:
+- Node.js 20 LTS (with npm)
+- Development tools (gcc, make, git)
+- Required utilities (lsof, curl, wget)
+- EPEL repository
+
+### Running the Application
+
 The easiest way to run the application is using the provided script:
 
 ```bash
@@ -40,12 +56,13 @@ If you prefer to run manually:
 
 ```
 cxpm-ai-prd/
-├── ui/                  # React application
-│   ├── src/            # Source files
-│   ├── package.json    # Dependencies
-│   └── vite.config.js  # Vite configuration
-├── run_app.sh          # Application launcher script
-└── README.md           # This file
+├── ui/                              # React application
+│   ├── src/                        # Source files
+│   ├── package.json                # Dependencies
+│   └── vite.config.js              # Vite configuration
+├── run_app.sh                      # Application launcher script
+├── install_dependencies_alma.sh    # AlmaLinux system setup script
+└── README.md                       # This file
 ```
 
 ## Technology Stack
