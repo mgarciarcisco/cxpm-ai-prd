@@ -25,6 +25,11 @@
 - Pages go in `ui/src/pages/`, components in `ui/src/components/{feature}/` (e.g., `components/projects/`)
 - Use `Link` from react-router-dom for navigation, not `<a>` tags
 - API service: `import { get, post, put, del } from '../services/api'` for HTTP calls
+- Run frontend tests: `cd ui && npm test`
+- Frontend tests in `ui/tests/components/` for component tests, `ui/tests/e2e/` for E2E tests
+- Wrap components using react-router-dom with `<BrowserRouter>` in tests
+- SQLAlchemy 2.0 typed columns: use `Mapped[T]` and `mapped_column()` for mypy compliance
+- Enum columns: `status: Mapped[StatusEnum] = mapped_column(SAEnum(StatusEnum), ...)` (use `from sqlalchemy import Enum as SAEnum`)
 
 ---
 
@@ -250,4 +255,51 @@
   - Backend `GET /api/projects` returns `list[ProjectResponse]` (plain array), not `{ projects: [...] }`
   - Always verify API response format matches frontend expectations before marking story complete
   - The unused `ProjectList` schema in `schemas/project.py` could cause confusion - it wraps projects but isn't used by the router
+---
+
+## 2026-01-22 - US-016
+- **What was implemented**: Integrated ProjectForm modal in ProjectsPage for creating new projects
+- **Files changed**:
+  - `ui/src/pages/ProjectsPage.jsx` - Added modal state, wired New Project button to open modal, handle form submission
+- **Learnings for future iterations:**
+  - Modal state pattern: `const [isModalOpen, setIsModalOpen] = useState(false)`
+  - Form submission handler: make async call, close modal, update list with new item
+  - After successful POST, use `setProjects((prev) => [...prev, newProject])` to append without refetch
+  - ProjectForm handles its own error display via try/catch in handleSubmit
+  - Manual browser verification needed - no browser testing tools available
+---
+
+## 2026-01-22 - US-017
+- **What was implemented**: Set up Vitest with component tests for frontend testing
+- **Files changed**:
+  - `ui/package.json` - Added test script and devDependencies (vitest, @testing-library/react, @testing-library/jest-dom, jsdom)
+  - `ui/vite.config.js` - Added test configuration with jsdom environment
+  - `ui/tests/setup.js` - Test setup file that imports @testing-library/jest-dom
+  - `ui/tests/components/ProjectCard.test.jsx` - Component tests for ProjectCard (name, description rendering)
+  - `ui/tests/e2e/` - Created empty directory for future E2E tests
+- **Learnings for future iterations:**
+  - Run frontend tests: `cd ui && npm test`
+  - Vitest v4 removed `pool` and `poolOptions` - use `isolate: false` at top level for single-threaded execution
+  - Test setup file imports `@testing-library/jest-dom` for DOM matchers
+  - Components using react-router-dom need to be wrapped with `<BrowserRouter>` in tests
+  - Use `vi.fn()` from Vitest to create mock functions
+  - Test structure: `ui/tests/components/` for component tests, `ui/tests/e2e/` for E2E tests
+---
+
+## 2026-01-22 - US-018
+- **What was implemented**: Created MeetingRecap model with status lifecycle for tracking uploaded meeting notes
+- **Files changed**:
+  - `backend/app/models/meeting_recap.py` - New model with MeetingStatus and InputType enums, all required fields
+  - `backend/app/models/__init__.py` - Updated to export MeetingRecap, MeetingStatus, InputType
+  - `backend/app/models/project.py` - Enabled meetings relationship with cascade delete
+  - `backend/alembic/env.py` - Added MeetingRecap import for autogenerate
+  - `backend/alembic/versions/0a10fb35f446_create_meeting_recaps_table.py` - Migration file
+  - `backend/conftest.py` - Added MeetingRecap import for test db setup
+- **Learnings for future iterations:**
+  - SQLAlchemy 2.0 style uses `Mapped[T]` and `mapped_column()` for type annotations to satisfy mypy
+  - Enum columns need explicit type annotation: `input_type: Mapped[InputType] = mapped_column(...)`
+  - Use `SAEnum` alias when importing `from sqlalchemy import Enum as SAEnum` to avoid conflict with Python's `enum.Enum`
+  - Status enums inheriting from `str, enum.Enum` work well with Pydantic serialization
+  - Foreign key with cascade delete: `ForeignKey("table.id", ondelete="CASCADE")`
+  - Remember to update conftest.py imports for new models so test DB creates tables
 ---
