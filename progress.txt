@@ -563,3 +563,16 @@
   - Factory checks `settings.ANTHROPIC_API_KEY` before trying to instantiate ClaudeProvider
   - ClaudeProvider constructor raises LLMError if API key is missing, so factory catches that
 ---
+
+## 2026-01-22 - US-038
+- **What was implemented**: Created versioned prompt for extracting structured items from meeting notes
+- **Files changed**:
+  - `backend/prompts/extract_meeting_v1.txt` - New prompt template for LLM-based meeting extraction
+- **Learnings for future iterations:**
+  - Prompts go in `backend/prompts/` directory with version suffix (e.g., `extract_meeting_v1.txt`)
+  - Prompt uses `{meeting_notes}` placeholder for input text injection
+  - 9 extraction sections: problems, user_goals, functional_requirements, data_needs, constraints, non_goals, risks_assumptions, open_questions, action_items
+  - JSON output format: `[{"section": "...", "content": "...", "source_quote": "..."}]`
+  - source_quote must be exact text from meeting notes for traceability
+  - Prompt handles edge cases: empty notes return `[]`, unclear content skipped, non-English preserved
+---
