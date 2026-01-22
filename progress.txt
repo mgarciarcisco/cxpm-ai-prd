@@ -534,3 +534,18 @@
   - Error handling: catch `httpx.ConnectError` for "Ollama not available", `httpx.TimeoutException` for timeouts
   - Provider accepts optional constructor params to override settings: base_url, model, timeout
 ---
+
+## 2026-01-22 - US-036
+- **What was implemented**: Created Claude LLM provider implementing the LLMProvider interface
+- **Files changed**:
+  - `backend/app/services/llm/claude.py` - ClaudeProvider class with generate() and stream() methods using Anthropic SDK
+  - `backend/app/services/llm/__init__.py` - Updated to export ClaudeProvider
+- **Learnings for future iterations:**
+  - Anthropic SDK uses `anthropic.Anthropic()` for sync client and `anthropic.AsyncAnthropic()` for async client
+  - Claude messages API: `messages.create()` for sync generation, `messages.stream()` async context manager for streaming
+  - Streaming uses `stream.text_stream` async iterator to yield text chunks
+  - Claude returns content as list of blocks - extract text with `[block.text for block in message.content if hasattr(block, "text")]`
+  - Error handling: `AuthenticationError`, `RateLimitError`, `APITimeoutError`, `APIConnectionError`, `APIStatusError`
+  - API key validation happens in constructor - raises LLMError early if not configured
+  - Import ClaudeProvider: `from app.services.llm import ClaudeProvider`
+---
