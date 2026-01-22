@@ -520,3 +520,17 @@
   - Abstract async generators need a `yield ""` statement (unreachable) to satisfy mypy type checking
   - LLMError is a custom exception for LLM operation failures
 ---
+
+## 2026-01-22 - US-035
+- **What was implemented**: Created Ollama LLM provider implementing the LLMProvider interface
+- **Files changed**:
+  - `backend/app/services/llm/ollama.py` - OllamaProvider class with generate() and stream() methods
+  - `backend/app/services/llm/__init__.py` - Updated to export OllamaProvider
+- **Learnings for future iterations:**
+  - Ollama API endpoints: `/api/generate` for text generation, `/api/tags` for health check
+  - Use `httpx` library for HTTP calls (sync Client and async AsyncClient)
+  - Streaming response: set `stream: True` in payload, use `client.stream()` and `aiter_lines()` for async
+  - Ollama returns JSONL format for streaming - each line is a JSON object with `response` field
+  - Error handling: catch `httpx.ConnectError` for "Ollama not available", `httpx.TimeoutException` for timeouts
+  - Provider accepts optional constructor params to override settings: base_url, model, timeout
+---
