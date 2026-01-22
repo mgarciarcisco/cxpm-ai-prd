@@ -649,3 +649,16 @@
   - sse-starlette was already in requirements.txt but needed to be installed in the environment
   - The endpoint wraps `extract_stream()` and emits status/item/complete/error events
 ---
+
+## 2026-01-22 - US-044
+- **What was implemented**: Created comprehensive tests for the extractor service with mocked LLM provider
+- **Files changed**:
+  - `backend/tests/test_extractor.py` - 12 tests covering extraction success, status transitions, and failure cases
+- **Learnings for future iterations:**
+  - Mock LLM provider by patching `get_provider` to return a custom class with `generate()` method
+  - Use type casting helpers like `_get_project_id()` and `_get_meeting_uuid()` to satisfy mypy with SQLAlchemy model attributes
+  - Test status transitions by checking `meeting.status`, `meeting.processed_at`, `meeting.failed_at`, `meeting.error_message`
+  - Test retry behavior by creating a provider class that fails on first call and succeeds on second
+  - Test all 9 section types to verify enum handling works correctly
+  - Tests cover: successful extraction, status transitions, malformed JSON, missing fields, invalid sections, empty response, markdown code block stripping, order assignment, retry behavior
+---
