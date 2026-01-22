@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Project
-from app.schemas import ProjectCreate, ProjectUpdate, ProjectResponse
+from app.models import Project, MeetingRecap
+from app.schemas import ProjectCreate, ProjectUpdate, ProjectResponse, MeetingListItemResponse
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -68,3 +68,14 @@ def delete_project(project_id: str, db: Session = Depends(get_db)) -> None:
 
     db.delete(project)
     db.commit()
+
+
+@router.get("/{project_id}/meetings", response_model=list[MeetingListItemResponse])
+def list_project_meetings(project_id: str, db: Session = Depends(get_db)) -> list[MeetingRecap]:
+    """Get list of meetings for a project."""
+    # Verify project exists
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    return db.query(MeetingRecap).filter(MeetingRecap.project_id == project_id).all()

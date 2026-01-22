@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile,
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Project, MeetingRecap
+from app.models import Project, MeetingRecap, MeetingItem
 from app.models.meeting_recap import InputType, MeetingStatus
-from app.schemas import UploadResponse
+from app.schemas import UploadResponse, MeetingResponse, MeetingItemResponse
 from app.services import parse_file
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
@@ -72,3 +72,44 @@ async def upload_meeting(
     db.refresh(meeting)
 
     return {"job_id": meeting.id, "meeting_id": meeting.id}
+
+
+@router.get("/{meeting_id}", response_model=MeetingResponse)
+def get_meeting(meeting_id: str, db: Session = Depends(get_db)) -> dict:
+    """
+    Get a single meeting by ID with its items.
+
+    Items filtered to exclude is_deleted=true.
+    """
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    # Get non-deleted items, ordered by section and order
+    items = (
+        db.query(MeetingItem)
+        .filter(MeetingItem.meeting_id == meeting_id, MeetingItem.is_deleted == False)
+        .order_by(MeetingItem.section, MeetingItem.order)
+        .all()
+    )
+
+    # Build response with filtered items
+    return {
+        "id": meeting.id,
+        "project_id": meeting.project_id,
+        "title": meeting.title,
+        "meeting_date": meeting.meeting_date,
+        "raw_input": meeting.raw_input,
+        "input_type": meeting.input_type,
+        "status": meeting.status,
+        "created_at": meeting.created_at,
+        "processed_at": meeting.processed_at,
+        "applied_at": meeting.applied_at,
+        "failed_at": meeting.failed_at,
+        "error_message": meeting.error_message,
+        "prompt_version": meeting.prompt_version,
+        "items": items,
+    }
