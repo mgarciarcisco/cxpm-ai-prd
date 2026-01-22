@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+pydantic
+pydantic-settings
+python-multipart
+httpx
+anthropic
+sse-starlette
+markdown
+pytest
+pytest-asyncio
