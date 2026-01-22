@@ -374,3 +374,13 @@
   - Filter soft-deleted items with `MeetingItem.is_deleted == False` in queries
   - When building response dicts manually, all fields must be explicitly included for Pydantic validation
 ---
+
+## 2026-01-22 - US-024
+- **What was implemented**: Created meeting delete endpoint for removing meetings and their associated items
+- **Files changed**:
+  - `backend/app/routers/meetings.py` - Added DELETE /{meeting_id} endpoint with 204/404 responses
+- **Learnings for future iterations:**
+  - DELETE endpoints use `status_code=status.HTTP_204_NO_CONTENT` and return `None`
+  - MeetingRecap model has cascade delete configured, so deleting a meeting automatically removes associated MeetingItems
+  - FastAPI returns 204 No Content automatically when route returns None with 204 status code
+---
