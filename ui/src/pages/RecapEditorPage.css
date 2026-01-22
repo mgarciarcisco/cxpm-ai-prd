@@ -1,0 +1,147 @@
+/* Recap Editor Section */
+.recap-editor-section {
+  padding: 0;
+}
+
+.recap-editor-date {
+  color: #6B7280;
+  font-size: 0.875rem;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Recap Editor Content */
+.recap-editor-content {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-height: 400px;
+}
+
+/* Placeholder for RecapEditor component */
+.recap-editor-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #6B7280;
+}
+
+.recap-editor-placeholder svg {
+  margin-bottom: 1rem;
+  color: #4ECDC4;
+}
+
+.recap-editor-placeholder h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.recap-editor-placeholder p {
+  font-size: 0.875rem;
+  margin: 0;
+  max-width: 400px;
+}
+
+/* Failed State */
+.recap-editor-failed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.recap-editor-failed svg {
+  color: #DC2626;
+  margin-bottom: 1rem;
+}
+
+.recap-editor-failed h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #DC2626;
+  margin: 0 0 0.5rem 0;
+}
+
+.recap-editor-failed p {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin: 0 0 1.5rem 0;
+  max-width: 400px;
+}
+
+/* Loading State */
+.recap-editor-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.recap-editor-loading p {
+  margin-top: 1rem;
+  color: #6B7280;
+  font-size: 0.875rem;
+}
+
+/* Error State */
+.recap-editor-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.recap-editor-error p {
+  color: #DC2626;
+  font-size: 0.875rem;
+  margin: 0 0 1rem 0;
+}
+
+/* Retry Button */
+.retry-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  background-color: #4ECDC4;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-btn:hover {
+  background-color: #3BB5AD;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .recap-editor-content {
+    padding: 1rem;
+    min-height: 300px;
+  }
+
+  .recap-editor-placeholder,
+  .recap-editor-failed {
+    padding: 2rem 1rem;
+  }
+}
