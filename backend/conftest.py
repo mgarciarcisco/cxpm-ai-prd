@@ -1,23 +1,27 @@
 """Pytest fixtures for testing the FastAPI application."""
 
 from collections.abc import Generator
-from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
+# Import models so that Base.metadata knows about them
+from app.models import Project  # noqa: F401
 
 
 # Create in-memory SQLite database for testing
+# Using StaticPool ensures all connections share the same in-memory database
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
 
 test_engine = create_engine(
     SQLALCHEMY_TEST_DATABASE_URL,
     connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
