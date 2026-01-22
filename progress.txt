@@ -763,3 +763,18 @@
   - Track closed instances separately (`closedInstances` array) to verify cleanup behavior
   - When testing rerenders with different props, use `renderHook` with `initialProps` and `rerender({ newProps })`
 ---
+
+## 2026-01-22 - US-052
+- **What was implemented**: Created MeetingItem update endpoint for editing extracted meeting items
+- **Files changed**:
+  - `backend/app/routers/meeting_items.py` - New router with PUT /api/meeting-items/{id} endpoint
+  - `backend/app/routers/__init__.py` - Exported meeting_items_router
+  - `backend/app/main.py` - Registered meeting_items_router
+  - `backend/app/schemas/meeting.py` - Added MeetingItemUpdate schema
+  - `backend/app/schemas/__init__.py` - Exported MeetingItemUpdate
+- **Learnings for future iterations:**
+  - Meeting item CRUD endpoints go in a separate router from meeting endpoints: `/api/meeting-items/`
+  - Status validation pattern: query the parent MeetingRecap and check `meeting.status != MeetingStatus.processed`
+  - Import MeetingItemUpdate: `from app.schemas import MeetingItemUpdate`
+  - Use `# type: ignore[assignment]` for SQLAlchemy Column assignments to satisfy mypy
+---
