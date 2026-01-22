@@ -476,3 +476,18 @@
   - Form submission logic will be implemented in US-032 (this story only creates the UI)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-032
+- **What was implemented**: Connected UploadMeetingPage to the backend API for uploading meeting notes
+- **Files changed**:
+  - `ui/src/pages/UploadMeetingPage.jsx` - Added API submission with FormData, loading state, error handling, and navigation
+  - `ui/src/pages/UploadMeetingPage.css` - Added btn-spinner animation for loading state
+- **Learnings for future iterations:**
+  - Use raw `fetch` with FormData for multipart form uploads (not api.js wrapper which sets JSON content-type)
+  - FormData automatically handles file vs text data: `formData.append('file', file)` or `formData.append('text', text)`
+  - Use `useNavigate` from react-router-dom for programmatic navigation after form submission
+  - Pass state to navigation target via second argument: `navigate(path, { state: { job_id } })`
+  - Loading spinner pattern: CSS animation with `border-top-color` for spinner effect (consistent with ProjectsPage)
+  - isSubmitDisabled should include isLoading to prevent double submissions
+  - Manual browser verification needed - no browser testing tools available
+---
