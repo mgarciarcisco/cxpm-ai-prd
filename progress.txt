@@ -384,3 +384,14 @@
   - MeetingRecap model has cascade delete configured, so deleting a meeting automatically removes associated MeetingItems
   - FastAPI returns 204 No Content automatically when route returns None with 204 status code
 ---
+
+## 2026-01-22 - US-025
+- **What was implemented**: Created tests for the file parser service
+- **Files changed**:
+  - `backend/tests/test_parser.py` - 10 tests covering: valid .txt parsing, valid .md parsing, uppercase extensions, 50KB limit rejection, exact 50KB acceptance, unsupported file type rejection (.pdf, .docx), no extension rejection, empty filename rejection
+- **Learnings for future iterations:**
+  - Use `MagicMock()` (not `MagicMock(spec=UploadFile)`) with return type `Any` to avoid mypy issues with mock assertions
+  - `AsyncMock(return_value=content)` for mocking async methods like `file.read()`
+  - Parser service tests don't need database fixtures - they're unit tests for pure functions
+  - Test boundary conditions: exact limits (50KB) and just-over limits (50KB + 1 byte)
+---
