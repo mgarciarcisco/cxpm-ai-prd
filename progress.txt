@@ -506,3 +506,17 @@
   - FileDropzone maintains its own internal state - parent can't directly clear it without using clear button
   - Test setup helper: `window.history.pushState({}, 'Test page', route)` to set initial route
 ---
+
+## 2026-01-22 - US-034
+- **What was implemented**: Created abstract LLM provider base class and LLMError exception
+- **Files changed**:
+  - `backend/app/services/llm/__init__.py` - New LLM subpackage init, exports LLMProvider and LLMError
+  - `backend/app/services/llm/base.py` - Abstract LLMProvider class with generate() and async stream() methods
+  - `backend/app/services/__init__.py` - Updated to export LLM classes
+- **Learnings for future iterations:**
+  - LLM providers go in `backend/app/services/llm/` directory
+  - Import LLM classes: `from app.services.llm import LLMProvider, LLMError`
+  - LLMProvider is an ABC with abstract methods `generate(prompt: str) -> str` and `async stream(prompt: str) -> AsyncIterator[str]`
+  - Abstract async generators need a `yield ""` statement (unreachable) to satisfy mypy type checking
+  - LLMError is a custom exception for LLM operation failures
+---
