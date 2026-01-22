@@ -21,8 +21,8 @@ class Project(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationships with cascade delete (will be populated when related models are created)
-    # meetings = relationship("MeetingRecap", back_populates="project", cascade="all, delete-orphan")
+    # Relationships with cascade delete
+    meetings = relationship("MeetingRecap", back_populates="project", cascade="all, delete-orphan")
     # requirements = relationship("Requirement", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
