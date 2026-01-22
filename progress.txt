@@ -687,3 +687,19 @@
   - Test classes help organize related tests: status events, item events, complete events, error events, edge cases
   - SSE tests verify event order (status before items, items before complete), event content, and error handling
 ---
+
+## 2026-01-22 - US-047
+- **What was implemented**: Created useStreaming React hook for consuming SSE streams from the extraction endpoint
+- **Files changed**:
+  - `ui/src/hooks/useStreaming.js` - New hook with EventSource connection, item accumulation, timeout handling, error handling, cleanup, and retry function
+- **Learnings for future iterations:**
+  - React hooks go in `ui/src/hooks/` directory
+  - Import useStreaming: `import { useStreaming } from '../hooks/useStreaming'`
+  - Hook returns `{ items, status, error, retry }` - items array accumulates as events arrive
+  - EventSource events handled via `addEventListener('eventName', handler)` for custom event types
+  - Connection timeout implemented with 30 second timer that resets on every event
+  - Cleanup function closes EventSource and clears timeout - called on unmount or jobId change
+  - EventSource.onerror handles both connection errors and closed states (readyState === CLOSED vs CONNECTING)
+  - Use useRef to hold mutable values (EventSource, timeout) that shouldn't trigger re-renders
+  - Use useCallback for functions that are dependencies in useEffect to avoid infinite loops
+---
