@@ -446,3 +446,17 @@
   - Two-panel layout uses CSS grid with `grid-template-columns: 1fr 1fr`, responsive at 1024px breakpoint
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-030
+- **What was implemented**: Created FileDropzone component for drag-and-drop file uploads
+- **Files changed**:
+  - `ui/src/components/common/FileDropzone.jsx` - Component with drag-and-drop, click-to-upload, file validation, selected file display
+  - `ui/src/components/common/FileDropzone.css` - Styling with dashed border, dragging state, selected file state
+- **Learnings for future iterations:**
+  - FileDropzone accepts `onFile` prop callback (receives File object or null when cleared)
+  - Uses `accept` prop for file type filtering (default `.txt,.md`)
+  - Drag events need `e.preventDefault()` and `e.stopPropagation()` to work correctly
+  - File input hidden with `display: none`, triggered via ref on click
+  - Shows visual feedback for different states: default, dragging (blue), has-file (green)
+  - Manual browser verification needed - no browser testing tools available
+---
