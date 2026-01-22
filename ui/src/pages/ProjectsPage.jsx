@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { get } from '../services/api'
+import { get, post } from '../services/api'
 import ProjectCard from '../components/projects/ProjectCard'
+import Modal from '../components/common/Modal'
+import ProjectForm from '../components/projects/ProjectForm'
 import './ProjectsPage.css'
 
 function ProjectsPage() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     fetchProjects()
@@ -36,6 +39,16 @@ function ProjectsPage() {
     console.log('Delete project:', project)
   }
 
+  const handleCreateProject = async (projectData) => {
+    const newProject = await post('/api/projects', projectData)
+    setIsModalOpen(false)
+    setProjects((prev) => [...prev, newProject])
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+  }
+
   return (
     <main className="main-content">
       <section className="tasks-section">
@@ -45,7 +58,7 @@ function ProjectsPage() {
         </div>
 
         <div className="projects-header">
-          <button className="new-project-btn">
+          <button className="new-project-btn" onClick={() => setIsModalOpen(true)}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 3.33334V12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M3.33334 8H12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -53,6 +66,12 @@ function ProjectsPage() {
             New Project
           </button>
         </div>
+
+        {isModalOpen && (
+          <Modal title="Create New Project" onClose={handleCloseModal}>
+            <ProjectForm onSubmit={handleCreateProject} onCancel={handleCloseModal} />
+          </Modal>
+        )}
 
         {loading && (
           <div className="projects-loading">
