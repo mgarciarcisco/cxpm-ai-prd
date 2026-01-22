@@ -2,6 +2,7 @@ import React from 'react'
 import { Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import ProjectsPage from './pages/ProjectsPage'
+import ProjectDashboard from './pages/ProjectDashboard'
 import './App.css'
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/app" element={<ProjectsPage />} />
+        <Route path="/app/projects/:id" element={<ProjectDashboard />} />
         <Route path="/app/*" element={<ProjectsPage />} />
       </Routes>
     </div>
