@@ -13,6 +13,7 @@ from app.models import MeetingRecap, MeetingItem
 from app.models.meeting_item import Section
 from app.models.meeting_recap import MeetingStatus
 from app.services.llm import get_provider, LLMError
+from app.services.chunker import chunk_text
 
 
 # Path to the extraction prompt template
@@ -122,17 +123,84 @@ def _create_meeting_items(
     return items
 
 
+def _deduplicate_items(items_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Deduplicate items by exact content match.
+
+    Items with identical content within the same section are considered duplicates.
+    The first occurrence is kept.
+
+    Args:
+        items_data: List of extracted item dictionaries.
+
+    Returns:
+        Deduplicated list of items.
+    """
+    seen: set[tuple[str, str]] = set()  # (section, content)
+    deduplicated: list[dict[str, Any]] = []
+
+    for item in items_data:
+        key = (item["section"], item["content"])
+        if key not in seen:
+            seen.add(key)
+            deduplicated.append(item)
+
+    return deduplicated
+
+
+def _extract_single_chunk(
+    raw_text: str,
+    prompt_template: str,
+    max_attempts: int
+) -> list[dict[str, Any]]:
+    """Extract items from a single chunk of text.
+
+    Args:
+        raw_text: The text chunk to process.
+        prompt_template: The prompt template with {meeting_notes} placeholder.
+        max_attempts: Maximum number of retry attempts.
+
+    Returns:
+        List of extracted item dictionaries.
+
+    Raises:
+        ExtractionError: If extraction fails after all retries.
+    """
+    prompt = prompt_template.replace("{meeting_notes}", raw_text)
+    last_error: Exception | None = None
+
+    for attempt in range(max_attempts):
+        try:
+            provider = get_provider()
+            response = provider.generate(prompt)
+            items_data = _parse_llm_response(response)
+            return items_data
+
+        except (ExtractionError, LLMError) as e:
+            last_error = e
+            if attempt >= max_attempts - 1:
+                break
+            continue
+        except Exception as e:
+            last_error = ExtractionError(f"Unexpected error during extraction: {e}")
+            if attempt >= max_attempts - 1:
+                break
+            continue
+
+    raise ExtractionError(f"Chunk extraction failed after {max_attempts} attempts: {last_error}")
+
+
 def extract(meeting_id: UUID, db: Session) -> list[MeetingItem]:
     """Extract structured items from meeting notes using LLM.
 
     This function:
     1. Loads the meeting from the database
-    2. Calls the LLM with the extraction prompt
-    3. Parses the JSON response
-    4. Creates MeetingItem records
-    5. Updates meeting status
+    2. Checks if input exceeds CHUNK_SIZE_CHARS and chunks if needed
+    3. Calls the LLM with the extraction prompt for each chunk
+    4. Merges and deduplicates results from all chunks
+    5. Creates MeetingItem records
+    6. Updates meeting status
 
-    On failure, it retries once for malformed output or timeout.
+    On failure, it retries once for malformed output or timeout (per chunk).
 
     Args:
         meeting_id: The UUID of the meeting to process.
@@ -155,52 +223,58 @@ def extract(meeting_id: UUID, db: Session) -> list[MeetingItem]:
 
     # Load prompt template
     prompt_template = _load_prompt()
-    prompt = prompt_template.replace("{meeting_notes}", meeting.raw_input)
 
-    # Attempt extraction with retry logic
+    # Determine retry attempts
     max_attempts = settings.LLM_MAX_RETRIES + 1
-    last_error: Exception | None = None
 
-    for attempt in range(max_attempts):
-        try:
-            # Get LLM provider and generate response
-            provider = get_provider()
-            response = provider.generate(prompt)
+    try:
+        # Check if we need to chunk the input
+        raw_input = meeting.raw_input
+        all_items_data: list[dict[str, Any]] = []
 
-            # Parse the response
-            items_data = _parse_llm_response(response)
+        if len(raw_input) > settings.CHUNK_SIZE_CHARS:
+            # Chunk the input and process each chunk separately
+            chunks = chunk_text(raw_input, settings.CHUNK_SIZE_CHARS)
 
-            # Create meeting items
-            items = _create_meeting_items(str(meeting_id), items_data, db)
+            for chunk in chunks:
+                chunk_items = _extract_single_chunk(chunk, prompt_template, max_attempts)
+                all_items_data.extend(chunk_items)
 
-            # Update meeting status to processed
-            meeting.status = MeetingStatus.processed
-            meeting.processed_at = datetime.utcnow()  # type: ignore[assignment]
-            meeting.prompt_version = PROMPT_VERSION  # type: ignore[assignment]
-            meeting.error_message = None  # type: ignore[assignment]
-            db.commit()
+            # Deduplicate items by exact content match
+            all_items_data = _deduplicate_items(all_items_data)
+        else:
+            # Process as single piece (no chunking needed)
+            all_items_data = _extract_single_chunk(raw_input, prompt_template, max_attempts)
 
-            return items
+        # Create meeting items
+        items = _create_meeting_items(str(meeting_id), all_items_data, db)
 
-        except (ExtractionError, LLMError) as e:
-            last_error = e
-            # On last attempt, don't retry
-            if attempt >= max_attempts - 1:
-                break
-            # Otherwise, continue to retry
-            continue
-        except Exception as e:
-            # Unexpected error - treat as extraction error
-            last_error = ExtractionError(f"Unexpected error during extraction: {e}")
-            if attempt >= max_attempts - 1:
-                break
-            continue
+        # Update meeting status to processed
+        meeting.status = MeetingStatus.processed
+        meeting.processed_at = datetime.utcnow()  # type: ignore[assignment]
+        meeting.prompt_version = PROMPT_VERSION  # type: ignore[assignment]
+        meeting.error_message = None  # type: ignore[assignment]
+        db.commit()
 
-    # All attempts failed - update meeting status to failed
-    meeting.status = MeetingStatus.failed
-    meeting.failed_at = datetime.utcnow()  # type: ignore[assignment]
-    meeting.error_message = str(last_error) if last_error else "Unknown error"  # type: ignore[assignment]
-    meeting.prompt_version = PROMPT_VERSION  # type: ignore[assignment]
-    db.commit()
+        return items
 
-    raise ExtractionError(f"Extraction failed after {max_attempts} attempts: {last_error}")
+    except ExtractionError as e:
+        # Update meeting status to failed
+        meeting.status = MeetingStatus.failed
+        meeting.failed_at = datetime.utcnow()  # type: ignore[assignment]
+        meeting.error_message = str(e)  # type: ignore[assignment]
+        meeting.prompt_version = PROMPT_VERSION  # type: ignore[assignment]
+        db.commit()
+
+        raise
+
+    except Exception as e:
+        # Unexpected error - update meeting status to failed
+        error_msg = f"Unexpected error during extraction: {e}"
+        meeting.status = MeetingStatus.failed
+        meeting.failed_at = datetime.utcnow()  # type: ignore[assignment]
+        meeting.error_message = error_msg  # type: ignore[assignment]
+        meeting.prompt_version = PROMPT_VERSION  # type: ignore[assignment]
+        db.commit()
+
+        raise ExtractionError(error_msg)
