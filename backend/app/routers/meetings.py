@@ -113,3 +113,22 @@ def get_meeting(meeting_id: str, db: Session = Depends(get_db)) -> dict:
         "prompt_version": meeting.prompt_version,
         "items": items,
     }
+
+
+@router.delete("/{meeting_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_meeting(meeting_id: str, db: Session = Depends(get_db)) -> None:
+    """
+    Delete a meeting and its associated items.
+
+    Returns 204 No Content on success, 404 if meeting not found.
+    """
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    # Delete the meeting (cascade delete will remove associated items)
+    db.delete(meeting)
+    db.commit()
