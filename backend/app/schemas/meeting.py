@@ -74,3 +74,9 @@ class UploadResponse(BaseModel):
 
     job_id: str
     meeting_id: str
+
+
+class MeetingItemUpdate(BaseModel):
+    """Schema for updating a meeting item."""
+
+    content: str
