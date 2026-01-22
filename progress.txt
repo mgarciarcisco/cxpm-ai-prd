@@ -303,3 +303,45 @@
   - Foreign key with cascade delete: `ForeignKey("table.id", ondelete="CASCADE")`
   - Remember to update conftest.py imports for new models so test DB creates tables
 ---
+
+## 2026-01-22 - US-019
+- **What was implemented**: Created MeetingItem model for storing extracted items from meeting notes
+- **Files changed**:
+  - `backend/app/models/meeting_item.py` - New model with Section enum and MeetingItem model
+  - `backend/app/models/__init__.py` - Updated to export MeetingItem and Section
+  - `backend/app/models/meeting_recap.py` - Enabled items relationship with cascade delete
+  - `backend/alembic/env.py` - Added MeetingItem import for autogenerate
+  - `backend/alembic/versions/96e4c628927a_create_meeting_items_table.py` - Migration file
+  - `backend/conftest.py` - Added MeetingItem import for test db setup
+- **Learnings for future iterations:**
+  - Section enum has 9 values for requirement categories: problems, user_goals, functional_requirements, data_needs, constraints, non_goals, risks_assumptions, open_questions, action_items
+  - Use `str | None` for optional typed columns: `source_quote: Mapped[str | None] = mapped_column(Text, nullable=True)`
+  - Composite indexes defined in `__table_args__`: `Index("ix_name", "col1", "col2")`
+  - MeetingItem has soft-delete via is_deleted flag (not hard delete)
+  - Relationships are bidirectional: MeetingRecap.items ↔ MeetingItem.meeting
+---
+
+## 2026-01-22 - US-020
+- **What was implemented**: Created Pydantic schemas for Meeting API request/response validation
+- **Files changed**:
+  - `backend/app/schemas/meeting.py` - New schemas: MeetingUpload, MeetingItemResponse, MeetingResponse, UploadResponse
+  - `backend/app/schemas/__init__.py` - Updated to export Meeting schemas
+- **Learnings for future iterations:**
+  - Import enums from models for Pydantic schemas: `from app.models.meeting_recap import MeetingStatus, InputType`
+  - Pydantic schemas can reference SQLAlchemy model enums directly - they inherit from `str, enum.Enum`
+  - MeetingResponse includes nested `items: list[MeetingItemResponse]` for one-to-many relationships
+  - UploadResponse returns `job_id` and `meeting_id` (both same value, for API flexibility)
+---
+
+## 2026-01-22 - US-021
+- **What was implemented**: Created file parser service for processing uploaded meeting notes
+- **Files changed**:
+  - `backend/app/services/__init__.py` - Services package init, exports parse_file
+  - `backend/app/services/parser.py` - Async parse_file function that validates and parses .txt and .md files
+- **Learnings for future iterations:**
+  - Services go in `backend/app/services/` directory
+  - Import services: `from app.services import parse_file` or `from app.services.parser import parse_file`
+  - parse_file is async: `content = await parse_file(file)` where file is FastAPI's UploadFile
+  - File size check uses `settings.MAX_FILE_SIZE_KB * 1024` for byte comparison
+  - File extension check uses `filename.lower().endswith((".txt", ".md"))` for flexibility
+---
