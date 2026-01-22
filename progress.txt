@@ -674,3 +674,16 @@
   - Tests verify that section headers are prepended to subsequent chunks for context continuity
   - Edge case: single very long paragraph is kept intact even if exceeding max_chars (can't split mid-paragraph)
 ---
+
+## 2026-01-22 - US-046
+- **What was implemented**: Created comprehensive tests for SSE streaming endpoint
+- **Files changed**:
+  - `backend/tests/test_streaming.py` - 15 tests organized in 5 classes covering status events, item events, complete events, error events, and meeting not found
+- **Learnings for future iterations:**
+  - SSE events are parsed from response text by splitting on newlines and extracting `event:` and `data:` lines
+  - Test SSE endpoints with TestClient just like regular endpoints - response.text contains the SSE event stream
+  - Mock async generators for testing extract_stream by defining async functions that yield dictionaries
+  - Async generator mocks need an unreachable `yield` statement to satisfy Python's type checker
+  - Test classes help organize related tests: status events, item events, complete events, error events, edge cases
+  - SSE tests verify event order (status before items, items before complete), event content, and error handling
+---
