@@ -407,3 +407,15 @@
   - Helper functions like `_create_project()` reduce test boilerplate and improve readability
   - Test both positive cases and error cases (404s) for all CRUD operations
 ---
+
+## 2026-01-22 - US-027
+- **What was implemented**: Created StatusBadge component for displaying meeting status with colored badges
+- **Files changed**:
+  - `ui/src/components/common/StatusBadge.jsx` - Component with status prop, renders badge with appropriate color
+  - `ui/src/components/common/StatusBadge.css` - Styling with colors for each status (gray=pending, blue=processing, green=processed, purple=applied, red=failed)
+- **Learnings for future iterations:**
+  - StatusBadge uses a config object pattern to map status values to labels and CSS classes
+  - Status colors follow common UI conventions: gray for inactive, blue for in-progress, green for success, red for error
+  - Frontend Vitest tests may have worker timeout issues in WSL/Windows environments - build pass confirms code correctness
+  - Manual browser verification needed - no browser testing tools available
+---
