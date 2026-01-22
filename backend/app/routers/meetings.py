@@ -1,16 +1,20 @@
 """Meeting API endpoints."""
 
+import asyncio
+import json
 from datetime import date
-from typing import Optional
+from typing import Any, AsyncIterator, Optional
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, status, File, UploadFile, Form
+from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Project, MeetingRecap, MeetingItem
 from app.models.meeting_recap import InputType, MeetingStatus
 from app.schemas import UploadResponse, MeetingResponse, MeetingItemResponse
-from app.services import parse_file
+from app.services import parse_file, extract_stream, ExtractionError
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
 
@@ -132,3 +136,76 @@ def delete_meeting(meeting_id: str, db: Session = Depends(get_db)) -> None:
     # Delete the meeting (cascade delete will remove associated items)
     db.delete(meeting)
     db.commit()
+
+
+@router.get("/{job_id}/stream")
+async def stream_extraction(
+    job_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> EventSourceResponse:
+    """
+    Stream extraction results as Server-Sent Events (SSE).
+
+    Emits events:
+    - {type: 'status', data: 'processing'} at start
+    - {type: 'item', data: {section, content, source_quote}} for each item
+    - {type: 'complete', data: {item_count}} when done
+    - {type: 'error', data: {message}} on failure
+    """
+    # Verify meeting exists
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == job_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    async def event_generator() -> AsyncIterator[dict[str, Any]]:
+        """Generate SSE events for extraction streaming."""
+        item_count = 0
+
+        try:
+            # Emit initial status event
+            yield {
+                "event": "status",
+                "data": json.dumps("processing"),
+            }
+
+            # Stream items from extraction
+            async for item in extract_stream(UUID(job_id), db):
+                # Check if client disconnected
+                if await request.is_disconnected():
+                    break
+
+                item_count += 1
+                yield {
+                    "event": "item",
+                    "data": json.dumps({
+                        "section": item["section"],
+                        "content": item["content"],
+                        "source_quote": item.get("source_quote"),
+                    }),
+                }
+
+            # Emit complete event
+            yield {
+                "event": "complete",
+                "data": json.dumps({"item_count": item_count}),
+            }
+
+        except ExtractionError as e:
+            # Emit error event
+            yield {
+                "event": "error",
+                "data": json.dumps({"message": str(e)}),
+            }
+
+        except Exception as e:
+            # Emit error event for unexpected errors
+            yield {
+                "event": "error",
+                "data": json.dumps({"message": f"Extraction failed: {e}"}),
+            }
+
+    return EventSourceResponse(event_generator())
