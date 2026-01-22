@@ -576,3 +576,21 @@
   - source_quote must be exact text from meeting notes for traceability
   - Prompt handles edge cases: empty notes return `[]`, unclear content skipped, non-English preserved
 ---
+
+## 2026-01-22 - US-039
+- **What was implemented**: Created extractor service for processing meeting notes with LLM
+- **Files changed**:
+  - `backend/app/services/extractor.py` - New service with extract() function that processes meetings with LLM
+  - `backend/app/services/__init__.py` - Updated exports to include extract, ExtractionError, and get_provider
+- **Learnings for future iterations:**
+  - Extractor service: `from app.services import extract, ExtractionError`
+  - extract() function signature: `extract(meeting_id: UUID, db: Session) -> list[MeetingItem]`
+  - ExtractionError is raised when extraction fails (meeting not found, LLM error, invalid JSON, etc.)
+  - Prompt template loaded from `backend/prompts/extract_meeting_v1.txt` using Path
+  - PROMPT_VERSION constant set to "extract_v1" for tracking which prompt version was used
+  - LLM response parsing strips markdown code blocks (```json...```) before JSON parsing
+  - JSON validation checks: must be array, each item must have section, content fields, section must be valid enum
+  - Retry logic: max_attempts = LLM_MAX_RETRIES + 1 (default 2 attempts)
+  - Meeting status transitions: pending -> processing -> processed/failed
+  - SQLAlchemy Column type assignments need `# type: ignore[assignment]` for mypy with old-style Column definitions
+---
