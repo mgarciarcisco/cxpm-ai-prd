@@ -345,3 +345,17 @@
   - File size check uses `settings.MAX_FILE_SIZE_KB * 1024` for byte comparison
   - File extension check uses `filename.lower().endswith((".txt", ".md"))` for flexibility
 ---
+
+## 2026-01-22 - US-022
+- **What was implemented**: Created meeting upload endpoint for processing meeting notes
+- **Files changed**:
+  - `backend/app/routers/meetings.py` - New router with POST /api/meetings/upload endpoint
+  - `backend/app/routers/__init__.py` - Updated to export meetings_router
+  - `backend/app/main.py` - Registered meetings_router
+- **Learnings for future iterations:**
+  - FastAPI Form() and File() can be used together for multipart form data with file upload
+  - Use `Optional[UploadFile] = File(None)` for optional file upload
+  - Use `Optional[str] = Form(None)` for optional form field
+  - The endpoint is async since it uses parse_file which is async
+  - python-multipart package is required at runtime for Form data (installed separately from requirements.txt)
+---
