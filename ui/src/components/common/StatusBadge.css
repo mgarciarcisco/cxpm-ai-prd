@@ -1,0 +1,40 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+/* Pending - Gray */
+.status-badge--pending {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Processing - Blue */
+.status-badge--processing {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* Processed - Green */
+.status-badge--processed {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+/* Applied - Purple */
+.status-badge--applied {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+}
+
+/* Failed - Red */
+.status-badge--failed {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
