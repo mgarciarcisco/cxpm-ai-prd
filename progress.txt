@@ -460,3 +460,19 @@
   - Shows visual feedback for different states: default, dragging (blue), has-file (green)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-031
+- **What was implemented**: Created UploadMeetingPage for uploading meeting notes via file or text
+- **Files changed**:
+  - `ui/src/pages/UploadMeetingPage.jsx` - New page with title input (required), date picker, FileDropzone, textarea for text input, file size validation
+  - `ui/src/pages/UploadMeetingPage.css` - Styling for form inputs, divider, error messages, responsive layout
+  - `ui/src/App.jsx` - Added route `/app/projects/:id/meetings/new` for UploadMeetingPage
+- **Learnings for future iterations:**
+  - File size validation done client-side (50KB limit) before submission
+  - Use "or" divider pattern with CSS pseudo-elements for alternative input methods
+  - File and text inputs are mutually exclusive: selecting file clears text, typing text clears file
+  - Date input defaults to today using `new Date().toISOString().split('T')[0]`
+  - Submit button disabled when title empty OR (no file AND no text)
+  - Form submission logic will be implemented in US-032 (this story only creates the UI)
+  - Manual browser verification needed - no browser testing tools available
+---
