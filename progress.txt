@@ -733,3 +733,19 @@
   - Status-based rendering: pending/processing -> StreamingPreview, processed -> placeholder (RecapEditor in future), failed -> error with retry
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-050
+- **What was implemented**: Verified streaming integration in upload flow (all components already implemented in previous stories)
+- **Files changed**:
+  - No new files - functionality was implemented across US-032, US-047, and US-049
+  - `ui/src/pages/UploadMeetingPage.jsx` - Navigation to RecapEditorPage with job_id (implemented in US-032)
+  - `ui/src/pages/RecapEditorPage.jsx` - Receives job_id and auto-starts streaming (implemented in US-049)
+  - `ui/src/hooks/useStreaming.js` - Starts automatically when jobId is provided (implemented in US-047)
+- **Learnings for future iterations:**
+  - This story was an integration verification story - all acceptance criteria were satisfied by previous implementations
+  - Upload flow: UploadMeetingPage → POST /api/meetings/upload → navigate to RecapEditorPage with job_id in state
+  - RecapEditorPage extracts job_id from `location.state?.job_id` or falls back to URL param `mid`
+  - useStreaming hook activates when meeting status is 'pending' or 'processing' (conditional jobId in line 20-22)
+  - Always verify integration between components when marking "glue" stories as complete
+  - Manual browser verification needed - no browser testing tools available
+---
