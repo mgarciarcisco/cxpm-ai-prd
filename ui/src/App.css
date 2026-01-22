@@ -195,3 +195,32 @@
   color: #4B5563;
   line-height: 1.4;
 }
+
+/* Feature Card Link */
+.feature-card-link {
+  text-decoration: none;
+  display: block;
+}
+
+/* Back Link */
+.back-link {
+  color: #4ECDC4;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* Projects Placeholder */
+.projects-placeholder {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 3rem;
+  text-align: center;
+  color: #6B7280;
+}
