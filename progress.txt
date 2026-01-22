@@ -594,3 +594,18 @@
   - Meeting status transitions: pending -> processing -> processed/failed
   - SQLAlchemy Column type assignments need `# type: ignore[assignment]` for mypy with old-style Column definitions
 ---
+
+## 2026-01-22 - US-040
+- **What was implemented**: Created chunking service for splitting long meeting notes into manageable pieces
+- **Files changed**:
+  - `backend/app/services/chunker.py` - New service with chunk_text() function that splits text by paragraphs
+  - `backend/app/services/__init__.py` - Updated exports to include chunk_text
+- **Learnings for future iterations:**
+  - Chunker service: `from app.services import chunk_text`
+  - chunk_text() function signature: `chunk_text(text: str, max_chars: int = 4000) -> list[str]`
+  - Token estimation: approximately 4 characters per token (max_chars=4000 ≈ 1000 tokens)
+  - Splits text by double newlines (`\n\n`) to preserve paragraph boundaries
+  - Tracks section headers (lines starting with `#`) and prepends to new chunks for context
+  - Returns empty list for empty/whitespace-only input
+  - Returns single-element list if text fits within max_chars
+---
