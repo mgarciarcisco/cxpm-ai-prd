@@ -18,7 +18,7 @@ function ProjectsPage() {
       setLoading(true)
       setError(null)
       const data = await get('/api/projects')
-      setProjects(data.projects || [])
+      setProjects(data || [])
     } catch (err) {
       setError(err.message)
     } finally {
