@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, AsyncIterator
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -277,4 +277,183 @@ def extract(meeting_id: UUID, db: Session) -> list[MeetingItem]:
         meeting.prompt_version = PROMPT_VERSION  # type: ignore[assignment]
         db.commit()
 
+        raise ExtractionError(error_msg)
+
+
+def _parse_streaming_json(accumulated: str) -> tuple[list[dict[str, Any]], str]:
+    """Attempt to parse complete JSON items from accumulated text.
+
+    This function tries to extract complete JSON array items from a partially
+    streamed JSON response. It looks for complete JSON objects within the array.
+
+    Args:
+        accumulated: The accumulated text from streaming.
+
+    Returns:
+        A tuple of (parsed_items, remaining_text). parsed_items contains
+        fully parsed item dictionaries, remaining_text is what's left to parse.
+    """
+    # Clean the accumulated text
+    cleaned = accumulated.strip()
+
+    # Strip markdown code blocks if present
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
+
+    # If it doesn't start with '[', we don't have a valid JSON array yet
+    if not cleaned.startswith("["):
+        return [], accumulated
+
+    parsed_items: list[dict[str, Any]] = []
+    valid_sections = {s.value for s in Section}
+
+    # Try to parse progressively larger portions
+    # Look for complete JSON objects by finding matching braces
+    brace_count = 0
+    in_string = False
+    escape_next = False
+    item_start = -1
+
+    for i, char in enumerate(cleaned):
+        if escape_next:
+            escape_next = False
+            continue
+
+        if char == "\\" and in_string:
+            escape_next = True
+            continue
+
+        if char == '"' and not escape_next:
+            in_string = not in_string
+            continue
+
+        if in_string:
+            continue
+
+        if char == "[" and item_start == -1:
+            # Start of array
+            continue
+
+        if char == "{":
+            if brace_count == 0:
+                item_start = i
+            brace_count += 1
+
+        if char == "}":
+            brace_count -= 1
+            if brace_count == 0 and item_start != -1:
+                # We have a complete object
+                item_str = cleaned[item_start : i + 1]
+                try:
+                    item = json.loads(item_str)
+                    if (
+                        isinstance(item, dict)
+                        and "section" in item
+                        and "content" in item
+                        and item["section"] in valid_sections
+                    ):
+                        parsed_items.append(item)
+                except json.JSONDecodeError:
+                    pass
+                item_start = -1
+
+    return parsed_items, accumulated
+
+
+async def extract_stream(
+    meeting_id: UUID, db: Session
+) -> AsyncIterator[dict[str, Any]]:
+    """Stream extracted items from meeting notes using LLM.
+
+    This async generator function:
+    1. Loads the meeting from the database
+    2. Updates status to processing
+    3. Streams LLM response and yields individual items as they are parsed
+    4. Updates meeting status to processed when complete
+
+    Args:
+        meeting_id: The UUID of the meeting to process.
+        db: Database session.
+
+    Yields:
+        Individual MeetingItem dictionaries as they are extracted:
+        {"section": "...", "content": "...", "source_quote": "..."}
+
+    Raises:
+        ExtractionError: If the meeting is not found or extraction fails.
+    """
+    # Load the meeting
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == str(meeting_id)).first()
+    if not meeting:
+        raise ExtractionError(f"Meeting not found: {meeting_id}")
+
+    # Update status to processing
+    meeting.status = MeetingStatus.processing
+    db.commit()
+
+    # Load prompt template
+    prompt_template = _load_prompt()
+
+    try:
+        raw_input = meeting.raw_input
+        all_items_data: list[dict[str, Any]] = []
+        yielded_items: set[tuple[str, str]] = set()  # Track (section, content) for dedup
+
+        # Determine if we need to chunk
+        if len(raw_input) > settings.CHUNK_SIZE_CHARS:
+            chunks = chunk_text(raw_input, settings.CHUNK_SIZE_CHARS)
+        else:
+            chunks = [raw_input]
+
+        for chunk in chunks:
+            prompt = prompt_template.replace("{meeting_notes}", chunk)
+            provider = get_provider()
+
+            accumulated = ""
+            async for text_chunk in provider.stream(prompt):
+                accumulated += text_chunk
+
+                # Try to parse complete items from accumulated text
+                parsed_items, _ = _parse_streaming_json(accumulated)
+
+                # Yield any new items that we haven't yielded yet
+                for item in parsed_items:
+                    key = (item["section"], item["content"])
+                    if key not in yielded_items:
+                        yielded_items.add(key)
+                        all_items_data.append(item)
+                        yield item
+
+        # Create meeting items in database
+        _create_meeting_items(str(meeting_id), all_items_data, db)
+
+        # Update meeting status to processed
+        meeting.status = MeetingStatus.processed
+        meeting.processed_at = datetime.utcnow()  # type: ignore[assignment]
+        meeting.prompt_version = PROMPT_VERSION  # type: ignore[assignment]
+        meeting.error_message = None  # type: ignore[assignment]
+        db.commit()
+
+    except (ExtractionError, LLMError) as e:
+        # Update meeting status to failed
+        meeting.status = MeetingStatus.failed
+        meeting.failed_at = datetime.utcnow()  # type: ignore[assignment]
+        meeting.error_message = str(e)  # type: ignore[assignment]
+        meeting.prompt_version = PROMPT_VERSION  # type: ignore[assignment]
+        db.commit()
+        raise ExtractionError(str(e))
+
+    except Exception as e:
+        # Unexpected error - update meeting status to failed
+        error_msg = f"Unexpected error during extraction: {e}"
+        meeting.status = MeetingStatus.failed
+        meeting.failed_at = datetime.utcnow()  # type: ignore[assignment]
+        meeting.error_message = error_msg  # type: ignore[assignment]
+        meeting.prompt_version = PROMPT_VERSION  # type: ignore[assignment]
+        db.commit()
         raise ExtractionError(error_msg)

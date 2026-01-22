@@ -2,7 +2,7 @@
 
 from app.services.parser import parse_file
 from app.services.llm import LLMProvider, LLMError, get_provider
-from app.services.extractor import extract, ExtractionError
+from app.services.extractor import extract, extract_stream, ExtractionError
 from app.services.chunker import chunk_text
 
 __all__ = [
@@ -11,6 +11,7 @@ __all__ = [
     "LLMError",
     "get_provider",
     "extract",
+    "extract_stream",
     "ExtractionError",
     "chunk_text",
 ]
