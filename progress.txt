@@ -419,3 +419,15 @@
   - Frontend Vitest tests may have worker timeout issues in WSL/Windows environments - build pass confirms code correctness
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-028
+- **What was implemented**: Created MeetingsList component for displaying meetings with status badges
+- **Files changed**:
+  - `ui/src/components/meetings/MeetingsList.jsx` - Component displaying meetings as list items with title, date, StatusBadge; onClick handler; empty state
+  - `ui/src/components/meetings/MeetingsList.css` - Styling for list items with hover effects and empty state
+- **Learnings for future iterations:**
+  - Meeting list components go in `ui/src/components/meetings/` directory
+  - Use `onMeetingClick` prop pattern for click handling (passing the meeting object)
+  - Empty state shows an icon and "No meetings yet" text
+  - Meetings have `meeting_date` field (snake_case from backend API)
+---
