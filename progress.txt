@@ -395,3 +395,15 @@
   - Parser service tests don't need database fixtures - they're unit tests for pure functions
   - Test boundary conditions: exact limits (50KB) and just-over limits (50KB + 1 byte)
 ---
+
+## 2026-01-22 - US-026
+- **What was implemented**: Created comprehensive tests for meeting endpoints
+- **Files changed**:
+  - `backend/tests/test_meetings.py` - 13 tests covering: upload with text, upload with .txt file, upload with .md file, upload requires file or text, upload 404 on missing project, list meetings by project, list empty meetings, list meetings 404 on missing project, get meeting with items, get meeting 404, delete meeting, delete meeting 404, delete removes from project list
+- **Learnings for future iterations:**
+  - Use `BytesIO` from `io` module to create in-memory file objects for testing file uploads
+  - For multipart file uploads in TestClient: `files={"file": ("filename.txt", file_obj, "text/plain")}`
+  - Form data goes in `data={}` parameter, files in `files={}` parameter
+  - Helper functions like `_create_project()` reduce test boilerplate and improve readability
+  - Test both positive cases and error cases (404s) for all CRUD operations
+---
