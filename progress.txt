@@ -662,3 +662,15 @@
   - Test all 9 section types to verify enum handling works correctly
   - Tests cover: successful extraction, status transitions, malformed JSON, missing fields, invalid sections, empty response, markdown code block stripping, order assignment, retry behavior
 ---
+
+## 2026-01-22 - US-045
+- **What was implemented**: Created comprehensive tests for the chunker service
+- **Files changed**:
+  - `backend/tests/test_chunker.py` - 17 tests organized in 5 classes covering all chunking scenarios
+- **Learnings for future iterations:**
+  - Chunker tests don't need database fixtures - they're pure unit tests
+  - Test classes organize related tests: under limit, over limit, paragraph boundaries, section headers, edge cases
+  - Key behaviors tested: empty input, exact limit, multiple chunks, paragraph boundary preservation, section header prepending
+  - Tests verify that section headers are prepended to subsequent chunks for context continuity
+  - Edge case: single very long paragraph is kept intact even if exceeding max_chars (can't split mid-paragraph)
+---
