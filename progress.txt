@@ -359,3 +359,18 @@
   - The endpoint is async since it uses parse_file which is async
   - python-multipart package is required at runtime for Form data (installed separately from requirements.txt)
 ---
+
+## 2026-01-22 - US-023
+- **What was implemented**: Created meeting list and get endpoints for viewing meetings
+- **Files changed**:
+  - `backend/app/routers/meetings.py` - Added GET /api/meetings/{id} endpoint with items filtering
+  - `backend/app/routers/projects.py` - Added GET /api/projects/{id}/meetings endpoint
+  - `backend/app/schemas/meeting.py` - Added MeetingListItemResponse schema for list views
+  - `backend/app/schemas/__init__.py` - Exported new MeetingListItemResponse schema
+- **Learnings for future iterations:**
+  - Project-scoped endpoints go in projects router: `/api/projects/{id}/meetings`
+  - Resource-specific endpoints go in their own router: `/api/meetings/{id}`
+  - Use separate response schemas for list vs detail views (MeetingListItemResponse vs MeetingResponse)
+  - Filter soft-deleted items with `MeetingItem.is_deleted == False` in queries
+  - When building response dicts manually, all fields must be explicitly included for Pydantic validation
+---
