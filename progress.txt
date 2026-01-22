@@ -718,3 +718,18 @@
   - 9 sections match backend Section enum: problems, user_goals, functional_requirements, data_needs, constraints, non_goals, risks_assumptions, open_questions, action_items
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-049
+- **What was implemented**: Created RecapEditorPage shell for viewing meeting extraction results
+- **Files changed**:
+  - `ui/src/pages/RecapEditorPage.jsx` - New page component with conditional rendering based on meeting status (pending/processing shows StreamingPreview, processed shows placeholder, failed shows error with retry)
+  - `ui/src/pages/RecapEditorPage.css` - Styling for loading, error, placeholder, and failed states
+  - `ui/src/App.jsx` - Added route `/app/projects/:id/meetings/:mid` for RecapEditorPage
+- **Learnings for future iterations:**
+  - RecapEditorPage uses `useParams()` to extract `:id` (project) and `:mid` (meeting) from URL
+  - Uses `useLocation()` to access navigation state (job_id passed from UploadMeetingPage)
+  - The `useStreaming` hook is conditionally activated based on meeting status - pass null jobId when not needed
+  - Retry functionality for failed extractions will call POST /api/meetings/{id}/retry endpoint (to be implemented in US-114)
+  - Status-based rendering: pending/processing -> StreamingPreview, processed -> placeholder (RecapEditor in future), failed -> error with retry
+  - Manual browser verification needed - no browser testing tools available
+---
