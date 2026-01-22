@@ -1,2 +1,197 @@
 # Ralphy Progress Log
 
+## Codebase Patterns
+- Backend FastAPI app lives in `backend/app/main.py`
+- Python dependencies in `backend/requirements.txt`
+- Use `python3 -m mypy <file> --ignore-missing-imports` for typechecking
+- Use `--break-system-packages` flag when installing pip packages in this environment
+- Uvicorn runs the app: `python3 -m uvicorn app.main:app --port 8000`
+- Import settings: `from app.config import settings`
+- Import database: `from app.database import engine, SessionLocal, Base, get_db`
+- Import models: `from app.models import Project` (add new models to models/__init__.py)
+- Run Alembic migrations from backend directory: `cd backend && python3 -m alembic upgrade head`
+- Create new migrations: `cd backend && python3 -m alembic revision --autogenerate -m "description"`
+- Always import models in `alembic/env.py` for autogenerate to detect new models
+- Import schemas: `from app.schemas import ProjectCreate, ProjectResponse` etc.
+- Pydantic v2 uses `model_config = {"from_attributes": True}` for ORM conversion
+- Routers go in `backend/app/routers/`, export from `__init__.py`, include in main.py
+- Use `APIRouter(prefix="/api/...", tags=["..."])` for route grouping
+- Response models: `response_model=ProjectResponse`, status codes: `status_code=status.HTTP_201_CREATED`
+- Run tests: `cd backend && python3 -m pytest tests/ -v`
+- Test fixtures in `backend/conftest.py`: `test_db` (in-memory SQLite), `test_client` (FastAPI TestClient)
+- In-memory SQLite tests require `poolclass=StaticPool` and model imports in conftest.py
+- Frontend (ui) uses Vite + React with npm scripts: `npm run dev`, `npm run build`
+- React Router: BrowserRouter wraps App in main.jsx, Routes/Route in App.jsx
+- Pages go in `ui/src/pages/`, components in `ui/src/components/{feature}/` (e.g., `components/projects/`)
+- Use `Link` from react-router-dom for navigation, not `<a>` tags
+- API service: `import { get, post, put, del } from '../services/api'` for HTTP calls
+
+---
+
+## 2026-01-22 - US-001
+- **What was implemented**: Set up FastAPI backend structure with CORS middleware and health check endpoint
+- **Files changed**:
+  - `backend/app/__init__.py` - Created empty init file
+  - `backend/app/main.py` - FastAPI app with CORS and /api/health endpoint
+  - `backend/requirements.txt` - All required dependencies
+- **Learnings for future iterations:**
+  - This environment is externally managed Python, need `--break-system-packages` for pip
+  - Mypy works with `--ignore-missing-imports` flag for third-party libs
+  - CORS allows localhost:3000, localhost:5173, and 127.0.0.1 variants
+---
+
+## 2026-01-22 - US-002
+- **What was implemented**: Created centralized configuration with pydantic-settings
+- **Files changed**:
+  - `backend/app/config.py` - Settings class with all config variables using pydantic-settings
+  - `backend/.env.example` - Example environment file documenting all optional variables
+- **Learnings for future iterations:**
+  - Config uses `env_file = ".env"` in Config class to load from .env file
+  - Import settings with `from app.config import settings`
+  - All settings have sensible defaults for local development
+---
+
+## 2026-01-22 - US-003
+- **What was implemented**: Configured SQLAlchemy with SQLite database
+- **Files changed**:
+  - `backend/app/database.py` - SQLAlchemy engine, SessionLocal, Base, and get_db dependency
+- **Learnings for future iterations:**
+  - Import database components: `from app.database import engine, SessionLocal, Base, get_db`
+  - SQLite requires `connect_args={"check_same_thread": False}` for thread safety
+  - `get_db` is a FastAPI dependency generator that yields Session and auto-closes
+  - SessionLocal is configured with `autocommit=False, autoflush=False` as per FastAPI best practices
+---
+
+## 2026-01-22 - US-004
+- **What was implemented**: Set up Alembic for database migrations
+- **Files changed**:
+  - `backend/alembic.ini` - Alembic configuration file
+  - `backend/alembic/env.py` - Updated to import Base from database.py and use DATABASE_URL from config
+  - `backend/alembic/versions/0194510d4c15_initial.py` - Initial empty migration
+  - `.gitignore` - Added *.db to exclude SQLite database files
+- **Learnings for future iterations:**
+  - Run migrations from backend directory: `cd backend && python3 -m alembic upgrade head`
+  - Create new migrations: `python3 -m alembic revision --autogenerate -m "description"`
+  - env.py uses `config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)` to dynamically set URL
+  - Alembic imports models via Base.metadata for autogenerate support
+---
+
+## 2026-01-22 - US-005
+- **What was implemented**: Created Project model with database migration
+- **Files changed**:
+  - `backend/app/models/__init__.py` - Models package init, exports Project
+  - `backend/app/models/project.py` - Project model with id (UUID), name, description, created_at, updated_at
+  - `backend/alembic/env.py` - Updated to import models for autogenerate support
+  - `backend/alembic/versions/02ddbe2acae5_create_projects_table.py` - Migration creating projects table
+- **Learnings for future iterations:**
+  - Models go in `backend/app/models/` directory
+  - Import models with `from app.models import Project`
+  - UUID columns use `CHAR(36)` type in SQLite with lambda default for uuid generation
+  - Always import models in `alembic/env.py` for autogenerate to detect schema changes
+  - Cascade delete relationships are configured via SQLAlchemy relationship() with cascade="all, delete-orphan"
+---
+
+## 2026-01-22 - US-006
+- **What was implemented**: Created Pydantic schemas for Project API validation
+- **Files changed**:
+  - `backend/app/schemas/__init__.py` - Schemas package init, exports all Project schemas
+  - `backend/app/schemas/project.py` - ProjectCreate, ProjectUpdate, ProjectResponse, ProjectList schemas
+- **Learnings for future iterations:**
+  - Schemas go in `backend/app/schemas/` directory
+  - Import schemas with `from app.schemas import ProjectCreate, ProjectResponse` etc.
+  - Use `model_config = {"from_attributes": True}` in Pydantic v2 for ORM model conversion
+  - ProjectCreate has required `name`, optional `description`
+  - ProjectUpdate has all optional fields for partial updates
+  - ProjectResponse includes all fields including timestamps
+  - ProjectList wraps a list of ProjectResponse objects
+---
+
+## 2026-01-22 - US-007
+- **What was implemented**: Created Project CRUD API endpoints
+- **Files changed**:
+  - `backend/app/routers/__init__.py` - Routers package init, exports projects_router
+  - `backend/app/routers/projects.py` - Full CRUD: POST, GET (list), GET (single), PUT, DELETE
+  - `backend/app/main.py` - Registered projects_router
+- **Learnings for future iterations:**
+  - Routers go in `backend/app/routers/` directory
+  - Use `router = APIRouter(prefix="/api/projects", tags=["projects"])` for route grouping
+  - Router exports from `__init__.py`: `from app.routers.projects import router as projects_router`
+  - Include router in main.py: `app.include_router(projects_router)`
+  - Use `response_model` decorator param for automatic response serialization
+  - Use `status_code=status.HTTP_201_CREATED` for POST endpoints
+  - Use `status_code=status.HTTP_204_NO_CONTENT` for DELETE endpoints
+  - Use `model_dump(exclude_unset=True)` in Pydantic v2 for partial updates
+---
+
+## 2026-01-22 - US-008
+- **What was implemented**: Set up pytest with fixtures for testing
+- **Files changed**:
+  - `backend/pytest.ini` - Pytest configuration with asyncio_mode = auto
+  - `backend/conftest.py` - Test fixtures for test_client and test_db
+  - `backend/tests/__init__.py` - Tests package init
+  - `backend/tests/test_health.py` - Health endpoint test to verify setup
+- **Learnings for future iterations:**
+  - Tests go in `backend/tests/` directory
+  - Run tests: `cd backend && python3 -m pytest tests/ -v`
+  - test_db fixture uses in-memory SQLite (`sqlite:///:memory:`) for test isolation
+  - test_client fixture overrides get_db dependency to use test database
+  - Each test gets fresh database (tables created before, dropped after)
+  - Use `app.dependency_overrides[get_db] = override_get_db` to swap dependencies in tests
+---
+
+## 2026-01-22 - US-009
+- **What was implemented**: Created tests for Project CRUD endpoints
+- **Files changed**:
+  - `backend/tests/test_projects.py` - Comprehensive tests for all 5 CRUD operations
+  - `backend/conftest.py` - Fixed to use StaticPool and import models
+- **Learnings for future iterations:**
+  - In-memory SQLite requires `poolclass=StaticPool` to share the same database across connections
+  - Must import models in `conftest.py` so `Base.metadata.create_all()` creates the tables
+  - Test file covers: POST create, GET list, GET single, GET 404, PUT update, PUT 404, DELETE, DELETE 404
+  - Use fake UUID `00000000-0000-0000-0000-000000000000` to test 404 responses
+---
+
+## 2026-01-22 - US-010
+- **What was implemented**: Set up React Router with /app routes for SPA navigation
+- **Files changed**:
+  - `ui/package.json` - Added react-router-dom dependency
+  - `ui/src/main.jsx` - Wrapped App with BrowserRouter
+  - `ui/src/App.jsx` - Set up Routes component with / and /app routes
+  - `ui/src/pages/LandingPage.jsx` - Extracted landing page content from original App.jsx
+  - `ui/src/pages/ProjectsPage.jsx` - Created placeholder for projects page
+  - `ui/src/App.css` - Added styles for feature-card-link, back-link, projects-placeholder
+- **Learnings for future iterations:**
+  - Use `Link` from react-router-dom for client-side navigation
+  - BrowserRouter must wrap the entire app in main.jsx (entry point)
+  - Routes/Route components define URL-to-component mapping
+  - Use `path="/app/*"` to catch all subroutes for a section
+  - Build with `npm run build` to verify no JS errors
+  - Manual browser verification needed for routing - no agent-browser skill available
+---
+
+## 2026-01-22 - US-011
+- **What was implemented**: Created API service layer with fetch wrapper for consistent HTTP calls
+- **Files changed**:
+  - `ui/src/services/api.js` - Created with get, post, put, del functions and error handling
+- **Learnings for future iterations:**
+  - API service uses `import.meta.env.VITE_API_URL` for base URL (Vite env var pattern)
+  - Default base URL is `http://localhost:8000` for local development
+  - All functions throw Error with `detail` from API response or status code fallback
+  - Import API methods: `import { get, post, put, del } from '../services/api'`
+  - DELETE typically returns 204 No Content, so `del()` handles both 204 and JSON responses
+---
+
+## 2026-01-22 - US-012
+- **What was implemented**: Created ProjectCard component for displaying project information as a card
+- **Files changed**:
+  - `ui/src/components/projects/ProjectCard.jsx` - Component with name, description, meeting count, last activity, edit/delete buttons
+  - `ui/src/components/projects/ProjectCard.css` - Styling for the card with hover effects and consistent design
+- **Learnings for future iterations:**
+  - Components go in `ui/src/components/{feature}/` directories (e.g., `components/projects/`)
+  - Use CSS alongside component files for scoped styling (e.g., `ProjectCard.css` next to `ProjectCard.jsx`)
+  - Import CSS in component: `import './ProjectCard.css'`
+  - Use `useNavigate` from react-router-dom for programmatic navigation
+  - Use `e.stopPropagation()` in nested buttons to prevent click events from bubbling to parent
+  - Card uses SVG icons inline for edit, delete, and stats (meetings, clock)
+  - Manual browser verification needed - no browser testing tools available
+---
