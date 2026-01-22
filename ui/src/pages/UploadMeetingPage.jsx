@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FileDropzone } from '../components/common/FileDropzone';
 import './UploadMeetingPage.css';
 
 const MAX_FILE_SIZE_KB = 50;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function UploadMeetingPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [meetingDate, setMeetingDate] = useState(new Date().toISOString().split('T')[0]);
   const [file, setFile] = useState(null);
   const [text, setText] = useState('');
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileSelect = (selectedFile) => {
     setError(null);
@@ -44,13 +47,46 @@ function UploadMeetingPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Form submission will be implemented in US-032
-    // This story only creates the page UI
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('project_id', id);
+      formData.append('title', title);
+      formData.append('meeting_date', meetingDate);
+
+      if (file) {
+        formData.append('file', file);
+      } else if (text.trim()) {
+        formData.append('text', text.trim());
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/meetings/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Upload failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Navigate to the meeting page with the job_id
+      navigate(`/app/projects/${id}/meetings/${data.meeting_id}`, {
+        state: { job_id: data.job_id }
+      });
+    } catch (err) {
+      setError(err.message || 'Failed to upload meeting notes. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const isSubmitDisabled = !title.trim() || (!file && !text.trim());
+  const isSubmitDisabled = isLoading || !title.trim() || (!file && !text.trim());
 
   return (
     <main className="main-content">
@@ -140,12 +176,21 @@ function UploadMeetingPage() {
               className="form-btn form-btn--primary"
               disabled={isSubmitDisabled}
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 10V12.6667C14 13.0203 13.8595 13.3594 13.6095 13.6095C13.3594 13.8595 13.0203 14 12.6667 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M11.3333 5.33333L8 2L4.66666 5.33333" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M8 2V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Process Meeting Notes
+              {isLoading ? (
+                <>
+                  <span className="btn-spinner"></span>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 10V12.6667C14 13.0203 13.8595 13.3594 13.6095 13.6095C13.3594 13.8595 13.0203 14 12.6667 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M11.3333 5.33333L8 2L4.66666 5.33333" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 2V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Process Meeting Notes
+                </>
+              )}
             </button>
           </div>
         </form>
