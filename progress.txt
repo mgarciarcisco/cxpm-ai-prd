@@ -749,3 +749,17 @@
   - Always verify integration between components when marking "glue" stories as complete
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-051
+- **What was implemented**: Created comprehensive tests for the useStreaming React hook
+- **Files changed**:
+  - `ui/tests/components/useStreaming.test.js` - 28 tests covering all hook functionality
+- **Learnings for future iterations:**
+  - React hook testing requires `@testing-library/react`'s `renderHook` and `act` utilities
+  - Mock EventSource by creating a class with static constants (CONNECTING, OPEN, CLOSED), instance tracking arrays, and helper methods
+  - Use `vi.useFakeTimers()` to test timeout behavior - can advance time with `vi.advanceTimersByTime(ms)`
+  - Use `act()` wrapper when triggering state changes in hooks (e.g., simulating events)
+  - Test classes organize related tests: connection, items, errors, onerror, timeout, retry, cleanup
+  - Track closed instances separately (`closedInstances` array) to verify cleanup behavior
+  - When testing rerenders with different props, use `renderHook` with `initialProps` and `rerender({ newProps })`
+---
