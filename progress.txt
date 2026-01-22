@@ -491,3 +491,18 @@
   - isSubmitDisabled should include isLoading to prevent double submissions
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-033
+- **What was implemented**: Created comprehensive tests for the upload form (UploadMeetingPage)
+- **Files changed**:
+  - `ui/tests/components/UploadMeetingPage.test.jsx` - 20 tests covering title validation, file handling, size validation, text input
+  - `ui/package.json` - Added @testing-library/user-event dependency
+- **Learnings for future iterations:**
+  - Use `@testing-library/user-event` for realistic user interaction testing (typing, clicking)
+  - For routing tests, wrap components with `<BrowserRouter>` and define required Routes
+  - Mock `global.fetch` for API call tests: `global.fetch = vi.fn()` in test setup
+  - Create file objects for testing: `new File([content], 'filename.txt', { type: 'text/plain' })`
+  - Use `fireEvent.change(input, { target: { files: [file] } })` to simulate file selection
+  - FileDropzone maintains its own internal state - parent can't directly clear it without using clear button
+  - Test setup helper: `window.history.pushState({}, 'Test page', route)` to set initial route
+---
