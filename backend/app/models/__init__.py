@@ -2,5 +2,6 @@
 
 from app.models.project import Project
 from app.models.meeting_recap import MeetingRecap, MeetingStatus, InputType
+from app.models.meeting_item import MeetingItem, Section
 
-__all__ = ["Project", "MeetingRecap", "MeetingStatus", "InputType"]
+__all__ = ["Project", "MeetingRecap", "MeetingStatus", "InputType", "MeetingItem", "Section"]

@@ -54,7 +54,7 @@ class MeetingRecap(Base):
 
     # Relationships
     project = relationship("Project", back_populates="meetings")
-    # items = relationship("MeetingItem", back_populates="meeting", cascade="all, delete-orphan")
+    items = relationship("MeetingItem", back_populates="meeting", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<MeetingRecap(id={self.id}, title={self.title}, status={self.status})>"
