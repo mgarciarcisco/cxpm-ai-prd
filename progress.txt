@@ -195,3 +195,59 @@
   - Card uses SVG icons inline for edit, delete, and stats (meetings, clock)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-013
+- **What was implemented**: Created ProjectsPage with responsive card grid that displays projects
+- **Files changed**:
+  - `ui/src/pages/ProjectsPage.jsx` - Full page implementation with data fetching, loading/error/empty states
+  - `ui/src/pages/ProjectsPage.css` - Styling for grid, loading spinner, error and empty states
+- **Learnings for future iterations:**
+  - Pages go in `ui/src/pages/` directory with accompanying CSS files
+  - Use `useState` for state management: loading, error, data
+  - Use `useEffect` with empty deps array for fetch on mount
+  - API returns `{ projects: [...] }` - access `.projects` property
+  - Loading spinner uses CSS animation with `border-top-color` for spinner effect
+  - Responsive grid: 3 columns > 2 columns (1024px) > 1 column (640px)
+  - Manual browser verification needed - no browser testing tools available
+---
+
+## 2026-01-22 - US-014
+- **What was implemented**: Created reusable Modal component for displaying forms and content in overlays
+- **Files changed**:
+  - `ui/src/components/common/Modal.jsx` - Modal with backdrop, close button, focus trapping, ESC key support
+  - `ui/src/components/common/Modal.css` - Styling with responsive design (bottom sheet on mobile)
+- **Learnings for future iterations:**
+  - Shared/common components go in `ui/src/components/common/` directory
+  - Modal uses refs for focus management: store `previousActiveElement` to restore on close
+  - Focus trap implementation: query focusable elements, handle Tab/Shift+Tab cycling
+  - Prevent body scroll when modal open: `document.body.style.overflow = 'hidden'`
+  - ESC key closes modal via `document.addEventListener('keydown', ...)`
+  - Use `aria-modal="true"` and `role="dialog"` for accessibility
+  - Mobile responsive: modal becomes bottom sheet (slides up from bottom) on narrow screens
+  - Manual browser verification needed - no browser testing tools available
+---
+
+## 2026-01-22 - US-015
+- **What was implemented**: Created ProjectForm component for creating and editing projects
+- **Files changed**:
+  - `ui/src/components/projects/ProjectForm.jsx` - Form with name input (required) and description textarea (optional)
+  - `ui/src/components/projects/ProjectForm.css` - Styling for form inputs, labels, buttons, error states
+- **Learnings for future iterations:**
+  - Form components accept `project` prop for edit mode and `onSubmit` prop for form submission
+  - Use `useEffect` to pre-fill form values when `project` prop is passed
+  - `onSubmit` prop should be async - form handles try/catch and displays error message on failure
+  - Submit button disabled when required field empty (`!name.trim()`) or during submission
+  - CSS pattern: `.project-form-btn--primary` and `--secondary` for button variants
+  - Responsive: buttons stack vertically on mobile with `flex-direction: column-reverse`
+  - Manual browser verification needed - no browser testing tools available
+---
+
+## 2026-01-22 - Bugfix: US-013 API Contract Mismatch
+- **What was fixed**: Corrected API response handling in ProjectsPage - backend returns plain array, not wrapped object
+- **Files changed**:
+  - `ui/src/pages/ProjectsPage.jsx` - Changed `setProjects(data.projects || [])` to `setProjects(data || [])`
+- **Learnings for future iterations:**
+  - Backend `GET /api/projects` returns `list[ProjectResponse]` (plain array), not `{ projects: [...] }`
+  - Always verify API response format matches frontend expectations before marking story complete
+  - The unused `ProjectList` schema in `schemas/project.py` could cause confusion - it wraps projects but isn't used by the router
+---
