@@ -431,3 +431,18 @@
   - Empty state shows an icon and "No meetings yet" text
   - Meetings have `meeting_date` field (snake_case from backend API)
 ---
+
+## 2026-01-22 - US-029
+- **What was implemented**: Created ProjectDashboard page with two-panel layout for managing meetings and viewing requirements
+- **Files changed**:
+  - `ui/src/pages/ProjectDashboard.jsx` - Dashboard page with project info, action buttons, left panel (MeetingsList), right panel (requirements placeholder)
+  - `ui/src/pages/ProjectDashboard.css` - Styling for two-panel layout, action buttons, loading/error states
+  - `ui/src/App.jsx` - Added route `/app/projects/:id` for ProjectDashboard
+- **Learnings for future iterations:**
+  - Use `useParams()` from react-router-dom to extract `:id` from URL
+  - Use `Promise.all()` to fetch multiple API endpoints in parallel for better performance
+  - Export functionality needs raw fetch (not api.js) to handle blob response for file download
+  - Create download link programmatically: create blob URL, create anchor, click, cleanup
+  - Two-panel layout uses CSS grid with `grid-template-columns: 1fr 1fr`, responsive at 1024px breakpoint
+  - Manual browser verification needed - no browser testing tools available
+---
