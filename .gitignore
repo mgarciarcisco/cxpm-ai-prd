@@ -212,3 +212,6 @@ cxpm-ai-prd-key
 
 # Sensitive artifacts - never commit
 docs/artifacts/
+
+# SQLite databases
+*.db
