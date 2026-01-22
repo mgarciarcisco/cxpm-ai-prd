@@ -6,10 +6,20 @@ from app.schemas.project import (
     ProjectResponse,
     ProjectList,
 )
+from app.schemas.meeting import (
+    MeetingUpload,
+    MeetingItemResponse,
+    MeetingResponse,
+    UploadResponse,
+)
 
 __all__ = [
     "ProjectCreate",
     "ProjectUpdate",
     "ProjectResponse",
     "ProjectList",
+    "MeetingUpload",
+    "MeetingItemResponse",
+    "MeetingResponse",
+    "UploadResponse",
 ]
