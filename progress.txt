@@ -636,3 +636,16 @@
   - Same chunking logic as `extract()` - processes multiple chunks sequentially, yielding items from each
   - Import streaming extractor: `from app.services import extract_stream`
 ---
+
+## 2026-01-22 - US-043
+- **What was implemented**: Created SSE streaming endpoint for real-time extraction results
+- **Files changed**:
+  - `backend/app/routers/meetings.py` - Added GET /api/meetings/{job_id}/stream endpoint using sse-starlette
+- **Learnings for future iterations:**
+  - Use `EventSourceResponse` from `sse_starlette.sse` for SSE responses in FastAPI
+  - SSE events use `{"event": "event_name", "data": json.dumps(data)}` format for sse-starlette
+  - Check client disconnection with `await request.is_disconnected()` in the event generator
+  - Import `Request` from fastapi to access `request.is_disconnected()`
+  - sse-starlette was already in requirements.txt but needed to be installed in the environment
+  - The endpoint wraps `extract_stream()` and emits status/item/complete/error events
+---
