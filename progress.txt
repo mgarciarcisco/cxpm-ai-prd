@@ -549,3 +549,17 @@
   - API key validation happens in constructor - raises LLMError early if not configured
   - Import ClaudeProvider: `from app.services.llm import ClaudeProvider`
 ---
+
+## 2026-01-22 - US-037
+- **What was implemented**: Created LLM factory with automatic fallback from Ollama to Claude
+- **Files changed**:
+  - `backend/app/services/llm/factory.py` - New factory module with get_provider() function and Ollama health check
+  - `backend/app/services/llm/__init__.py` - Updated to export get_provider function
+- **Learnings for future iterations:**
+  - LLM factory uses `/api/tags` endpoint to check Ollama availability (not `/api/generate`)
+  - Factory pattern: `get_provider()` returns a polymorphic LLMProvider instance
+  - Health check has short timeout (5 seconds) to fail fast if Ollama is unavailable
+  - Import factory: `from app.services.llm import get_provider`
+  - Factory checks `settings.ANTHROPIC_API_KEY` before trying to instantiate ClaudeProvider
+  - ClaudeProvider constructor raises LLMError if API key is missing, so factory catches that
+---
