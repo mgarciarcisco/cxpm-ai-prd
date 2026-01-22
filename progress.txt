@@ -622,3 +622,17 @@
   - Chunk results are collected into `all_items_data` list, then deduplicated before creating MeetingItem records
   - Error handling wraps the entire extraction process - if any chunk fails, the meeting status is set to failed
 ---
+
+## 2026-01-22 - US-042
+- **What was implemented**: Added streaming extraction function for real-time item extraction feedback
+- **Files changed**:
+  - `backend/app/services/extractor.py` - Added `extract_stream()` async generator function and `_parse_streaming_json()` helper
+  - `backend/app/services/__init__.py` - Updated exports to include `extract_stream`
+- **Learnings for future iterations:**
+  - `extract_stream()` is an async generator: `async for item in extract_stream(meeting_id, db): ...`
+  - Streaming JSON parsing requires tracking brace counts and string escapes to find complete objects
+  - `_parse_streaming_json()` handles partial JSON by finding complete `{...}` objects within accumulated text
+  - Uses a `yielded_items` set to deduplicate on-the-fly as items are streamed
+  - Same chunking logic as `extract()` - processes multiple chunks sequentially, yielding items from each
+  - Import streaming extractor: `from app.services import extract_stream`
+---
