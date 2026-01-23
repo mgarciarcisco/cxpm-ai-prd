@@ -124,3 +124,16 @@ class ApplyResponse(BaseModel):
     added: list[ConflictResultResponse] = []
     skipped: list[ConflictResultResponse] = []
     conflicts: list[ConflictResultResponse] = []
+
+
+class MergeSuggestionRequest(BaseModel):
+    """Schema for requesting a merge suggestion."""
+
+    existing: str
+    new: str
+
+
+class MergeSuggestionResponse(BaseModel):
+    """Schema for merge suggestion response."""
+
+    merged_text: str

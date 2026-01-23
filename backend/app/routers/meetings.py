@@ -23,8 +23,10 @@ from app.schemas import (
     ApplyResponse,
     ConflictResultResponse,
     MatchedRequirementResponse,
+    MergeSuggestionRequest,
+    MergeSuggestionResponse,
 )
-from app.services import parse_file, extract_stream, ExtractionError, detect_conflicts, ConflictDetectionError
+from app.services import parse_file, extract_stream, ExtractionError, detect_conflicts, ConflictDetectionError, suggest_merge, MergeError
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
 
@@ -401,5 +403,27 @@ def apply_meeting(
     except ConflictDetectionError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post("/suggest-merge", response_model=MergeSuggestionResponse)
+def suggest_merge_endpoint(
+    request: MergeSuggestionRequest,
+) -> MergeSuggestionResponse:
+    """
+    Get an AI-suggested merge of two conflicting requirement texts.
+
+    Takes existing requirement content and new meeting item content,
+    returns a merged text suggestion.
+
+    Returns 500 with error message if LLM fails.
+    """
+    try:
+        merged_text = suggest_merge(request.existing, request.new)
+        return MergeSuggestionResponse(merged_text=merged_text)
+    except MergeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
