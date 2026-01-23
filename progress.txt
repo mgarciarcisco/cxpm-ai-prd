@@ -1135,3 +1135,17 @@
   - Export tests verify Markdown format: header, sections, empty section placeholders, sources table, content-type, content-disposition
   - History endpoint returns entries ordered by `created_at.desc()` (newest first)
 ---
+
+## 2026-01-22 - US-079
+- **What was implemented**: Created RequirementsPage for viewing all requirements organized by section
+- **Files changed**:
+  - `ui/src/pages/RequirementsPage.jsx` - New page component fetching requirements from GET /api/projects/{id}/requirements, displays all 9 sections with CollapsibleSection and ItemRow components
+  - `ui/src/pages/RequirementsPage.css` - Styling for loading state, error state, empty sections, and responsive layout
+  - `ui/src/App.jsx` - Added route `/app/projects/:id/requirements` for RequirementsPage
+- **Learnings for future iterations:**
+  - RequirementsPage follows the same pattern as RecapEditorPage for fetching and displaying sectioned data
+  - Requirements API returns data grouped by section (e.g., `requirements.problems`, `requirements.user_goals`, etc.)
+  - Use SECTIONS constant array to maintain consistent ordering across UI (matches backend Section enum)
+  - ItemRow can be used with `draggable={false}` for read-only display (editing/deletion to be added in subsequent stories)
+  - Manual browser verification needed - no browser testing tools available
+---
