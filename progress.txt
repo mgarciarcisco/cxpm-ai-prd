@@ -1496,3 +1496,19 @@
   - Success handling deferred to US-104 (navigation and toast)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-104
+- **What was implemented**: Success and error handling after applying changes in ConflictResolverPage
+- **Files changed**:
+  - `ui/src/pages/ConflictResolverPage.jsx` - Added useNavigate hook, applySuccess and applyError state, success/error message UI, handleRetryApply function, auto-navigation to requirements page after delay
+  - `ui/src/pages/ConflictResolverPage.css` - Added styles for .apply-success-message and .apply-error-message, fadeIn animation, retry-link button styling
+- **Learnings for future iterations:**
+  - useNavigate from react-router-dom is used for programmatic navigation after successful API calls
+  - Success feedback uses a separate `applySuccess` state to show inline message before navigation
+  - setTimeout used to delay navigation (1.5s) so user can see success message
+  - Apply errors tracked separately from fetch errors via `applyError` state to allow targeted retry
+  - Retry link button resets error state and calls handleApplyChanges again
+  - Footer is hidden when applySuccess is true to avoid confusing UX
+  - fadeIn CSS animation provides smooth appearance for success message
+  - Manual browser verification needed - no browser testing tools available
+---
