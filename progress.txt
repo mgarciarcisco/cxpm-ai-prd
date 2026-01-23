@@ -801,3 +801,17 @@
   - Filter by `is_deleted == False` when calculating max order to ignore soft-deleted items
   - MeetingItemCreate schema uses `Section` enum directly from models for validation
 ---
+
+## 2026-01-22 - US-055
+- **What was implemented**: Created MeetingItem reorder endpoint for reordering items within a section
+- **Files changed**:
+  - `backend/app/routers/meetings.py` - Added PUT /api/meetings/{id}/items/reorder endpoint
+  - `backend/app/schemas/meeting.py` - Added MeetingItemReorderRequest schema (section and item_ids)
+  - `backend/app/schemas/__init__.py` - Exported MeetingItemReorderRequest
+- **Learnings for future iterations:**
+  - Reorder endpoint receives `section` and `item_ids` (list of string UUIDs) in request body
+  - Use `enumerate(item_ids, start=1)` to assign new order values based on position
+  - Create lookup dict by ID: `{str(item.id): item for item in items}` for efficient updates
+  - Return items in new order by querying with `.order_by(MeetingItem.order)` after commit
+  - Same status validation pattern: meeting status must be `processed` to allow reordering
+---
