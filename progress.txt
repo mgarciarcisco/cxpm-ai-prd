@@ -986,3 +986,19 @@
   - Two composite indexes: (project_id, section) for section queries and (project_id, is_active) for filtering active requirements
   - Project model already had commented placeholder for requirements relationship - just uncomment it
 ---
+
+## 2026-01-22 - US-068
+- **What was implemented**: Created RequirementSource model for tracking which meetings contributed to each requirement
+- **Files changed**:
+  - `backend/app/models/requirement_source.py` - New RequirementSource model with id (UUID), requirement_id (FK with cascade), meeting_id (FK, SET NULL on delete), meeting_item_id (FK, nullable, SET NULL on delete), source_quote (text, nullable), created_at timestamp
+  - `backend/app/models/requirement.py` - Added `sources` relationship with back_populates and cascade delete
+  - `backend/app/models/__init__.py` - Updated to export RequirementSource
+  - `backend/alembic/env.py` - Added RequirementSource import for autogenerate
+  - `backend/alembic/versions/4a7f1d3ecf25_create_requirement_sources_table.py` - Migration file
+  - `backend/conftest.py` - Added RequirementSource import for test db setup
+- **Learnings for future iterations:**
+  - RequirementSource uses `ondelete="SET NULL"` for meeting_id and meeting_item_id - this allows meetings to be deleted independently while preserving the requirement and its history
+  - RequirementSource uses `ondelete="CASCADE"` for requirement_id - when a requirement is deleted, its sources are also deleted
+  - Requirement model needed bidirectional relationship added: `sources = relationship("RequirementSource", back_populates="requirement", cascade="all, delete-orphan")`
+  - Index on meeting_id enables efficient traceability queries to find all requirements derived from a specific meeting
+---
