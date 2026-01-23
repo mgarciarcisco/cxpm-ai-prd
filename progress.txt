@@ -1408,3 +1408,21 @@
   - The resolve endpoint handles empty decisions list gracefully, still updating meeting status to applied
   - Multiple decisions can be processed in a single resolve request with correct count tracking
 ---
+
+## 2026-01-22 - US-098
+- **What was implemented**: Created ConflictResolverPage with summary for apply flow
+- **Files changed**:
+  - `ui/src/pages/ConflictResolverPage.jsx` - Main page component with summary header and item lists
+  - `ui/src/pages/ConflictResolverPage.css` - Styling for the conflict resolver page
+  - `ui/src/App.jsx` - Added route for `/app/projects/:id/meetings/:mid/apply`
+- **Learnings for future iterations:**
+  - The page calls `POST /api/meetings/{id}/apply` to get categorized results (added/skipped/conflicts)
+  - Summary header displays counts for each category with color-coded indicators (green=added, gray=skipped, red=conflicts)
+  - Uses CollapsibleSection component for expandable sections - added items expanded by default, skipped collapsed
+  - Added items shown with checkmark icon in green-tinted container
+  - Skipped items show the reason and matched existing requirement for context
+  - Conflicts section is placeholder for future stories (US-099, US-100, US-101)
+  - Uses formatSection helper to convert section enums to human-readable labels
+  - Loading state shows spinner with "Analyzing meeting items..." message
+  - Error state provides retry button to re-fetch data
+---
