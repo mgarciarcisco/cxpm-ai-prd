@@ -930,3 +930,17 @@
   - Only one section can have an active add form at a time (controlled by `addingToSection` state)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-064
+- **What was implemented**: Integrated RecapEditor component into RecapEditorPage to show the editor when extraction is complete
+- **Files changed**:
+  - `ui/src/pages/RecapEditorPage.jsx` - Imported RecapEditor, added meetingItems state, added useEffect for streaming-to-processed transition, added callback handlers (handleEditItem, handleDeleteItem, handleReorderItems, handleAddItem), replaced placeholder with actual RecapEditor component
+- **Learnings for future iterations:**
+  - RecapEditorPage manages items state separately from meeting state, allowing real-time UI updates after edits
+  - Transition from StreamingPreview to RecapEditor triggered by watching `streamStatus === 'complete'`
+  - When streaming completes, we manually set meeting status to 'processed' in local state and copy streaming items to meetingItems
+  - When page loads with already-processed meeting, items are initialized from `meetingData.items` in fetchMeeting
+  - Callback handlers update local state immediately, providing responsive UI without refetching
+  - handleReorderItems needs to preserve items from other sections when reordering one section
+  - Manual browser verification needed - no browser testing tools available
+---
