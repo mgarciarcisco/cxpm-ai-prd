@@ -6,7 +6,8 @@
   background-color: #FFFFFF;
   border: 1px solid #E5E7EB;
   border-radius: 8px;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  position: relative;
 }
 
 .item-row:hover {
@@ -259,4 +260,38 @@
 .item-row-delete-btn--cancel:focus-visible {
   outline: 2px solid #3B82F6;
   outline-offset: 2px;
+}
+
+/* Drag and drop styles */
+.item-row[draggable="true"] {
+  cursor: grab;
+}
+
+.item-row[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.item-row--dragging {
+  opacity: 0.5;
+  background-color: #EFF6FF;
+  border-color: #3B82F6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: scale(1.02);
+}
+
+.item-row--drag-over {
+  border-color: #3B82F6;
+  background-color: #EFF6FF;
+  box-shadow: 0 0 0 2px #3B82F6, 0 4px 8px rgba(59, 130, 246, 0.2);
+}
+
+.item-row--drag-over::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4px;
+  height: 2px;
+  background-color: #3B82F6;
+  border-radius: 2px;
 }
