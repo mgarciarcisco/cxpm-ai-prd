@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { post, get } from '../services/api';
 import { CollapsibleSection } from '../components/common/CollapsibleSection';
 import { ConflictCard } from '../components/conflicts/ConflictCard';
+import { BulkActions } from '../components/conflicts/BulkActions';
 import './ConflictResolverPage.css';
 
 function ConflictResolverPage() {
@@ -72,12 +73,53 @@ function ConflictResolverPage() {
     }));
   };
 
+  /**
+   * Get the AI recommended resolution for a conflict based on classification
+   */
+  const getAIRecommendation = (conflict) => {
+    if (conflict.classification === 'refinement') {
+      return 'conflict_replaced';
+    } else if (conflict.classification === 'contradiction') {
+      return 'conflict_keep_existing';
+    }
+    return null;
+  };
+
+  /**
+   * Handle "Accept AI recommendations" bulk action
+   * Sets all conflicts to their AI-recommended resolution
+   */
+  const handleAcceptAllAI = () => {
+    if (!applyResults?.conflicts) return;
+
+    const newResolutions = {};
+    applyResults.conflicts.forEach((conflict) => {
+      const recommendation = getAIRecommendation(conflict);
+      if (recommendation) {
+        newResolutions[conflict.item_id] = recommendation;
+      }
+    });
+
+    setConflictResolutions((prev) => ({
+      ...prev,
+      ...newResolutions,
+    }));
+  };
+
   return (
     <main className="main-content">
       <section className="conflict-resolver-section">
         <div className="section-header">
-          <h2>Apply Meeting: {meeting?.title || 'Meeting'}</h2>
-          <Link to={`/app/projects/${id}/meetings/${mid}`} className="back-link">Back to Recap</Link>
+          <div className="section-header-left">
+            <h2>Apply Meeting: {meeting?.title || 'Meeting'}</h2>
+            <Link to={`/app/projects/${id}/meetings/${mid}`} className="back-link">Back to Recap</Link>
+          </div>
+          <div className="section-header-right">
+            <BulkActions
+              conflicts={applyResults?.conflicts}
+              onAcceptAllAI={handleAcceptAllAI}
+            />
+          </div>
         </div>
 
         {/* Summary Header */}
