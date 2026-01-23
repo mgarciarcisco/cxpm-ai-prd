@@ -1607,3 +1607,20 @@
   - Uses project's primary color #4ECDC4 for action button styling
   - Browser testing tool (agent-browser skill) not available - manual verification needed
 ---
+
+## 2026-01-23 - US-112
+- **What was implemented**: Added EmptyState component usage to all list pages for better empty state UX
+- **Files changed**:
+  - `ui/src/pages/ProjectsPage.jsx` - Uses EmptyState with "Create your first project" message and New Project button
+  - `ui/src/pages/ProjectDashboard.jsx` - Passes emptyActionButton prop to MeetingsList for Add Meeting link
+  - `ui/src/pages/ProjectDashboard.css` - Added .empty-state-link-btn styles for Link styled as button
+  - `ui/src/pages/RequirementsPage.jsx` - Shows EmptyState when all sections are empty with "Apply meeting recaps to build requirements"
+  - `ui/src/pages/RequirementsPage.css` - Added .requirements-empty-state-container styles
+  - `ui/src/components/meetings/MeetingsList.jsx` - Refactored to use EmptyState with optional emptyActionButton prop
+- **Learnings for future iterations:**
+  - EmptyState component accepts: icon (JSX), title, description, actionButton props
+  - For Link elements styled as buttons in EmptyState, use a custom CSS class (e.g., .empty-state-link-btn)
+  - MeetingsList now accepts `emptyActionButton` prop for customizable empty state actions
+  - To check if all requirements are empty, iterate SECTIONS array checking if each section has 0 items
+  - Manual browser verification needed - no browser testing tools available
+---
