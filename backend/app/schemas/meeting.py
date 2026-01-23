@@ -137,3 +137,27 @@ class MergeSuggestionResponse(BaseModel):
     """Schema for merge suggestion response."""
 
     merged_text: str
+
+
+class ResolveDecision(BaseModel):
+    """Schema for a single decision in the resolve request."""
+
+    item_id: str
+    decision: str  # 'added', 'skipped_duplicate', 'skipped_semantic', 'conflict_keep_existing', 'conflict_replaced', 'conflict_kept_both', 'conflict_merged'
+    merged_text: Optional[str] = None  # Required for 'conflict_merged' decision
+    matched_requirement_id: Optional[str] = None  # Required for conflict decisions
+
+
+class ResolveRequest(BaseModel):
+    """Schema for the resolve endpoint request."""
+
+    decisions: list[ResolveDecision]
+
+
+class ResolveResponse(BaseModel):
+    """Schema for the resolve endpoint response with counts."""
+
+    added: int = 0
+    skipped: int = 0
+    merged: int = 0
+    replaced: int = 0

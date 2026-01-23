@@ -2,7 +2,7 @@
 
 import asyncio
 import json
-from datetime import date
+from datetime import date, datetime
 from typing import Any, AsyncIterator, Optional
 from uuid import UUID
 
@@ -11,7 +11,18 @@ from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Project, MeetingRecap, MeetingItem
+from app.models import (
+    Project,
+    MeetingRecap,
+    MeetingItem,
+    Requirement,
+    RequirementSource,
+    RequirementHistory,
+    MeetingItemDecision,
+    Actor,
+    Action,
+    Decision,
+)
 from app.models.meeting_recap import InputType, MeetingStatus
 from sqlalchemy import func
 from app.schemas import (
@@ -25,6 +36,8 @@ from app.schemas import (
     MatchedRequirementResponse,
     MergeSuggestionRequest,
     MergeSuggestionResponse,
+    ResolveRequest,
+    ResolveResponse,
 )
 from app.services import parse_file, extract_stream, ExtractionError, detect_conflicts, ConflictDetectionError, suggest_merge, MergeError
 
@@ -427,3 +440,296 @@ def suggest_merge_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
+
+
+@router.post("/{meeting_id}/resolve", response_model=ResolveResponse)
+def resolve_meeting(
+    meeting_id: str,
+    request: ResolveRequest,
+    db: Session = Depends(get_db),
+) -> ResolveResponse:
+    """
+    Resolve conflicts and create requirements from meeting items.
+
+    Accepts an array of decisions, each containing:
+    - item_id: The meeting item ID
+    - decision: The decision type (added, skipped_*, conflict_*)
+    - merged_text: Required for conflict_merged decisions
+    - matched_requirement_id: Required for conflict decisions
+
+    This endpoint:
+    1. Creates requirements for added items with is_active=true
+    2. Records all decisions in MeetingItemDecision table
+    3. Updates RequirementHistory for all changes with actor=ai_extraction or ai_merge
+    4. Creates RequirementSource entries linking requirement to meeting and meeting_item
+    5. Updates meeting status to applied and sets applied_at timestamp
+
+    Returns counts: {added, skipped, merged, replaced}
+    Returns 400 if meeting status is not processed.
+    Returns 404 if meeting not found.
+    """
+    # Verify meeting exists
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    # Check meeting status
+    if meeting.status != MeetingStatus.processed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot resolve meeting unless status is processed",
+        )
+
+    # Get project_id from meeting
+    project_id = meeting.project_id
+
+    # Initialize counters
+    counts = ResolveResponse()
+
+    # Build a lookup for meeting items
+    meeting_items = (
+        db.query(MeetingItem)
+        .filter(MeetingItem.meeting_id == meeting_id)
+        .filter(MeetingItem.is_deleted == False)
+        .all()
+    )
+    items_by_id = {item.id: item for item in meeting_items}
+
+    # Get max order per section for new requirements
+    max_orders: dict[str, int] = {}
+    existing_max_orders = (
+        db.query(Requirement.section, func.max(Requirement.order))
+        .filter(Requirement.project_id == project_id)
+        .filter(Requirement.is_active == True)
+        .group_by(Requirement.section)
+        .all()
+    )
+    for section, max_order in existing_max_orders:
+        max_orders[section.value if hasattr(section, 'value') else section] = max_order or 0
+
+    # Process each decision
+    for decision_data in request.decisions:
+        item = items_by_id.get(decision_data.item_id)
+        if not item:
+            # Skip if item not found
+            continue
+
+        decision_type = decision_data.decision
+        matched_req_id = decision_data.matched_requirement_id
+        merged_text = decision_data.merged_text
+
+        # Determine the Decision enum value
+        try:
+            decision_enum = Decision(decision_type)
+        except ValueError:
+            # Skip invalid decision types
+            continue
+
+        # Handle based on decision type
+        if decision_type == "added":
+            # Create new requirement
+            section_key = item.section.value if hasattr(item.section, 'value') else str(item.section)
+            new_order = max_orders.get(section_key, 0) + 1
+            max_orders[section_key] = new_order
+
+            requirement = Requirement(
+                project_id=project_id,
+                section=item.section,
+                content=item.content,
+                order=new_order,
+                is_active=True,
+            )
+            db.add(requirement)
+            db.flush()  # Get the requirement ID
+
+            # Create RequirementSource
+            source = RequirementSource(
+                requirement_id=requirement.id,
+                meeting_id=meeting_id,
+                meeting_item_id=item.id,
+                source_quote=item.source_quote,
+            )
+            db.add(source)
+
+            # Create RequirementHistory
+            history = RequirementHistory(
+                requirement_id=requirement.id,
+                meeting_id=meeting_id,
+                actor=Actor.ai_extraction,
+                action=Action.created,
+                old_content=None,
+                new_content=item.content,
+            )
+            db.add(history)
+
+            # Record decision
+            decision_record = MeetingItemDecision(
+                meeting_item_id=item.id,
+                decision=decision_enum,
+                matched_requirement_id=None,
+                reason="New requirement added",
+            )
+            db.add(decision_record)
+
+            counts.added += 1
+
+        elif decision_type in ("skipped_duplicate", "skipped_semantic"):
+            # Just record the decision, no requirement changes
+            decision_record = MeetingItemDecision(
+                meeting_item_id=item.id,
+                decision=decision_enum,
+                matched_requirement_id=matched_req_id,
+                reason="Skipped as duplicate" if decision_type == "skipped_duplicate" else "Skipped as semantic duplicate",
+            )
+            db.add(decision_record)
+
+            counts.skipped += 1
+
+        elif decision_type == "conflict_keep_existing":
+            # Just record the decision, keep existing requirement unchanged
+            decision_record = MeetingItemDecision(
+                meeting_item_id=item.id,
+                decision=decision_enum,
+                matched_requirement_id=matched_req_id,
+                reason="Kept existing requirement",
+            )
+            db.add(decision_record)
+
+            counts.skipped += 1
+
+        elif decision_type == "conflict_replaced":
+            # Replace existing requirement with new content
+            if matched_req_id:
+                matched_req = db.query(Requirement).filter(Requirement.id == matched_req_id).first()
+                if matched_req:
+                    old_content = matched_req.content
+                    matched_req.content = item.content  # type: ignore[assignment]
+
+                    # Create RequirementSource
+                    source = RequirementSource(
+                        requirement_id=matched_req.id,
+                        meeting_id=meeting_id,
+                        meeting_item_id=item.id,
+                        source_quote=item.source_quote,
+                    )
+                    db.add(source)
+
+                    # Create RequirementHistory
+                    history = RequirementHistory(
+                        requirement_id=matched_req.id,
+                        meeting_id=meeting_id,
+                        actor=Actor.ai_extraction,
+                        action=Action.modified,
+                        old_content=old_content,
+                        new_content=item.content,
+                    )
+                    db.add(history)
+
+            # Record decision
+            decision_record = MeetingItemDecision(
+                meeting_item_id=item.id,
+                decision=decision_enum,
+                matched_requirement_id=matched_req_id,
+                reason="Replaced existing requirement",
+            )
+            db.add(decision_record)
+
+            counts.replaced += 1
+
+        elif decision_type == "conflict_kept_both":
+            # Create a new requirement alongside the existing one
+            section_key = item.section.value if hasattr(item.section, 'value') else str(item.section)
+            new_order = max_orders.get(section_key, 0) + 1
+            max_orders[section_key] = new_order
+
+            requirement = Requirement(
+                project_id=project_id,
+                section=item.section,
+                content=item.content,
+                order=new_order,
+                is_active=True,
+            )
+            db.add(requirement)
+            db.flush()
+
+            # Create RequirementSource
+            source = RequirementSource(
+                requirement_id=requirement.id,
+                meeting_id=meeting_id,
+                meeting_item_id=item.id,
+                source_quote=item.source_quote,
+            )
+            db.add(source)
+
+            # Create RequirementHistory
+            history = RequirementHistory(
+                requirement_id=requirement.id,
+                meeting_id=meeting_id,
+                actor=Actor.ai_extraction,
+                action=Action.created,
+                old_content=None,
+                new_content=item.content,
+            )
+            db.add(history)
+
+            # Record decision
+            decision_record = MeetingItemDecision(
+                meeting_item_id=item.id,
+                decision=decision_enum,
+                matched_requirement_id=matched_req_id,
+                reason="Kept both existing and new requirement",
+            )
+            db.add(decision_record)
+
+            counts.added += 1
+
+        elif decision_type == "conflict_merged":
+            # Merge with existing requirement using merged_text
+            if matched_req_id and merged_text:
+                matched_req = db.query(Requirement).filter(Requirement.id == matched_req_id).first()
+                if matched_req:
+                    old_content = matched_req.content
+                    matched_req.content = merged_text  # type: ignore[assignment]
+
+                    # Create RequirementSource
+                    source = RequirementSource(
+                        requirement_id=matched_req.id,
+                        meeting_id=meeting_id,
+                        meeting_item_id=item.id,
+                        source_quote=item.source_quote,
+                    )
+                    db.add(source)
+
+                    # Create RequirementHistory with ai_merge actor
+                    history = RequirementHistory(
+                        requirement_id=matched_req.id,
+                        meeting_id=meeting_id,
+                        actor=Actor.ai_merge,
+                        action=Action.merged,
+                        old_content=old_content,
+                        new_content=merged_text,
+                    )
+                    db.add(history)
+
+            # Record decision
+            decision_record = MeetingItemDecision(
+                meeting_item_id=item.id,
+                decision=decision_enum,
+                matched_requirement_id=matched_req_id,
+                reason="Merged with existing requirement",
+            )
+            db.add(decision_record)
+
+            counts.merged += 1
+
+    # Update meeting status to applied
+    meeting.status = MeetingStatus.applied  # type: ignore[assignment]
+    meeting.applied_at = datetime.utcnow()  # type: ignore[assignment]
+
+    # Commit all changes
+    db.commit()
+
+    return counts

@@ -20,6 +20,9 @@ from app.schemas.meeting import (
     ApplyResponse,
     MergeSuggestionRequest,
     MergeSuggestionResponse,
+    ResolveDecision,
+    ResolveRequest,
+    ResolveResponse,
 )
 from app.schemas.requirement import (
     RequirementSourceResponse,
@@ -48,6 +51,9 @@ __all__ = [
     "ApplyResponse",
     "MergeSuggestionRequest",
     "MergeSuggestionResponse",
+    "ResolveDecision",
+    "ResolveRequest",
+    "ResolveResponse",
     "RequirementSourceResponse",
     "RequirementHistoryResponse",
     "RequirementResponse",
