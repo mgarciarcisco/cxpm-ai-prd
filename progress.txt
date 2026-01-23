@@ -1700,3 +1700,16 @@
   - For Enum columns in group by, access `.value` to get the string representation
   - last_activity falls back to: applied_at → meeting created_at → project created_at
 ---
+
+## 2026-01-23 - US-117
+- **What was implemented**: Added dashboard statistics display to ProjectDashboard component
+- **Files changed**:
+  - `ui/src/pages/ProjectDashboard.jsx` - Added stats state, fetches from /api/projects/{id}/stats in parallel with other API calls, displays meeting count in panel header, displays requirement counts by section, shows last updated timestamp
+  - `ui/src/pages/ProjectDashboard.css` - Added styles for panel-header, panel-count badge, requirements-summary, requirement-section-row, section-name, section-count, last-activity
+- **Learnings for future iterations:**
+  - Use `Promise.all()` to fetch multiple endpoints in parallel for better performance
+  - Panel headers can use flexbox with `justify-content: space-between` to show title and count
+  - Section names from backend use snake_case (e.g., `user_goals`) - format for display with `replace(/_/g, ' ')` and title case
+  - ProjectStatsResponse includes: meeting_count, requirement_count, requirement_counts_by_section (array of {section, count}), last_activity (datetime or null)
+  - Manual browser verification needed - no browser testing tools available
+---
