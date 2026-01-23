@@ -1583,3 +1583,14 @@
   - Use `size="large"` for page-level loading states
   - Pages already had loading state logic, just needed to swap the CSS spinner for the component
 ---
+
+## 2026-01-23 - US-110
+- **What was implemented**: Added ErrorBoundary wrapper to App.jsx Routes for error isolation
+- **Files changed**:
+  - `ui/src/App.jsx` - Imported ErrorBoundary and wrapped Routes component
+- **Learnings for future iterations:**
+  - ErrorBoundary wraps Routes inside App.jsx, after the header (so header still renders on errors)
+  - All pages already had their own error handling with retry buttons for API failures from previous stories
+  - ErrorBoundary component created in US-108 includes Try Again button that resets state
+  - Browser testing tool (agent-browser skill) not available - manual verification needed
+---
