@@ -1244,3 +1244,18 @@
   - Document.body `appendChild` and `removeChild` can be spied on to verify dynamic anchor creation for downloads
   - Test organization: Section Rendering, Loading State, Error State, Inline Edit Interaction, Delete Confirmation, Source Link Navigation, Export Button, History Popover, Back Link, Drag and Drop Reordering
 ---
+
+## 2026-01-22 - US-087
+- **What was implemented**: Created MeetingItemDecision model for recording all decisions during the apply process
+- **Files changed**:
+  - `backend/app/models/meeting_item_decision.py` - New model with Decision enum (7 values) and MeetingItemDecision model with id, meeting_item_id (FK), decision, matched_requirement_id (FK, nullable), reason, created_at
+  - `backend/app/models/__init__.py` - Updated to export MeetingItemDecision and Decision
+  - `backend/alembic/env.py` - Added MeetingItemDecision import for autogenerate
+  - `backend/alembic/versions/d14d0c3d54db_create_meeting_item_decisions_table.py` - Migration file
+  - `backend/conftest.py` - Added MeetingItemDecision import for test db setup
+- **Learnings for future iterations:**
+  - Decision enum has 7 values for tracking apply outcomes: added, skipped_duplicate, skipped_semantic, conflict_keep_existing, conflict_replaced, conflict_kept_both, conflict_merged
+  - MeetingItemDecision uses `ondelete="CASCADE"` for meeting_item_id - when a meeting item is deleted, its decisions are also deleted
+  - MeetingItemDecision uses `ondelete="SET NULL"` for matched_requirement_id - requirements can be deleted independently while preserving the decision record
+  - Import MeetingItemDecision and Decision: `from app.models import MeetingItemDecision, Decision`
+---
