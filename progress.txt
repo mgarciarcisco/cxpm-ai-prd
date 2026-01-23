@@ -1110,3 +1110,15 @@
   - Empty sections show "*No items in this section.*" in italics
   - Generated date uses UTC and `datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')` format
 ---
+
+## 2026-01-22 - US-077
+- **What was implemented**: Created Markdown export endpoint for downloading requirements as a Markdown file
+- **Files changed**:
+  - `backend/app/routers/requirements.py` - Added GET /api/projects/{id}/requirements/export endpoint with text/markdown Content-Type and Content-Disposition header
+- **Learnings for future iterations:**
+  - Export endpoint returns FastAPI `Response` with `media_type="text/markdown"` for correct content type
+  - Use `Content-Disposition: attachment; filename="{name}"` header to suggest download filename
+  - `_slugify_filename()` helper converts project name to safe filename (lowercase, hyphens, alphanumeric only)
+  - `export_markdown()` service expects `UUID` type, so convert string project_id with `UUID(project_id)`
+  - Catch `ValueError` from export_markdown (project not found) and re-raise as 404 HTTPException
+---
