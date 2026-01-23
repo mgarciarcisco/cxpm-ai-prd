@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Project, Requirement, Section, RequirementHistory, Actor, Action
-from app.schemas import RequirementsListResponse, RequirementResponse, RequirementSourceResponse, RequirementUpdate, RequirementReorderRequest
+from app.schemas import RequirementsListResponse, RequirementResponse, RequirementSourceResponse, RequirementUpdate, RequirementReorderRequest, RequirementHistoryResponse
 
 router = APIRouter(prefix="/api", tags=["requirements"])
 
@@ -191,3 +191,42 @@ def reorder_requirements(
     db.commit()
 
     return {"success": "true"}
+
+
+@router.get(
+    "/requirements/{requirement_id}/history",
+    response_model=list[RequirementHistoryResponse],
+)
+def get_requirement_history(
+    requirement_id: str,
+    db: Session = Depends(get_db),
+) -> list[RequirementHistoryResponse]:
+    """Get the change history for a requirement.
+
+    Returns history entries ordered by created_at descending (newest first).
+    Includes actor, action, old_content, and new_content for each entry.
+    """
+    # Find the requirement
+    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
+    if not requirement:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
+
+    # Query history entries ordered by created_at descending
+    history_entries = (
+        db.query(RequirementHistory)
+        .filter(RequirementHistory.requirement_id == requirement_id)
+        .order_by(RequirementHistory.created_at.desc())
+        .all()
+    )
+
+    return [
+        RequirementHistoryResponse(
+            id=str(entry.id),
+            actor=entry.actor,
+            action=entry.action,
+            old_content=entry.old_content,
+            new_content=entry.new_content,
+            created_at=entry.created_at,  # type: ignore[arg-type]
+        )
+        for entry in history_entries
+    ]
