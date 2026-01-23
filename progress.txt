@@ -1019,3 +1019,16 @@
   - Index on requirement_id enables efficient queries for viewing a requirement's change history
   - Import RequirementHistory and enums: `from app.models import RequirementHistory, Actor, Action`
 ---
+
+## 2026-01-22 - US-070
+- **What was implemented**: Created Pydantic schemas for Requirements API validation
+- **Files changed**:
+  - `backend/app/schemas/requirement.py` - New file with RequirementSourceResponse, RequirementHistoryResponse, RequirementResponse, RequirementUpdate, RequirementsListResponse schemas
+  - `backend/app/schemas/__init__.py` - Updated to export new schemas
+- **Learnings for future iterations:**
+  - RequirementResponse includes `sources: list[RequirementSourceResponse]` for meeting source traceability
+  - RequirementResponse includes `history_count: int` for showing how many changes a requirement has (computed by router, not from_attributes)
+  - RequirementsListResponse has all 9 section fields (problems, user_goals, etc.) for grouping requirements by section
+  - Import requirement schemas: `from app.schemas import RequirementResponse, RequirementUpdate, RequirementsListResponse, RequirementHistoryResponse`
+  - RequirementHistoryResponse imports Actor and Action enums from `app.models.requirement_history`
+---
