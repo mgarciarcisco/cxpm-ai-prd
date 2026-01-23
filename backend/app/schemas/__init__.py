@@ -14,6 +14,7 @@ from app.schemas.meeting import (
     UploadResponse,
     MeetingItemUpdate,
     MeetingItemCreate,
+    MeetingItemReorderRequest,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "UploadResponse",
     "MeetingItemUpdate",
     "MeetingItemCreate",
+    "MeetingItemReorderRequest",
 ]

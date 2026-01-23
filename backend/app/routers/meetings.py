@@ -14,7 +14,7 @@ from app.database import get_db
 from app.models import Project, MeetingRecap, MeetingItem
 from app.models.meeting_recap import InputType, MeetingStatus
 from sqlalchemy import func
-from app.schemas import UploadResponse, MeetingResponse, MeetingItemResponse, MeetingItemCreate
+from app.schemas import UploadResponse, MeetingResponse, MeetingItemResponse, MeetingItemCreate, MeetingItemReorderRequest
 from app.services import parse_file, extract_stream, ExtractionError
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
@@ -188,6 +188,70 @@ def add_meeting_item(
     db.refresh(item)
 
     return item
+
+
+@router.put("/{meeting_id}/items/reorder", response_model=list[MeetingItemResponse])
+def reorder_meeting_items(
+    meeting_id: str,
+    reorder_data: MeetingItemReorderRequest,
+    db: Session = Depends(get_db),
+) -> list[MeetingItem]:
+    """
+    Reorder meeting items within a section.
+
+    Updates the order field for each item based on the provided item_ids array.
+    Returns 404 if meeting not found.
+    Returns 400 if meeting status is not processed.
+    """
+    # Find the meeting
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    # Check meeting status
+    if meeting.status != MeetingStatus.processed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot reorder items unless meeting status is processed",
+        )
+
+    # Get all items for this section and meeting (non-deleted)
+    items = (
+        db.query(MeetingItem)
+        .filter(
+            MeetingItem.meeting_id == meeting_id,
+            MeetingItem.section == reorder_data.section,
+            MeetingItem.is_deleted == False,
+        )
+        .all()
+    )
+
+    # Create a lookup dict by ID
+    items_by_id = {str(item.id): item for item in items}
+
+    # Update order based on position in item_ids
+    for new_order, item_id in enumerate(reorder_data.item_ids, start=1):
+        if item_id in items_by_id:
+            items_by_id[item_id].order = new_order  # type: ignore[assignment]
+
+    db.commit()
+
+    # Refresh and return all items in new order
+    updated_items = (
+        db.query(MeetingItem)
+        .filter(
+            MeetingItem.meeting_id == meeting_id,
+            MeetingItem.section == reorder_data.section,
+            MeetingItem.is_deleted == False,
+        )
+        .order_by(MeetingItem.order)
+        .all()
+    )
+
+    return updated_items
 
 
 @router.get("/{job_id}/stream")

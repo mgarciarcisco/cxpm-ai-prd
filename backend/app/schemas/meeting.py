@@ -87,3 +87,10 @@ class MeetingItemCreate(BaseModel):
 
     section: Section
     content: str
+
+
+class MeetingItemReorderRequest(BaseModel):
+    """Schema for reordering meeting items within a section."""
+
+    section: Section
+    item_ids: list[str]
