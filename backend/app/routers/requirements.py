@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Project, Requirement, Section
-from app.schemas import RequirementsListResponse, RequirementResponse, RequirementSourceResponse
+from app.models import Project, Requirement, Section, RequirementHistory, Actor, Action
+from app.schemas import RequirementsListResponse, RequirementResponse, RequirementSourceResponse, RequirementUpdate
 
-router = APIRouter(prefix="/api/projects", tags=["requirements"])
+router = APIRouter(prefix="/api", tags=["requirements"])
 
 
 def _build_requirement_response(requirement: Requirement) -> RequirementResponse:
@@ -31,7 +31,7 @@ def _build_requirement_response(requirement: Requirement) -> RequirementResponse
     )
 
 
-@router.get("/{project_id}/requirements", response_model=RequirementsListResponse)
+@router.get("/projects/{project_id}/requirements", response_model=RequirementsListResponse)
 def list_project_requirements(
     project_id: str, db: Session = Depends(get_db)
 ) -> RequirementsListResponse:
@@ -72,3 +72,44 @@ def list_project_requirements(
         grouped[req.section.value].append(response)
 
     return RequirementsListResponse(**grouped)
+
+
+@router.put(
+    "/requirements/{requirement_id}",
+    response_model=RequirementResponse,
+)
+def update_requirement(
+    requirement_id: str,
+    update_data: RequirementUpdate,
+    db: Session = Depends(get_db),
+) -> RequirementResponse:
+    """Update a requirement's content.
+
+    Records the change in RequirementHistory with actor=user, action=modified.
+    Returns the updated requirement.
+    """
+    # Find the requirement
+    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
+    if not requirement:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
+
+    # Store old content for history
+    old_content = requirement.content
+
+    # Update the requirement
+    requirement.content = update_data.content  # type: ignore[assignment]
+
+    # Record change in history
+    history_entry = RequirementHistory(
+        requirement_id=requirement.id,
+        actor=Actor.user,
+        action=Action.modified,
+        old_content=old_content,
+        new_content=update_data.content,
+    )
+    db.add(history_entry)
+
+    db.commit()
+    db.refresh(requirement)
+
+    return _build_requirement_response(requirement)
