@@ -1750,3 +1750,16 @@
   - When opening modal for "new" action, make sure to clear the editing state: `setEditingProject(null); setIsModalOpen(true)`
   - Modal title can be dynamic based on editing state: `editingProject ? "Edit Project" : "Create New Project"`
 ---
+
+## 2026-01-23 - US-121
+- **What was implemented**: Added project delete functionality to ProjectsPage with confirmation dialog
+- **Files changed**:
+  - `ui/src/pages/ProjectsPage.jsx` - Added deletingProject/isDeleting/deleteError state, handleDelete/handleCancelDelete/handleConfirmDelete handlers, and delete confirmation modal using existing Modal component
+  - `ui/src/pages/ProjectsPage.css` - Added styles for delete-confirmation dialog (icon, message, warning text, error display, action buttons)
+- **Learnings for future iterations:**
+  - Use the existing Modal component for confirmation dialogs that require user attention (consistent with edit/create flow)
+  - Delete confirmation should clearly warn about cascading deletes (meetings and requirements)
+  - Use `del` from api.js for DELETE requests (already handles 204 No Content)
+  - Error message styling follows same pattern as other error states (red background, red text)
+  - Button disabled state with opacity: 0.6 for visual feedback during async operations
+---
