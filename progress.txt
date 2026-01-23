@@ -840,3 +840,17 @@
   - Item count displayed as a pill/badge in the header
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-058
+- **What was implemented**: Created ItemRow component for displaying individual items with edit/delete actions and drag handle
+- **Files changed**:
+  - `ui/src/components/common/ItemRow.jsx` - Component with content display, edit button, delete button, drag handle icon
+  - `ui/src/components/common/ItemRow.css` - Styling with hover states, action button visibility transitions
+- **Learnings for future iterations:**
+  - ItemRow accepts props: `item` (object with content field), `onEdit` (callback), `onDelete` (callback)
+  - Action buttons hidden by default, revealed on row hover using CSS `opacity` transition
+  - Drag handle uses 6-dot pattern (2x3 grid) with SVG circles for visual representation
+  - Use `e.stopPropagation()` on action button clicks to prevent event bubbling
+  - Consistent icon styling with ProjectCard: 16x16 SVG, stroke-based icons
+  - Manual browser verification needed - no browser testing tools available
+---
