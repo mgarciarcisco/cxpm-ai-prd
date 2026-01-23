@@ -26,6 +26,7 @@ def _build_requirement_response(requirement: Requirement) -> RequirementResponse
             RequirementSourceResponse(
                 id=str(source.id),
                 meeting_id=str(source.meeting_id) if source.meeting_id else None,
+                meeting_title=source.meeting.title if source.meeting else None,
                 meeting_item_id=str(source.meeting_item_id) if source.meeting_item_id else None,
                 source_quote=source.source_quote,
                 created_at=source.created_at,

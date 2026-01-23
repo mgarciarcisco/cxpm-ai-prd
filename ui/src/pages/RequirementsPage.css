@@ -25,6 +25,31 @@
   gap: 0.25rem;
 }
 
+/* Source Links */
+.requirement-sources {
+  font-size: 0.75rem;
+  color: #6B7280;
+  padding-left: 2.25rem;
+  margin-top: -0.125rem;
+  margin-bottom: 0.25rem;
+}
+
+.requirement-sources-label {
+  font-style: italic;
+  margin-right: 0.25rem;
+}
+
+.requirement-source-link {
+  color: #4ECDC4;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.requirement-source-link:hover {
+  color: #3BB5AD;
+  text-decoration: underline;
+}
+
 /* Empty State */
 .requirements-empty {
   color: #9CA3AF;

@@ -233,6 +233,24 @@ function RequirementsPage() {
                           isDragging={draggedItem?.id === item.id}
                           isDragOver={dragOverItem?.id === item.id}
                         />
+                        {item.sources && item.sources.length > 0 && (
+                          <div className="requirement-sources">
+                            <span className="requirement-sources-label">Source:</span>
+                            {item.sources
+                              .filter(source => source.meeting_id)
+                              .map((source, index, filteredSources) => (
+                                <span key={source.id}>
+                                  <Link
+                                    to={`/app/projects/${id}/meetings/${source.meeting_id}`}
+                                    className="requirement-source-link"
+                                  >
+                                    {source.meeting_title || 'Meeting'}
+                                  </Link>
+                                  {index < filteredSources.length - 1 && ', '}
+                                </span>
+                              ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

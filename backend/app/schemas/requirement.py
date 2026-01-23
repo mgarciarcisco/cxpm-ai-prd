@@ -14,6 +14,7 @@ class RequirementSourceResponse(BaseModel):
 
     id: str
     meeting_id: Optional[str] = None
+    meeting_title: Optional[str] = None
     meeting_item_id: Optional[str] = None
     source_quote: Optional[str] = None
     created_at: datetime
