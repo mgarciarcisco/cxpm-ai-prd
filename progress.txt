@@ -1330,3 +1330,18 @@
   - Uses `detect_conflicts(UUID(meeting_id), db)` from conflict service to get categorized results
   - Converts dataclass `ConflictResult` to Pydantic `ConflictResultResponse` for API response
 ---
+
+## 2026-01-22 - US-093
+- **What was implemented**: Created POST /api/meetings/suggest-merge endpoint for getting AI-suggested merged text
+- **Files changed**:
+  - `backend/app/routers/meetings.py` - Added suggest_merge_endpoint that calls merger service
+  - `backend/app/schemas/meeting.py` - Added MergeSuggestionRequest, MergeSuggestionResponse schemas
+  - `backend/app/schemas/__init__.py` - Updated exports to include new schemas
+- **Learnings for future iterations:**
+  - Merge suggestion endpoint: `POST /api/meetings/suggest-merge` - takes existing and new text, returns merged_text
+  - Request body: `MergeSuggestionRequest(existing: str, new: str)`
+  - Response: `MergeSuggestionResponse(merged_text: str)` on success
+  - Error handling: catches MergeError and returns HTTP 500 with error message
+  - This endpoint is called by the frontend MergeEditor component when user selects "Merge" option for conflict resolution
+  - Unlike the apply endpoint, this does not require a meeting_id - it's a standalone merge utility
+---
