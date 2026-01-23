@@ -1642,3 +1642,22 @@
   - Error states are styled consistently with red background (#FEF2F2), red border (#FECACA), and red text (#DC2626)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-23 - US-114
+- **What was implemented**: Created POST /api/meetings/{id}/retry endpoint for retrying failed extractions
+- **Files changed:**
+  - `backend/app/routers/meetings.py` - Added `retry_meeting` endpoint at POST /api/meetings/{id}/retry
+  - `backend/tests/test_meetings.py` - Added 5 tests for retry endpoint functionality
+- **Endpoint behavior:**
+  - Resets meeting status from 'failed' to 'pending'
+  - Clears `error_message` field (sets to None)
+  - Clears `failed_at` timestamp (sets to None)
+  - Returns full MeetingResponse with updated status and items list
+  - Returns 404 if meeting not found
+  - Returns 400 if meeting status is not 'failed'
+- **Learnings for future iterations:**
+  - Retry pattern: reset status to pending, clear error fields, let user trigger stream again
+  - Tests use `test_db` fixture to directly manipulate meeting status to 'failed' for testing
+  - Import MeetingStatus from `app.models.meeting_recap` not from `app.models`
+  - Response structure matches MeetingResponse schema including items list (empty for failed meetings)
+---
