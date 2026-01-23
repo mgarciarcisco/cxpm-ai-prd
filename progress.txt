@@ -1070,3 +1070,16 @@
   - History entry for deactivation records old_content but sets new_content to None
   - Same router pattern as update endpoint - direct access via `/api/requirements/{id}`
 ---
+
+## 2026-01-22 - US-074
+- **What was implemented**: Created Requirements reorder endpoint for reordering requirements within a section
+- **Files changed**:
+  - `backend/app/schemas/requirement.py` - Added RequirementReorderRequest schema (section and requirement_ids)
+  - `backend/app/schemas/__init__.py` - Exported RequirementReorderRequest
+  - `backend/app/routers/requirements.py` - Added PUT /api/projects/{id}/requirements/reorder endpoint
+- **Learnings for future iterations:**
+  - RequirementReorderRequest follows same pattern as MeetingItemReorderRequest (section + array of IDs)
+  - Reorder endpoint follows project-scoped pattern: `/api/projects/{id}/requirements/reorder`
+  - Filter by `is_active == True` when getting requirements to exclude soft-deleted items
+  - Returns simple `{"success": "true"}` response to match acceptance criteria "Returns 200 with success"
+---
