@@ -1,6 +1,6 @@
 """Application configuration using pydantic-settings."""
 
-from typing import Optional
+
 from pydantic_settings import BaseSettings
 
 
@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3.2"
 
     # Claude API (optional fallback)
-    ANTHROPIC_API_KEY: Optional[str] = None
+    ANTHROPIC_API_KEY: str | None = None
 
     # File upload limits
     MAX_FILE_SIZE_KB: int = 50

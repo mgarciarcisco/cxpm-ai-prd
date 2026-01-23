@@ -9,14 +9,14 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy.orm import Session
 
-from app.models import MeetingRecap, MeetingItem, Project, Requirement
+from app.models import MeetingItem, MeetingRecap, Project, Requirement
 from app.models.meeting_item import Section
-from app.models.meeting_recap import MeetingStatus, InputType
+from app.models.meeting_recap import InputType, MeetingStatus
 from app.services.conflict import (
-    detect_conflicts,
     ConflictDetectionError,
     ConflictDetectionResult,
     _parse_classification_response,
+    detect_conflicts,
 )
 
 
@@ -221,7 +221,7 @@ def test_llm_classification_called_for_non_exact_matches(test_db: Session) -> No
     mock_provider = MockLLMProvider(mock_response)
 
     with patch("app.services.conflict.get_provider", return_value=mock_provider):
-        result = detect_conflicts(_get_meeting_uuid(meeting), test_db)
+        detect_conflicts(_get_meeting_uuid(meeting), test_db)
 
     assert mock_provider.generate_called
     assert mock_provider.prompt_received is not None

@@ -1,9 +1,10 @@
 """Tests for the SSE streaming endpoint."""
 
 import json
+from collections.abc import AsyncIterator
 from datetime import date
-from typing import Any, AsyncIterator, cast
-from unittest.mock import patch, AsyncMock
+from typing import Any, cast
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -11,7 +12,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models import MeetingRecap, Project
-from app.models.meeting_recap import MeetingStatus, InputType
+from app.models.meeting_recap import InputType, MeetingStatus
 from app.services.extractor import ExtractionError
 
 

@@ -3,8 +3,7 @@
 from pathlib import Path
 
 from app.config import settings
-from app.services.llm import get_provider, LLMError
-
+from app.services.llm import LLMError, get_provider
 
 # Path to the merge suggestion prompt template
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "suggest_merge_v1.txt"

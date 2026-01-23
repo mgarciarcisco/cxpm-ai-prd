@@ -1,10 +1,9 @@
 """Tests for the parser service."""
 
 from typing import Any
-
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from fastapi import HTTPException
 
 from app.services.parser import parse_file

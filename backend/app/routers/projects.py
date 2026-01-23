@@ -1,13 +1,19 @@
 """Project CRUD API endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Project, MeetingRecap, Requirement
-from app.models.meeting_item import Section
-from app.schemas import ProjectCreate, ProjectUpdate, ProjectResponse, MeetingListItemResponse, ProjectStatsResponse, SectionCount
+from app.models import MeetingRecap, Project, Requirement
+from app.schemas import (
+    MeetingListItemResponse,
+    ProjectCreate,
+    ProjectResponse,
+    ProjectStatsResponse,
+    ProjectUpdate,
+    SectionCount,
+)
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 

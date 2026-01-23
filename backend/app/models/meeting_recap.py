@@ -1,13 +1,13 @@
 """MeetingRecap model for storing uploaded meeting notes with status lifecycle."""
 
-import uuid
 import enum
+import uuid
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import Column, String, Text, DateTime, Date, ForeignKey, Enum as SAEnum
+from sqlalchemy import Column, Date, DateTime, ForeignKey, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.sqlite import CHAR
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 

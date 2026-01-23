@@ -1,8 +1,8 @@
 """API routers package."""
 
-from app.routers.projects import router as projects_router
-from app.routers.meetings import router as meetings_router
 from app.routers.meeting_items import router as meeting_items_router
+from app.routers.meetings import router as meetings_router
+from app.routers.projects import router as projects_router
 from app.routers.requirements import router as requirements_router
 
 __all__ = ["projects_router", "meetings_router", "meeting_items_router", "requirements_router"]

@@ -5,10 +5,9 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.models import Project, Requirement, MeetingRecap
+from app.models import MeetingRecap, Project, Requirement
 from app.models.meeting_item import Section
 from app.models.meeting_recap import MeetingStatus
-
 
 # Section display names for the Markdown output
 SECTION_TITLES: dict[Section, str] = {

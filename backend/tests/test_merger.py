@@ -1,11 +1,11 @@
 """Tests for the merge suggestion service."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.services.merger import suggest_merge, MergeError
 from app.services.llm import LLMError
+from app.services.merger import MergeError, suggest_merge
 
 
 class MockLLMProvider:

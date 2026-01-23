@@ -1,38 +1,38 @@
 """Pydantic schemas for API request/response validation."""
 
-from app.schemas.project import (
-    ProjectCreate,
-    ProjectUpdate,
-    ProjectResponse,
-    ProjectList,
-    SectionCount,
-    ProjectStatsResponse,
-)
 from app.schemas.meeting import (
-    MeetingUpload,
-    MeetingItemResponse,
-    MeetingResponse,
-    MeetingListItemResponse,
-    UploadResponse,
-    MeetingItemUpdate,
+    ApplyResponse,
+    ConflictResultResponse,
+    MatchedRequirementResponse,
     MeetingItemCreate,
     MeetingItemReorderRequest,
-    MatchedRequirementResponse,
-    ConflictResultResponse,
-    ApplyResponse,
+    MeetingItemResponse,
+    MeetingItemUpdate,
+    MeetingListItemResponse,
+    MeetingResponse,
+    MeetingUpload,
     MergeSuggestionRequest,
     MergeSuggestionResponse,
     ResolveDecision,
     ResolveRequest,
     ResolveResponse,
+    UploadResponse,
+)
+from app.schemas.project import (
+    ProjectCreate,
+    ProjectList,
+    ProjectResponse,
+    ProjectStatsResponse,
+    ProjectUpdate,
+    SectionCount,
 )
 from app.schemas.requirement import (
-    RequirementSourceResponse,
     RequirementHistoryResponse,
-    RequirementResponse,
-    RequirementUpdate,
-    RequirementsListResponse,
     RequirementReorderRequest,
+    RequirementResponse,
+    RequirementsListResponse,
+    RequirementSourceResponse,
+    RequirementUpdate,
 )
 
 __all__ = [

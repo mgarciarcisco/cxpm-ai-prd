@@ -3,9 +3,9 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models import MeetingRecap, MeetingItem
-from app.models.meeting_recap import MeetingStatus
+from app.models import MeetingItem, MeetingRecap
 from app.models.meeting_item import Section
+from app.models.meeting_recap import MeetingStatus
 
 
 def _create_project(test_client: TestClient) -> str:

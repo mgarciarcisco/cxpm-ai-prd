@@ -3,9 +3,9 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, Text, DateTime, ForeignKey, Index
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Text
 from sqlalchemy.dialects.sqlite import CHAR
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 

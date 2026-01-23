@@ -1,22 +1,21 @@
 """Pydantic schemas for Requirements API request/response validation."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
 from app.models.meeting_item import Section
-from app.models.requirement_history import Actor, Action
+from app.models.requirement_history import Action, Actor
 
 
 class RequirementSourceResponse(BaseModel):
     """Schema for requirement source response (link to meeting)."""
 
     id: str
-    meeting_id: Optional[str] = None
-    meeting_title: Optional[str] = None
-    meeting_item_id: Optional[str] = None
-    source_quote: Optional[str] = None
+    meeting_id: str | None = None
+    meeting_title: str | None = None
+    meeting_item_id: str | None = None
+    source_quote: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -28,8 +27,8 @@ class RequirementHistoryResponse(BaseModel):
     id: str
     actor: Actor
     action: Action
-    old_content: Optional[str] = None
-    new_content: Optional[str] = None
+    old_content: str | None = None
+    new_content: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

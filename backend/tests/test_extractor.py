@@ -9,10 +9,10 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy.orm import Session
 
-from app.models import MeetingRecap, MeetingItem, Project
+from app.models import MeetingItem, MeetingRecap, Project
 from app.models.meeting_item import Section
-from app.models.meeting_recap import MeetingStatus, InputType
-from app.services.extractor import extract, ExtractionError
+from app.models.meeting_recap import InputType, MeetingStatus
+from app.services.extractor import ExtractionError, extract
 
 
 def _get_project_id(project: Project) -> str:

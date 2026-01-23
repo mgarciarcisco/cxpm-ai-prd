@@ -10,9 +10,17 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
-# Import models so that Base.metadata knows about them
-from app.models import Project, MeetingRecap, MeetingItem, Requirement, RequirementSource, RequirementHistory, MeetingItemDecision  # noqa: F401
 
+# Import models so that Base.metadata knows about them
+from app.models import (  # noqa: F401
+    MeetingItem,
+    MeetingItemDecision,
+    MeetingRecap,
+    Project,
+    Requirement,
+    RequirementHistory,
+    RequirementSource,
+)
 
 # Create in-memory SQLite database for testing
 # Using StaticPool ensures all connections share the same in-memory database

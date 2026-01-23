@@ -15,20 +15,19 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models import (
-    Project,
-    MeetingRecap,
-    MeetingItem,
-    Requirement,
-    RequirementSource,
-    RequirementHistory,
-    MeetingItemDecision,
-    Actor,
     Action,
+    Actor,
+    MeetingItem,
+    MeetingItemDecision,
+    MeetingRecap,
+    Project,
+    Requirement,
+    RequirementHistory,
+    RequirementSource,
 )
 from app.models.meeting_item import Section
-from app.models.meeting_recap import MeetingStatus, InputType
 from app.models.meeting_item_decision import Decision
-
+from app.models.meeting_recap import InputType, MeetingStatus
 
 # =============================================
 # Test helpers

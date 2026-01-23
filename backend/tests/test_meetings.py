@@ -235,7 +235,7 @@ def test_delete_meeting_removes_from_project_list(test_client: TestClient) -> No
     project_id = _create_project(test_client)
 
     # Create two meetings
-    upload1 = test_client.post(
+    test_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,

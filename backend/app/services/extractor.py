@@ -1,20 +1,20 @@
 """Extractor service for processing meeting notes with LLM."""
 
 import json
+from collections.abc import AsyncIterator
 from datetime import datetime
 from pathlib import Path
-from typing import Any, AsyncIterator
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import MeetingRecap, MeetingItem
+from app.models import MeetingItem, MeetingRecap
 from app.models.meeting_item import Section
 from app.models.meeting_recap import MeetingStatus
-from app.services.llm import get_provider, LLMError
 from app.services.chunker import chunk_text
-
+from app.services.llm import LLMError, get_provider
 
 # Path to the extraction prompt template
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "extract_meeting_v1.txt"

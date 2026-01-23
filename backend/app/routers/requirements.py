@@ -8,8 +8,15 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Project, Requirement, Section, RequirementHistory, Actor, Action
-from app.schemas import RequirementsListResponse, RequirementResponse, RequirementSourceResponse, RequirementUpdate, RequirementReorderRequest, RequirementHistoryResponse
+from app.models import Action, Actor, Project, Requirement, RequirementHistory
+from app.schemas import (
+    RequirementHistoryResponse,
+    RequirementReorderRequest,
+    RequirementResponse,
+    RequirementsListResponse,
+    RequirementSourceResponse,
+    RequirementUpdate,
+)
 from app.services import export_markdown
 
 router = APIRouter(prefix="/api", tags=["requirements"])

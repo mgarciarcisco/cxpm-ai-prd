@@ -31,6 +31,8 @@ select = [
 ignore = [
     "E501",   # Line too long (handled by formatter)
     "B008",   # Do not perform function calls in argument defaults (FastAPI uses this pattern)
+    "E712",   # SQLAlchemy requires == True/False for boolean column comparisons
+    "B904",   # Exception chaining (raise from) - not always needed
 ]
 
 [lint.per-file-ignores]

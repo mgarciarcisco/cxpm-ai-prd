@@ -3,10 +3,10 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models import Requirement, RequirementHistory, RequirementSource, MeetingRecap
+from app.models import MeetingRecap, Requirement, RequirementHistory, RequirementSource
 from app.models.meeting_item import Section
-from app.models.requirement_history import Actor, Action
 from app.models.meeting_recap import MeetingStatus
+from app.models.requirement_history import Action, Actor
 
 
 def _create_project(test_client: TestClient) -> str:

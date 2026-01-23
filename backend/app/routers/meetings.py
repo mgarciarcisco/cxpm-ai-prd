@@ -1,45 +1,53 @@
 """Meeting API endpoints."""
 
-import asyncio
 import json
+from collections.abc import AsyncIterator
 from datetime import date, datetime
-from typing import Any, AsyncIterator, Optional
+from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status, File, UploadFile, Form
-from sse_starlette.sse import EventSourceResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
+from sse_starlette.sse import EventSourceResponse
 
 from app.database import get_db
 from app.models import (
-    Project,
-    MeetingRecap,
-    MeetingItem,
-    Requirement,
-    RequirementSource,
-    RequirementHistory,
-    MeetingItemDecision,
-    Actor,
     Action,
+    Actor,
     Decision,
+    MeetingItem,
+    MeetingItemDecision,
+    MeetingRecap,
+    Project,
+    Requirement,
+    RequirementHistory,
+    RequirementSource,
 )
 from app.models.meeting_recap import InputType, MeetingStatus
-from sqlalchemy import func
 from app.schemas import (
-    UploadResponse,
-    MeetingResponse,
-    MeetingItemResponse,
-    MeetingItemCreate,
-    MeetingItemReorderRequest,
     ApplyResponse,
     ConflictResultResponse,
     MatchedRequirementResponse,
+    MeetingItemCreate,
+    MeetingItemReorderRequest,
+    MeetingItemResponse,
+    MeetingResponse,
     MergeSuggestionRequest,
     MergeSuggestionResponse,
     ResolveRequest,
     ResolveResponse,
+    UploadResponse,
 )
-from app.services import parse_file, extract_stream, ExtractionError, detect_conflicts, ConflictDetectionError, suggest_merge, MergeError
+from app.services import (
+    ConflictDetectionError,
+    ExtractionError,
+    MergeError,
+    detect_conflicts,
+    extract_stream,
+    parse_file,
+    suggest_merge,
+)
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
 
@@ -49,8 +57,8 @@ async def upload_meeting(
     project_id: str = Form(...),
     title: str = Form(...),
     meeting_date: date = Form(...),
-    file: Optional[UploadFile] = File(None),
-    text: Optional[str] = Form(None),
+    file: UploadFile | None = File(None),
+    text: str | None = Form(None),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     """

@@ -9,11 +9,10 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import MeetingRecap, MeetingItem, Requirement
+from app.models import MeetingItem, MeetingRecap, Requirement
 from app.models.meeting_item import Section
 from app.models.meeting_recap import MeetingStatus
-from app.services.llm import get_provider, LLMError
-
+from app.services.llm import LLMError, get_provider
 
 # Path to the conflict classification prompt template
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "classify_conflict_v1.txt"

@@ -1,12 +1,11 @@
 """Pydantic schemas for Meeting API request/response validation."""
 
 from datetime import date, datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
-from app.models.meeting_recap import MeetingStatus, InputType
 from app.models.meeting_item import Section
+from app.models.meeting_recap import InputType, MeetingStatus
 
 
 class MeetingUpload(BaseModel):
@@ -15,7 +14,7 @@ class MeetingUpload(BaseModel):
     project_id: str
     title: str
     meeting_date: date
-    text: Optional[str] = None
+    text: str | None = None
 
 
 class MeetingItemResponse(BaseModel):
@@ -24,7 +23,7 @@ class MeetingItemResponse(BaseModel):
     id: str
     section: Section
     content: str
-    source_quote: Optional[str] = None
+    source_quote: str | None = None
     order: int
 
     model_config = {"from_attributes": True}
@@ -41,11 +40,11 @@ class MeetingResponse(BaseModel):
     input_type: InputType
     status: MeetingStatus
     created_at: datetime
-    processed_at: Optional[datetime] = None
-    applied_at: Optional[datetime] = None
-    failed_at: Optional[datetime] = None
-    error_message: Optional[str] = None
-    prompt_version: Optional[str] = None
+    processed_at: datetime | None = None
+    applied_at: datetime | None = None
+    failed_at: datetime | None = None
+    error_message: str | None = None
+    prompt_version: str | None = None
     items: list[MeetingItemResponse] = []
 
     model_config = {"from_attributes": True}
@@ -61,10 +60,10 @@ class MeetingListItemResponse(BaseModel):
     input_type: InputType
     status: MeetingStatus
     created_at: datetime
-    processed_at: Optional[datetime] = None
-    applied_at: Optional[datetime] = None
-    failed_at: Optional[datetime] = None
-    error_message: Optional[str] = None
+    processed_at: datetime | None = None
+    applied_at: datetime | None = None
+    failed_at: datetime | None = None
+    error_message: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -114,8 +113,8 @@ class ConflictResultResponse(BaseModel):
     item_content: str
     decision: str  # 'added', 'skipped_duplicate', 'skipped_semantic', 'conflict'
     reason: str
-    matched_requirement: Optional[MatchedRequirementResponse] = None
-    classification: Optional[str] = None  # 'duplicate', 'new', 'refinement', 'contradiction'
+    matched_requirement: MatchedRequirementResponse | None = None
+    classification: str | None = None  # 'duplicate', 'new', 'refinement', 'contradiction'
 
 
 class ApplyResponse(BaseModel):
@@ -144,8 +143,8 @@ class ResolveDecision(BaseModel):
 
     item_id: str
     decision: str  # 'added', 'skipped_duplicate', 'skipped_semantic', 'conflict_keep_existing', 'conflict_replaced', 'conflict_kept_both', 'conflict_merged'
-    merged_text: Optional[str] = None  # Required for 'conflict_merged' decision
-    matched_requirement_id: Optional[str] = None  # Required for conflict decisions
+    merged_text: str | None = None  # Required for 'conflict_merged' decision
+    matched_requirement_id: str | None = None  # Required for conflict decisions
 
 
 class ResolveRequest(BaseModel):

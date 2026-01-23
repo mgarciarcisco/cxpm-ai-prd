@@ -1,7 +1,6 @@
 """Pydantic schemas for Project API request/response validation."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -10,14 +9,14 @@ class ProjectCreate(BaseModel):
     """Schema for creating a new project."""
 
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class ProjectUpdate(BaseModel):
     """Schema for updating an existing project."""
 
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -25,7 +24,7 @@ class ProjectResponse(BaseModel):
 
     id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -51,4 +50,4 @@ class ProjectStatsResponse(BaseModel):
     meeting_count: int
     requirement_count: int
     requirement_counts_by_section: list[SectionCount]
-    last_activity: Optional[datetime] = None
+    last_activity: datetime | None = None
