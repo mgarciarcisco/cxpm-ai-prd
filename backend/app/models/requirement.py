@@ -30,6 +30,7 @@ class Requirement(Base):
     # Relationships
     project = relationship("Project", back_populates="requirements")
     sources = relationship("RequirementSource", back_populates="requirement", cascade="all, delete-orphan")
+    history = relationship("RequirementHistory", back_populates="requirement", cascade="all, delete-orphan")
 
     # Indexes for efficient queries
     __table_args__ = (
