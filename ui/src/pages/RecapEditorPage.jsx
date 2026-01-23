@@ -96,7 +96,7 @@ function RecapEditorPage() {
     // Call the retry endpoint to reset the meeting status
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/meetings/${mid}/retry`,
+        `${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')}/api/meetings/${mid}/retry`,
         { method: 'POST' }
       );
       if (!response.ok) {

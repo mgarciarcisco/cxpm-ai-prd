@@ -61,7 +61,7 @@ function ProjectDashboard() {
 
   const handleExport = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/projects/${id}/requirements/export`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')}/api/projects/${id}/requirements/export`);
       if (!response.ok) {
         throw new Error('Export failed');
       }
