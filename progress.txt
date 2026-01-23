@@ -1231,3 +1231,16 @@
   - Button shows "Exporting..." text and is disabled during export operation
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-086
+- **What was implemented**: Created comprehensive tests for RequirementsPage
+- **Files changed**:
+  - `ui/tests/components/RequirementsPage.test.jsx` - 29 tests covering section rendering, inline editing, delete confirmation, source link navigation, export button, history popover, and drag-and-drop reordering
+- **Learnings for future iterations:**
+  - Use `MemoryRouter` and `Routes` components when testing pages that use `useParams()` from react-router-dom
+  - Mock `global.fetch` for testing export functionality (blob downloads)
+  - Mock `URL.createObjectURL` and `URL.revokeObjectURL` for testing file download triggering
+  - Use `*AllBy*` variants (e.g., `getAllByText`) when elements may appear multiple times (e.g., "Sprint Planning" in multiple source links)
+  - Document.body `appendChild` and `removeChild` can be spied on to verify dynamic anchor creation for downloads
+  - Test organization: Section Rendering, Loading State, Error State, Inline Edit Interaction, Delete Confirmation, Source Link Navigation, Export Button, History Popover, Back Link, Drag and Drop Reordering
+---
