@@ -970,3 +970,19 @@
   - RecapEditor has 9 sections, test empty section count carefully (6 empty when 4 items are spread across 3 sections)
   - Use `waitFor()` for async API call assertions
 ---
+
+## 2026-01-22 - US-067
+- **What was implemented**: Created Requirement model for storing accumulated requirements from meetings
+- **Files changed**:
+  - `backend/app/models/requirement.py` - New Requirement model with id (UUID), project_id (FK), section (enum), content (text), order (int), is_active (bool), timestamps
+  - `backend/app/models/__init__.py` - Updated to export Requirement
+  - `backend/app/models/project.py` - Enabled requirements relationship with cascade delete
+  - `backend/alembic/env.py` - Added Requirement import for autogenerate
+  - `backend/alembic/versions/2f79be4b75bf_create_requirements_table.py` - Migration file
+  - `backend/conftest.py` - Added Requirement import for test db setup
+- **Learnings for future iterations:**
+  - Requirement reuses the `Section` enum from `meeting_item.py` - import from there rather than redefining
+  - is_active pattern used for soft-delete of requirements (vs is_deleted on MeetingItem)
+  - Two composite indexes: (project_id, section) for section queries and (project_id, is_active) for filtering active requirements
+  - Project model already had commented placeholder for requirements relationship - just uncomment it
+---
