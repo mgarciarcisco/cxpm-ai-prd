@@ -1569,3 +1569,17 @@
   - Primary button color is #4ECDC4 with hover #3DB9B0
   - Frontend has no lint script, use `npm run build` to check for build errors
 ---
+
+## 2026-01-23 - US-109
+- **What was implemented**: Added consistent LoadingSpinner component to all data-fetching pages
+- **Files changed**:
+  - `ui/src/pages/ProjectsPage.jsx` - Replaced CSS-based spinner with LoadingSpinner component
+  - `ui/src/pages/ProjectDashboard.jsx` - Replaced CSS-based spinner with LoadingSpinner component
+  - `ui/src/pages/RequirementsPage.jsx` - Replaced CSS-based spinner with LoadingSpinner component
+  - `ui/src/pages/ConflictResolverPage.jsx` - Replaced CSS-based spinner with LoadingSpinner component
+- **Learnings for future iterations:**
+  - The LoadingSpinner component (from US-107) should be used consistently across all pages
+  - Import with: `import LoadingSpinner from '../components/common/LoadingSpinner'`
+  - Use `size="large"` for page-level loading states
+  - Pages already had loading state logic, just needed to swap the CSS spinner for the component
+---
