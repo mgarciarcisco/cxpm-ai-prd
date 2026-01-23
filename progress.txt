@@ -1392,3 +1392,19 @@
   - Type safety: when using `in` operator on `str | None`, must first assert `is not None` to satisfy mypy
   - The merger loads prompt template from `prompts/suggest_merge_v1.txt` with placeholders `{existing_content}` and `{new_content}`
 ---
+
+## 2026-01-22 - US-097
+- **What was implemented**: Created comprehensive tests for the apply and resolve endpoints
+- **Files changed**:
+  - `backend/tests/test_apply.py` - 24 tests covering apply/resolve endpoint functionality
+- **Learnings for future iterations:**
+  - Tests cover: apply endpoint categorization (added/skipped/conflicts), resolve endpoint creating requirements
+  - Decision recording: tests verify MeetingItemDecision records are created for each decision type
+  - History tracking: tests verify RequirementHistory records are created with correct actor (ai_extraction/ai_merge) and action (created/modified/merged)
+  - Source linking: tests verify RequirementSource is created linking requirements to meetings and meeting_items, including source_quote
+  - Status transition: tests verify meeting status changes to 'applied' and applied_at timestamp is set
+  - All decision types tested: added, skipped_duplicate, skipped_semantic, conflict_keep_existing, conflict_replaced, conflict_kept_both, conflict_merged
+  - Testing pattern: use test_client and test_db fixtures, create helpers for project/meeting/item/requirement creation
+  - The resolve endpoint handles empty decisions list gracefully, still updating meeting status to applied
+  - Multiple decisions can be processed in a single resolve request with correct count tracking
+---
