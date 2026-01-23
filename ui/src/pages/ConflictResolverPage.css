@@ -358,6 +358,72 @@
   }
 }
 
+/* Apply Success Message */
+.apply-success-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  margin-top: 1.5rem;
+  background-color: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  border-radius: 12px;
+  color: #059669;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+.apply-success-message svg {
+  flex-shrink: 0;
+}
+
+/* Apply Error Message */
+.apply-error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  margin-top: 1.5rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  color: #DC2626;
+  font-size: 0.875rem;
+}
+
+.apply-error-message svg {
+  flex-shrink: 0;
+}
+
+.apply-error-message span {
+  flex: 1;
+}
+
+.retry-link {
+  background: none;
+  border: none;
+  color: #DC2626;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0.25rem 0.5rem;
+}
+
+.retry-link:hover {
+  color: #B91C1C;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Mobile Responsive */
 @media (max-width: 640px) {
   .conflict-resolver-section .section-header {

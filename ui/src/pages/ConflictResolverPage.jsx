@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { post, get } from '../services/api';
 import { CollapsibleSection } from '../components/common/CollapsibleSection';
 import { ConflictCard } from '../components/conflicts/ConflictCard';
@@ -8,13 +8,16 @@ import './ConflictResolverPage.css';
 
 function ConflictResolverPage() {
   const { id, mid } = useParams();
+  const navigate = useNavigate();
   const [meeting, setMeeting] = useState(null);
   const [applyResults, setApplyResults] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [applyError, setApplyError] = useState(null);
   const [conflictResolutions, setConflictResolutions] = useState({});
   const [mergedTexts, setMergedTexts] = useState({});
   const [applyLoading, setApplyLoading] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -145,6 +148,7 @@ function ConflictResolverPage() {
     if (!allConflictsResolved()) return;
 
     setApplyLoading(true);
+    setApplyError(null);
 
     try {
       // Build decisions array
@@ -192,12 +196,24 @@ function ConflictResolverPage() {
       // Call resolve endpoint
       await post(`/api/meetings/${mid}/resolve`, { decisions });
 
-      // Success handling will be in US-104
+      // Show success state and navigate after delay
+      setApplySuccess(true);
+      setTimeout(() => {
+        navigate(`/app/projects/${id}/requirements`);
+      }, 1500);
     } catch (err) {
-      setError(err.message);
+      setApplyError(err.message);
     } finally {
       setApplyLoading(false);
     }
+  };
+
+  /**
+   * Handle retry after apply error
+   */
+  const handleRetryApply = () => {
+    setApplyError(null);
+    handleApplyChanges();
   };
 
   return (
@@ -322,8 +338,34 @@ function ConflictResolverPage() {
           )}
         </div>
 
+        {/* Apply Error Message */}
+        {applyError && (
+          <div className="apply-error-message">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="2"/>
+              <line x1="10" y1="6" x2="10" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <circle cx="10" cy="13" r="1" fill="currentColor"/>
+            </svg>
+            <span>Failed to apply changes: {applyError}</span>
+            <button onClick={handleRetryApply} className="retry-link">
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {applySuccess && (
+          <div className="apply-success-message">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+              <path d="M8 12l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Changes applied successfully! Redirecting to requirements...</span>
+          </div>
+        )}
+
         {/* Page Footer with Apply Changes button */}
-        {(addedCount > 0 || skippedCount > 0 || conflictsCount > 0) && (
+        {(addedCount > 0 || skippedCount > 0 || conflictsCount > 0) && !applySuccess && (
           <div className="conflict-resolver-footer">
             <div className="footer-summary">
               {addedCount > 0 && <span>{addedCount} to add</span>}
