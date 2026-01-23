@@ -1526,3 +1526,19 @@
   - For case-sensitive string includes checks (like `includes('semantic')`), ensure test data uses matching case
   - Fake timers with async: use `vi.useFakeTimers({ shouldAdvanceTime: true })` and `vi.advanceTimersByTimeAsync()` for better async handling
 ---
+
+## 2026-01-22 - US-106
+- **What was implemented**: E2E tests for the full apply flow using Playwright
+- **Files changed**:
+  - `ui/package.json` - Added @playwright/test devDependency and test:e2e scripts
+  - `ui/package-lock.json` - Updated lockfile
+  - `ui/playwright.config.ts` - Playwright configuration with chromium browser
+  - `ui/tests/e2e/apply-flow.spec.ts` - 7 E2E tests covering the full apply flow
+  - `ui/vite.config.js` - Excluded e2e tests from Vitest
+- **Learnings for future iterations:**
+  - Playwright E2E tests mock API responses using `page.route()` for isolated testing
+  - Use `page.locator().first()` when expecting multiple matches in strict mode
+  - ProjectForm uses `#project-name` and `#project-description` IDs (not name attributes)
+  - E2E tests must be excluded from Vitest via config exclude option
+  - Run E2E tests with `npm run test:e2e` and unit tests with `npm test`
+---
