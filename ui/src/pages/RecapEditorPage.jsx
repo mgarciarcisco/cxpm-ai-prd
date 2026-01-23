@@ -43,8 +43,8 @@ function RecapEditorPage() {
       setError(null);
       const meetingData = await get(`/api/meetings/${mid}`);
       setMeeting(meetingData);
-      // Initialize meetingItems from meeting data if status is processed
-      if (meetingData.status === 'processed' && meetingData.items) {
+      // Initialize meetingItems from meeting data if status is processed or applied
+      if ((meetingData.status === 'processed' || meetingData.status === 'applied') && meetingData.items) {
         setMeetingItems(meetingData.items);
       }
     } catch (err) {
@@ -134,8 +134,9 @@ function RecapEditorPage() {
 
   // Determine what to show based on meeting status
   const showStreamingPreview = meeting?.status === 'pending' || meeting?.status === 'processing';
-  const showRecapEditor = meeting?.status === 'processed';
+  const showRecapEditor = meeting?.status === 'processed' || meeting?.status === 'applied';
   const showFailedState = meeting?.status === 'failed';
+  const isApplied = meeting?.status === 'applied';
 
   return (
     <main className="main-content">
@@ -163,6 +164,15 @@ function RecapEditorPage() {
 
           {showRecapEditor && (
             <>
+              {isApplied && (
+                <div className="recap-editor-applied-notice">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                  <span>This meeting has been applied to requirements</span>
+                </div>
+              )}
               <RecapEditor
                 meetingId={mid}
                 items={meetingItems}
@@ -170,16 +180,19 @@ function RecapEditorPage() {
                 onDeleteItem={handleDeleteItem}
                 onReorderItems={handleReorderItems}
                 onAddItem={handleAddItem}
+                readOnly={isApplied}
               />
-              <div className="recap-editor-actions">
-                <button
-                  className="save-apply-btn"
-                  onClick={handleSaveAndApply}
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Saving...' : 'Save & Apply'}
-                </button>
-              </div>
+              {!isApplied && (
+                <div className="recap-editor-actions">
+                  <button
+                    className="save-apply-btn"
+                    onClick={handleSaveAndApply}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? 'Saving...' : 'Save & Apply'}
+                  </button>
+                </div>
+              )}
             </>
           )}
 
