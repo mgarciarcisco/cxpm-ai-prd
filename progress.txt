@@ -957,3 +957,16 @@
   - Button styling consistent with other primary action buttons (teal color, 8px border radius)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-066
+- **What was implemented**: Created comprehensive tests for RecapEditor and ItemRow components
+- **Files changed**:
+  - `ui/tests/components/RecapEditor.test.jsx` - 15 tests covering section display, source_quote display, add item functionality, drag-and-drop, edit callback
+  - `ui/tests/components/ItemRow.test.jsx` - 30 tests covering basic rendering, inline editing, delete confirmation flow, drag-and-drop events
+- **Learnings for future iterations:**
+  - Mock `vi.mock('../../src/services/api', ...)` pattern for mocking API calls in component tests
+  - jsdom's drag events don't include `dataTransfer`, so must provide it as `fireEvent.dragStart(el, { dataTransfer: { effectAllowed: '', setData: vi.fn() } })`
+  - Test delete confirmation flow by checking for "Delete this item?" text and Cancel/Delete buttons
+  - RecapEditor has 9 sections, test empty section count carefully (6 empty when 4 items are spread across 3 sections)
+  - Use `waitFor()` for async API call assertions
+---
