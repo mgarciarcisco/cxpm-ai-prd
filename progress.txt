@@ -1442,3 +1442,14 @@
   - Classification shown as badge (blue for refinement, red for contradiction)
   - Decision values map to backend: conflict_keep_existing, conflict_replaced, conflict_kept_both, conflict_merged
 ---
+
+## 2026-01-22 - US-100
+- **What was implemented**: Integrated ConflictCard component into ConflictResolverPage to display conflicts with resolution options
+- **Files changed**:
+  - `ui/src/pages/ConflictResolverPage.jsx` - Added ConflictCard import, conflictResolutions state, handleResolutionChange handler, and replaced placeholder with ConflictCard components
+  - `ui/src/pages/ConflictResolverPage.css` - Replaced conflicts-placeholder styles with conflicts-list flexbox container
+- **Learnings for future iterations:**
+  - ConflictCard component expects formatSection function prop to format section enum to display text
+  - Resolution state is tracked per item_id using object: {[item_id]: resolution}
+  - ConflictCard already handles AI recommendations based on classification (refinement vs contradiction)
+---
