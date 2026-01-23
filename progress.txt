@@ -1032,3 +1032,18 @@
   - Import requirement schemas: `from app.schemas import RequirementResponse, RequirementUpdate, RequirementsListResponse, RequirementHistoryResponse`
   - RequirementHistoryResponse imports Actor and Action enums from `app.models.requirement_history`
 ---
+
+## 2026-01-22 - US-071
+- **What was implemented**: Created Requirements list endpoint for viewing all active requirements grouped by section
+- **Files changed**:
+  - `backend/app/routers/requirements.py` - New router with GET /api/projects/{id}/requirements endpoint
+  - `backend/app/routers/__init__.py` - Exported requirements_router
+  - `backend/app/main.py` - Registered requirements_router
+- **Learnings for future iterations:**
+  - Requirements router follows same pattern as other routers - prefix `/api/projects` with tag `requirements`
+  - `_build_requirement_response()` helper function builds RequirementResponse manually to include computed fields (sources, history_count)
+  - history_count computed from `len(requirement.history)` - requires relationship to be loaded
+  - Query uses `is_active == True` filter to exclude soft-deleted requirements
+  - Order by `section, order` ensures consistent ordering within and across sections
+  - Response grouped into RequirementsListResponse which has a field for each of the 9 sections
+---
