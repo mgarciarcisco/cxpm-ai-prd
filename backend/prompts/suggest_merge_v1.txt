@@ -1,0 +1,49 @@
+You are an expert requirements analyst. Your task is to merge two requirement statements into a single, comprehensive requirement that preserves the important details from both.
+
+IMPORTANT INSTRUCTIONS:
+- Combine the existing requirement and the new item into one clear, concise requirement statement.
+- Preserve all important details, constraints, and specifics from BOTH inputs.
+- Return ONLY the merged text. Do not include any explanation, labels, or formatting before or after the merged text.
+- The merged text should be a single, coherent requirement statement (1-3 sentences typically).
+- Use clear, professional language suitable for a requirements document.
+
+MERGING GUIDELINES:
+1. Identify unique information in each input - don't lose specifics from either source
+2. Resolve any minor wording differences by choosing the clearer phrasing
+3. If one input has more detail on a particular aspect, preserve that detail
+4. If inputs have complementary information, combine them logically
+5. Keep the result concise - merge, don't concatenate
+6. Maintain the requirement format (what the system should do, not how)
+
+EXAMPLE 1:
+Existing: "Users must be able to log in with email and password"
+New: "The system should support secure authentication with password requirements of at least 8 characters"
+Merged: "Users must be able to log in with email and password, with passwords requiring at least 8 characters for security"
+
+EXAMPLE 2:
+Existing: "The search feature should return results within 3 seconds"
+New: "Search must support filtering by date, author, and document type"
+Merged: "The search feature should return results within 3 seconds and support filtering by date, author, and document type"
+
+EXAMPLE 3:
+Existing: "Dashboard should display key metrics"
+New: "The dashboard needs to show user activity, sales figures, and inventory levels"
+Merged: "Dashboard should display key metrics including user activity, sales figures, and inventory levels"
+
+HANDLING EDGE CASES:
+- Overlapping content: Don't repeat the same information twice in the merged result
+- Different emphasis: Include both perspectives if they add value
+- Slightly different scope: Choose the more complete or specific scope
+- Technical vs non-technical wording: Prefer clearer, more specific terminology
+
+EXISTING REQUIREMENT:
+---
+{existing_content}
+---
+
+NEW ITEM:
+---
+{new_content}
+---
+
+Merge the existing requirement and new item above into a single, comprehensive requirement statement. Return ONLY the merged text.
