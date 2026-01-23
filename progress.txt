@@ -1094,3 +1094,19 @@
   - RequirementHistory model has mixed column styles (Mapped vs Column) - use `# type: ignore[arg-type]` for created_at when building response
   - RequirementHistoryResponse schema already existed and was already exported from `__init__.py`
 ---
+
+## 2026-01-22 - US-076
+- **What was implemented**: Created Markdown export service for exporting requirements as Markdown documents
+- **Files changed**:
+  - `backend/app/services/exporter.py` - New service with export_markdown(project_id, db) function that generates formatted Markdown
+  - `backend/app/services/__init__.py` - Updated exports to include export_markdown
+- **Learnings for future iterations:**
+  - Export service: `from app.services import export_markdown`
+  - export_markdown() function signature: `export_markdown(project_id: UUID, db: Session) -> str`
+  - SECTION_TITLES dict maps Section enum values to human-readable display names
+  - SECTION_ORDER list ensures consistent ordering of all 9 sections
+  - Query applied meetings with `MeetingStatus.applied` filter for sources table
+  - Markdown table format uses pipe-separated columns with header row and separator row
+  - Empty sections show "*No items in this section.*" in italics
+  - Generated date uses UTC and `datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')` format
+---
