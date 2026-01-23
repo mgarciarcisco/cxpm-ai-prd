@@ -1,0 +1,118 @@
+/* Requirements Page Section */
+.requirements-section {
+  padding: 0;
+}
+
+/* Requirements Content */
+.requirements-content {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-height: 400px;
+}
+
+/* Requirements Items */
+.requirements-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.requirements-item-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Empty State */
+.requirements-empty {
+  color: #9CA3AF;
+  font-size: 0.875rem;
+  font-style: italic;
+  padding: 1rem;
+  text-align: center;
+  border: 1px dashed #E5E7EB;
+  border-radius: 8px;
+  margin: 0;
+}
+
+/* Loading State */
+.requirements-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.requirements-loading .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #E5E7EB;
+  border-top-color: #4ECDC4;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.requirements-loading p {
+  margin-top: 1rem;
+  color: #6B7280;
+  font-size: 0.875rem;
+}
+
+/* Error State */
+.requirements-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.requirements-error p {
+  color: #DC2626;
+  font-size: 0.875rem;
+  margin: 0 0 1rem 0;
+}
+
+/* Retry Button */
+.retry-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  background-color: #4ECDC4;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-btn:hover {
+  background-color: #3BB5AD;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .requirements-content {
+    padding: 1rem;
+    min-height: 300px;
+  }
+}

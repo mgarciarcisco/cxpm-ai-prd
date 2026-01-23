@@ -5,6 +5,7 @@ import ProjectsPage from './pages/ProjectsPage'
 import ProjectDashboard from './pages/ProjectDashboard'
 import UploadMeetingPage from './pages/UploadMeetingPage'
 import RecapEditorPage from './pages/RecapEditorPage'
+import RequirementsPage from './pages/RequirementsPage'
 import './App.css'
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
         <Route path="/app/projects/:id" element={<ProjectDashboard />} />
         <Route path="/app/projects/:id/meetings/new" element={<UploadMeetingPage />} />
         <Route path="/app/projects/:id/meetings/:mid" element={<RecapEditorPage />} />
+        <Route path="/app/projects/:id/requirements" element={<RequirementsPage />} />
         <Route path="/app/*" element={<ProjectsPage />} />
       </Routes>
     </div>
