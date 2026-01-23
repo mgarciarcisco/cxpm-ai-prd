@@ -14,6 +14,7 @@ function RecapEditorPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [meetingItems, setMeetingItems] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Get jobId from navigation state or use meeting id
   const jobId = location.state?.job_id || mid;
@@ -85,6 +86,12 @@ function RecapEditorPage() {
     setMeetingItems(prev => [...prev, newItem]);
   }, []);
 
+  // Handle Save & Apply - navigate to apply/conflict resolver page
+  const handleSaveAndApply = () => {
+    setIsSaving(true);
+    navigate(`/app/projects/${id}/meetings/${mid}/apply`);
+  };
+
   const handleRetry = async () => {
     // Call the retry endpoint to reset the meeting status
     try {
@@ -155,14 +162,25 @@ function RecapEditorPage() {
           )}
 
           {showRecapEditor && (
-            <RecapEditor
-              meetingId={mid}
-              items={meetingItems}
-              onEditItem={handleEditItem}
-              onDeleteItem={handleDeleteItem}
-              onReorderItems={handleReorderItems}
-              onAddItem={handleAddItem}
-            />
+            <>
+              <RecapEditor
+                meetingId={mid}
+                items={meetingItems}
+                onEditItem={handleEditItem}
+                onDeleteItem={handleDeleteItem}
+                onReorderItems={handleReorderItems}
+                onAddItem={handleAddItem}
+              />
+              <div className="recap-editor-actions">
+                <button
+                  className="save-apply-btn"
+                  onClick={handleSaveAndApply}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : 'Save & Apply'}
+                </button>
+              </div>
+            </>
           )}
 
           {showFailedState && (

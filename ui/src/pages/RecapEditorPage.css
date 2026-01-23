@@ -133,6 +133,40 @@
   background-color: #3BB5AD;
 }
 
+/* Recap Editor Actions */
+.recap-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #E5E7EB;
+}
+
+/* Save & Apply Button */
+.save-apply-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  background-color: #4ECDC4;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.save-apply-btn:hover:not(:disabled) {
+  background-color: #3BB5AD;
+}
+
+.save-apply-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Mobile Responsive */
 @media (max-width: 640px) {
   .recap-editor-content {
