@@ -16,6 +16,13 @@ from app.schemas.meeting import (
     MeetingItemCreate,
     MeetingItemReorderRequest,
 )
+from app.schemas.requirement import (
+    RequirementSourceResponse,
+    RequirementHistoryResponse,
+    RequirementResponse,
+    RequirementUpdate,
+    RequirementsListResponse,
+)
 
 __all__ = [
     "ProjectCreate",
@@ -30,4 +37,9 @@ __all__ = [
     "MeetingItemUpdate",
     "MeetingItemCreate",
     "MeetingItemReorderRequest",
+    "RequirementSourceResponse",
+    "RequirementHistoryResponse",
+    "RequirementResponse",
+    "RequirementUpdate",
+    "RequirementsListResponse",
 ]
