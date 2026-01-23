@@ -915,3 +915,18 @@
   - Smooth animations achieved with CSS transitions on `transform`, `opacity`, and `box-shadow`
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-063
+- **What was implemented**: Added ability to add new items to any section in the RecapEditor component
+- **Files changed**:
+  - `ui/src/components/meetings/RecapEditor.jsx` - Added state for add item form (addingToSection, newItemContent, isAddingSaving, addError), added handleStartAddItem/handleCancelAddItem/handleSubmitAddItem handlers, added onAddItem callback prop, renders "+ Add item" button at bottom of each section that opens inline textarea form
+  - `ui/src/components/meetings/RecapEditor.css` - Added styles for add item button (dashed border, centered content, hover/focus states), add item form (textarea, error display, action buttons)
+- **Learnings for future iterations:**
+  - Add item form follows the same pattern as ItemRow edit mode: inline form replaces button when active
+  - `onAddItem` callback receives the newly created item from the API response, allowing parent to update its items state
+  - POST /api/meetings/{id}/items already implemented in US-054, accepts `section` and `content` in request body
+  - Keyboard shortcuts: Escape to cancel, Ctrl+Enter to submit (consistent with ItemRow edit mode)
+  - Add item button uses dashed border styling to indicate "add" action, similar to empty state styling
+  - Only one section can have an active add form at a time (controlled by `addingToSection` state)
+  - Manual browser verification needed - no browser testing tools available
+---
