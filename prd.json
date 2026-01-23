@@ -1990,7 +1990,7 @@
         "Verify in browser using agent-browser skill"
       ],
       "priority": 120,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

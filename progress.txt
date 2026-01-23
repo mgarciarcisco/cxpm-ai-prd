@@ -1739,3 +1739,14 @@
   - Project structure section should reflect the actual codebase organization including backend services and frontend components
   - Typecheck is sufficient for documentation-only changes (no code logic to test)
 ---
+
+## 2026-01-23 - US-120
+- **What was implemented**: Added project edit functionality to ProjectsPage - clicking edit icon on ProjectCard opens Modal with ProjectForm in edit mode, pre-filled with existing project data, and successful submission updates the project via PUT API
+- **Files changed**:
+  - `ui/src/pages/ProjectsPage.jsx` - Added editingProject state, handleEdit opens modal with project, handleUpdateProject calls PUT API and updates list, Modal/ProjectForm now handle both create and edit modes
+- **Learnings for future iterations:**
+  - ProjectForm already supported edit mode via the `project` prop - it checks `!!project` to determine mode
+  - Pattern for edit modals: use separate state (`editingProject`) to track which item is being edited, pass it to the form component
+  - When opening modal for "new" action, make sure to clear the editing state: `setEditingProject(null); setIsModalOpen(true)`
+  - Modal title can be dynamic based on editing state: `editingProject ? "Edit Project" : "Create New Project"`
+---
