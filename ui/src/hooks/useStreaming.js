@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const CONNECTION_TIMEOUT_MS = 30000; // 30 seconds
+const CONNECTION_TIMEOUT_MS = 120000; // 2 minutes - allows time for slow LLM responses
 
 /**
  * Custom hook for streaming meeting extraction results via SSE

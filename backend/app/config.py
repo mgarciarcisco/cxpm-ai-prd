@@ -12,7 +12,7 @@ class Settings(BaseSettings):
 
     # Ollama LLM settings
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3"
+    OLLAMA_MODEL: str = "llama3.2"
 
     # Claude API (optional fallback)
     ANTHROPIC_API_KEY: Optional[str] = None
