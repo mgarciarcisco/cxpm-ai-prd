@@ -49,6 +49,24 @@ function RequirementsPage() {
     }
   };
 
+  /**
+   * Handle edit callback from ItemRow - updates local state with the updated item
+   * @param {Object} updatedItem - The updated requirement from the API
+   */
+  const handleEditItem = (updatedItem) => {
+    setRequirements((prev) => {
+      if (!prev) return prev;
+      const newRequirements = { ...prev };
+      // Find and update the item in the correct section
+      Object.keys(newRequirements).forEach((sectionKey) => {
+        newRequirements[sectionKey] = newRequirements[sectionKey].map((item) =>
+          item.id === updatedItem.id ? { ...item, content: updatedItem.content } : item
+        );
+      });
+      return newRequirements;
+    });
+  };
+
   if (loading) {
     return (
       <main className="main-content">
@@ -95,6 +113,8 @@ function RequirementsPage() {
                       <div key={item.id} className="requirements-item-wrapper">
                         <ItemRow
                           item={item}
+                          onEdit={handleEditItem}
+                          apiEndpoint="requirements"
                           draggable={false}
                         />
                       </div>

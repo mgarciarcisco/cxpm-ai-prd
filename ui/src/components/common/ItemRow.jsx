@@ -13,7 +13,8 @@ export function ItemRow({
   onDragLeave,
   onDrop,
   isDragOver = false,
-  isDragging = false
+  isDragging = false,
+  apiEndpoint = 'meeting-items'  // Allows customizing API endpoint (e.g., 'requirements')
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(item.content);
@@ -47,7 +48,7 @@ export function ItemRow({
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      await del(`/api/meeting-items/${item.id}`);
+      await del(`/api/${apiEndpoint}/${item.id}`);
       setIsConfirmingDelete(false);
       // Notify parent of the deletion
       if (onDelete) {
@@ -75,7 +76,7 @@ export function ItemRow({
     setIsSaving(true);
     setError(null);
     try {
-      const updatedItem = await put(`/api/meeting-items/${item.id}`, {
+      const updatedItem = await put(`/api/${apiEndpoint}/${item.id}`, {
         content: editedContent.trim()
       });
       setIsEditing(false);
