@@ -1122,3 +1122,16 @@
   - `export_markdown()` service expects `UUID` type, so convert string project_id with `UUID(project_id)`
   - Catch `ValueError` from export_markdown (project not found) and re-raise as 404 HTTPException
 ---
+
+## 2026-01-22 - US-078
+- **What was implemented**: Created comprehensive tests for Requirements endpoints (CRUD and export)
+- **Files changed**:
+  - `backend/tests/test_requirements.py` - 29 tests organized in 6 classes covering list, update, delete, reorder, export, and history endpoints
+- **Learnings for future iterations:**
+  - Test classes organize related tests: TestListRequirements, TestUpdateRequirement, TestDeleteRequirement, TestReorderRequirements, TestExportRequirements, TestRequirementHistory
+  - Helper functions `_create_requirement()`, `_create_meeting()`, `_create_requirement_source()` directly modify the database for test setup
+  - Requirements use `is_active=False` for soft-delete (vs `is_deleted=True` for MeetingItems)
+  - History is recorded with Actor.user and Action.modified/deactivated for user-triggered changes
+  - Export tests verify Markdown format: header, sections, empty section placeholders, sources table, content-type, content-disposition
+  - History endpoint returns entries ordered by `created_at.desc()` (newest first)
+---
