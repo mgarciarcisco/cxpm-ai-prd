@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { put } from '../../services/api';
+import { put, post } from '../../services/api';
 import { CollapsibleSection } from '../common/CollapsibleSection';
 import { ItemRow } from '../common/ItemRow';
 import './RecapEditor.css';
@@ -30,11 +30,16 @@ const SECTIONS = [
  * @param {Function} props.onEditItem - Callback when edit is clicked on an item (item) => void
  * @param {Function} props.onDeleteItem - Callback when delete is clicked on an item (item) => void
  * @param {Function} props.onReorderItems - Callback when items are reordered (section, newItemIds) => void
+ * @param {Function} props.onAddItem - Callback when a new item is added (newItem) => void
  */
-export function RecapEditor({ meetingId, items = [], onEditItem, onDeleteItem, onReorderItems }) {
+export function RecapEditor({ meetingId, items = [], onEditItem, onDeleteItem, onReorderItems, onAddItem }) {
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
   const [isReordering, setIsReordering] = useState(false);
+  const [addingToSection, setAddingToSection] = useState(null);
+  const [newItemContent, setNewItemContent] = useState('');
+  const [isAddingSaving, setIsAddingSaving] = useState(false);
+  const [addError, setAddError] = useState(null);
   // Group items by section
   const groupedItems = {};
   SECTIONS.forEach((section) => {
@@ -57,6 +62,55 @@ export function RecapEditor({ meetingId, items = [], onEditItem, onDeleteItem, o
       onDeleteItem(item);
     }
   };
+
+  const handleStartAddItem = useCallback((sectionKey) => {
+    setAddingToSection(sectionKey);
+    setNewItemContent('');
+    setAddError(null);
+  }, []);
+
+  const handleCancelAddItem = useCallback(() => {
+    setAddingToSection(null);
+    setNewItemContent('');
+    setAddError(null);
+  }, []);
+
+  const handleSubmitAddItem = useCallback(async () => {
+    if (!newItemContent.trim() || !addingToSection) {
+      return;
+    }
+
+    setIsAddingSaving(true);
+    setAddError(null);
+
+    try {
+      const newItem = await post(`/api/meetings/${meetingId}/items`, {
+        section: addingToSection,
+        content: newItemContent.trim()
+      });
+
+      // Notify parent of the new item
+      if (onAddItem) {
+        onAddItem(newItem);
+      }
+
+      // Reset state
+      setAddingToSection(null);
+      setNewItemContent('');
+    } catch (err) {
+      setAddError(err.message || 'Failed to add item');
+    } finally {
+      setIsAddingSaving(false);
+    }
+  }, [addingToSection, newItemContent, meetingId, onAddItem]);
+
+  const handleAddItemKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') {
+      handleCancelAddItem();
+    } else if (e.key === 'Enter' && e.ctrlKey) {
+      handleSubmitAddItem();
+    }
+  }, [handleCancelAddItem, handleSubmitAddItem]);
 
   const handleDragStart = useCallback((e, item) => {
     setDraggedItem(item);
@@ -178,6 +232,55 @@ export function RecapEditor({ meetingId, items = [], onEditItem, onDeleteItem, o
               </div>
             ) : (
               <p className="recap-editor-empty">No items extracted for this section</p>
+            )}
+
+            {/* Add item functionality */}
+            {addingToSection === section.key ? (
+              <div className="recap-editor-add-form">
+                <textarea
+                  className="recap-editor-add-textarea"
+                  value={newItemContent}
+                  onChange={(e) => setNewItemContent(e.target.value)}
+                  onKeyDown={handleAddItemKeyDown}
+                  placeholder="Enter new item content..."
+                  rows={3}
+                  autoFocus
+                  disabled={isAddingSaving}
+                />
+                {addError && (
+                  <div className="recap-editor-add-error">{addError}</div>
+                )}
+                <div className="recap-editor-add-actions">
+                  <button
+                    className="recap-editor-add-btn recap-editor-add-btn--cancel"
+                    onClick={handleCancelAddItem}
+                    disabled={isAddingSaving}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="recap-editor-add-btn recap-editor-add-btn--submit"
+                    onClick={handleSubmitAddItem}
+                    disabled={isAddingSaving || !newItemContent.trim()}
+                    type="button"
+                  >
+                    {isAddingSaving ? 'Adding...' : 'Add Item'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className="recap-editor-add-item-btn"
+                onClick={() => handleStartAddItem(section.key)}
+                type="button"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 3.33334V12.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3.33334 8H12.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Add item
+              </button>
             )}
           </CollapsibleSection>
         );
