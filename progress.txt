@@ -1364,3 +1364,18 @@
   - Meeting status updated to "applied" with applied_at timestamp after all decisions processed
   - Order for new requirements: track max order per section and increment for each new requirement
 ---
+
+## 2026-01-22 - US-095
+- **What was implemented**: Created comprehensive tests for the conflict detection service
+- **Files changed**:
+  - `backend/tests/test_conflict.py` - 20 tests covering all conflict detection scenarios
+- **Learnings for future iterations:**
+  - Tests cover: exact match detection, LLM classification with mocked responses, duplicate/new/refinement/contradiction classifications
+  - Testing pattern: create MockLLMProvider class with configurable response, patch `app.services.conflict.get_provider`
+  - Exact match detection skips LLM calls entirely - items with identical content (after strip) are marked as `skipped_duplicate`
+  - Semantic duplicates (detected by LLM) use decision `skipped_semantic` 
+  - Refinement and contradiction classifications result in `conflict` decision requiring manual resolution
+  - Edge cases tested: meeting not found, wrong status, empty meeting, deleted items excluded, inactive requirements excluded
+  - Helper function `_parse_classification_response` is also tested directly for JSON parsing edge cases
+  - When LLM fails, the service gracefully degrades to creating a conflict for manual review
+---
