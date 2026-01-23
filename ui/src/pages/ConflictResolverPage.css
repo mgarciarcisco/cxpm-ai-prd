@@ -165,23 +165,11 @@
   line-height: 1.4;
 }
 
-/* Conflicts Placeholder */
-.conflicts-placeholder {
-  padding: 1.5rem;
-  background-color: #FEF3C7;
-  border: 1px solid #FCD34D;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.conflicts-placeholder p {
-  font-size: 0.875rem;
-  color: #92400E;
-  margin: 0;
-}
-
-.conflicts-placeholder p:first-child {
-  margin-bottom: 0.5rem;
+/* Conflicts List */
+.conflicts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 /* No Items Message */

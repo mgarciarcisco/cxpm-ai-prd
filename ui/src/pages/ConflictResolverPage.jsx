@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { post, get } from '../services/api';
 import { CollapsibleSection } from '../components/common/CollapsibleSection';
+import { ConflictCard } from '../components/conflicts/ConflictCard';
 import './ConflictResolverPage.css';
 
 function ConflictResolverPage() {
@@ -10,6 +11,7 @@ function ConflictResolverPage() {
   const [applyResults, setApplyResults] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [conflictResolutions, setConflictResolutions] = useState({});
 
   useEffect(() => {
     fetchData();
@@ -59,6 +61,16 @@ function ConflictResolverPage() {
   const addedCount = applyResults?.added?.length || 0;
   const skippedCount = applyResults?.skipped?.length || 0;
   const conflictsCount = applyResults?.conflicts?.length || 0;
+
+  /**
+   * Handle resolution change for a conflict
+   */
+  const handleResolutionChange = (itemId, resolution) => {
+    setConflictResolutions((prev) => ({
+      ...prev,
+      [itemId]: resolution,
+    }));
+  };
 
   return (
     <main className="main-content">
@@ -137,16 +149,23 @@ function ConflictResolverPage() {
             </CollapsibleSection>
           )}
 
-          {/* Conflicts Section (placeholder for future stories) */}
+          {/* Conflicts Section */}
           {conflictsCount > 0 && (
             <CollapsibleSection
               title="Conflicts Need Review"
               itemCount={conflictsCount}
               defaultExpanded={true}
             >
-              <div className="conflicts-placeholder">
-                <p>Conflict resolution UI will be implemented in upcoming stories (US-099, US-100, US-101).</p>
-                <p>{conflictsCount} conflict(s) detected that need your review.</p>
+              <div className="conflicts-list">
+                {applyResults.conflicts.map((conflict) => (
+                  <ConflictCard
+                    key={conflict.item_id}
+                    conflict={conflict}
+                    selectedResolution={conflictResolutions[conflict.item_id] || null}
+                    onResolutionChange={handleResolutionChange}
+                    formatSection={formatSection}
+                  />
+                ))}
               </div>
             </CollapsibleSection>
           )}
