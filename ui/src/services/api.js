@@ -2,7 +2,9 @@
  * API service layer with fetch wrapper for consistent HTTP calls
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// In production (nginx), use relative URLs which get proxied to backend
+// In development, use localhost:8000 directly
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
 
 /**
  * Make a GET request to the API
