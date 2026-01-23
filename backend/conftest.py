@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.main import app
 # Import models so that Base.metadata knows about them
-from app.models import Project, MeetingRecap, MeetingItem, Requirement, RequirementSource, RequirementHistory  # noqa: F401
+from app.models import Project, MeetingRecap, MeetingItem, Requirement, RequirementSource, RequirementHistory, MeetingItemDecision  # noqa: F401
 
 
 # Create in-memory SQLite database for testing

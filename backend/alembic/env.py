@@ -10,7 +10,7 @@ from app.database import Base
 from app.config import settings
 
 # Import all models so Alembic can detect them for autogenerate
-from app.models import Project, MeetingRecap, MeetingItem, Requirement, RequirementSource, RequirementHistory  # noqa: F401
+from app.models import Project, MeetingRecap, MeetingItem, Requirement, RequirementSource, RequirementHistory, MeetingItemDecision  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
