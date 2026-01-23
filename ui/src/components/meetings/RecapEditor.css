@@ -1,0 +1,49 @@
+.recap-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.recap-editor-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recap-editor-item-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.recap-editor-source-quote {
+  display: flex;
+  gap: 0.5rem;
+  padding-left: 2rem;
+  font-size: 0.75rem;
+  color: #6B7280;
+  line-height: 1.4;
+}
+
+.recap-editor-source-label {
+  color: #9CA3AF;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.recap-editor-source-text {
+  font-style: italic;
+  word-break: break-word;
+}
+
+.recap-editor-empty {
+  color: #9CA3AF;
+  font-size: 0.875rem;
+  font-style: italic;
+  margin: 0;
+  padding: 0.75rem;
+  text-align: center;
+  background-color: #F9FAFB;
+  border-radius: 6px;
+  border: 1px dashed #E5E7EB;
+}
