@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { get, post, put } from '../services/api'
+import { get, post, put, del } from '../services/api'
 import ProjectCard from '../components/projects/ProjectCard'
 import Modal from '../components/common/Modal'
 import ProjectForm from '../components/projects/ProjectForm'
@@ -14,6 +14,9 @@ function ProjectsPage() {
   const [error, setError] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
+  const [deletingProject, setDeletingProject] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   useEffect(() => {
     fetchProjects()
@@ -38,8 +41,29 @@ function ProjectsPage() {
   }
 
   const handleDelete = (project) => {
-    // Will be implemented in US-121
-    console.log('Delete project:', project)
+    setDeletingProject(project)
+    setDeleteError(null)
+  }
+
+  const handleCancelDelete = () => {
+    setDeletingProject(null)
+    setDeleteError(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deletingProject) return
+
+    setIsDeleting(true)
+    setDeleteError(null)
+    try {
+      await del(`/api/projects/${deletingProject.id}`)
+      setProjects((prev) => prev.filter((p) => p.id !== deletingProject.id))
+      setDeletingProject(null)
+    } catch (err) {
+      setDeleteError(err.message || 'Failed to delete project')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const handleCreateProject = async (projectData) => {
@@ -86,6 +110,47 @@ function ProjectsPage() {
               onSubmit={editingProject ? handleUpdateProject : handleCreateProject}
               onCancel={handleCloseModal}
             />
+          </Modal>
+        )}
+
+        {deletingProject && (
+          <Modal title="Delete Project" onClose={handleCancelDelete}>
+            <div className="delete-confirmation">
+              <div className="delete-confirmation-icon">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M24 16V24" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M24 32H24.02" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <p className="delete-confirmation-message">
+                Are you sure you want to delete <strong>{deletingProject.name}</strong>?
+              </p>
+              <p className="delete-confirmation-warning">
+                This will permanently delete the project and all its meetings and requirements. This action cannot be undone.
+              </p>
+              {deleteError && (
+                <div className="delete-confirmation-error">
+                  {deleteError}
+                </div>
+              )}
+              <div className="delete-confirmation-actions">
+                <button
+                  className="delete-confirmation-btn delete-confirmation-btn--cancel"
+                  onClick={handleCancelDelete}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="delete-confirmation-btn delete-confirmation-btn--confirm"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Project'}
+                </button>
+              </div>
+            </div>
           </Modal>
         )}
 
