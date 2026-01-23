@@ -868,3 +868,18 @@
   - Empty section placeholder uses dashed border and italic text for visual distinction
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-060
+- **What was implemented**: Added inline editing capability to ItemRow component
+- **Files changed**:
+  - `ui/src/components/common/ItemRow.jsx` - Added edit mode state management, textarea for editing, save/cancel buttons, API call to PUT /api/meeting-items/{id}, error handling
+  - `ui/src/components/common/ItemRow.css` - Added styles for edit mode: editing container, textarea, save/cancel buttons, error message, disabled states
+- **Learnings for future iterations:**
+  - ItemRow now manages its own edit state internally using `useState` hooks (isEditing, editedContent, isSaving, error)
+  - Edit mode renders a completely different JSX structure (conditional return)
+  - Keyboard shortcuts: Escape to cancel, Ctrl+Enter to save
+  - After successful save, `onEdit` callback receives the updated item from the API response (allows parent to update its state)
+  - Error messages displayed inline within the edit container using red background styling
+  - Save button disabled when content is empty or saving is in progress
+  - Manual browser verification needed - no browser testing tools available
+---
