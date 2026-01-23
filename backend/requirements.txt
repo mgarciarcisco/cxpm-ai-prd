@@ -11,3 +11,4 @@ sse-starlette
 markdown
 pytest
 pytest-asyncio
+ruff

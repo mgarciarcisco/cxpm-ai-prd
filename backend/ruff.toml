@@ -1,0 +1,38 @@
+# Ruff configuration
+# https://docs.astral.sh/ruff/configuration/
+
+# Target Python 3.11
+target-version = "py311"
+
+# Line length
+line-length = 120
+
+# Exclude directories
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "alembic/versions",
+]
+
+[lint]
+# Enable recommended rules
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "UP",     # pyupgrade
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "B008",   # Do not perform function calls in argument defaults (FastAPI uses this pattern)
+]
+
+[lint.per-file-ignores]
+# Tests can use assert and have unused imports
+"tests/**/*.py" = ["S101", "F401"]
