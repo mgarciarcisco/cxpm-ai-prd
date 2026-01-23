@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { get } from '../services/api';
 import { useStreaming } from '../hooks/useStreaming';
 import StreamingPreview from '../components/meetings/StreamingPreview';
+import { RecapEditor } from '../components/meetings/RecapEditor';
 import './RecapEditorPage.css';
 
 function RecapEditorPage() {
@@ -12,14 +13,24 @@ function RecapEditorPage() {
   const [meeting, setMeeting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [meetingItems, setMeetingItems] = useState([]);
 
   // Get jobId from navigation state or use meeting id
   const jobId = location.state?.job_id || mid;
 
   // Streaming hook for pending/processing meetings
-  const { items, status: streamStatus, error: streamError, retry } = useStreaming(
+  const { items: streamingItems, status: streamStatus, error: streamError, retry } = useStreaming(
     meeting?.status === 'pending' || meeting?.status === 'processing' ? jobId : null
   );
+
+  // Transition from streaming to processed state when streaming completes
+  useEffect(() => {
+    if (streamStatus === 'complete' && meeting?.status !== 'processed') {
+      // Update meeting status and set items from streaming
+      setMeeting(prev => prev ? { ...prev, status: 'processed' } : prev);
+      setMeetingItems(streamingItems);
+    }
+  }, [streamStatus, meeting?.status, streamingItems]);
 
   useEffect(() => {
     fetchMeeting();
@@ -31,12 +42,48 @@ function RecapEditorPage() {
       setError(null);
       const meetingData = await get(`/api/meetings/${mid}`);
       setMeeting(meetingData);
+      // Initialize meetingItems from meeting data if status is processed
+      if (meetingData.status === 'processed' && meetingData.items) {
+        setMeetingItems(meetingData.items);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  // Handle item edit callback - update the item in local state
+  const handleEditItem = useCallback((updatedItem) => {
+    setMeetingItems(prev => prev.map(item =>
+      item.id === updatedItem.id ? updatedItem : item
+    ));
+  }, []);
+
+  // Handle item delete callback - remove item from local state
+  const handleDeleteItem = useCallback((deletedItem) => {
+    setMeetingItems(prev => prev.filter(item => item.id !== deletedItem.id));
+  }, []);
+
+  // Handle item reorder callback - update order in local state
+  const handleReorderItems = useCallback((section, newItemIds) => {
+    setMeetingItems(prev => {
+      // Get items not in this section
+      const otherItems = prev.filter(item => item.section !== section);
+      // Get items in this section and reorder them
+      const sectionItems = prev.filter(item => item.section === section);
+      const reorderedSectionItems = newItemIds.map((itemId, index) => {
+        const item = sectionItems.find(i => i.id === itemId);
+        return item ? { ...item, order: index + 1 } : null;
+      }).filter(Boolean);
+      return [...otherItems, ...reorderedSectionItems];
+    });
+  }, []);
+
+  // Handle add item callback - add new item to local state
+  const handleAddItem = useCallback((newItem) => {
+    setMeetingItems(prev => [...prev, newItem]);
+  }, []);
 
   const handleRetry = async () => {
     // Call the retry endpoint to reset the meeting status
@@ -100,7 +147,7 @@ function RecapEditorPage() {
         <div className="recap-editor-content">
           {showStreamingPreview && (
             <StreamingPreview
-              items={items}
+              items={streamingItems}
               status={streamStatus}
               error={streamError}
               onRetry={retry}
@@ -108,19 +155,14 @@ function RecapEditorPage() {
           )}
 
           {showRecapEditor && (
-            <div className="recap-editor-placeholder">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M38 8H10C7.79086 8 6 9.79086 6 12V38C6 40.2091 7.79086 42 10 42H38C40.2091 42 42 40.2091 42 38V12C42 9.79086 40.2091 8 38 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16 16H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16 24H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16 32H26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <h3>Extraction Complete</h3>
-              <p>
-                {meeting?.items?.length || 0} item{meeting?.items?.length !== 1 ? 's' : ''} extracted.
-                The full recap editor will be available in a future update.
-              </p>
-            </div>
+            <RecapEditor
+              meetingId={mid}
+              items={meetingItems}
+              onEditItem={handleEditItem}
+              onDeleteItem={handleDeleteItem}
+              onReorderItems={handleReorderItems}
+              onAddItem={handleAddItem}
+            />
           )}
 
           {showFailedState && (
