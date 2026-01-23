@@ -1480,3 +1480,19 @@
   - Section header uses flexbox with justify-content: space-between to place bulk actions on the right
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-103
+- **What was implemented**: Added Apply Changes button to ConflictResolverPage with full resolution collection and API submission
+- **Files changed**:
+  - `ui/src/pages/ConflictResolverPage.jsx` - Added mergedTexts and applyLoading state, handleMergedTextSave function, allConflictsResolved validation, handleApplyChanges API call, footer component with Apply Changes button
+  - `ui/src/pages/ConflictResolverPage.css` - Added sticky footer styling, summary indicators, button states including disabled and loading spinner
+- **Learnings for future iterations:**
+  - Apply Changes button should be in sticky footer so it's always visible when scrolling long conflict lists
+  - allConflictsResolved() must check for both resolution selection AND merged text when resolution is 'conflict_merged'
+  - Decisions array includes: 'added' items, 'skipped' items (with skipped_duplicate or skipped_semantic), and conflict resolutions with matched_requirement_id
+  - For 'conflict_merged' decisions, merged_text is required in the decision object
+  - Footer summary shows real-time count of resolved conflicts (e.g., "2/3 conflicts resolved")
+  - Loading state replaces button text with spinner and "Applying..." text
+  - Success handling deferred to US-104 (navigation and toast)
+  - Manual browser verification needed - no browser testing tools available
+---
