@@ -1504,7 +1504,7 @@
         "Typecheck passes"
       ],
       "priority": 91,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

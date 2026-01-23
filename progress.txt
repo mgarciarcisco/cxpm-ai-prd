@@ -1300,3 +1300,17 @@
   - Includes examples showing merge patterns: adding specifics, combining complementary info, expanding scope
   - Edge cases: overlapping content (don't repeat), different emphasis (include both), different scope (choose more complete)
 ---
+
+## 2026-01-22 - US-091
+- **What was implemented**: Created merge suggestion service for combining conflicting requirements using LLM
+- **Files changed**:
+  - `backend/app/services/merger.py` - New service with suggest_merge(existing, new) function, MergeError exception class, prompt template loading and response cleaning
+  - `backend/app/services/__init__.py` - Updated exports to include suggest_merge and MergeError
+- **Learnings for future iterations:**
+  - Merge suggestion service: `from app.services import suggest_merge, MergeError`
+  - suggest_merge() function signature: `suggest_merge(existing: str, new: str) -> str`
+  - Unlike classify_conflict which returns JSON, merge prompt returns plain text - requires different response handling
+  - Response cleaning: strips markdown code blocks if present, removes surrounding whitespace
+  - Error handling: catches LLMError and wraps in MergeError, validates non-empty response
+  - Retry logic uses settings.LLM_MAX_RETRIES + 1 for total attempts (same pattern as conflict detection)
+---
