@@ -1465,3 +1465,18 @@
   - Provides fallback behavior when AI suggestion fails (concatenates both contents)
   - Component exports both named `MergeEditor` and default export for flexibility
 ---
+
+## 2026-01-22 - US-102
+- **What was implemented**: Created BulkActions component with "Accept AI recommendations" button for bulk conflict resolution
+- **Files changed**:
+  - `ui/src/components/conflicts/BulkActions.jsx` - Component with bulk action button, renders only when conflicts exist
+  - `ui/src/components/conflicts/BulkActions.css` - Styling with orange/amber theme matching AI recommendation badges
+  - `ui/src/pages/ConflictResolverPage.jsx` - Integrated BulkActions in header, added getAIRecommendation and handleAcceptAllAI functions
+  - `ui/src/pages/ConflictResolverPage.css` - Added section-header-left and section-header-right layout styles
+- **Learnings for future iterations:**
+  - BulkActions component receives conflicts array and onAcceptAllAI callback
+  - AI recommendations are based on classification: 'refinement' -> conflict_replaced, 'contradiction' -> conflict_keep_existing
+  - Bulk action sets all resolutions at once but individual ConflictCards can still override via onResolutionChange
+  - Section header uses flexbox with justify-content: space-between to place bulk actions on the right
+  - Manual browser verification needed - no browser testing tools available
+---
