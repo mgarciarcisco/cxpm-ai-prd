@@ -1002,3 +1002,20 @@
   - Requirement model needed bidirectional relationship added: `sources = relationship("RequirementSource", back_populates="requirement", cascade="all, delete-orphan")`
   - Index on meeting_id enables efficient traceability queries to find all requirements derived from a specific meeting
 ---
+
+## 2026-01-22 - US-069
+- **What was implemented**: Created RequirementHistory model for auditing all changes to requirements
+- **Files changed**:
+  - `backend/app/models/requirement_history.py` - New RequirementHistory model with Actor enum (system, user, ai_extraction, ai_merge), Action enum (created, modified, deactivated, reactivated, merged), id (UUID), requirement_id (FK with CASCADE), meeting_id (FK, nullable, SET NULL on delete), actor, action, old_content, new_content, created_at
+  - `backend/app/models/requirement.py` - Added `history` relationship with back_populates and cascade delete
+  - `backend/app/models/__init__.py` - Updated to export RequirementHistory, Actor, Action
+  - `backend/alembic/env.py` - Added RequirementHistory import for autogenerate
+  - `backend/alembic/versions/77d97144f4ea_create_requirement_history_table.py` - Migration file
+  - `backend/conftest.py` - Added RequirementHistory import for test db setup
+- **Learnings for future iterations:**
+  - Actor and Action enums inherit from `str, enum.Enum` for Pydantic serialization compatibility
+  - RequirementHistory uses `ondelete="CASCADE"` for requirement_id - when a requirement is deleted, its history is also deleted
+  - RequirementHistory uses `ondelete="SET NULL"` for meeting_id - meetings can be deleted independently while preserving the audit history
+  - Index on requirement_id enables efficient queries for viewing a requirement's change history
+  - Import RequirementHistory and enums: `from app.models import RequirementHistory, Actor, Action`
+---
