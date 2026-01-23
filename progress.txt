@@ -1217,3 +1217,17 @@
   - Mobile responsive: popover becomes bottom sheet on narrow screens
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-085
+- **What was implemented**: Added Markdown export button to RequirementsPage for downloading requirements as Markdown file
+- **Files changed**:
+  - `ui/src/pages/RequirementsPage.jsx` - Added `isExporting` state, `handleExport` function (using fetch + blob download pattern), "Export as Markdown" button in page header with download icon SVG
+  - `ui/src/pages/RequirementsPage.css` - Added styles for `.section-header-title`, `.export-btn` with hover/disabled states, mobile responsive styles
+- **Learnings for future iterations:**
+  - Export functionality uses raw `fetch` (not api.js wrapper) because we need blob response for file download
+  - File download pattern: create blob URL, create anchor element, set download attribute, programmatically click, cleanup
+  - Filename sanitization: `project.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')` removes spaces and non-alphanumeric characters
+  - Same export implementation as ProjectDashboard for consistency
+  - Button shows "Exporting..." text and is disabled during export operation
+  - Manual browser verification needed - no browser testing tools available
+---
