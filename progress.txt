@@ -1201,3 +1201,19 @@
   - Meeting title fallback to 'Meeting' if title is null (defensive coding)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-084
+- **What was implemented**: Created HistoryPopover component for viewing requirement change history
+- **Files changed**:
+  - `ui/src/components/requirements/HistoryPopover.jsx` - New component with popover that fetches and displays history from GET /api/requirements/{id}/history
+  - `ui/src/components/requirements/HistoryPopover.css` - Styling for popover with loading, error, empty states, action color coding, content diff display
+  - `ui/src/pages/RequirementsPage.jsx` - Added HistoryPopover import and display next to source links (only shown when history_count > 0)
+  - `ui/src/pages/RequirementsPage.css` - Added `.requirement-meta` container for sources + history alignment
+- **Learnings for future iterations:**
+  - HistoryPopover uses click-outside and Escape key detection for closing the popover
+  - Actor enum values (system, user, ai_extraction, ai_merge) formatted with human-readable labels
+  - Action enum values (created, modified, deactivated, reactivated, merged) color-coded with CSS classes
+  - Content changes shown with Before/After sections using red/green diff-like styling
+  - Mobile responsive: popover becomes bottom sheet on narrow screens
+  - Manual browser verification needed - no browser testing tools available
+---
