@@ -1661,3 +1661,28 @@
   - Import MeetingStatus from `app.models.meeting_recap` not from `app.models`
   - Response structure matches MeetingResponse schema including items list (empty for failed meetings)
 ---
+
+## 2026-01-23 - US-115
+- **What was implemented**: Added mobile responsive layout with hamburger menu navigation and proper touch targets
+- **Files changed:**
+  - `ui/src/App.jsx` - Added mobile hamburger menu with state management, navigation links, and overlay
+  - `ui/src/App.css` - Added header nav styles, mobile menu button, overlay, and 768px/640px breakpoints
+  - `ui/src/index.css` - Added global mobile touch target rules (44px minimum) and input sizing
+  - `ui/src/components/projects/ProjectCard.css` - Increased action button touch targets to 44px
+  - `ui/src/components/common/ItemRow.css` - Increased action button touch targets, added mobile styles
+  - `ui/src/components/common/Modal.css` - Increased close button touch target to 44px
+  - `ui/src/components/meetings/MeetingsList.css` - Added mobile styles for list items
+- **Key responsive features:**
+  - Hamburger menu appears at 768px breakpoint, shows navigation as dropdown
+  - All interactive elements have minimum 44x44px touch targets on mobile
+  - Form inputs set to 16px font to prevent iOS zoom on focus
+  - Cards stack vertically on narrow screens (existing styles already in place)
+  - Header text truncates with ellipsis on small screens
+- **Learnings for future iterations:**
+  - Use `useState` for mobile menu toggle, `useLocation` to highlight active nav
+  - Mobile menu overlay closes menu when clicked
+  - Many components already had responsive styles at 640px breakpoint from previous stories
+  - Use `min-width` and `min-height` for touch targets instead of padding alone
+  - Input font-size 16px prevents iOS auto-zoom behavior
+  - Manual browser verification needed - no browser testing tools available
+---
