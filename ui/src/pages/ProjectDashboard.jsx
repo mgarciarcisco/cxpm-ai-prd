@@ -10,6 +10,7 @@ function ProjectDashboard() {
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [meetings, setMeetings] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -21,17 +22,37 @@ function ProjectDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const [projectData, meetingsData] = await Promise.all([
+      const [projectData, meetingsData, statsData] = await Promise.all([
         get(`/api/projects/${id}`),
-        get(`/api/projects/${id}/meetings`)
+        get(`/api/projects/${id}/meetings`),
+        get(`/api/projects/${id}/stats`)
       ]);
       setProject(projectData);
       setMeetings(meetingsData || []);
+      setStats(statsData);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatLastActivity = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  };
+
+  const formatSectionName = (section) => {
+    return section
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
   };
 
   const handleMeetingClick = (meeting) => {
@@ -123,7 +144,10 @@ function ProjectDashboard() {
 
         <div className="dashboard-content">
           <div className="dashboard-panel dashboard-panel--meetings">
-            <h3 className="panel-title">Meetings</h3>
+            <div className="panel-header">
+              <h3 className="panel-title">Meetings</h3>
+              {stats && <span className="panel-count">{stats.meeting_count}</span>}
+            </div>
             <MeetingsList
               meetings={meetings}
               onMeetingClick={handleMeetingClick}
@@ -136,16 +160,38 @@ function ProjectDashboard() {
           </div>
 
           <div className="dashboard-panel dashboard-panel--requirements">
-            <h3 className="panel-title">Requirements Summary</h3>
-            <div className="requirements-summary-placeholder">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M38 8H10C7.79086 8 6 9.79086 6 12V38C6 40.2091 7.79086 42 10 42H38C40.2091 42 42 40.2091 42 38V12C42 9.79086 40.2091 8 38 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16 16H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16 24H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16 32H26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <p>Apply meeting recaps to build your working requirements document.</p>
+            <div className="panel-header">
+              <h3 className="panel-title">Requirements Summary</h3>
+              {stats && <span className="panel-count">{stats.requirement_count}</span>}
             </div>
+            {stats && stats.requirement_count > 0 ? (
+              <div className="requirements-summary">
+                <div className="requirements-sections">
+                  {stats.requirement_counts_by_section.map(({ section, count }) => (
+                    <div key={section} className="requirement-section-row">
+                      <span className="section-name">{formatSectionName(section)}</span>
+                      <span className="section-count">{count}</span>
+                    </div>
+                  ))}
+                </div>
+                {stats.last_activity && (
+                  <div className="last-activity">
+                    <span className="last-activity-label">Last updated:</span>
+                    <span className="last-activity-value">{formatLastActivity(stats.last_activity)}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="requirements-summary-placeholder">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M38 8H10C7.79086 8 6 9.79086 6 12V38C6 40.2091 7.79086 42 10 42H38C40.2091 42 42 40.2091 42 38V12C42 9.79086 40.2091 8 38 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 16H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 24H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 32H26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <p>Apply meeting recaps to build your working requirements document.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
