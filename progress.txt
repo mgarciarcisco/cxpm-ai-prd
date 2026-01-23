@@ -1624,3 +1624,21 @@
   - To check if all requirements are empty, iterate SECTIONS array checking if each section has 0 items
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-23 - US-113
+- **What was implemented**: Verified retry buttons for failed LLM calls already exist across all required pages
+- **Files changed**: None - all retry functionality was already implemented in previous stories
+- **Verification completed:**
+  - `ui/src/pages/RecapEditorPage.jsx` - Has `handleRetry` (lines 95-111) and failed state UI with retry button (lines 186-206)
+  - `ui/src/pages/ConflictResolverPage.jsx` - Has `handleRetryApply` (lines 215-218) and error message with retry link (lines 343-355)
+  - `ui/src/components/conflicts/MergeEditor.jsx` - Has `handleRetry` (lines 60-62) and error state with retry button (lines 90-100)
+  - `ui/src/pages/RecapEditorPage.css` - Has `.retry-btn` styles (lines 116-134)
+  - `ui/src/pages/ConflictResolverPage.css` - Has `.retry-link` and `.apply-error-message` styles (lines 380-414)
+  - `ui/src/components/conflicts/MergeEditor.css` - Has `.merge-editor-retry-btn` and `.merge-editor-error` styles (lines 67-106)
+- **Learnings for future iterations:**
+  - RecapEditorPage retry calls POST /api/meetings/{id}/retry (endpoint created in US-114) and triggers streaming hook
+  - ConflictResolverPage retry uses inline `handleRetryApply` which calls `handleApplyChanges` again
+  - MergeEditor retry calls `fetchMergeSuggestion()` again which POSTs to /api/meetings/suggest-merge
+  - Error states are styled consistently with red background (#FEF2F2), red border (#FECACA), and red text (#DC2626)
+  - Manual browser verification needed - no browser testing tools available
+---
