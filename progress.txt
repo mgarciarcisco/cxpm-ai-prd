@@ -1379,3 +1379,16 @@
   - Helper function `_parse_classification_response` is also tested directly for JSON parsing edge cases
   - When LLM fails, the service gracefully degrades to creating a conflict for manual review
 ---
+
+## 2026-01-22 - US-096
+- **What was implemented**: Created tests for the merge suggestion service
+- **Files changed**:
+  - `backend/tests/test_merger.py` - 12 tests covering all merge suggestion scenarios
+- **Learnings for future iterations:**
+  - Tests cover: successful merge, mocked LLM response, markdown code block stripping, LLM failure handling, retry logic
+  - Testing pattern: create MockLLMProvider class with configurable response, patch `app.services.merger.get_provider`
+  - MergeError is raised for LLM failures, empty responses, and after retries exhausted
+  - The merger service strips markdown code blocks (```...```) from LLM responses automatically
+  - Type safety: when using `in` operator on `str | None`, must first assert `is not None` to satisfy mypy
+  - The merger loads prompt template from `prompts/suggest_merge_v1.txt` with placeholders `{existing_content}` and `{new_content}`
+---
