@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import projects_router, meetings_router, meeting_items_router
+from app.routers import projects_router, meetings_router, meeting_items_router, requirements_router
 
 app = FastAPI(
     title="CXPM AI PRD",
@@ -34,3 +34,4 @@ async def health_check() -> dict[str, str]:
 app.include_router(projects_router)
 app.include_router(meetings_router)
 app.include_router(meeting_items_router)
+app.include_router(requirements_router)
