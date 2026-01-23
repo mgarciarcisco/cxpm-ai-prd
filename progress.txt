@@ -1345,3 +1345,22 @@
   - This endpoint is called by the frontend MergeEditor component when user selects "Merge" option for conflict resolution
   - Unlike the apply endpoint, this does not require a meeting_id - it's a standalone merge utility
 ---
+
+## 2026-01-22 - US-094
+- **What was implemented**: Created POST /api/meetings/{id}/resolve endpoint for resolving conflicts and creating requirements
+- **Files changed**:
+  - `backend/app/routers/meetings.py` - Added resolve_meeting endpoint that processes decisions array and creates/updates requirements
+  - `backend/app/schemas/meeting.py` - Added ResolveDecision, ResolveRequest, ResolveResponse schemas
+  - `backend/app/schemas/__init__.py` - Updated exports to include new schemas
+- **Learnings for future iterations:**
+  - Resolve endpoint: `POST /api/meetings/{meeting_id}/resolve` - creates requirements and records all decisions
+  - Request body: `ResolveRequest(decisions: list[ResolveDecision])` where each decision has item_id, decision type, optional merged_text, optional matched_requirement_id
+  - Decision types map to Decision enum: added, skipped_duplicate, skipped_semantic, conflict_keep_existing, conflict_replaced, conflict_kept_both, conflict_merged
+  - Response: `ResolveResponse(added=N, skipped=M, merged=P, replaced=Q)` with counts of each action
+  - For "added" and "conflict_kept_both": create new Requirement with is_active=true, RequirementSource with source_quote, RequirementHistory with actor=ai_extraction
+  - For "conflict_replaced": update existing Requirement content, create RequirementSource and RequirementHistory with actor=ai_extraction
+  - For "conflict_merged": update existing Requirement with merged_text, create RequirementSource and RequirementHistory with actor=ai_merge
+  - All decisions recorded in MeetingItemDecision table with reason
+  - Meeting status updated to "applied" with applied_at timestamp after all decisions processed
+  - Order for new requirements: track max order per section and increment for each new requirement
+---
