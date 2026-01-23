@@ -14,8 +14,17 @@ from app.database import get_db
 from app.models import Project, MeetingRecap, MeetingItem
 from app.models.meeting_recap import InputType, MeetingStatus
 from sqlalchemy import func
-from app.schemas import UploadResponse, MeetingResponse, MeetingItemResponse, MeetingItemCreate, MeetingItemReorderRequest
-from app.services import parse_file, extract_stream, ExtractionError
+from app.schemas import (
+    UploadResponse,
+    MeetingResponse,
+    MeetingItemResponse,
+    MeetingItemCreate,
+    MeetingItemReorderRequest,
+    ApplyResponse,
+    ConflictResultResponse,
+    MatchedRequirementResponse,
+)
+from app.services import parse_file, extract_stream, ExtractionError, detect_conflicts, ConflictDetectionError
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
 
@@ -325,3 +334,72 @@ async def stream_extraction(
             }
 
     return EventSourceResponse(event_generator())
+
+
+@router.post("/{meeting_id}/apply", response_model=ApplyResponse)
+def apply_meeting(
+    meeting_id: str,
+    db: Session = Depends(get_db),
+) -> ApplyResponse:
+    """
+    Apply meeting items with conflict detection.
+
+    Calls conflict detection service and returns categorized results:
+    - added: Items that will be added as new requirements
+    - skipped: Items that were skipped (duplicates)
+    - conflicts: Items that need user resolution
+
+    Does NOT create requirements yet (that happens in resolve endpoint).
+    Returns 400 if meeting status is not processed.
+    Returns 404 if meeting not found.
+    """
+    # Verify meeting exists
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    # Check meeting status
+    if meeting.status != MeetingStatus.processed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot apply meeting unless status is processed",
+        )
+
+    try:
+        # Call conflict detection service
+        result = detect_conflicts(UUID(meeting_id), db)
+
+        # Convert dataclass results to Pydantic response models
+        def convert_result(conflict_result: Any) -> ConflictResultResponse:
+            matched_req = None
+            if conflict_result.matched_requirement is not None:
+                matched_req = MatchedRequirementResponse(
+                    id=conflict_result.matched_requirement.id,
+                    section=conflict_result.matched_requirement.section,
+                    content=conflict_result.matched_requirement.content,
+                )
+
+            return ConflictResultResponse(
+                item_id=conflict_result.item.id,
+                item_section=conflict_result.item.section,
+                item_content=conflict_result.item.content,
+                decision=conflict_result.decision,
+                reason=conflict_result.reason,
+                matched_requirement=matched_req,
+                classification=conflict_result.classification,
+            )
+
+        return ApplyResponse(
+            added=[convert_result(r) for r in result.added],
+            skipped=[convert_result(r) for r in result.skipped],
+            conflicts=[convert_result(r) for r in result.conflicts],
+        )
+
+    except ConflictDetectionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )

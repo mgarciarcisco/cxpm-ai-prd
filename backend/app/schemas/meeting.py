@@ -94,3 +94,33 @@ class MeetingItemReorderRequest(BaseModel):
 
     section: Section
     item_ids: list[str]
+
+
+class MatchedRequirementResponse(BaseModel):
+    """Schema for a matched requirement in conflict detection."""
+
+    id: str
+    section: Section
+    content: str
+
+    model_config = {"from_attributes": True}
+
+
+class ConflictResultResponse(BaseModel):
+    """Schema for a single conflict detection result."""
+
+    item_id: str
+    item_section: Section
+    item_content: str
+    decision: str  # 'added', 'skipped_duplicate', 'skipped_semantic', 'conflict'
+    reason: str
+    matched_requirement: Optional[MatchedRequirementResponse] = None
+    classification: Optional[str] = None  # 'duplicate', 'new', 'refinement', 'contradiction'
+
+
+class ApplyResponse(BaseModel):
+    """Schema for apply endpoint response with categorized results."""
+
+    added: list[ConflictResultResponse] = []
+    skipped: list[ConflictResultResponse] = []
+    conflicts: list[ConflictResultResponse] = []

@@ -15,6 +15,9 @@ from app.schemas.meeting import (
     MeetingItemUpdate,
     MeetingItemCreate,
     MeetingItemReorderRequest,
+    MatchedRequirementResponse,
+    ConflictResultResponse,
+    ApplyResponse,
 )
 from app.schemas.requirement import (
     RequirementSourceResponse,
@@ -38,6 +41,9 @@ __all__ = [
     "MeetingItemUpdate",
     "MeetingItemCreate",
     "MeetingItemReorderRequest",
+    "MatchedRequirementResponse",
+    "ConflictResultResponse",
+    "ApplyResponse",
     "RequirementSourceResponse",
     "RequirementHistoryResponse",
     "RequirementResponse",
