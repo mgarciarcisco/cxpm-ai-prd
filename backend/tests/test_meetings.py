@@ -3,6 +3,10 @@
 from io import BytesIO
 
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from app.models import MeetingRecap
+from app.models.meeting_recap import MeetingStatus
 
 
 def _create_project(test_client: TestClient) -> str:
@@ -260,3 +264,134 @@ def test_delete_meeting_removes_from_project_list(test_client: TestClient) -> No
     data = response.json()
     assert len(data) == 1
     assert data[0]["title"] == "Keep This"
+
+
+def test_retry_meeting_resets_status(test_client: TestClient, test_db: Session) -> None:
+    """Test POST /api/meetings/{id}/retry resets a failed meeting to pending."""
+    project_id = _create_project(test_client)
+
+    # Create a meeting
+    upload_response = test_client.post(
+        "/api/meetings/upload",
+        data={
+            "project_id": project_id,
+            "title": "Failed Meeting",
+            "meeting_date": "2026-01-22",
+            "text": "This will fail and be retried.",
+        },
+    )
+    meeting_id = upload_response.json()["meeting_id"]
+
+    # Manually set the meeting to failed status with an error
+    meeting = test_db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting.status = MeetingStatus.failed  # type: ignore[assignment]
+    meeting.error_message = "Test error message"  # type: ignore[assignment]
+    test_db.commit()
+
+    # Retry the meeting
+    retry_response = test_client.post(f"/api/meetings/{meeting_id}/retry")
+    assert retry_response.status_code == 200
+    data = retry_response.json()
+    assert data["status"] == "pending"
+    assert data["error_message"] is None
+
+
+def test_retry_meeting_clears_error_message(test_client: TestClient, test_db: Session) -> None:
+    """Test POST /api/meetings/{id}/retry clears the error_message field."""
+    project_id = _create_project(test_client)
+
+    # Create a meeting
+    upload_response = test_client.post(
+        "/api/meetings/upload",
+        data={
+            "project_id": project_id,
+            "title": "Error Meeting",
+            "meeting_date": "2026-01-22",
+            "text": "Error will be cleared.",
+        },
+    )
+    meeting_id = upload_response.json()["meeting_id"]
+
+    # Set meeting to failed with error message
+    meeting = test_db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting.status = MeetingStatus.failed  # type: ignore[assignment]
+    meeting.error_message = "Extraction failed: invalid format"  # type: ignore[assignment]
+    test_db.commit()
+
+    # Retry the meeting
+    test_client.post(f"/api/meetings/{meeting_id}/retry")
+
+    # Verify error_message is cleared in database
+    test_db.refresh(meeting)
+    assert meeting.error_message is None
+
+
+def test_retry_meeting_404_on_missing(test_client: TestClient) -> None:
+    """Test POST /api/meetings/{id}/retry returns 404 for non-existent meeting."""
+    fake_meeting_id = "00000000-0000-0000-0000-000000000000"
+
+    response = test_client.post(f"/api/meetings/{fake_meeting_id}/retry")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Meeting not found"
+
+
+def test_retry_meeting_400_on_non_failed_status(test_client: TestClient) -> None:
+    """Test POST /api/meetings/{id}/retry returns 400 if meeting status is not failed."""
+    project_id = _create_project(test_client)
+
+    # Create a meeting (status will be pending)
+    upload_response = test_client.post(
+        "/api/meetings/upload",
+        data={
+            "project_id": project_id,
+            "title": "Pending Meeting",
+            "meeting_date": "2026-01-22",
+            "text": "This is still pending.",
+        },
+    )
+    meeting_id = upload_response.json()["meeting_id"]
+
+    # Try to retry a pending meeting (should fail)
+    response = test_client.post(f"/api/meetings/{meeting_id}/retry")
+    assert response.status_code == 400
+    assert "Can only retry meetings with failed status" in response.json()["detail"]
+
+
+def test_retry_meeting_returns_meeting_response(test_client: TestClient, test_db: Session) -> None:
+    """Test POST /api/meetings/{id}/retry returns a full MeetingResponse."""
+    project_id = _create_project(test_client)
+
+    # Create a meeting
+    upload_response = test_client.post(
+        "/api/meetings/upload",
+        data={
+            "project_id": project_id,
+            "title": "Full Response Test",
+            "meeting_date": "2026-01-22",
+            "text": "Check all response fields.",
+        },
+    )
+    meeting_id = upload_response.json()["meeting_id"]
+
+    # Set meeting to failed
+    meeting = test_db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting.status = MeetingStatus.failed  # type: ignore[assignment]
+    meeting.error_message = "Test error"  # type: ignore[assignment]
+    test_db.commit()
+
+    # Retry and check response has all expected fields
+    response = test_client.post(f"/api/meetings/{meeting_id}/retry")
+    assert response.status_code == 200
+    data = response.json()
+
+    # Verify all MeetingResponse fields are present
+    assert data["id"] == meeting_id
+    assert data["project_id"] == project_id
+    assert data["title"] == "Full Response Test"
+    assert data["meeting_date"] == "2026-01-22"
+    assert data["raw_input"] == "Check all response fields."
+    assert data["input_type"] == "txt"
+    assert data["status"] == "pending"
+    assert "created_at" in data
+    assert "items" in data
+    assert isinstance(data["items"], list)

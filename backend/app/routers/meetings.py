@@ -103,6 +103,63 @@ async def upload_meeting(
     return {"job_id": meeting.id, "meeting_id": meeting.id}
 
 
+@router.post("/{meeting_id}/retry", response_model=MeetingResponse)
+def retry_meeting(meeting_id: str, db: Session = Depends(get_db)) -> dict:
+    """
+    Retry a failed extraction by resetting the meeting status.
+
+    Resets the meeting status to 'pending' and clears the error_message.
+    Returns 404 if meeting not found.
+    Returns 400 if meeting status is not 'failed'.
+    """
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    # Check that meeting status is failed
+    if meeting.status != MeetingStatus.failed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only retry meetings with failed status",
+        )
+
+    # Reset status to pending and clear error
+    meeting.status = MeetingStatus.pending  # type: ignore[assignment]
+    meeting.error_message = None  # type: ignore[assignment]
+    meeting.failed_at = None  # type: ignore[assignment]
+
+    db.commit()
+    db.refresh(meeting)
+
+    # Get non-deleted items for the response
+    items = (
+        db.query(MeetingItem)
+        .filter(MeetingItem.meeting_id == meeting_id, MeetingItem.is_deleted == False)
+        .order_by(MeetingItem.section, MeetingItem.order)
+        .all()
+    )
+
+    return {
+        "id": meeting.id,
+        "project_id": meeting.project_id,
+        "title": meeting.title,
+        "meeting_date": meeting.meeting_date,
+        "raw_input": meeting.raw_input,
+        "input_type": meeting.input_type,
+        "status": meeting.status,
+        "created_at": meeting.created_at,
+        "processed_at": meeting.processed_at,
+        "applied_at": meeting.applied_at,
+        "failed_at": meeting.failed_at,
+        "error_message": meeting.error_message,
+        "prompt_version": meeting.prompt_version,
+        "items": items,
+    }
+
+
 @router.get("/{meeting_id}", response_model=MeetingResponse)
 def get_meeting(meeting_id: str, db: Session = Depends(get_db)) -> dict:
     """
