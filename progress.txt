@@ -1512,3 +1512,17 @@
   - fadeIn CSS animation provides smooth appearance for success message
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-105
+- **What was implemented**: Comprehensive tests for ConflictResolverPage and related components
+- **Files changed**:
+  - `ui/tests/components/ConflictResolverPage.test.jsx` - 34 tests covering summary rendering, ConflictCard option selection, BulkActions button behavior, Apply Changes validation and submission, loading/error states, and no-conflicts scenario
+- **Learnings for future iterations:**
+  - Use `MemoryRouter` and `Routes` when testing components that use `useParams()` and navigation
+  - Mock `useNavigate` by spreading actual module and overriding: `vi.mock('react-router-dom', async () => ({ ...actual, useNavigate: () => mockFn }))`
+  - CollapsibleSection with `defaultExpanded={false}` requires clicking to expand before checking content
+  - When testing content that has multiple instances (e.g., "2" appearing as summary count and item count), use more specific selectors like `getAllByText` or target parent containers
+  - `post.mock.calls.filter(call => call[0].includes('/resolve'))` pattern useful for checking specific endpoint calls
+  - For case-sensitive string includes checks (like `includes('semantic')`), ensure test data uses matching case
+  - Fake timers with async: use `vi.useFakeTimers({ shouldAdvanceTime: true })` and `vi.advanceTimersByTimeAsync()` for better async handling
+---
