@@ -1259,3 +1259,15 @@
   - MeetingItemDecision uses `ondelete="SET NULL"` for matched_requirement_id - requirements can be deleted independently while preserving the decision record
   - Import MeetingItemDecision and Decision: `from app.models import MeetingItemDecision, Decision`
 ---
+
+## 2026-01-22 - US-088
+- **What was implemented**: Created versioned prompt for classifying relationships between existing requirements and new meeting items
+- **Files changed**:
+  - `backend/prompts/classify_conflict_v1.txt` - New prompt template for LLM-based conflict classification
+- **Learnings for future iterations:**
+  - Prompt uses `{existing_content}` and `{new_content}` placeholders for input text injection
+  - 4 classification values: duplicate (same meaning), new (unrelated), refinement (compatible enhancement), contradiction (incompatible conflict)
+  - JSON output format: `{"classification": "...", "reason": "..."}`
+  - Edge case handling: partial overlaps classified as "new", ambiguous contradictions prefer "refinement" (assume compatibility)
+  - Prompts go in `backend/prompts/` directory with version suffix (e.g., `classify_conflict_v1.txt`)
+---
