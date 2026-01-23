@@ -1047,3 +1047,15 @@
   - Order by `section, order` ensures consistent ordering within and across sections
   - Response grouped into RequirementsListResponse which has a field for each of the 9 sections
 ---
+
+## 2026-01-22 - US-072
+- **What was implemented**: Created Requirements update endpoint for editing requirement content
+- **Files changed**:
+  - `backend/app/routers/requirements.py` - Added PUT /api/requirements/{id} endpoint, updated router prefix from `/api/projects` to `/api` to support both project-scoped and direct requirement endpoints
+- **Learnings for future iterations:**
+  - Router prefix was updated from `/api/projects` to `/api` to support both patterns: `/api/projects/{id}/requirements` (list) and `/api/requirements/{id}` (update/delete)
+  - PUT endpoint records history with actor=user, action=modified using RequirementHistory model
+  - Store `old_content` before update to record in history
+  - The `_build_requirement_response()` helper function is reused for consistent response format
+  - Import RequirementHistory, Actor, Action from models for history recording
+---
