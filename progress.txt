@@ -1426,3 +1426,19 @@
   - Loading state shows spinner with "Analyzing meeting items..." message
   - Error state provides retry button to re-fetch data
 ---
+
+## 2026-01-22 - US-099
+- **What was implemented**: Created ConflictCard component for displaying conflicts with resolution options
+- **Files changed**:
+  - `ui/src/components/conflicts/ConflictCard.jsx` - Component showing side-by-side comparison with resolution radio buttons
+  - `ui/src/components/conflicts/ConflictCard.css` - Styling for conflict card with responsive layout
+- **Learnings for future iterations:**
+  - ConflictCard displays existing requirement on left (amber background) and new item on right (green background)
+  - AI recommendation section shows classification-based suggestion (refinement suggests replace, contradiction suggests keep existing)
+  - Resolution options: Keep existing, Replace, Keep both, Merge - each maps to a decision type for resolve endpoint
+  - Radio button options styled with selected state (blue border) and recommended badge (amber)
+  - Component is collapsible with expand/collapse icon in header
+  - Props: conflict object, selectedResolution, onResolutionChange callback, formatSection helper
+  - Classification shown as badge (blue for refinement, red for contradiction)
+  - Decision values map to backend: conflict_keep_existing, conflict_replaced, conflict_kept_both, conflict_merged
+---
