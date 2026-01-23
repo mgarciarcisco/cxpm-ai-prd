@@ -6,6 +6,7 @@ from app.services.extractor import extract, extract_stream, ExtractionError
 from app.services.chunker import chunk_text
 from app.services.exporter import export_markdown
 from app.services.conflict import detect_conflicts, ConflictDetectionError, ConflictDetectionResult, ConflictResult
+from app.services.merger import suggest_merge, MergeError
 
 __all__ = [
     "parse_file",
@@ -21,4 +22,6 @@ __all__ = [
     "ConflictDetectionError",
     "ConflictDetectionResult",
     "ConflictResult",
+    "suggest_merge",
+    "MergeError",
 ]
