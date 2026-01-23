@@ -944,3 +944,16 @@
   - handleReorderItems needs to preserve items from other sections when reordering one section
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-065
+- **What was implemented**: Added Save & Apply button to RecapEditorPage for navigating to the apply/conflict resolver page
+- **Files changed**:
+  - `ui/src/pages/RecapEditorPage.jsx` - Added isSaving state, handleSaveAndApply handler, Save & Apply button with disabled state
+  - `ui/src/pages/RecapEditorPage.css` - Added styles for .recap-editor-actions container and .save-apply-btn with hover/disabled states
+- **Learnings for future iterations:**
+  - Save & Apply button only appears when meeting status is 'processed' (showRecapEditor condition)
+  - Button navigates to `/app/projects/:id/meetings/:mid/apply` for conflict resolution
+  - Used isSaving state to disable button during navigation (prevents double-clicks)
+  - Button styling consistent with other primary action buttons (teal color, 8px border radius)
+  - Manual browser verification needed - no browser testing tools available
+---
