@@ -778,3 +778,13 @@
   - Import MeetingItemUpdate: `from app.schemas import MeetingItemUpdate`
   - Use `# type: ignore[assignment]` for SQLAlchemy Column assignments to satisfy mypy
 ---
+
+## 2026-01-22 - US-053
+- **What was implemented**: Created MeetingItem delete endpoint for soft-deleting extracted meeting items
+- **Files changed**:
+  - `backend/app/routers/meeting_items.py` - Added DELETE /api/meeting-items/{id} endpoint
+- **Learnings for future iterations:**
+  - Soft-delete pattern: set `is_deleted = True` instead of hard deleting the record
+  - DELETE endpoints return `status_code=status.HTTP_204_NO_CONTENT` and `None`
+  - Same status validation as update endpoint - can only delete items from processed meetings
+---
