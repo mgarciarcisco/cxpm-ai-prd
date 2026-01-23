@@ -80,3 +80,10 @@ class MeetingItemUpdate(BaseModel):
     """Schema for updating a meeting item."""
 
     content: str
+
+
+class MeetingItemCreate(BaseModel):
+    """Schema for creating a new meeting item."""
+
+    section: Section
+    content: str

@@ -13,6 +13,7 @@ from app.schemas.meeting import (
     MeetingListItemResponse,
     UploadResponse,
     MeetingItemUpdate,
+    MeetingItemCreate,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "MeetingListItemResponse",
     "UploadResponse",
     "MeetingItemUpdate",
+    "MeetingItemCreate",
 ]

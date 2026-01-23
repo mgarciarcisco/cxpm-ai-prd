@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Project, MeetingRecap, MeetingItem
 from app.models.meeting_recap import InputType, MeetingStatus
-from app.schemas import UploadResponse, MeetingResponse, MeetingItemResponse
+from sqlalchemy import func
+from app.schemas import UploadResponse, MeetingResponse, MeetingItemResponse, MeetingItemCreate
 from app.services import parse_file, extract_stream, ExtractionError
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
@@ -136,6 +137,57 @@ def delete_meeting(meeting_id: str, db: Session = Depends(get_db)) -> None:
     # Delete the meeting (cascade delete will remove associated items)
     db.delete(meeting)
     db.commit()
+
+
+@router.post("/{meeting_id}/items", response_model=MeetingItemResponse, status_code=status.HTTP_201_CREATED)
+def add_meeting_item(
+    meeting_id: str,
+    item_data: MeetingItemCreate,
+    db: Session = Depends(get_db),
+) -> MeetingItem:
+    """
+    Add a new item to a meeting.
+
+    Sets order to max(order) + 1 for that section.
+    Returns 404 if meeting not found.
+    Returns 400 if meeting status is not processed.
+    """
+    # Find the meeting
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    # Check meeting status
+    if meeting.status != MeetingStatus.processed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot add items unless meeting status is processed",
+        )
+
+    # Get max order for this section (only non-deleted items)
+    max_order = db.query(func.max(MeetingItem.order)).filter(
+        MeetingItem.meeting_id == meeting_id,
+        MeetingItem.section == item_data.section,
+        MeetingItem.is_deleted == False,
+    ).scalar()
+
+    new_order = (max_order or 0) + 1
+
+    # Create new item
+    item = MeetingItem(
+        meeting_id=meeting_id,
+        section=item_data.section,
+        content=item_data.content,
+        order=new_order,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+
+    return item
 
 
 @router.get("/{job_id}/stream")
