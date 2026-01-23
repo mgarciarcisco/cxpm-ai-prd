@@ -22,6 +22,7 @@ from app.schemas.requirement import (
     RequirementResponse,
     RequirementUpdate,
     RequirementsListResponse,
+    RequirementReorderRequest,
 )
 
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     "RequirementResponse",
     "RequirementUpdate",
     "RequirementsListResponse",
+    "RequirementReorderRequest",
 ]

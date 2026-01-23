@@ -65,3 +65,10 @@ class RequirementsListResponse(BaseModel):
     risks_assumptions: list[RequirementResponse] = []
     open_questions: list[RequirementResponse] = []
     action_items: list[RequirementResponse] = []
+
+
+class RequirementReorderRequest(BaseModel):
+    """Schema for reordering requirements within a section."""
+
+    section: Section
+    requirement_ids: list[str]

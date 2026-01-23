@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Project, Requirement, Section, RequirementHistory, Actor, Action
-from app.schemas import RequirementsListResponse, RequirementResponse, RequirementSourceResponse, RequirementUpdate
+from app.schemas import RequirementsListResponse, RequirementResponse, RequirementSourceResponse, RequirementUpdate, RequirementReorderRequest
 
 router = APIRouter(prefix="/api", tags=["requirements"])
 
@@ -148,3 +148,46 @@ def delete_requirement(
 
     db.commit()
     return None
+
+
+@router.put(
+    "/projects/{project_id}/requirements/reorder",
+    status_code=status.HTTP_200_OK,
+)
+def reorder_requirements(
+    project_id: str,
+    reorder_data: RequirementReorderRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Reorder requirements within a section.
+
+    Updates the order field for each requirement based on the provided requirement_ids array.
+    Returns 200 OK with success message.
+    """
+    # Verify project exists
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    # Get all active requirements for this section and project
+    requirements = (
+        db.query(Requirement)
+        .filter(
+            Requirement.project_id == project_id,
+            Requirement.section == reorder_data.section,
+            Requirement.is_active == True,
+        )
+        .all()
+    )
+
+    # Create a lookup dict by ID
+    requirements_by_id = {str(req.id): req for req in requirements}
+
+    # Update order based on position in requirement_ids
+    for new_order, req_id in enumerate(reorder_data.requirement_ids, start=1):
+        if req_id in requirements_by_id:
+            requirements_by_id[req_id].order = new_order  # type: ignore[assignment]
+
+    db.commit()
+
+    return {"success": "true"}
