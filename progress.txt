@@ -1173,3 +1173,16 @@
   - The reusable `apiEndpoint` prop pattern in ItemRow allows same component to work with different API resources (meeting-items vs requirements)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-082
+- **What was implemented**: Added drag-and-drop reordering functionality to RequirementsPage
+- **Files changed**:
+  - `ui/src/pages/RequirementsPage.jsx` - Added drag state (draggedItem, dragOverItem, isReordering), implemented drag handlers (handleDragStart, handleDragEnd, handleDragOver, handleDragLeave, handleDrop), passed drag props to ItemRow, calls PUT /api/projects/{id}/requirements/reorder on drop
+- **Learnings for future iterations:**
+  - RequirementsPage follows the same drag-and-drop pattern as RecapEditor (US-062)
+  - The drag-and-drop handlers need `useCallback` with appropriate dependencies (draggedItem, requirements, id)
+  - Requirements reorder endpoint uses `requirement_ids` parameter (not `item_ids` like MeetingItems)
+  - Local state is updated optimistically after successful API call using setRequirements with section-specific update
+  - Items have a `section` property that matches the section key (e.g., 'problems', 'user_goals')
+  - Manual browser verification needed - no browser testing tools available
+---
