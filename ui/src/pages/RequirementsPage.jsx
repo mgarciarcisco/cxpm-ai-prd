@@ -4,6 +4,7 @@ import { get, put } from '../services/api';
 import { CollapsibleSection } from '../components/common/CollapsibleSection';
 import { ItemRow } from '../components/common/ItemRow';
 import { HistoryPopover } from '../components/requirements/HistoryPopover';
+import { EmptyState } from '../components/common/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import './RequirementsPage.css';
 
@@ -231,6 +232,11 @@ function RequirementsPage() {
     );
   }
 
+  // Check if all sections are empty
+  const hasNoRequirements = !requirements || SECTIONS.every(
+    (section) => !requirements[section.key] || requirements[section.key].length === 0
+  );
+
   return (
     <main className="main-content">
       <section className="requirements-section">
@@ -253,67 +259,84 @@ function RequirementsPage() {
           </button>
         </div>
 
-        <div className="requirements-content">
-          {SECTIONS.map((section) => {
-            const sectionItems = requirements?.[section.key] || [];
-            return (
-              <CollapsibleSection
-                key={section.key}
-                title={section.label}
-                itemCount={sectionItems.length}
-                defaultExpanded={true}
-              >
-                {sectionItems.length > 0 ? (
-                  <div className="requirements-items">
-                    {sectionItems.map((item) => (
-                      <div key={item.id} className="requirements-item-wrapper">
-                        <ItemRow
-                          item={item}
-                          onEdit={handleEditItem}
-                          onDelete={handleDeleteItem}
-                          apiEndpoint="requirements"
-                          draggable={!isReordering}
-                          onDragStart={handleDragStart}
-                          onDragEnd={handleDragEnd}
-                          onDragOver={handleDragOver}
-                          onDragLeave={handleDragLeave}
-                          onDrop={handleDrop}
-                          isDragging={draggedItem?.id === item.id}
-                          isDragOver={dragOverItem?.id === item.id}
-                        />
-                        <div className="requirement-meta">
-                          {item.sources && item.sources.length > 0 && (
-                            <div className="requirement-sources">
-                              <span className="requirement-sources-label">Source:</span>
-                              {item.sources
-                                .filter(source => source.meeting_id)
-                                .map((source, index, filteredSources) => (
-                                  <span key={source.id}>
-                                    <Link
-                                      to={`/app/projects/${id}/meetings/${source.meeting_id}`}
-                                      className="requirement-source-link"
-                                    >
-                                      {source.meeting_title || 'Meeting'}
-                                    </Link>
-                                    {index < filteredSources.length - 1 && ', '}
-                                  </span>
-                                ))}
-                            </div>
-                          )}
-                          {item.history_count > 0 && (
-                            <HistoryPopover requirementId={item.id} />
-                          )}
+        {hasNoRequirements ? (
+          <div className="requirements-empty-state-container">
+            <EmptyState
+              icon={
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M38 8H10C7.79086 8 6 9.79086 6 12V38C6 40.2091 7.79086 42 10 42H38C40.2091 42 42 40.2091 42 38V12C42 9.79086 40.2091 8 38 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 16H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 24H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 32H26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              }
+              title="Apply meeting recaps to build requirements"
+              description="Upload meeting notes, extract items, then apply them to build your working requirements document."
+            />
+          </div>
+        ) : (
+          <div className="requirements-content">
+            {SECTIONS.map((section) => {
+              const sectionItems = requirements?.[section.key] || [];
+              return (
+                <CollapsibleSection
+                  key={section.key}
+                  title={section.label}
+                  itemCount={sectionItems.length}
+                  defaultExpanded={true}
+                >
+                  {sectionItems.length > 0 ? (
+                    <div className="requirements-items">
+                      {sectionItems.map((item) => (
+                        <div key={item.id} className="requirements-item-wrapper">
+                          <ItemRow
+                            item={item}
+                            onEdit={handleEditItem}
+                            onDelete={handleDeleteItem}
+                            apiEndpoint="requirements"
+                            draggable={!isReordering}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            isDragging={draggedItem?.id === item.id}
+                            isDragOver={dragOverItem?.id === item.id}
+                          />
+                          <div className="requirement-meta">
+                            {item.sources && item.sources.length > 0 && (
+                              <div className="requirement-sources">
+                                <span className="requirement-sources-label">Source:</span>
+                                {item.sources
+                                  .filter(source => source.meeting_id)
+                                  .map((source, index, filteredSources) => (
+                                    <span key={source.id}>
+                                      <Link
+                                        to={`/app/projects/${id}/meetings/${source.meeting_id}`}
+                                        className="requirement-source-link"
+                                      >
+                                        {source.meeting_title || 'Meeting'}
+                                      </Link>
+                                      {index < filteredSources.length - 1 && ', '}
+                                    </span>
+                                  ))}
+                              </div>
+                            )}
+                            {item.history_count > 0 && (
+                              <HistoryPopover requirementId={item.id} />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="requirements-empty">No requirements in this section</p>
-                )}
-              </CollapsibleSection>
-            );
-          })}
-        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="requirements-empty">No requirements in this section</p>
+                  )}
+                </CollapsibleSection>
+              );
+            })}
+          </div>
+        )}
       </section>
     </main>
   );

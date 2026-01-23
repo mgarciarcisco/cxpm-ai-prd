@@ -124,7 +124,15 @@ function ProjectDashboard() {
         <div className="dashboard-content">
           <div className="dashboard-panel dashboard-panel--meetings">
             <h3 className="panel-title">Meetings</h3>
-            <MeetingsList meetings={meetings} onMeetingClick={handleMeetingClick} />
+            <MeetingsList
+              meetings={meetings}
+              onMeetingClick={handleMeetingClick}
+              emptyActionButton={
+                <Link to={`/app/projects/${id}/meetings/new`} className="empty-state-link-btn">
+                  Add Meeting
+                </Link>
+              }
+            />
           </div>
 
           <div className="dashboard-panel dashboard-panel--requirements">

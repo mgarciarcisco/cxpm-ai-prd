@@ -138,6 +138,30 @@
   margin: 0 0 1rem 0;
 }
 
+/* Empty State Link Button */
+.empty-state-link-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background-color: #4ECDC4;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.empty-state-link-btn:hover {
+  background-color: #3DBDB5;
+}
+
+.empty-state-link-btn:focus {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 /* Mobile Responsive */
 @media (max-width: 640px) {
   .dashboard-actions {

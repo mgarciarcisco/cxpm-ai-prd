@@ -94,7 +94,19 @@
   text-decoration: underline;
 }
 
-/* Empty State */
+/* Empty State Container (when no requirements at all) */
+.requirements-empty-state-container {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 3rem 1.5rem;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty Section State (individual section empty) */
 .requirements-empty {
   color: #9CA3AF;
   font-size: 0.875rem;

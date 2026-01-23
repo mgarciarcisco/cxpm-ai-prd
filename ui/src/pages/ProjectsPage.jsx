@@ -5,6 +5,7 @@ import ProjectCard from '../components/projects/ProjectCard'
 import Modal from '../components/common/Modal'
 import ProjectForm from '../components/projects/ProjectForm'
 import LoadingSpinner from '../components/common/LoadingSpinner'
+import { EmptyState } from '../components/common/EmptyState'
 import './ProjectsPage.css'
 
 function ProjectsPage() {
@@ -89,15 +90,22 @@ function ProjectsPage() {
         )}
 
         {!loading && !error && projects.length === 0 && (
-          <div className="projects-empty">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M42 30V38C42 39.0609 41.5786 40.0783 40.8284 40.8284C40.0783 41.5786 39.0609 42 38 42H10C8.93913 42 7.92172 41.5786 7.17157 40.8284C6.42143 40.0783 6 39.0609 6 38V10C6 8.93913 6.42143 7.92172 7.17157 7.17157C7.92172 6.42143 8.93913 6 10 6H18" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M34 6H42V14" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M20 28L42 6" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <h3>No projects yet</h3>
-            <p>Create your first project to start converting meeting notes into requirements.</p>
-          </div>
+          <EmptyState
+            icon={
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M42 30V38C42 39.0609 41.5786 40.0783 40.8284 40.8284C40.0783 41.5786 39.0609 42 38 42H10C8.93913 42 7.92172 41.5786 7.17157 40.8284C6.42143 40.0783 6 39.0609 6 38V10C6 8.93913 6.42143 7.92172 7.17157 7.17157C7.92172 6.42143 8.93913 6 10 6H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M34 6H42V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M20 28L42 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            }
+            title="Create your first project"
+            description="Get started by creating a project to organize your meeting notes and requirements."
+            actionButton={
+              <button onClick={() => setIsModalOpen(true)}>
+                New Project
+              </button>
+            }
+          />
         )}
 
         {!loading && !error && projects.length > 0 && (
