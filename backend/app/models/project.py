@@ -23,7 +23,7 @@ class Project(Base):
 
     # Relationships with cascade delete
     meetings = relationship("MeetingRecap", back_populates="project", cascade="all, delete-orphan")
-    # requirements = relationship("Requirement", back_populates="project", cascade="all, delete-orphan")
+    requirements = relationship("Requirement", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Project(id={self.id}, name={self.name})>"
