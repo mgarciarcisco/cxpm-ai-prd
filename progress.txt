@@ -1271,3 +1271,20 @@
   - Edge case handling: partial overlaps classified as "new", ambiguous contradictions prefer "refinement" (assume compatibility)
   - Prompts go in `backend/prompts/` directory with version suffix (e.g., `classify_conflict_v1.txt`)
 ---
+
+## 2026-01-22 - US-089
+- **What was implemented**: Created conflict detection service for identifying duplicates and conflicts when applying meeting items to requirements
+- **Files changed**:
+  - `backend/app/services/conflict.py` - New service with detect_conflicts() function, ConflictDetectionResult/ConflictResult dataclasses, exact text match detection, and LLM-based semantic classification
+  - `backend/app/services/__init__.py` - Updated exports to include detect_conflicts, ConflictDetectionError, ConflictDetectionResult, ConflictResult
+- **Learnings for future iterations:**
+  - Conflict detection service: `from app.services import detect_conflicts, ConflictDetectionResult, ConflictResult`
+  - detect_conflicts() function signature: `detect_conflicts(meeting_id: UUID, db: Session) -> ConflictDetectionResult`
+  - ConflictDetectionResult has three lists: added (new items), skipped (duplicates), conflicts (need user resolution)
+  - ConflictResult contains: item (MeetingItem), decision (str), reason (str), matched_requirement (Requirement|None), classification (str|None)
+  - Exact text match is checked first (fast path) before calling LLM for semantic classification
+  - LLM classification uses 4 categories: duplicate, new, refinement, contradiction
+  - "duplicate" -> skipped (semantic), "new" -> added, "refinement"/"contradiction" -> conflict
+  - Same section filtering: only compare against requirements in the same section as the meeting item
+  - Uses dataclasses for structured return types instead of plain dicts for better type safety
+---
