@@ -1,5 +1,6 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 import LandingPage from './pages/LandingPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDashboard from './pages/ProjectDashboard'
@@ -29,16 +30,18 @@ function App() {
         </div>
       </header>
 
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/app" element={<ProjectsPage />} />
-        <Route path="/app/projects/:id" element={<ProjectDashboard />} />
-        <Route path="/app/projects/:id/meetings/new" element={<UploadMeetingPage />} />
-        <Route path="/app/projects/:id/meetings/:mid" element={<RecapEditorPage />} />
-        <Route path="/app/projects/:id/meetings/:mid/apply" element={<ConflictResolverPage />} />
-        <Route path="/app/projects/:id/requirements" element={<RequirementsPage />} />
-        <Route path="/app/*" element={<ProjectsPage />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/app" element={<ProjectsPage />} />
+          <Route path="/app/projects/:id" element={<ProjectDashboard />} />
+          <Route path="/app/projects/:id/meetings/new" element={<UploadMeetingPage />} />
+          <Route path="/app/projects/:id/meetings/:mid" element={<RecapEditorPage />} />
+          <Route path="/app/projects/:id/meetings/:mid/apply" element={<ConflictResolverPage />} />
+          <Route path="/app/projects/:id/requirements" element={<RequirementsPage />} />
+          <Route path="/app/*" element={<ProjectsPage />} />
+        </Routes>
+      </ErrorBoundary>
     </div>
   )
 }
