@@ -1149,3 +1149,16 @@
   - ItemRow can be used with `draggable={false}` for read-only display (editing/deletion to be added in subsequent stories)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-080
+- **What was implemented**: Added inline editing to RequirementsPage using configurable ItemRow component
+- **Files changed**:
+  - `ui/src/components/common/ItemRow.jsx` - Added `apiEndpoint` prop that allows customizing the API endpoint (defaults to 'meeting-items' for backwards compatibility, can be set to 'requirements')
+  - `ui/src/pages/RequirementsPage.jsx` - Added `handleEditItem` callback to update local state on successful edit, passes `apiEndpoint="requirements"` and `onEdit` props to ItemRow
+- **Learnings for future iterations:**
+  - ItemRow component now supports configurable API endpoints via `apiEndpoint` prop (e.g., 'meeting-items' or 'requirements')
+  - This pattern allows reusing ItemRow across different resource types without code duplication
+  - Default value of 'meeting-items' ensures backwards compatibility with RecapEditor
+  - The same pattern will be used for delete functionality in US-081
+  - Manual browser verification needed - no browser testing tools available
+---
