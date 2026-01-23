@@ -1288,3 +1288,15 @@
   - Same section filtering: only compare against requirements in the same section as the meeting item
   - Uses dataclasses for structured return types instead of plain dicts for better type safety
 ---
+
+## 2026-01-22 - US-090
+- **What was implemented**: Created versioned prompt for suggesting merged text when combining conflicting requirements
+- **Files changed**:
+  - `backend/prompts/suggest_merge_v1.txt` - New prompt template for LLM-based merge suggestions
+- **Learnings for future iterations:**
+  - Merge prompt uses `{existing_content}` and `{new_content}` placeholders (same as classify_conflict prompt)
+  - Output format: single string (plain text), not JSON - different from other prompts that return structured JSON
+  - Prompt emphasizes preserving important details from BOTH inputs while keeping result concise
+  - Includes examples showing merge patterns: adding specifics, combining complementary info, expanding scope
+  - Edge cases: overlapping content (don't repeat), different emphasis (include both), different scope (choose more complete)
+---
