@@ -113,3 +113,38 @@ def update_requirement(
     db.refresh(requirement)
 
     return _build_requirement_response(requirement)
+
+
+@router.delete(
+    "/requirements/{requirement_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_requirement(
+    requirement_id: str,
+    db: Session = Depends(get_db),
+) -> None:
+    """Soft-delete a requirement by setting is_active=False.
+
+    Records the change in RequirementHistory with actor=user, action=deactivated.
+    Returns 204 No Content on success.
+    """
+    # Find the requirement
+    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
+    if not requirement:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
+
+    # Soft-delete by setting is_active to False
+    requirement.is_active = False  # type: ignore[assignment]
+
+    # Record change in history
+    history_entry = RequirementHistory(
+        requirement_id=requirement.id,
+        actor=Actor.user,
+        action=Action.deactivated,
+        old_content=requirement.content,
+        new_content=None,
+    )
+    db.add(history_entry)
+
+    db.commit()
+    return None
