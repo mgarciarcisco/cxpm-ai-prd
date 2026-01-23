@@ -1453,3 +1453,15 @@
   - Resolution state is tracked per item_id using object: {[item_id]: resolution}
   - ConflictCard already handles AI recommendations based on classification (refinement vs contradiction)
 ---
+
+## 2026-01-22 - US-101
+- **What was implemented**: Created MergeEditor component for editing AI-suggested merged text when resolving conflicts
+- **Files changed**:
+  - `ui/src/components/conflicts/MergeEditor.jsx` - Component with loading state, editable textarea, save/cancel buttons, retry on error
+  - `ui/src/components/conflicts/MergeEditor.css` - Styling consistent with ConflictCard design patterns
+- **Learnings for future iterations:**
+  - Conflict resolution components go in `ui/src/components/conflicts/` directory
+  - MergeEditor fetches from POST `/api/meetings/suggest-merge` with `{existing, new}` body
+  - Provides fallback behavior when AI suggestion fails (concatenates both contents)
+  - Component exports both named `MergeEditor` and default export for flexibility
+---
