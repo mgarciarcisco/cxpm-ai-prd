@@ -13,6 +13,8 @@ function ConflictResolverPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [conflictResolutions, setConflictResolutions] = useState({});
+  const [mergedTexts, setMergedTexts] = useState({});
+  const [applyLoading, setApplyLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -104,6 +106,98 @@ function ConflictResolverPage() {
       ...prev,
       ...newResolutions,
     }));
+  };
+
+  /**
+   * Handle merged text save for a conflict
+   */
+  const handleMergedTextSave = (itemId, text) => {
+    setMergedTexts((prev) => ({
+      ...prev,
+      [itemId]: text,
+    }));
+  };
+
+  /**
+   * Check if all conflicts have valid resolutions
+   * For 'conflict_merged' decisions, merged text must also be provided
+   */
+  const allConflictsResolved = () => {
+    if (!applyResults?.conflicts || applyResults.conflicts.length === 0) {
+      return true;
+    }
+
+    return applyResults.conflicts.every((conflict) => {
+      const resolution = conflictResolutions[conflict.item_id];
+      if (!resolution) return false;
+      if (resolution === 'conflict_merged') {
+        return mergedTexts[conflict.item_id]?.trim();
+      }
+      return true;
+    });
+  };
+
+  /**
+   * Handle Apply Changes button click
+   * Collects all decisions and calls POST /api/meetings/{id}/resolve
+   */
+  const handleApplyChanges = async () => {
+    if (!allConflictsResolved()) return;
+
+    setApplyLoading(true);
+
+    try {
+      // Build decisions array
+      const decisions = [];
+
+      // Add "added" items as 'added' decisions
+      if (applyResults?.added) {
+        applyResults.added.forEach((item) => {
+          decisions.push({
+            item_id: item.item_id,
+            decision: 'added',
+          });
+        });
+      }
+
+      // Add "skipped" items as appropriate skipped decisions
+      if (applyResults?.skipped) {
+        applyResults.skipped.forEach((item) => {
+          decisions.push({
+            item_id: item.item_id,
+            decision: item.reason?.includes('semantic') ? 'skipped_semantic' : 'skipped_duplicate',
+          });
+        });
+      }
+
+      // Add conflict resolutions
+      if (applyResults?.conflicts) {
+        applyResults.conflicts.forEach((conflict) => {
+          const resolution = conflictResolutions[conflict.item_id];
+          const decision = {
+            item_id: conflict.item_id,
+            decision: resolution,
+            matched_requirement_id: conflict.matched_requirement?.id,
+          };
+
+          // Add merged text for merge decisions
+          if (resolution === 'conflict_merged') {
+            decision.merged_text = mergedTexts[conflict.item_id];
+          }
+
+          decisions.push(decision);
+        });
+      }
+
+      // Call resolve endpoint
+      await post(`/api/meetings/${mid}/resolve`, { decisions });
+
+      // Success handling will be in US-104
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setApplyLoading(false);
+    }
   };
 
   return (
@@ -205,6 +299,8 @@ function ConflictResolverPage() {
                     conflict={conflict}
                     selectedResolution={conflictResolutions[conflict.item_id] || null}
                     onResolutionChange={handleResolutionChange}
+                    mergedText={mergedTexts[conflict.item_id] || ''}
+                    onMergedTextSave={(text) => handleMergedTextSave(conflict.item_id, text)}
                     formatSection={formatSection}
                   />
                 ))}
@@ -225,6 +321,40 @@ function ConflictResolverPage() {
             </div>
           )}
         </div>
+
+        {/* Page Footer with Apply Changes button */}
+        {(addedCount > 0 || skippedCount > 0 || conflictsCount > 0) && (
+          <div className="conflict-resolver-footer">
+            <div className="footer-summary">
+              {addedCount > 0 && <span>{addedCount} to add</span>}
+              {skippedCount > 0 && <span>{skippedCount} skipped</span>}
+              {conflictsCount > 0 && (
+                <span className={allConflictsResolved() ? 'resolved' : 'unresolved'}>
+                  {Object.keys(conflictResolutions).length}/{conflictsCount} conflicts resolved
+                </span>
+              )}
+            </div>
+            <button
+              className="apply-changes-btn"
+              onClick={handleApplyChanges}
+              disabled={!allConflictsResolved() || applyLoading}
+            >
+              {applyLoading ? (
+                <>
+                  <span className="apply-spinner"></span>
+                  Applying...
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.667 5L7.5 14.167L3.333 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Apply Changes
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </section>
     </main>
   );

@@ -269,6 +269,95 @@
   margin: 0 0 1rem 0;
 }
 
+/* Page Footer */
+.conflict-resolver-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  margin-top: 2rem;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  bottom: 1rem;
+}
+
+.footer-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #6B7280;
+}
+
+.footer-summary span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.footer-summary span::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.footer-summary .resolved {
+  color: #059669;
+}
+
+.footer-summary .unresolved {
+  color: #DC2626;
+}
+
+.apply-changes-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: #2563EB;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.apply-changes-btn:hover:not(:disabled) {
+  background-color: #1D4ED8;
+}
+
+.apply-changes-btn:disabled {
+  background-color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+.apply-changes-btn svg {
+  flex-shrink: 0;
+}
+
+.apply-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: apply-spin 0.8s linear infinite;
+}
+
+@keyframes apply-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Mobile Responsive */
 @media (max-width: 640px) {
   .conflict-resolver-section .section-header {
@@ -296,5 +385,21 @@
 
   .added-item-check {
     align-self: flex-start;
+  }
+
+  .conflict-resolver-footer {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .footer-summary {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .apply-changes-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
