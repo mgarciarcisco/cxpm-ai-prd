@@ -33,7 +33,7 @@ export function useStreaming(jobId) {
     timeoutRef.current = setTimeout(() => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
-        setError('Connection timed out. No events received for 30 seconds.');
+        setError('Connection timed out. No events received for 2 minutes.');
         setStatus('error');
       }
     }, CONNECTION_TIMEOUT_MS);

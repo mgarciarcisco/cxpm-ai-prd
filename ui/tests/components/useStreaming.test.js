@@ -327,15 +327,15 @@ describe('useStreaming', () => {
   })
 
   describe('Connection timeout', () => {
-    it('sets error after 30 seconds with no events', async () => {
+    it('sets error after 2 minutes with no events', async () => {
       const { result, unmount } = renderHook(() => useStreaming('job-123'))
 
-      // Wait for 30 seconds
+      // Wait for 2 minutes (120 seconds)
       act(() => {
-        vi.advanceTimersByTime(30000)
+        vi.advanceTimersByTime(120000)
       })
 
-      expect(result.current.error).toBe('Connection timed out. No events received for 30 seconds.')
+      expect(result.current.error).toBe('Connection timed out. No events received for 2 minutes.')
       expect(result.current.status).toBe('error')
 
       unmount()
@@ -344,9 +344,9 @@ describe('useStreaming', () => {
     it('resets timeout when event received', async () => {
       const { result, unmount } = renderHook(() => useStreaming('job-123'))
 
-      // Advance 20 seconds
+      // Advance 60 seconds
       act(() => {
-        vi.advanceTimersByTime(20000)
+        vi.advanceTimersByTime(60000)
       })
 
       // No timeout yet
@@ -357,21 +357,21 @@ describe('useStreaming', () => {
         MockEventSource.instances[0].simulateOpen()
       })
 
-      // Advance another 20 seconds (40 total from start, but 20 from last event)
+      // Advance another 60 seconds (120 total from start, but 60 from last event)
       act(() => {
-        vi.advanceTimersByTime(20000)
+        vi.advanceTimersByTime(60000)
       })
 
       // Still no timeout (timer was reset)
       expect(result.current.error).toBeNull()
 
-      // Advance 10 more seconds (30 from last event)
+      // Advance 60 more seconds (120 from last event)
       act(() => {
-        vi.advanceTimersByTime(10000)
+        vi.advanceTimersByTime(60000)
       })
 
       // Now should timeout
-      expect(result.current.error).toBe('Connection timed out. No events received for 30 seconds.')
+      expect(result.current.error).toBe('Connection timed out. No events received for 2 minutes.')
 
       unmount()
     })
@@ -380,7 +380,7 @@ describe('useStreaming', () => {
       const { unmount } = renderHook(() => useStreaming('job-123'))
 
       act(() => {
-        vi.advanceTimersByTime(30000)
+        vi.advanceTimersByTime(120000)
       })
 
       expect(MockEventSource.closedInstances.length).toBe(1)
