@@ -67,6 +67,24 @@ function RequirementsPage() {
     });
   };
 
+  /**
+   * Handle delete callback from ItemRow - removes the deleted item from local state
+   * @param {Object} deletedItem - The deleted requirement
+   */
+  const handleDeleteItem = (deletedItem) => {
+    setRequirements((prev) => {
+      if (!prev) return prev;
+      const newRequirements = { ...prev };
+      // Find and remove the item from the correct section
+      Object.keys(newRequirements).forEach((sectionKey) => {
+        newRequirements[sectionKey] = newRequirements[sectionKey].filter(
+          (item) => item.id !== deletedItem.id
+        );
+      });
+      return newRequirements;
+    });
+  };
+
   if (loading) {
     return (
       <main className="main-content">
@@ -114,6 +132,7 @@ function RequirementsPage() {
                         <ItemRow
                           item={item}
                           onEdit={handleEditItem}
+                          onDelete={handleDeleteItem}
                           apiEndpoint="requirements"
                           draggable={false}
                         />
