@@ -1083,3 +1083,14 @@
   - Filter by `is_active == True` when getting requirements to exclude soft-deleted items
   - Returns simple `{"success": "true"}` response to match acceptance criteria "Returns 200 with success"
 ---
+
+## 2026-01-22 - US-075
+- **What was implemented**: Created Requirements history endpoint for viewing change history
+- **Files changed**:
+  - `backend/app/routers/requirements.py` - Added GET /api/requirements/{id}/history endpoint
+- **Learnings for future iterations:**
+  - History endpoint uses direct requirement path: `/api/requirements/{id}/history` (same router prefix pattern as update/delete)
+  - Query ordered by `created_at.desc()` for newest-first ordering
+  - RequirementHistory model has mixed column styles (Mapped vs Column) - use `# type: ignore[arg-type]` for created_at when building response
+  - RequirementHistoryResponse schema already existed and was already exported from `__init__.py`
+---
