@@ -1314,3 +1314,19 @@
   - Error handling: catches LLMError and wraps in MergeError, validates non-empty response
   - Retry logic uses settings.LLM_MAX_RETRIES + 1 for total attempts (same pattern as conflict detection)
 ---
+
+## 2026-01-22 - US-092
+- **What was implemented**: Created POST /api/meetings/{id}/apply endpoint for conflict detection
+- **Files changed**:
+  - `backend/app/routers/meetings.py` - Added apply_meeting endpoint that calls detect_conflicts service
+  - `backend/app/schemas/meeting.py` - Added MatchedRequirementResponse, ConflictResultResponse, ApplyResponse schemas
+  - `backend/app/schemas/__init__.py` - Updated exports to include new schemas
+- **Learnings for future iterations:**
+  - Apply endpoint: `POST /api/meetings/{meeting_id}/apply` - returns categorized items without creating requirements
+  - Response format: `ApplyResponse(added=[], skipped=[], conflicts=[])` where each item is a `ConflictResultResponse`
+  - The endpoint does NOT create requirements - that happens in the resolve endpoint (US-094)
+  - Requires meeting status to be "processed" (returns 400 otherwise)
+  - Returns 404 if meeting not found
+  - Uses `detect_conflicts(UUID(meeting_id), db)` from conflict service to get categorized results
+  - Converts dataclass `ConflictResult` to Pydantic `ConflictResultResponse` for API response
+---
