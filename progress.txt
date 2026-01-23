@@ -1162,3 +1162,14 @@
   - The same pattern will be used for delete functionality in US-081
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-081
+- **What was implemented**: Added delete functionality to RequirementsPage with confirmation dialog
+- **Files changed**:
+  - `ui/src/pages/RequirementsPage.jsx` - Added `handleDeleteItem` callback that removes deleted items from local state, connected `onDelete` prop to ItemRow
+- **Learnings for future iterations:**
+  - ItemRow already had delete confirmation dialog functionality from US-061 and apiEndpoint support from US-080
+  - RequirementsPage just needed to add the `handleDeleteItem` callback and pass `onDelete` prop to ItemRow
+  - The reusable `apiEndpoint` prop pattern in ItemRow allows same component to work with different API resources (meeting-items vs requirements)
+  - Manual browser verification needed - no browser testing tools available
+---
