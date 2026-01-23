@@ -815,3 +815,15 @@
   - Return items in new order by querying with `.order_by(MeetingItem.order)` after commit
   - Same status validation pattern: meeting status must be `processed` to allow reordering
 ---
+
+## 2026-01-22 - US-056
+- **What was implemented**: Created comprehensive tests for MeetingItem endpoints (update, soft-delete, add, reorder)
+- **Files changed**:
+  - `backend/tests/test_meeting_items.py` - 19 tests organized in 5 classes covering all MeetingItem CRUD operations
+- **Learnings for future iterations:**
+  - Helper functions `_set_meeting_status()` and `_create_meeting_item()` directly modify the database for test setup
+  - Use `test_db` fixture (Session) for direct database manipulation in tests
+  - Soft-delete is verified by checking `item.is_deleted is True` and that the item is excluded from GET /api/meetings/{id} response
+  - Status validation tests cover all non-processed statuses: pending, processing, failed, applied
+  - Test classes help organize tests by endpoint: TestUpdateMeetingItem, TestDeleteMeetingItem, TestAddMeetingItem, TestReorderMeetingItems, TestStatusValidation
+---
