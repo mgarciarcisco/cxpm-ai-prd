@@ -898,3 +898,20 @@
   - Confirm button styled as destructive action (red background)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-062
+- **What was implemented**: Added drag-and-drop reordering functionality to ItemRow and RecapEditor components
+- **Files changed**:
+  - `ui/src/components/common/ItemRow.jsx` - Added drag-and-drop props (draggable, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop, isDragging, isDragOver), implemented drag event handlers
+  - `ui/src/components/common/ItemRow.css` - Added styles for dragging state (opacity, scale transform, blue highlight) and drag-over state (drop indicator line, border highlight)
+  - `ui/src/components/meetings/RecapEditor.jsx` - Added drag-and-drop state management (draggedItem, dragOverItem, isReordering), implemented drag handlers with section-only restriction, calls PUT /api/meetings/{id}/items/reorder on drop
+- **Learnings for future iterations:**
+  - HTML5 drag-and-drop uses `draggable` attribute and drag event handlers (onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop)
+  - RecapEditor manages drag state centrally, passing isDragging and isDragOver booleans to ItemRows for styling
+  - Section-only drag restriction: compare `draggedItem.section === targetItem.section` before allowing drop
+  - Drop indicator implemented with CSS `::before` pseudo-element positioned above the target row
+  - `e.preventDefault()` required in `onDragOver` and `onDrop` to allow drop events
+  - `e.dataTransfer.effectAllowed = 'move'` sets the drag cursor style
+  - Smooth animations achieved with CSS transitions on `transform`, `opacity`, and `box-shadow`
+  - Manual browser verification needed - no browser testing tools available
+---
