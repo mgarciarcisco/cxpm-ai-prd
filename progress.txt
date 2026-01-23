@@ -1186,3 +1186,18 @@
   - Items have a `section` property that matches the section key (e.g., 'problems', 'user_goals')
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-083
+- **What was implemented**: Added source meeting links to each requirement item on RequirementsPage
+- **Files changed**:
+  - `backend/app/schemas/requirement.py` - Added `meeting_title` field to RequirementSourceResponse schema
+  - `backend/app/routers/requirements.py` - Updated `_build_requirement_response()` to include meeting title from source relationship
+  - `ui/src/pages/RequirementsPage.jsx` - Added source link display below each ItemRow, with multiple sources as comma-separated links
+  - `ui/src/pages/RequirementsPage.css` - Added styles for source links (teal color, hover underline, italic label)
+- **Learnings for future iterations:**
+  - RequirementSource model has a `meeting` relationship that provides access to meeting title via `source.meeting.title`
+  - Source links need to filter for sources with valid meeting_id (some sources may have null meeting_id if meeting was deleted)
+  - Display format uses "Source: Link1, Link2" pattern with italic label and comma separators
+  - Meeting title fallback to 'Meeting' if title is null (defensive coding)
+  - Manual browser verification needed - no browser testing tools available
+---
