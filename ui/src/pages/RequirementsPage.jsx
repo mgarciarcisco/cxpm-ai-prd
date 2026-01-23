@@ -4,6 +4,7 @@ import { get, put } from '../services/api';
 import { CollapsibleSection } from '../components/common/CollapsibleSection';
 import { ItemRow } from '../components/common/ItemRow';
 import { HistoryPopover } from '../components/requirements/HistoryPopover';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import './RequirementsPage.css';
 
 /**
@@ -212,7 +213,7 @@ function RequirementsPage() {
     return (
       <main className="main-content">
         <div className="requirements-loading">
-          <div className="loading-spinner"></div>
+          <LoadingSpinner size="large" />
           <p>Loading requirements...</p>
         </div>
       </main>

@@ -4,6 +4,7 @@ import { get, post } from '../services/api'
 import ProjectCard from '../components/projects/ProjectCard'
 import Modal from '../components/common/Modal'
 import ProjectForm from '../components/projects/ProjectForm'
+import LoadingSpinner from '../components/common/LoadingSpinner'
 import './ProjectsPage.css'
 
 function ProjectsPage() {
@@ -75,7 +76,7 @@ function ProjectsPage() {
 
         {loading && (
           <div className="projects-loading">
-            <div className="loading-spinner"></div>
+            <LoadingSpinner size="large" />
             <p>Loading projects...</p>
           </div>
         )}

@@ -4,6 +4,7 @@ import { post, get } from '../services/api';
 import { CollapsibleSection } from '../components/common/CollapsibleSection';
 import { ConflictCard } from '../components/conflicts/ConflictCard';
 import { BulkActions } from '../components/conflicts/BulkActions';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import './ConflictResolverPage.css';
 
 function ConflictResolverPage() {
@@ -46,7 +47,7 @@ function ConflictResolverPage() {
     return (
       <main className="main-content">
         <div className="conflict-resolver-loading">
-          <div className="loading-spinner"></div>
+          <LoadingSpinner size="large" />
           <p>Analyzing meeting items...</p>
         </div>
       </main>

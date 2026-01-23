@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { get } from '../services/api';
 import MeetingsList from '../components/meetings/MeetingsList';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import './ProjectDashboard.css';
 
 function ProjectDashboard() {
@@ -64,7 +65,7 @@ function ProjectDashboard() {
     return (
       <main className="main-content">
         <div className="dashboard-loading">
-          <div className="loading-spinner"></div>
+          <LoadingSpinner size="large" />
           <p>Loading project...</p>
         </div>
       </main>
