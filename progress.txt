@@ -1713,3 +1713,18 @@
   - ProjectStatsResponse includes: meeting_count, requirement_count, requirement_counts_by_section (array of {section, count}), last_activity (datetime or null)
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-23 - US-118
+- **What was implemented**: Created comprehensive E2E happy path test covering the complete user journey
+- **Files changed**:
+  - `ui/tests/e2e/happy-path.spec.ts` - Full E2E test with 9 test cases covering: navigate to /app, create project, upload meeting file, wait for streaming, edit item, apply without conflicts, verify source links, upload second meeting with duplicate, verify duplicate skipped, export markdown
+- **Learnings for future iterations:**
+  - E2E tests mock API routes using `page.route('**/api/...')` pattern
+  - For file uploads in Playwright, use `fileInput.setInputFiles({ name, mimeType, buffer: Buffer.from(content) })`
+  - SSE streaming mocks use `contentType: 'text/event-stream'` and format: `event: eventName\ndata: {...}\n\n`
+  - FileDropzone component uses class `file-dropzone__selected` when a file is selected (not `dropzone-selected`)
+  - Use `.first()` for locators that might match multiple elements (e.g., `.requirement-source-link.first()`)
+  - Project dashboard requires mocking `/api/projects/{id}/stats` endpoint for stats display
+  - Download verification in Playwright: use `page.waitForEvent('download')` before triggering download action
+  - Tests pass with `npx playwright test happy-path.spec.ts --project=chromium`
+---
