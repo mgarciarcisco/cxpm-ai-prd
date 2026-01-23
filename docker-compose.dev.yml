@@ -1,0 +1,31 @@
+version: '3.8'
+
+# Development override - use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Backend with hot reload
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+      - backend_data:/app/data
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+
+  # Frontend with hot reload (Vite dev server instead of Nginx)
+  frontend:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: cxpm-frontend-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./ui/src:/app/ui/src
+      - ./ui/public:/app/ui/public
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend

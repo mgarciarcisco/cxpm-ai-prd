@@ -1,24 +1,60 @@
 version: '3.8'
 
 services:
-  cxpm-ai-prd:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: cxpm-ai-prd-app
+  # Ollama - Local LLM server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: cxpm-ollama
     ports:
-      - "3000:3000"
+      - "11434:11434"
     volumes:
-      # Mount source code for development (hot reload)
-      - ./ui/src:/app/ui/src
-      - ./ui/public:/app/ui/public
-      # Persist node_modules in named volume (better performance)
-      - node_modules:/app/ui/node_modules
-    environment:
-      - NODE_ENV=development
+      - ollama_data:/root/.ollama
     restart: unless-stopped
-    stdin_open: true
-    tty: true
+    # Uncomment for GPU support (NVIDIA):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # Backend - FastAPI application
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cxpm-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./data/cxpm.db
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=llama3.2
+      - LLM_TIMEOUT=120
+      - LLM_MAX_RETRIES=1
+      - CHUNK_SIZE_CHARS=4000
+      - MAX_FILE_SIZE_KB=50
+    volumes:
+      - backend_data:/app/data
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  # Frontend - React application (Production mode with Nginx)
+  frontend:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.prod
+    container_name: cxpm-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
 
 volumes:
-  node_modules:
+  ollama_data:
+    driver: local
+  backend_data:
+    driver: local

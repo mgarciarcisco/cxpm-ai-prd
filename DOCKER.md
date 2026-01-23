@@ -2,261 +2,233 @@
 
 This guide provides detailed information about running the CXPM AI PRD application in Docker.
 
-## Overview
+## Architecture
 
-The application is containerized using AlmaLinux 9 as the base image, with Node.js v24.11.1 and npm 11.6.2 installed via nvm.
+The application runs as 3 containers:
 
-## Files
-
-- **Dockerfile** - Defines the container image
-- **docker-compose.yml** - Docker Compose configuration for easy management
-- **.dockerignore** - Files to exclude from the Docker build context
-- **docker_run.sh** - Automated script to build and run the container
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    docker-compose.yml                        │
+├─────────────────┬─────────────────┬─────────────────────────┤
+│    frontend     │     backend     │         ollama          │
+│  (React/Nginx)  │    (FastAPI)    │      (LLM Server)       │
+│     :3000       │      :8000      │        :11434           │
+└─────────────────┴─────────────────┴─────────────────────────┘
+```
 
 ## Quick Start
 
-### Using the automated script (Recommended)
+### 1. Start All Services (Production Mode)
 
 ```bash
-./docker_run.sh
+docker-compose up --build -d
 ```
 
-This script will:
-1. Check if Docker is installed and running
-2. Stop and remove any existing container
-3. Build the Docker image
-4. Start the container with proper configuration
-5. Display useful management commands
-
-### Using Docker Compose
+### 2. Pull the Ollama Model (First Time Only)
 
 ```bash
-# Build and start in detached mode
-docker-compose up --build -d
+docker exec cxpm-ollama ollama pull llama3.2
+```
 
-# View logs
+### 3. Access the Application
+
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8000
+- **API Docs:** http://localhost:8000/docs
+
+## Files
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.yml` | Production setup (3 services) |
+| `docker-compose.dev.yml` | Development overrides (hot reload) |
+| `backend/Dockerfile` | Backend container (FastAPI + Python) |
+| `ui/Dockerfile` | Frontend dev container (Vite) |
+| `ui/Dockerfile.prod` | Frontend prod container (Nginx) |
+| `ui/nginx.conf` | Nginx config for SPA + API proxy |
+| `.dockerignore` | Files to exclude from builds |
+
+## Development Mode
+
+For hot-reload development:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+This enables:
+- Backend code changes auto-reload
+- Frontend code changes auto-reload (Vite HMR)
+- Source code mounted as volumes
+
+## Production Mode
+
+```bash
+docker-compose up --build -d
+```
+
+This:
+- Builds optimized React bundle
+- Serves static files via Nginx
+- Proxies API requests to backend
+- Runs with restart policies
+
+## Commands
+
+### View Logs
+
+```bash
+# All services
 docker-compose logs -f
 
-# Stop
-docker-compose down
+# Specific service
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f ollama
+```
 
-# Restart
+### Stop Services
+
+```bash
+docker-compose down
+```
+
+### Restart Services
+
+```bash
 docker-compose restart
 ```
 
-### Using Docker commands directly
-
-```bash
-# Build the image
-docker build -t cxpm-ai-prd .
-
-# Run the container
-docker run -d \
-  --name cxpm-ai-prd-app \
-  -p 3000:3000 \
-  -v $(pwd)/ui/src:/app/ui/src \
-  -v $(pwd)/ui/public:/app/ui/public \
-  cxpm-ai-prd
-
-# View logs
-docker logs -f cxpm-ai-prd-app
-
-# Stop the container
-docker stop cxpm-ai-prd-app
-
-# Remove the container
-docker rm cxpm-ai-prd-app
-```
-
-## Dockerfile Details
-
-### Base Image
-- **almalinux:9** - Enterprise Linux distribution
-
-### Installed Components
-- Development Tools (gcc, make, etc.)
-- git, curl, wget, lsof
-- nvm (Node Version Manager)
-- Node.js v24.11.1
-- npm 11.6.2
-
-### Build Process
-1. Updates system packages
-2. Installs system dependencies
-3. Installs nvm and Node.js
-4. Creates system-wide symlinks
-5. Copies application files
-6. Installs npm dependencies
-7. Configures to run on port 3000
-
-### Exposed Ports
-- **3000** - Vite development server
-
-## Docker Compose Features
-
-The `docker-compose.yml` configuration includes:
-
-### Volume Mounts
-- `./ui/src:/app/ui/src` - Hot reload for source code changes
-- `./ui/public:/app/ui/public` - Public assets
-- `node_modules` - Named volume for better performance
-
-### Environment
-- `NODE_ENV=development` - Development mode
-
-### Networking
-- Maps port 3000 from container to host
-
-### Auto-restart
-- `restart: unless-stopped` - Automatically restarts on failure
-
-## Development Workflow
-
-### Making Code Changes
-
-With Docker Compose, code changes in `ui/src/` are automatically reflected due to volume mounting and Vite's hot reload:
-
-1. Edit files in `ui/src/`
-2. Save the file
-3. Refresh your browser at `http://localhost:3000`
-
-### Installing New npm Packages
-
-If you need to add new packages:
-
-```bash
-# Stop the container
-docker-compose down
-
-# Add package to ui/package.json manually, or:
-docker-compose run cxpm-ai-prd npm install <package-name>
-
-# Rebuild and start
-docker-compose up --build -d
-```
-
-### Rebuilding the Image
-
-After changes to:
-- `Dockerfile`
-- `package.json` (dependencies)
-- Build configuration
-
-Rebuild the image:
+### Rebuild After Code Changes
 
 ```bash
 docker-compose up --build -d
-# or
-docker build -t cxpm-ai-prd . --no-cache
+```
+
+### Access Container Shell
+
+```bash
+# Backend
+docker exec -it cxpm-backend /bin/sh
+
+# Frontend
+docker exec -it cxpm-frontend /bin/sh
+
+# Ollama
+docker exec -it cxpm-ollama /bin/bash
+```
+
+### Ollama Model Management
+
+```bash
+# List models
+docker exec cxpm-ollama ollama list
+
+# Pull a model
+docker exec cxpm-ollama ollama pull llama3.2
+
+# Remove a model
+docker exec cxpm-ollama ollama rm llama3.2
+```
+
+## Environment Variables
+
+### Backend
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `sqlite:///./data/cxpm.db` | Database connection |
+| `OLLAMA_BASE_URL` | `http://ollama:11434` | Ollama API URL |
+| `OLLAMA_MODEL` | `llama3.2` | Model to use |
+| `ANTHROPIC_API_KEY` | (none) | Claude API key (fallback) |
+| `LLM_TIMEOUT` | `120` | LLM request timeout (seconds) |
+| `MAX_FILE_SIZE_KB` | `50` | Max upload file size |
+
+### Frontend (Build-time)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_API_URL` | `http://localhost:8000` | Backend API URL |
+
+## GPU Support (Optional)
+
+For faster Ollama inference with NVIDIA GPU:
+
+1. Install [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+
+2. Uncomment GPU lines in `docker-compose.yml`:
+
+```yaml
+ollama:
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+```
+
+3. Restart:
+
+```bash
+docker-compose up -d
+```
+
+## Data Persistence
+
+Data is persisted in Docker volumes:
+
+| Volume | Purpose |
+|--------|---------|
+| `ollama_data` | Ollama models (~2-8GB per model) |
+| `backend_data` | SQLite database |
+
+To backup:
+
+```bash
+docker run --rm -v cxpm-ai-prd_backend_data:/data -v $(pwd):/backup alpine tar cvf /backup/backup.tar /data
 ```
 
 ## Troubleshooting
 
 ### Container won't start
 
-Check logs:
 ```bash
-docker-compose logs
-# or
-docker logs cxpm-ai-prd-app
+docker-compose logs <service-name>
 ```
 
-### Port already in use
+### Ollama connection refused
 
-Stop any processes using port 3000:
-```bash
-# Find process
-lsof -ti:3000
-
-# Kill process
-kill -9 $(lsof -ti:3000)
-
-# Or change the port in docker-compose.yml:
-ports:
-  - "3001:3000"  # Use 3001 on host instead
-```
-
-### Permission denied errors
-
-Ensure Docker daemon is running and you have permissions:
-```bash
-# Check Docker status
-docker info
-
-# Add user to docker group (Linux)
-sudo usermod -aG docker $USER
-# Log out and back in for changes to take effect
-```
-
-### Image build fails
-
-Try building without cache:
-```bash
-docker-compose build --no-cache
-# or
-docker build -t cxpm-ai-prd . --no-cache
-```
-
-### Hot reload not working
-
-Ensure volume mounts are correct and container can write to those directories.
-
-## Production Deployment
-
-For production, you should:
-
-1. Create a production Dockerfile that builds optimized assets:
-
-```dockerfile
-# ... build stage ...
-RUN npm run build
-
-# Use a lightweight web server
-FROM nginx:alpine
-COPY --from=build /app/ui/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-2. Use environment variables for configuration
-3. Implement proper logging
-4. Set up health checks
-5. Use orchestration tools (Kubernetes, Docker Swarm)
-
-## Useful Commands
+Wait for Ollama to fully start (can take 30-60 seconds on first run):
 
 ```bash
-# View container resource usage
-docker stats cxpm-ai-prd-app
-
-# Access container shell
-docker exec -it cxpm-ai-prd-app /bin/bash
-
-# Copy files from container
-docker cp cxpm-ai-prd-app:/app/ui/dist ./dist
-
-# Inspect container
-docker inspect cxpm-ai-prd-app
-
-# Remove all stopped containers
-docker container prune
-
-# Remove unused images
-docker image prune
+docker-compose logs -f ollama
+# Wait for "Ollama is running"
 ```
 
-## Security Considerations
+### Frontend can't reach backend
 
-- The container runs as root by default (suitable for development)
-- For production, create a non-root user
-- Keep the base image updated: `docker pull almalinux:9`
-- Scan images for vulnerabilities: `docker scan cxpm-ai-prd`
-- Don't include sensitive data in the image
-- Use secrets management for credentials
+In production mode, Nginx proxies `/api/*` to the backend. Check:
+- Backend is running: `docker-compose ps`
+- Backend logs: `docker-compose logs backend`
 
-## Resources
+### Out of disk space
 
-- [Docker Documentation](https://docs.docker.com/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [AlmaLinux Documentation](https://wiki.almalinux.org/)
-- [Best practices for writing Dockerfiles](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+Ollama models are large. To free space:
+
+```bash
+# Remove unused models
+docker exec cxpm-ollama ollama rm <model-name>
+
+# Clean Docker system
+docker system prune -a
+```
+
+## First-Time Setup Checklist
+
+1. [ ] Docker and Docker Compose installed
+2. [ ] Run `docker-compose up --build -d`
+3. [ ] Pull Ollama model: `docker exec cxpm-ollama ollama pull llama3.2`
+4. [ ] Open http://localhost:3000
+5. [ ] Create a project and test extraction
