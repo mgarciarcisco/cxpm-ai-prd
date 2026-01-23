@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { get, post } from '../services/api'
+import { get, post, put } from '../services/api'
 import ProjectCard from '../components/projects/ProjectCard'
 import Modal from '../components/common/Modal'
 import ProjectForm from '../components/projects/ProjectForm'
@@ -13,6 +13,7 @@ function ProjectsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState(null)
 
   useEffect(() => {
     fetchProjects()
@@ -32,8 +33,8 @@ function ProjectsPage() {
   }
 
   const handleEdit = (project) => {
-    // Will be implemented in US-120
-    console.log('Edit project:', project)
+    setEditingProject(project)
+    setIsModalOpen(true)
   }
 
   const handleDelete = (project) => {
@@ -43,12 +44,21 @@ function ProjectsPage() {
 
   const handleCreateProject = async (projectData) => {
     const newProject = await post('/api/projects', projectData)
-    setIsModalOpen(false)
+    handleCloseModal()
     setProjects((prev) => [...prev, newProject])
+  }
+
+  const handleUpdateProject = async (projectData) => {
+    const updatedProject = await put(`/api/projects/${editingProject.id}`, projectData)
+    handleCloseModal()
+    setProjects((prev) =>
+      prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
+    )
   }
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
+    setEditingProject(null)
   }
 
   return (
@@ -60,7 +70,7 @@ function ProjectsPage() {
         </div>
 
         <div className="projects-header">
-          <button className="new-project-btn" onClick={() => setIsModalOpen(true)}>
+          <button className="new-project-btn" onClick={() => { setEditingProject(null); setIsModalOpen(true); }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 3.33334V12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M3.33334 8H12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -70,8 +80,12 @@ function ProjectsPage() {
         </div>
 
         {isModalOpen && (
-          <Modal title="Create New Project" onClose={handleCloseModal}>
-            <ProjectForm onSubmit={handleCreateProject} onCancel={handleCloseModal} />
+          <Modal title={editingProject ? "Edit Project" : "Create New Project"} onClose={handleCloseModal}>
+            <ProjectForm
+              project={editingProject}
+              onSubmit={editingProject ? handleUpdateProject : handleCreateProject}
+              onCancel={handleCloseModal}
+            />
           </Modal>
         )}
 
@@ -101,7 +115,7 @@ function ProjectsPage() {
             title="Create your first project"
             description="Get started by creating a project to organize your meeting notes and requirements."
             actionButton={
-              <button onClick={() => setIsModalOpen(true)}>
+              <button onClick={() => { setEditingProject(null); setIsModalOpen(true); }}>
                 New Project
               </button>
             }
