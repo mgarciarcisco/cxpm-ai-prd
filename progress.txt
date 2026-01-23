@@ -1728,3 +1728,14 @@
   - Download verification in Playwright: use `page.waitForEvent('download')` before triggering download action
   - Tests pass with `npx playwright test happy-path.spec.ts --project=chromium`
 ---
+
+## 2026-01-23 - US-119
+- **What was implemented**: Updated README.md with comprehensive documentation for the Meeting Notes to Requirements feature
+- **Files changed**:
+  - `README.md` - Added feature documentation section with user flow, API endpoints with examples, development setup, test instructions, updated project structure, and technology stack
+- **Learnings for future iterations:**
+  - Documentation should cover the full user flow from upload through to viewing requirements
+  - API examples using curl help developers understand the API contract quickly
+  - Project structure section should reflect the actual codebase organization including backend services and frontend components
+  - Typecheck is sufficient for documentation-only changes (no code logic to test)
+---
