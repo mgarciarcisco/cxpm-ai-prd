@@ -883,3 +883,18 @@
   - Save button disabled when content is empty or saving is in progress
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-22 - US-061
+- **What was implemented**: Added delete confirmation dialog to ItemRow component
+- **Files changed**:
+  - `ui/src/components/common/ItemRow.jsx` - Added confirmation dialog state (isConfirmingDelete, isDeleting, deleteError), handleDeleteClick opens dialog, handleCancelDelete/handleConfirmDelete handlers, confirmation UI with warning icon, API call to DELETE /api/meeting-items/{id}
+  - `ui/src/components/common/ItemRow.css` - Added styles for delete confirmation: red-themed container, warning message, error display, cancel/confirm buttons
+- **Learnings for future iterations:**
+  - ItemRow now has three render states: normal view, edit mode, and delete confirmation mode
+  - Delete confirmation uses same inline pattern as edit mode (conditional return based on state)
+  - `del` function from api.js is used for DELETE requests (returns void on 204 No Content)
+  - onDelete callback is called after successful API deletion to let parent remove item from list
+  - Confirmation dialog shows warning icon (circle with exclamation) styled in red
+  - Confirm button styled as destructive action (red background)
+  - Manual browser verification needed - no browser testing tools available
+---
