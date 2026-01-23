@@ -1686,3 +1686,17 @@
   - Input font-size 16px prevents iOS auto-zoom behavior
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-23 - US-116
+- **What was implemented**: Created GET /api/projects/{id}/stats endpoint that returns project statistics
+- **Files changed**:
+  - `backend/app/schemas/project.py` - Added SectionCount and ProjectStatsResponse schemas
+  - `backend/app/schemas/__init__.py` - Exported new schemas
+  - `backend/app/routers/projects.py` - Added get_project_stats endpoint with meeting_count, requirement_count (with per-section breakdown), and last_activity
+  - `backend/tests/test_projects.py` - Added tests for stats endpoint (empty project and 404 cases)
+- **Learnings for future iterations:**
+  - Use `func.count()` and `func.max()` from sqlalchemy for aggregate queries
+  - Group by queries return tuples of (column, aggregate) when using `.all()`
+  - For Enum columns in group by, access `.value` to get the string representation
+  - last_activity falls back to: applied_at → meeting created_at → project created_at
+---
