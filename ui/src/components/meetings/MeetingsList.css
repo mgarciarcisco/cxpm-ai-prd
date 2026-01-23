@@ -12,6 +12,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 1rem;
+  min-height: 60px;
   background-color: #FFFFFF;
   border: 1px solid #E5E7EB;
   border-radius: 8px;
@@ -69,4 +70,24 @@
   margin: 0;
   font-size: 0.875rem;
   color: #6B7280;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .meetings-list-item {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-height: auto;
+  }
+
+  .meetings-list-item-content {
+    margin-right: 0;
+    width: 100%;
+  }
+
+  .meetings-list-item-title {
+    white-space: normal;
+  }
 }

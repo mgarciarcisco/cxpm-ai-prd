@@ -1,5 +1,5 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import LandingPage from './pages/LandingPage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -11,24 +11,75 @@ import ConflictResolverPage from './pages/ConflictResolverPage'
 import './App.css'
 
 function App() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const location = useLocation()
+  const isInApp = location.pathname.startsWith('/app')
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen)
+  }
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false)
+  }
+
   return (
     <div className="app">
       <header className="header">
         <div className="header-left">
-          <div className="logo">
+          <Link to="/" className="logo" onClick={closeMobileMenu}>
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="36" height="36" rx="8" fill="#4ECDC4"/>
               <path d="M10 13h16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
               <path d="M10 18h16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
               <path d="M10 23h16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
-          </div>
+          </Link>
           <div className="header-text">
-            <h1>CX AI Assistant for Product Management</h1>
+            <h1>CX AI Assistant</h1>
             <span className="alpha-badge">ALPHA</span>
           </div>
         </div>
+
+        <nav className={`header-nav ${mobileMenuOpen ? 'header-nav--open' : ''}`}>
+          <Link
+            to="/"
+            className={`header-nav-link ${location.pathname === '/' ? 'header-nav-link--active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            Home
+          </Link>
+          <Link
+            to="/app"
+            className={`header-nav-link ${isInApp ? 'header-nav-link--active' : ''}`}
+            onClick={closeMobileMenu}
+          >
+            Projects
+          </Link>
+        </nav>
+
+        <button
+          className="mobile-menu-btn"
+          onClick={toggleMobileMenu}
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileMenuOpen}
+        >
+          {mobileMenuOpen ? (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          )}
+        </button>
       </header>
+
+      {mobileMenuOpen && <div className="mobile-menu-overlay" onClick={closeMobileMenu} />}
 
       <ErrorBoundary>
         <Routes>
