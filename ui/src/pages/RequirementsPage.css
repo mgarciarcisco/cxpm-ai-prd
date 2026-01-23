@@ -25,13 +25,20 @@
   gap: 0.25rem;
 }
 
+/* Requirement Meta (sources + history) */
+.requirement-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-left: 2.25rem;
+  margin-top: -0.125rem;
+  margin-bottom: 0.25rem;
+}
+
 /* Source Links */
 .requirement-sources {
   font-size: 0.75rem;
   color: #6B7280;
-  padding-left: 2.25rem;
-  margin-top: -0.125rem;
-  margin-bottom: 0.25rem;
 }
 
 .requirement-sources-label {

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { get, put } from '../services/api';
 import { CollapsibleSection } from '../components/common/CollapsibleSection';
 import { ItemRow } from '../components/common/ItemRow';
+import { HistoryPopover } from '../components/requirements/HistoryPopover';
 import './RequirementsPage.css';
 
 /**
@@ -233,24 +234,29 @@ function RequirementsPage() {
                           isDragging={draggedItem?.id === item.id}
                           isDragOver={dragOverItem?.id === item.id}
                         />
-                        {item.sources && item.sources.length > 0 && (
-                          <div className="requirement-sources">
-                            <span className="requirement-sources-label">Source:</span>
-                            {item.sources
-                              .filter(source => source.meeting_id)
-                              .map((source, index, filteredSources) => (
-                                <span key={source.id}>
-                                  <Link
-                                    to={`/app/projects/${id}/meetings/${source.meeting_id}`}
-                                    className="requirement-source-link"
-                                  >
-                                    {source.meeting_title || 'Meeting'}
-                                  </Link>
-                                  {index < filteredSources.length - 1 && ', '}
-                                </span>
-                              ))}
-                          </div>
-                        )}
+                        <div className="requirement-meta">
+                          {item.sources && item.sources.length > 0 && (
+                            <div className="requirement-sources">
+                              <span className="requirement-sources-label">Source:</span>
+                              {item.sources
+                                .filter(source => source.meeting_id)
+                                .map((source, index, filteredSources) => (
+                                  <span key={source.id}>
+                                    <Link
+                                      to={`/app/projects/${id}/meetings/${source.meeting_id}`}
+                                      className="requirement-source-link"
+                                    >
+                                      {source.meeting_title || 'Meeting'}
+                                    </Link>
+                                    {index < filteredSources.length - 1 && ', '}
+                                  </span>
+                                ))}
+                            </div>
+                          )}
+                          {item.history_count > 0 && (
+                            <HistoryPopover requirementId={item.id} />
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
