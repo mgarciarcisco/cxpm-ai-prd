@@ -1557,3 +1557,15 @@
   - CSS keyframes named `loading-spinner-spin` to avoid conflicts with page-specific `spin` animations
   - Manual browser verification needed - no browser testing tools available
 ---
+
+## 2026-01-23 - US-108
+- **What was implemented**: Created ErrorBoundary component for graceful error handling
+- **Files changed**:
+  - `ui/src/components/common/ErrorBoundary.jsx` - React class component error boundary with Try Again reset functionality
+  - `ui/src/components/common/ErrorBoundary.css` - Styles for error fallback UI (centered layout, error icon, message, button)
+- **Learnings for future iterations:**
+  - React Error Boundaries must be class components (cannot use hooks for componentDidCatch/getDerivedStateFromError)
+  - Use `role="alert"` for accessibility on error messages
+  - Primary button color is #4ECDC4 with hover #3DB9B0
+  - Frontend has no lint script, use `npm run build` to check for build errors
+---
