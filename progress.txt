@@ -1059,3 +1059,14 @@
   - The `_build_requirement_response()` helper function is reused for consistent response format
   - Import RequirementHistory, Actor, Action from models for history recording
 ---
+
+## 2026-01-22 - US-073
+- **What was implemented**: Created Requirements delete endpoint for soft-deleting requirements
+- **Files changed**:
+  - `backend/app/routers/requirements.py` - Added DELETE /api/requirements/{id} endpoint with soft-delete pattern (sets is_active=False), records history with actor=user, action=deactivated
+- **Learnings for future iterations:**
+  - Soft-delete pattern for requirements: set `is_active = False` (vs `is_deleted = True` for MeetingItem)
+  - DELETE endpoints return `status_code=status.HTTP_204_NO_CONTENT` and `None`
+  - History entry for deactivation records old_content but sets new_content to None
+  - Same router pattern as update endpoint - direct access via `/api/requirements/{id}`
+---
