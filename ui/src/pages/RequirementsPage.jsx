@@ -29,6 +29,9 @@ function RequirementsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Export state
+  const [isExporting, setIsExporting] = useState(false);
+
   // Drag-and-drop state
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
@@ -52,6 +55,35 @@ function RequirementsPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  /**
+   * Handle export button click - downloads requirements as Markdown file
+   */
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/projects/${id}/requirements/export`);
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const filename = project?.name
+        ? `${project.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-requirements.md`
+        : 'requirements.md';
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -202,8 +234,22 @@ function RequirementsPage() {
     <main className="main-content">
       <section className="requirements-section">
         <div className="section-header">
-          <h2>{project?.name || 'Project'} - Requirements</h2>
-          <Link to={`/app/projects/${id}`} className="back-link">Back to Project</Link>
+          <div className="section-header-title">
+            <h2>{project?.name || 'Project'} - Requirements</h2>
+            <Link to={`/app/projects/${id}`} className="back-link">Back to Project</Link>
+          </div>
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="export-btn"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 10V12.6667C14 13.0203 13.8595 13.3594 13.6095 13.6095C13.3594 13.8595 13.0203 14 12.6667 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M4.66666 6.66667L8 10L11.3333 6.66667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M8 10V2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            {isExporting ? 'Exporting...' : 'Export as Markdown'}
+          </button>
         </div>
 
         <div className="requirements-content">
