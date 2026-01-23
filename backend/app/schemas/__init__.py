@@ -5,6 +5,8 @@ from app.schemas.project import (
     ProjectUpdate,
     ProjectResponse,
     ProjectList,
+    SectionCount,
+    ProjectStatsResponse,
 )
 from app.schemas.meeting import (
     MeetingUpload,
@@ -38,6 +40,8 @@ __all__ = [
     "ProjectUpdate",
     "ProjectResponse",
     "ProjectList",
+    "SectionCount",
+    "ProjectStatsResponse",
     "MeetingUpload",
     "MeetingItemResponse",
     "MeetingResponse",

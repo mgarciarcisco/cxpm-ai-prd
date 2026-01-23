@@ -147,3 +147,30 @@ def test_delete_project_returns_404_for_missing(test_client: TestClient) -> None
     response = test_client.delete(f"/api/projects/{fake_uuid}")
     assert response.status_code == 404
     assert response.json()["detail"] == "Project not found"
+
+
+def test_get_project_stats_empty_project(test_client: TestClient) -> None:
+    """Test GET /api/projects/{id}/stats returns zeros for empty project."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Stats Test Project"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Get stats
+    response = test_client.get(f"/api/projects/{project_id}/stats")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["meeting_count"] == 0
+    assert data["requirement_count"] == 0
+    assert data["requirement_counts_by_section"] == []
+    assert data["last_activity"] is not None  # Falls back to project created_at
+
+
+def test_get_project_stats_returns_404_for_missing(test_client: TestClient) -> None:
+    """Test GET /api/projects/{id}/stats returns 404 for non-existent project."""
+    fake_uuid = "00000000-0000-0000-0000-000000000000"
+    response = test_client.get(f"/api/projects/{fake_uuid}/stats")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Project not found"

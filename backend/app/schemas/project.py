@@ -36,3 +36,19 @@ class ProjectList(BaseModel):
     """Schema for list of projects."""
 
     projects: list[ProjectResponse]
+
+
+class SectionCount(BaseModel):
+    """Schema for requirement count per section."""
+
+    section: str
+    count: int
+
+
+class ProjectStatsResponse(BaseModel):
+    """Schema for project statistics response."""
+
+    meeting_count: int
+    requirement_count: int
+    requirement_counts_by_section: list[SectionCount]
+    last_activity: Optional[datetime] = None
