@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { put } from '../../services/api';
+import { put, del } from '../../services/api';
 import './ItemRow.css';
 
 export function ItemRow({ item, onEdit, onDelete }) {
@@ -7,6 +7,9 @@ export function ItemRow({ item, onEdit, onDelete }) {
   const [editedContent, setEditedContent] = useState(item.content);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   const handleEditClick = (e) => {
     e.stopPropagation();
@@ -17,7 +20,32 @@ export function ItemRow({ item, onEdit, onDelete }) {
 
   const handleDeleteClick = (e) => {
     e.stopPropagation();
-    onDelete(item);
+    setIsConfirmingDelete(true);
+    setDeleteError(null);
+  };
+
+  const handleCancelDelete = (e) => {
+    e.stopPropagation();
+    setIsConfirmingDelete(false);
+    setDeleteError(null);
+  };
+
+  const handleConfirmDelete = async (e) => {
+    e.stopPropagation();
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await del(`/api/meeting-items/${item.id}`);
+      setIsConfirmingDelete(false);
+      // Notify parent of the deletion
+      if (onDelete) {
+        onDelete(item);
+      }
+    } catch (err) {
+      setDeleteError(err.message || 'Failed to delete item');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleCancelEdit = (e) => {
@@ -90,6 +118,44 @@ export function ItemRow({ item, onEdit, onDelete }) {
               type="button"
             >
               {isSaving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isConfirmingDelete) {
+    return (
+      <div className="item-row item-row--confirming-delete">
+        <div className="item-row-delete-container">
+          <div className="item-row-delete-message">
+            <svg className="item-row-delete-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10 6V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10 14H10.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Delete this item?</span>
+          </div>
+          {deleteError && (
+            <div className="item-row-delete-error">{deleteError}</div>
+          )}
+          <div className="item-row-delete-actions">
+            <button
+              className="item-row-delete-btn item-row-delete-btn--cancel"
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              className="item-row-delete-btn item-row-delete-btn--confirm"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              type="button"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </button>
           </div>
         </div>

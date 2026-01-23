@@ -177,3 +177,86 @@
   outline: 2px solid #3B82F6;
   outline-offset: 2px;
 }
+
+/* Delete confirmation styles */
+.item-row--confirming-delete {
+  border-color: #FCA5A5;
+  background-color: #FEF2F2;
+}
+
+.item-row-delete-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item-row-delete-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #991B1B;
+}
+
+.item-row-delete-icon {
+  flex-shrink: 0;
+  color: #DC2626;
+}
+
+.item-row-delete-error {
+  font-size: 0.75rem;
+  color: #DC2626;
+  padding: 0.5rem;
+  background-color: #FFFFFF;
+  border: 1px solid #FCA5A5;
+  border-radius: 4px;
+}
+
+.item-row-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.item-row-delete-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.item-row-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.item-row-delete-btn--cancel {
+  background-color: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.item-row-delete-btn--cancel:hover:not(:disabled) {
+  background-color: #F3F4F6;
+}
+
+.item-row-delete-btn--confirm {
+  background-color: #DC2626;
+  border: 1px solid #DC2626;
+  color: #FFFFFF;
+}
+
+.item-row-delete-btn--confirm:hover:not(:disabled) {
+  background-color: #B91C1C;
+  border-color: #B91C1C;
+}
+
+.item-row-delete-btn--confirm:focus-visible,
+.item-row-delete-btn--cancel:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
