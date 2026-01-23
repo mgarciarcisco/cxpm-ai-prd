@@ -10,6 +10,7 @@ import './ProjectsPage.css'
 
 function ProjectsPage() {
   const [projects, setProjects] = useState([])
+  const [projectStats, setProjectStats] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -22,12 +23,32 @@ function ProjectsPage() {
     fetchProjects()
   }, [])
 
+  const fetchProjectStats = async (projectList) => {
+    try {
+      const statsPromises = projectList.map(p =>
+        get(`/api/projects/${p.id}/stats`)
+          .then(stats => ({ id: p.id, stats }))
+          .catch(() => ({ id: p.id, stats: null }))
+      )
+      const statsResults = await Promise.all(statsPromises)
+      const statsMap = Object.fromEntries(
+        statsResults.map(r => [r.id, r.stats])
+      )
+      setProjectStats(statsMap)
+    } catch (err) {
+      console.error('Failed to fetch project stats:', err)
+    }
+  }
+
   const fetchProjects = async () => {
     try {
       setLoading(true)
       setError(null)
       const data = await get('/api/projects')
       setProjects(data || [])
+      if (data && data.length > 0) {
+        await fetchProjectStats(data)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -58,6 +79,11 @@ function ProjectsPage() {
     try {
       await del(`/api/projects/${deletingProject.id}`)
       setProjects((prev) => prev.filter((p) => p.id !== deletingProject.id))
+      // Clean up stats for deleted project
+      setProjectStats((prev) => {
+        const { [deletingProject.id]: _, ...rest } = prev
+        return rest
+      })
       setDeletingProject(null)
     } catch (err) {
       setDeleteError(err.message || 'Failed to delete project')
@@ -70,6 +96,11 @@ function ProjectsPage() {
     const newProject = await post('/api/projects', projectData)
     handleCloseModal()
     setProjects((prev) => [...prev, newProject])
+    // Initialize stats for new project (0 meetings)
+    setProjectStats((prev) => ({
+      ...prev,
+      [newProject.id]: { meeting_count: 0, requirement_count: 0, last_activity: newProject.created_at }
+    }))
   }
 
   const handleUpdateProject = async (projectData) => {
@@ -193,8 +224,8 @@ function ProjectsPage() {
               <ProjectCard
                 key={project.id}
                 project={project}
-                meetingCount={0}
-                lastActivity={project.updated_at}
+                meetingCount={projectStats[project.id]?.meeting_count ?? 0}
+                lastActivity={projectStats[project.id]?.last_activity || project.updated_at}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
