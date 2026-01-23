@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { get } from '../services/api';
+import { get, put } from '../services/api';
 import { CollapsibleSection } from '../components/common/CollapsibleSection';
 import { ItemRow } from '../components/common/ItemRow';
 import './RequirementsPage.css';
@@ -27,6 +27,11 @@ function RequirementsPage() {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Drag-and-drop state
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverItem, setDragOverItem] = useState(null);
+  const [isReordering, setIsReordering] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -85,6 +90,91 @@ function RequirementsPage() {
     });
   };
 
+  // Drag-and-drop handlers
+  const handleDragStart = useCallback((e, item) => {
+    setDraggedItem(item);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', item.id);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedItem(null);
+    setDragOverItem(null);
+  }, []);
+
+  const handleDragOver = useCallback((e, item) => {
+    // Only allow drop within the same section
+    if (draggedItem && draggedItem.section === item.section && draggedItem.id !== item.id) {
+      setDragOverItem(item);
+    }
+  }, [draggedItem]);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverItem(null);
+  }, []);
+
+  const handleDrop = useCallback(async (e, targetItem) => {
+    e.preventDefault();
+
+    if (!draggedItem || !targetItem || draggedItem.id === targetItem.id) {
+      setDraggedItem(null);
+      setDragOverItem(null);
+      return;
+    }
+
+    // Only allow drops within the same section
+    if (draggedItem.section !== targetItem.section) {
+      setDraggedItem(null);
+      setDragOverItem(null);
+      return;
+    }
+
+    const section = draggedItem.section;
+    const sectionItems = requirements?.[section] || [];
+
+    // Get indices
+    const draggedIndex = sectionItems.findIndex(item => item.id === draggedItem.id);
+    const targetIndex = sectionItems.findIndex(item => item.id === targetItem.id);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedItem(null);
+      setDragOverItem(null);
+      return;
+    }
+
+    // Create new order
+    const newItems = [...sectionItems];
+    newItems.splice(draggedIndex, 1);
+    newItems.splice(targetIndex, 0, draggedItem);
+
+    const newItemIds = newItems.map(item => item.id);
+
+    setDraggedItem(null);
+    setDragOverItem(null);
+    setIsReordering(true);
+
+    try {
+      await put(`/api/projects/${id}/requirements/reorder`, {
+        section: section,
+        requirement_ids: newItemIds
+      });
+
+      // Update local state with new order
+      setRequirements((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [section]: newItems
+        };
+      });
+    } catch (err) {
+      console.error('Failed to reorder requirements:', err);
+      // Could show a toast/error message here
+    } finally {
+      setIsReordering(false);
+    }
+  }, [draggedItem, requirements, id]);
+
   if (loading) {
     return (
       <main className="main-content">
@@ -134,7 +224,14 @@ function RequirementsPage() {
                           onEdit={handleEditItem}
                           onDelete={handleDeleteItem}
                           apiEndpoint="requirements"
-                          draggable={false}
+                          draggable={!isReordering}
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop}
+                          isDragging={draggedItem?.id === item.id}
+                          isDragOver={dragOverItem?.id === item.id}
                         />
                       </div>
                     ))}
