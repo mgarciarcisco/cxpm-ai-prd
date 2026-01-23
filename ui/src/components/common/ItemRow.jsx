@@ -1,15 +1,101 @@
+import { useState } from 'react';
+import { put } from '../../services/api';
 import './ItemRow.css';
 
 export function ItemRow({ item, onEdit, onDelete }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(item.content);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState(null);
+
   const handleEditClick = (e) => {
     e.stopPropagation();
-    onEdit(item);
+    setIsEditing(true);
+    setEditedContent(item.content);
+    setError(null);
   };
 
   const handleDeleteClick = (e) => {
     e.stopPropagation();
     onDelete(item);
   };
+
+  const handleCancelEdit = (e) => {
+    e.stopPropagation();
+    setIsEditing(false);
+    setEditedContent(item.content);
+    setError(null);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.stopPropagation();
+    if (!editedContent.trim()) {
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    try {
+      const updatedItem = await put(`/api/meeting-items/${item.id}`, {
+        content: editedContent.trim()
+      });
+      setIsEditing(false);
+      // Notify parent of the update
+      if (onEdit) {
+        onEdit(updatedItem);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      handleCancelEdit(e);
+    } else if (e.key === 'Enter' && e.ctrlKey) {
+      handleSaveEdit(e);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="item-row item-row--editing">
+        <div className="item-row-edit-container">
+          <textarea
+            className="item-row-edit-textarea"
+            value={editedContent}
+            onChange={(e) => setEditedContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={3}
+            autoFocus
+            disabled={isSaving}
+          />
+          {error && (
+            <div className="item-row-edit-error">{error}</div>
+          )}
+          <div className="item-row-edit-actions">
+            <button
+              className="item-row-edit-btn item-row-edit-btn--cancel"
+              onClick={handleCancelEdit}
+              disabled={isSaving}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              className="item-row-edit-btn item-row-edit-btn--save"
+              onClick={handleSaveEdit}
+              disabled={isSaving || !editedContent.trim()}
+              type="button"
+            >
+              {isSaving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="item-row">

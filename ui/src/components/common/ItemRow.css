@@ -83,3 +83,97 @@
   background-color: #FEF2F2;
   color: #DC2626;
 }
+
+/* Edit mode styles */
+.item-row--editing {
+  border-color: #3B82F6;
+  background-color: #F8FAFC;
+}
+
+.item-row-edit-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item-row-edit-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  line-height: 1.5;
+  color: #374151;
+  background-color: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.item-row-edit-textarea:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.item-row-edit-textarea:disabled {
+  background-color: #F3F4F6;
+  cursor: not-allowed;
+}
+
+.item-row-edit-error {
+  font-size: 0.75rem;
+  color: #DC2626;
+  padding: 0.5rem;
+  background-color: #FEF2F2;
+  border-radius: 4px;
+}
+
+.item-row-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.item-row-edit-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.item-row-edit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.item-row-edit-btn--cancel {
+  background-color: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.item-row-edit-btn--cancel:hover:not(:disabled) {
+  background-color: #F3F4F6;
+}
+
+.item-row-edit-btn--save {
+  background-color: #3B82F6;
+  border: 1px solid #3B82F6;
+  color: #FFFFFF;
+}
+
+.item-row-edit-btn--save:hover:not(:disabled) {
+  background-color: #2563EB;
+  border-color: #2563EB;
+}
+
+.item-row-edit-btn--save:focus-visible,
+.item-row-edit-btn--cancel:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
