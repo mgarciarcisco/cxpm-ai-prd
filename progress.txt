@@ -788,3 +788,16 @@
   - DELETE endpoints return `status_code=status.HTTP_204_NO_CONTENT` and `None`
   - Same status validation as update endpoint - can only delete items from processed meetings
 ---
+
+## 2026-01-22 - US-054
+- **What was implemented**: Created MeetingItem add endpoint for adding new items to processed meetings
+- **Files changed**:
+  - `backend/app/routers/meetings.py` - Added POST /api/meetings/{id}/items endpoint
+  - `backend/app/schemas/meeting.py` - Added MeetingItemCreate schema (section and content)
+  - `backend/app/schemas/__init__.py` - Exported MeetingItemCreate
+- **Learnings for future iterations:**
+  - Add endpoints go on the parent resource router (meetings.py) with path `/{id}/items`
+  - Use `sqlalchemy.func.max()` to calculate the next order value: `func.max(MeetingItem.order)`
+  - Filter by `is_deleted == False` when calculating max order to ignore soft-deleted items
+  - MeetingItemCreate schema uses `Section` enum directly from models for validation
+---
