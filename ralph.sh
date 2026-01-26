@@ -58,6 +58,7 @@ ${BOLD}Options:${RESET}
   --model <name>      Override model selection
   --browser           Enable browser automation
   --no-browser        Disable browser automation
+  --verbose           Show real-time agent output
   --dry-run           Preview actions without executing AI
   --help, -h          Show this help message
 
@@ -65,6 +66,7 @@ ${BOLD}Examples:${RESET}
   ./ralph.sh 5                            Run 5 iterations with default tool
   ./ralph.sh --cursor 10                  Run 10 iterations using Cursor
   ./ralph.sh --prd docs/my-prd.json 5     Use custom PRD file
+  ./ralph.sh --verbose 3                  Show real-time output for 3 iterations
   ./ralph.sh --dry-run                    Preview without running
 
 ${BOLD}Configuration:${RESET}
@@ -94,6 +96,7 @@ MODEL_OVERRIDE=""
 INIT_MODE=false
 SHOW_CONFIG=false
 DRY_RUN=false
+VERBOSE=false
 
 # Configurable pricing (per million tokens) - can be overridden in .ralphrc
 INPUT_PRICE_PER_M="${INPUT_PRICE_PER_M:-3}"
@@ -176,6 +179,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-browser)
       BROWSER_ENABLED="false"
+      shift
+      ;;
+    --verbose)
+      VERBOSE=true
       shift
       ;;
     --model)
@@ -509,6 +516,104 @@ print_session_summary() {
 }
 
 # =============================================================================
+# PRD & STORY FUNCTIONS
+# =============================================================================
+
+# Get the next user story to work on from PRD
+get_next_story() {
+    if [ ! -f "$PRD_FILE" ] || ! command -v jq &>/dev/null; then
+        echo ""
+        return
+    fi
+    
+    # Get first story where passes is false, ordered by priority
+    jq -r '.userStories | sort_by(.priority) | map(select(.passes == false)) | .[0] | "\(.id)|\(.title)|\(.priority)"' "$PRD_FILE" 2>/dev/null || echo ""
+}
+
+# Get count of remaining stories
+get_remaining_count() {
+    if [ ! -f "$PRD_FILE" ] || ! command -v jq &>/dev/null; then
+        echo "?"
+        return
+    fi
+    
+    jq -r '[.userStories[] | select(.passes == false)] | length' "$PRD_FILE" 2>/dev/null || echo "?"
+}
+
+# Show what story is being worked on
+show_current_story() {
+    local story_info
+    story_info=$(get_next_story)
+    
+    if [ -n "$story_info" ] && [ "$story_info" != "null|null|null" ]; then
+        local story_id story_title story_priority remaining
+        story_id=$(echo "$story_info" | cut -d'|' -f1)
+        story_title=$(echo "$story_info" | cut -d'|' -f2)
+        story_priority=$(echo "$story_info" | cut -d'|' -f3)
+        remaining=$(get_remaining_count)
+        
+        echo ""
+        printf "  ${BOLD}Story:${RESET}    ${CYAN}%s${RESET} - %s\n" "$story_id" "$story_title"
+        printf "  ${BOLD}Priority:${RESET} %s │ ${BOLD}Remaining:${RESET} %s stories\n" "$story_priority" "$remaining"
+        echo ""
+    fi
+}
+
+# Show detailed iteration summary
+show_iteration_summary() {
+    local log_file=$1
+    local output=$2
+    
+    if [ ! -f "$log_file" ]; then
+        return
+    fi
+    
+    echo ""
+    echo "  ${BOLD}━━━ Iteration Summary ━━━${RESET}"
+    
+    # Extract result from Claude output
+    local result_line
+    result_line=$(grep '"type":"result"' "$log_file" | tail -1)
+    
+    if [ -n "$result_line" ] && command -v jq &>/dev/null; then
+        # Extract key fields
+        local result_text duration_s num_turns actual_cost
+        result_text=$(echo "$result_line" | jq -r '.result // "No result"' 2>/dev/null | head -10)
+        duration_s=$(echo "$result_line" | jq -r '.duration_ms // 0' 2>/dev/null)
+        duration_s=$((duration_s / 1000))
+        num_turns=$(echo "$result_line" | jq -r '.num_turns // 0' 2>/dev/null)
+        actual_cost=$(echo "$result_line" | jq -r '.total_cost_usd // 0' 2>/dev/null)
+        
+        # Extract token usage for context remaining calculation
+        local input_tokens cache_read cache_creation output_toks
+        input_tokens=$(echo "$result_line" | jq -r '.usage.input_tokens // 0' 2>/dev/null)
+        cache_read=$(echo "$result_line" | jq -r '.usage.cache_read_input_tokens // 0' 2>/dev/null)
+        cache_creation=$(echo "$result_line" | jq -r '.usage.cache_creation_input_tokens // 0' 2>/dev/null)
+        output_toks=$(echo "$result_line" | jq -r '.usage.output_tokens // 0' 2>/dev/null)
+        
+        # Calculate total context used
+        local total_context
+        total_context=$((input_tokens + cache_read + cache_creation))
+        
+        # Show summary
+        printf "  ${DIM}Duration:${RESET}  %dm %ds │ ${DIM}Turns:${RESET} %s │ ${DIM}Cost:${RESET} ${YELLOW}\$%.2f${RESET}\n" \
+            $((duration_s / 60)) $((duration_s % 60)) "$num_turns" "$actual_cost"
+        printf "  ${DIM}Context:${RESET}   %s tokens used │ ${DIM}Output:${RESET} %s tokens\n" \
+            "$(format_tokens $total_context)" "$(format_tokens $output_toks)"
+        
+        echo ""
+        echo "  ${BOLD}Result:${RESET}"
+        echo "$result_text" | while IFS= read -r line; do
+            printf "    %s\n" "$line"
+        done
+    else
+        echo "  ${DIM}(No structured result available)${RESET}"
+    fi
+    
+    echo "  ${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+}
+
+# =============================================================================
 # BROWSER AUTOMATION
 # =============================================================================
 
@@ -627,7 +732,11 @@ if [ "$DRY_RUN" = true ]; then
     [[ -n "${PROJECT_LANG:-}" ]] && log_info "Project: $PROJECT_LANG ${PROJECT_FRAMEWORK:-}"
     [[ -n "$MODEL_OVERRIDE" ]] && log_info "Model override: $MODEL_OVERRIDE"
     log_info "Browser: $BROWSER_ENABLED"
-    echo ""
+    log_info "Verbose: $VERBOSE"
+    
+    # Show next story that would be worked on
+    show_current_story
+    
     log_success "Dry run complete. No AI iterations executed."
     exit 0
 fi
@@ -636,6 +745,10 @@ SESSION_START=$(date +%s)
 
 for i in $(seq 1 $MAX_ITERATIONS); do
   print_header "Iteration $i of $MAX_ITERATIONS"
+  
+  # Show what story will be worked on
+  show_current_story
+  
   ITERATION_LOG="$LOG_DIR/${i}_iteration.log"
   current_step="Thinking"
 
@@ -664,16 +777,37 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   # Run the selected tool in background
   PROMPT_CONTENT=$(cat "$FULL_PROMPT_FILE")
   
+  # Helper function to run command with optional verbose output
+  run_agent_cmd() {
+      if [ "$VERBOSE" = true ]; then
+          "$@" 2>&1 | tee "$tmpfile"
+      else
+          "$@" > "$tmpfile" 2>&1
+      fi
+  }
+  
   case "$TOOL" in
     claude)
          CMD="claude --dangerously-skip-permissions --output-format stream-json"
          if [ -n "$MODEL_OVERRIDE" ]; then CMD="$CMD --model $MODEL_OVERRIDE"; fi
-         $CMD -p "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         if [ "$VERBOSE" = true ]; then
+             echo "  ${DIM}[Verbose mode - showing agent output]${RESET}"
+             echo ""
+             $CMD -p "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+         else
+             $CMD -p "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         fi
          ai_pid=$!
          ;;
     cursor)
          CMD="agent --dangerously-skip-permissions --output-format stream-json"
-         $CMD -p "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         if [ "$VERBOSE" = true ]; then
+             echo "  ${DIM}[Verbose mode - showing agent output]${RESET}"
+             echo ""
+             $CMD -p "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+         else
+             $CMD -p "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         fi
          ai_pid=$!
          ;;
     opencode)
@@ -724,20 +858,23 @@ for i in $(seq 1 $MAX_ITERATIONS); do
          ;;
   esac
   
-  # Start progress monitor in background
-  monitor_progress "$tmpfile" "Iteration $i" &
-  monitor_pid=$!
+  # Start progress monitor in background (skip in verbose mode)
+  if [ "$VERBOSE" != true ]; then
+      monitor_progress "$tmpfile" "Iteration $i" &
+      monitor_pid=$!
+  fi
   
   # Wait for AI to finish
   wait "$ai_pid" 2>/dev/null || true
   
   # Stop the monitor
-  kill "$monitor_pid" 2>/dev/null || true
-  wait "$monitor_pid" 2>/dev/null || true
-  monitor_pid=""
-  
-  # Clear the progress line
-  printf "\r\033[K"
+  if [ -n "$monitor_pid" ]; then
+      kill "$monitor_pid" 2>/dev/null || true
+      wait "$monitor_pid" 2>/dev/null || true
+      monitor_pid=""
+      # Clear the progress line
+      printf "\r\033[K"
+  fi
   
   # Read and save result
   OUTPUT=$(cat "$tmpfile" 2>/dev/null || echo "")
@@ -775,7 +912,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     iter_cost=$(calculate_cost "$input_tokens" "$output_tokens")
   fi
   
-  # Display iteration summary
+  # Display basic completion
   printf "  ${GREEN}✓${RESET} %-16s │ " "Done"
   if [[ $input_tokens -gt 0 ]] || [[ $output_tokens -gt 0 ]]; then
     printf "Tokens: ${CYAN}%s${RESET} in / ${CYAN}%s${RESET} out" "$(format_tokens $input_tokens)" "$(format_tokens $output_tokens)"
@@ -786,6 +923,9 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     printf "Iteration complete"
   fi
   printf "\n"
+  
+  # Show detailed iteration summary
+  show_iteration_summary "$ITERATION_LOG" "$OUTPUT"
   
   # Cleanup temp file
   rm -f "$tmpfile"
