@@ -643,15 +643,19 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   FULL_PROMPT_FILE="$LOG_DIR/${i}_prompt_full.md"
   cp "$PROMPT_FILE" "$FULL_PROMPT_FILE"
   
+  # Append PRD file location (overrides default prd.json reference in prompt)
+  PRD_RELATIVE=$(realpath --relative-to="$SCRIPT_DIR" "$PRD_FILE" 2>/dev/null || basename "$PRD_FILE")
+  echo -e "\n## PRD Location\nThe PRD file for this run is: \`$PRD_RELATIVE\`" >> "$FULL_PROMPT_FILE"
+  
   # Append Browser Instructions
   get_browser_instructions >> "$FULL_PROMPT_FILE"
   
   # Append Project Context if in config
-  if [ -n "$PROJECT_LANG" ]; then
+  if [ -n "${PROJECT_LANG:-}" ]; then
       echo -e "\n## Project Context" >> "$FULL_PROMPT_FILE"
       echo "Language: $PROJECT_LANG" >> "$FULL_PROMPT_FILE"
-      if [ -n "$PROJECT_FRAMEWORK" ]; then echo "Framework: $PROJECT_FRAMEWORK" >> "$FULL_PROMPT_FILE"; fi
-      if [ -n "$TEST_COMMAND" ]; then echo "Test Command: $TEST_COMMAND" >> "$FULL_PROMPT_FILE"; fi
+      if [ -n "${PROJECT_FRAMEWORK:-}" ]; then echo "Framework: $PROJECT_FRAMEWORK" >> "$FULL_PROMPT_FILE"; fi
+      if [ -n "${TEST_COMMAND:-}" ]; then echo "Test Command: $TEST_COMMAND" >> "$FULL_PROMPT_FILE"; fi
   fi
 
   # Create temp file for output
