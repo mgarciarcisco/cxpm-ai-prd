@@ -4,8 +4,10 @@ You are an autonomous coding agent working on a software project.
 
 ## Your Task
 
-1. Read the PRD file (see PRD Location section below, or default to `prd.json`)
-2. Read the progress log at `progress.txt` (check Codebase Patterns section first)
+**IMPORTANT: Read files ONE AT A TIME, not in parallel. Wait for each read to complete before starting the next.**
+
+1. Read the PRD file (see PRD Location section below, or default to `prd.json`) - wait for it to complete
+2. THEN read the progress log at `progress.txt` (check Codebase Patterns section first)
 3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
 4. Pick the **highest priority** user story where `passes: false`
 5. Implement that single user story

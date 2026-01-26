@@ -215,3 +215,18 @@ docs/artifacts/
 
 # SQLite databases
 *.db
+
+# Ralph agent runtime artifacts
+logs/
+archive/
+.last-branch
+
+# Cursor IDE
+.cursor/
+
+# Playwright test artifacts
+ui/playwright-report/
+ui/test-results/
+
+# Temporary backups
+ralph_orig.sh

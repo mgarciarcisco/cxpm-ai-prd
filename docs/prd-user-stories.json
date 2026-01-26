@@ -16,7 +16,7 @@
         "Model is exported from models/__init__.py"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Follow existing model patterns in backend/app/models/. Use sqlalchemy Enum for status and mode fields."
     },
     {
