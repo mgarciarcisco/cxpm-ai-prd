@@ -564,12 +564,26 @@ show_iteration_summary() {
     local log_file=$1
     local output=$2
     
-    if [ ! -f "$log_file" ]; then
+    echo ""
+    echo -e "  ${BOLD}━━━ Iteration Summary ━━━${RESET}"
+    
+    # Check if log file exists and has content
+    if [ ! -f "$log_file" ] || [ ! -s "$log_file" ]; then
+        echo -e "  ${RED}Error: No output captured from agent${RESET}"
+        echo -e "  ${DIM}Check if the agent CLI is installed and accessible${RESET}"
+        echo -e "  ${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
         return
     fi
     
-    echo ""
-    echo "  ${BOLD}━━━ Iteration Summary ━━━${RESET}"
+    # Check for errors in output
+    if grep -q "Error:" "$log_file" 2>/dev/null; then
+        echo -e "  ${RED}Agent Error:${RESET}"
+        grep "Error:" "$log_file" | head -3 | while IFS= read -r line; do
+            echo -e "    ${DIM}$line${RESET}"
+        done
+        echo -e "  ${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+        return
+    fi
     
     # Extract result from Claude output
     local result_line
@@ -602,15 +616,16 @@ show_iteration_summary() {
             "$(format_tokens $total_context)" "$(format_tokens $output_toks)"
         
         echo ""
-        echo "  ${BOLD}Result:${RESET}"
+        echo -e "  ${BOLD}Result:${RESET}"
         echo "$result_text" | while IFS= read -r line; do
             printf "    %s\n" "$line"
         done
     else
-        echo "  ${DIM}(No structured result available)${RESET}"
+        echo -e "  ${DIM}(No structured result available - check log file)${RESET}"
+        echo -e "  ${DIM}Log: $log_file${RESET}"
     fi
     
-    echo "  ${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "  ${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 }
 
 # =============================================================================
@@ -788,10 +803,11 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   
   case "$TOOL" in
     claude)
-         CMD="claude --dangerously-skip-permissions --output-format stream-json"
+         # Note: --verbose is required when using -p with --output-format stream-json
+         CMD="claude --dangerously-skip-permissions --output-format stream-json --verbose"
          if [ -n "$MODEL_OVERRIDE" ]; then CMD="$CMD --model $MODEL_OVERRIDE"; fi
          if [ "$VERBOSE" = true ]; then
-             echo "  ${DIM}[Verbose mode - showing agent output]${RESET}"
+             echo -e "  ${DIM}[Verbose mode - showing agent output]${RESET}"
              echo ""
              $CMD -p "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
          else
