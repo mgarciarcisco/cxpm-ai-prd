@@ -25,6 +25,8 @@ class Project(Base):
     meetings = relationship("MeetingRecap", back_populates="project", cascade="all, delete-orphan")
     requirements = relationship("Requirement", back_populates="project", cascade="all, delete-orphan")
     prds = relationship("PRD", back_populates="project", cascade="all, delete-orphan")
+    user_stories = relationship("UserStory", back_populates="project", cascade="all, delete-orphan")
+    story_batches = relationship("StoryBatch", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Project(id={self.id}, name={self.name})>"

@@ -18,6 +18,16 @@ from app.schemas.meeting import (
     ResolveResponse,
     UploadResponse,
 )
+from app.schemas.prd import (
+    ExportFormat,
+    PaginatedResponse,
+    PRDGenerateRequest,
+    PRDResponse,
+    PRDSection,
+    PRDStatusResponse,
+    PRDSummary,
+    PRDUpdateRequest,
+)
 from app.schemas.project import (
     ProjectCreate,
     ProjectList,
@@ -34,14 +44,25 @@ from app.schemas.requirement import (
     RequirementSourceResponse,
     RequirementUpdate,
 )
+from app.schemas.user_story import (
+    ReorderRequest,
+    StoriesGenerateRequest,
+    StoryBatchResponse,
+    StoryBatchStatusResponse,
+    StoryExportFormat,
+    StoryUpdateRequest,
+    UserStoryResponse,
+)
 
 __all__ = [
+    # Project schemas
     "ProjectCreate",
     "ProjectUpdate",
     "ProjectResponse",
     "ProjectList",
     "SectionCount",
     "ProjectStatsResponse",
+    # Meeting schemas
     "MeetingUpload",
     "MeetingItemResponse",
     "MeetingResponse",
@@ -58,10 +79,28 @@ __all__ = [
     "ResolveDecision",
     "ResolveRequest",
     "ResolveResponse",
+    # Requirement schemas
     "RequirementSourceResponse",
     "RequirementHistoryResponse",
     "RequirementResponse",
     "RequirementUpdate",
     "RequirementsListResponse",
     "RequirementReorderRequest",
+    # PRD schemas
+    "ExportFormat",
+    "PaginatedResponse",
+    "PRDGenerateRequest",
+    "PRDResponse",
+    "PRDSection",
+    "PRDStatusResponse",
+    "PRDSummary",
+    "PRDUpdateRequest",
+    # User Story schemas
+    "ReorderRequest",
+    "StoriesGenerateRequest",
+    "StoryBatchResponse",
+    "StoryBatchStatusResponse",
+    "StoryExportFormat",
+    "StoryUpdateRequest",
+    "UserStoryResponse",
 ]

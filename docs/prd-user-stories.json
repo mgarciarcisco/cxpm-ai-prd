@@ -33,7 +33,7 @@
         "Model is exported from models/__init__.py"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "story_number should never be reused even when stories are deleted. Use @property decorator for story_id computed field."
     },
     {
@@ -48,7 +48,7 @@
         "Model is exported from models/__init__.py"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Batches group stories from a single generation run. story_count is updated after generation completes."
     },
     {
@@ -64,7 +64,7 @@
         "Migration can be rolled back with alembic downgrade"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Use 'alembic revision --autogenerate -m \"add prd and user story tables\"'. Ensure models are imported in alembic/env.py."
     },
     {
@@ -79,7 +79,7 @@
         "Schemas are exported from schemas/__init__.py"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Use Generic[T] for PaginatedResponse. Follow existing schema patterns in the codebase."
     },
     {
@@ -95,7 +95,7 @@
         "Prompts include {requirements_by_section} placeholder"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "See implementation plan for exact prompt text. Draft mode has 7 sections, Detailed mode has 12 sections."
     },
     {

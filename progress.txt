@@ -37,3 +37,104 @@ Started: New PRD & User Stories Generation feature
 Previous progress archived to: archive/2026-01-26-meeting-notes-to-requirements-progress.txt
 
 ---
+
+## 2026-01-26 - US-002: Create UserStory model with format and status enums
+- Created UserStory model with all required fields and enums
+- Added StoryFormat (CLASSIC, JOB_STORY), StoryStatus (DRAFT, READY, EXPORTED), StorySize (XS, S, M, L, XL) enums
+- Implemented story_id @property for formatted story ID (US-001, US-002, etc.)
+- Added user_stories relationship to Project model
+- Exported model and enums from models/__init__.py
+- Files changed:
+  - backend/app/models/user_story.py (created)
+  - backend/app/models/project.py (added user_stories relationship)
+  - backend/app/models/__init__.py (added exports)
+- **Learnings for future iterations:**
+  - When adding new models with relationships to other new models (e.g., UserStory -> StoryBatch), defer the relationship definition until the related model exists
+  - ForeignKey constraints to non-existent tables should also be deferred
+  - Leave TODO comments noting which US will add the missing relationships
+  - The story_number field is designed to never be reused - use MAX query with row-level locking when assigning
+---
+
+## 2026-01-26 - US-003: Create StoryBatch model for generation tracking
+- Created StoryBatch model with all required fields
+- Added StoryBatchStatus enum (QUEUED, GENERATING, READY, FAILED, CANCELLED)
+- StoryBatch reuses StoryFormat enum from UserStory model
+- Added story_batches relationship to Project model
+- Updated UserStory model to add ForeignKey to story_batches.id and batch relationship
+- Fixed import order in models/__init__.py (user_story before story_batch to avoid circular import)
+- Exported StoryBatch and StoryBatchStatus from models/__init__.py
+- Files changed:
+  - backend/app/models/story_batch.py (created)
+  - backend/app/models/project.py (added story_batches relationship)
+  - backend/app/models/user_story.py (added ForeignKey and batch relationship)
+  - backend/app/models/__init__.py (added exports with correct import order)
+- **Learnings for future iterations:**
+  - When model A imports from model B, ensure B is imported before A in __init__.py to avoid circular import issues
+  - Use ondelete="SET NULL" for optional ForeignKeys when the related record deletion shouldn't cascade
+  - StoryBatch -> UserStory relationship uses cascade="all, delete-orphan" so deleting a batch deletes its stories
+- **Manual verification needed:** Shell commands unavailable - run `cd backend && python3 -m ruff check .` and `python3 -m pytest tests/ -v` to verify
+---
+
+## 2026-01-26 - US-004: Create Alembic migration for new tables
+- Created migration `e8a5f2b3c1d0_add_prd_and_user_story_tables.py` for prds, story_batches, and user_stories tables
+- Updated `alembic/env.py` to import PRD, UserStory, and StoryBatch models for autogenerate support
+- Migration creates tables in correct order: prds, story_batches, then user_stories (due to FK dependency)
+- All tables include proper indexes on project_id, status, and other commonly queried columns
+- Files changed:
+  - backend/alembic/env.py (added PRD, UserStory, StoryBatch imports)
+  - backend/alembic/versions/e8a5f2b3c1d0_add_prd_and_user_story_tables.py (created)
+- **Learnings for future iterations:**
+  - Story_batches must be created before user_stories due to the batch_id ForeignKey
+  - Downgrade must drop tables in reverse order (user_stories first, then story_batches, then prds)
+  - Use lowercase enum values in migrations to match the str(enum.value) format
+  - Add indexes for columns that will be frequently queried (project_id, status, batch_id)
+- **Manual verification needed:** Shell commands unavailable - run the following to verify:
+  - `cd backend && python3 -m alembic upgrade head` to apply migration
+  - `cd backend && python3 -m alembic downgrade -1` to test rollback
+  - `cd backend && python3 -m alembic upgrade head` to reapply
+---
+
+## 2026-01-26 - US-005: Create Pydantic schemas and exception classes
+- Created PRD schemas: PRDGenerateRequest, PRDStatusResponse, PRDSection, PRDResponse, PRDSummary, PRDUpdateRequest, ExportFormat
+- Created UserStory schemas: StoriesGenerateRequest, StoryBatchStatusResponse, UserStoryResponse, StoryUpdateRequest, ReorderRequest, StoryBatchResponse, StoryExportFormat
+- Created PaginatedResponse generic schema using Generic[T] for reuse across API endpoints
+- Created exception classes at backend/app/exceptions.py: PRDGenerationError (base), NoRequirementsError, LLMResponseError, GenerationTimeoutError, GenerationCancelledError
+- Updated schemas/__init__.py to export all new schemas with organized comments
+- Files changed:
+  - backend/app/schemas/prd.py (created)
+  - backend/app/schemas/user_story.py (created)
+  - backend/app/exceptions.py (created)
+  - backend/app/schemas/__init__.py (updated with new exports)
+- **Learnings for future iterations:**
+  - Use `from_attributes=True` model_config for ORM-compatible response schemas
+  - Generic[T] requires TypeVar to be defined at module level before class definition
+  - Import model enums (PRDMode, PRDStatus, StoryFormat, etc.) from model files to reuse in schemas
+  - Exception classes should include relevant context (project_id, raw_response, etc.) for debugging
+  - Organize __all__ with comments for better readability when many schemas exist
+- **Manual verification needed:** Shell commands unavailable - run the following to verify:
+  - `cd backend && python3 -m ruff check .` to lint
+  - `cd backend && python3 -m pytest tests/ -v` to run tests
+  - `git add . && git commit -m "feat: US-005 - Create Pydantic schemas and exception classes"` to commit
+---
+
+## 2026-01-26 - US-006: Create PRD generation prompt templates
+- Created draft mode prompt at backend/prompts/generate_prd_draft_v1.txt
+- Created detailed mode prompt at backend/prompts/generate_prd_detailed_v1.txt
+- Draft prompt has 7 sections: executive_summary, problem_statement, goals_and_objectives, proposed_solution, open_questions, identified_gaps, next_steps
+- Draft prompt emphasizes gaps, open questions, and areas needing clarification (sections 5 & 6 marked as CRITICAL)
+- Detailed prompt has 12 sections covering all PRD aspects: executive_summary, problem_statement, goals_and_objectives, target_users, proposed_solution, functional_requirements, non_functional_requirements, technical_considerations, success_metrics, timeline_and_milestones, risks_and_mitigations, appendix
+- Both prompts specify JSON output format with title and sections array
+- Both prompts include {requirements_by_section} placeholder for dynamic content
+- Files changed:
+  - backend/prompts/generate_prd_draft_v1.txt (created)
+  - backend/prompts/generate_prd_detailed_v1.txt (created)
+- **Learnings for future iterations:**
+  - Prompt templates live in backend/prompts/ with naming convention: {action}_{target}_{version}.txt
+  - LLM prompts should specify output format precisely including field names and structure
+  - For draft/exploratory modes, mark critical sections that need emphasis
+  - Always include IMPORTANT INSTRUCTIONS section for consistent LLM behavior
+- **Manual verification needed:** Shell commands unavailable - run the following to verify:
+  - `cd backend && python3 -m ruff check .` to lint
+  - `cd backend && python3 -m pytest tests/ -v` to run tests
+  - `git add . && git commit -m "feat: US-006 - Create PRD generation prompt templates"` to commit
+---

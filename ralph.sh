@@ -816,7 +816,7 @@ for i in $(seq 1 $MAX_ITERATIONS); do
          ai_pid=$!
          ;;
     cursor)
-         CMD="agent --dangerously-skip-permissions --output-format stream-json"
+         CMD="agent --output-format stream-json"
          if [ "$VERBOSE" = true ]; then
              echo "  ${DIM}[Verbose mode - showing agent output]${RESET}"
              echo ""

@@ -8,6 +8,8 @@ from app.models.project import Project
 from app.models.requirement import Requirement
 from app.models.requirement_history import Action, Actor, RequirementHistory
 from app.models.requirement_source import RequirementSource
+from app.models.user_story import StoryFormat, StorySize, StoryStatus, UserStory
+from app.models.story_batch import StoryBatch, StoryBatchStatus
 
 __all__ = [
     "Project",
@@ -26,4 +28,10 @@ __all__ = [
     "PRD",
     "PRDMode",
     "PRDStatus",
+    "UserStory",
+    "StoryFormat",
+    "StoryStatus",
+    "StorySize",
+    "StoryBatch",
+    "StoryBatchStatus",
 ]
