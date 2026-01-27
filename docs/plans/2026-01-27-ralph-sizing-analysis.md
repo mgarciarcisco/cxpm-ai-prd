@@ -214,13 +214,13 @@ Ralph requires tasks completable in **one iteration** (~one context window):
 
 | Phase | Original Stories | Ralph Tasks | Stories Needing Split |
 |-------|-----------------|-------------|----------------------|
-| Phase 1 | 10 | 14 | 1 (P1-008) |
+| Phase 1 | 14 | 18 | 1 (P1-008) |
 | Phase 2 | 5 | 8 | 1 (P2-001) |
-| Phase 3 | 25 | 31 | 2 (P3-002, P3-012) |
-| Phase 4 | 7 | 18 | 4 (P4-002, P4-003, P4-004, P4-005) |
+| Phase 3 | 28 | 34 | 2 (P3-002, P3-012) |
+| Phase 4 | 10 | 21 | 4 (P4-002, P4-003, P4-004, P4-005) |
 | Phase 5 | 12 | 12 | 0 |
 | Phase 6 | 6 | 14 | 4 (P6-003, P6-004, P6-005, P6-006) |
-| **Total** | **65** | **97** | **12** |
+| **Total** | **75** | **107** | **12** |
 
 ---
 
@@ -243,8 +243,8 @@ Ralph requires tasks completable in **one iteration** (~one context window):
 
 ---
 
-## Recommended Action
+## Status
 
-Update the user stories document to break down the 12 large stories into Ralph-sized tasks, bringing the total from 65 to ~97 tasks.
+✅ **Completed:** User stories document updated with Ralph-sized subtasks and 10 additional stories identified during comprehensive review. Total now 75 stories / 107 Ralph tasks.
 
-Alternatively, keep the current structure for human planning but create a separate `ralph-tasks.json` or use the task_list system when ready to execute with Ralph.
+✅ **Created:** `ralph-tasks.json` with all 107 tasks and dependency graph for Ralph execution.

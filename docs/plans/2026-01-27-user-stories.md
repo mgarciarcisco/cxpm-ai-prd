@@ -219,6 +219,71 @@
 
 ---
 
+### P1-011: Auto-Update Stage Status on Content Change
+
+**As a** user
+**I want** stage statuses to update automatically when I add/remove content
+**So that** I don't have to manually track progress
+
+**Acceptance Criteria:**
+- [ ] Adding first requirement updates requirements_status from "empty" to "has_items"
+- [ ] Removing all requirements updates to "empty"
+- [ ] Generating PRD updates prd_status from "empty" to "draft"
+- [ ] Generating stories updates stories_status from "empty" to "generated"
+- [ ] Generating mockups updates mockups_status from "empty" to "generated"
+- [ ] First export updates export_status to "exported"
+
+**Size:** M | **Priority:** P1
+
+---
+
+### P1-012: Create Stage Status API Endpoints
+
+**As a** developer
+**I want** dedicated API endpoints for stage status
+**So that** the frontend can efficiently fetch and update progress
+
+**Acceptance Criteria:**
+- [ ] GET /api/projects/{id}/progress returns all stage statuses
+- [ ] PATCH /api/projects/{id}/stages/{stage} updates individual stage status
+- [ ] Status changes trigger progress recalculation
+
+**Size:** S | **Priority:** P1
+
+---
+
+### P1-013: Dashboard Archive Filter
+
+**As a** user
+**I want** to view and manage archived projects
+**So that** I can find old projects or unarchive them
+
+**Acceptance Criteria:**
+- [ ] Filter dropdown includes "Archived" option
+- [ ] Archived projects show with visual indicator
+- [ ] Can unarchive from project settings
+- [ ] Archived projects hidden from default view
+
+**Size:** S | **Priority:** P2
+
+---
+
+### P1-014: Create Confirmation Dialog Component
+
+**As a** developer
+**I want** a reusable confirmation dialog
+**So that** destructive actions have consistent UX
+
+**Acceptance Criteria:**
+- [ ] Supports title, message, confirm/cancel buttons
+- [ ] Supports "type to confirm" pattern (for delete project)
+- [ ] Supports warning/danger variants
+- [ ] Accessible (focus trap, escape to close)
+
+**Size:** S | **Priority:** P1
+
+---
+
 ## Phase 2: Project View Shell
 
 ### 🔷 P2-001: Create Project View Shell
@@ -808,6 +873,57 @@
 
 ---
 
+### P3-026: User Stories Stage - Delete Story
+
+**As a** user
+**I want** to delete user stories I don't need
+**So that** I can keep my list clean
+
+**Acceptance Criteria:**
+- [ ] Delete button on story card (alongside Edit)
+- [ ] Confirmation dialog before delete
+- [ ] Story removed from list
+- [ ] Counts update in header summary
+- [ ] Order of remaining stories preserved
+
+**Size:** S | **Priority:** P1
+
+---
+
+### P3-027: PRD Stage - Write Manually
+
+**As a** user
+**I want** to write a PRD manually without AI generation
+**So that** I can create PRDs from existing content or write from scratch
+
+**Acceptance Criteria:**
+- [ ] "Write Manually" button in empty state opens editor directly
+- [ ] Empty textarea with helpful placeholder text
+- [ ] Can save without AI generation
+- [ ] Status updates to "draft" on first save
+- [ ] Same Preview/Edit tabs as generated PRD
+
+**Size:** S | **Priority:** P2
+
+---
+
+### P3-028: PRD Stage - Save Status Indicator
+
+**As a** user
+**I want** to see when my PRD changes are saved
+**So that** I know my work is safe
+
+**Acceptance Criteria:**
+- [ ] Shows "Saved" indicator when no pending changes
+- [ ] Shows "Saving..." during auto-save
+- [ ] Shows "Unsaved changes" when content modified but not saved
+- [ ] Visual indicator near edit area (icon + text)
+- [ ] Updates in real-time
+
+**Size:** S | **Priority:** P2
+
+---
+
 ## Phase 4: Quick Convert Mode
 
 ### P4-001: Quick Convert Landing Page
@@ -1030,6 +1146,55 @@
 - [ ] User Stories: download as JSON or Markdown
 - [ ] Mockups: download as PNG
 - [ ] Download triggers browser save dialog
+
+**Size:** M | **Priority:** P1
+
+---
+
+### P4-008: Quick Convert - Session Storage
+
+**As a** user
+**I want** my Quick Convert data to persist in session storage
+**So that** I don't lose work if I accidentally navigate away
+
+**Acceptance Criteria:**
+- [ ] Results saved to sessionStorage after generation
+- [ ] Restored on page revisit (within same session)
+- [ ] Clear button to reset and start fresh
+- [ ] Warning if navigating away with unsaved changes
+
+**Size:** S | **Priority:** P2
+
+---
+
+### P4-009: Quick Convert - Navigation Warning
+
+**As a** user
+**I want** to be warned before leaving with unsaved work
+**So that** I don't accidentally lose my generated content
+
+**Acceptance Criteria:**
+- [ ] Browser beforeunload warning when data exists
+- [ ] In-app navigation shows confirmation dialog
+- [ ] No warning if data was saved to project or downloaded
+- [ ] Clear way to dismiss and proceed
+
+**Size:** S | **Priority:** P2
+
+---
+
+### P4-010: Quick Convert - Data Chaining Between Pages
+
+**As a** user
+**I want** to chain conversions together
+**So that** I can go from Requirements → PRD → Stories without re-entering data
+
+**Acceptance Criteria:**
+- [ ] "Generate PRD" from Requirements passes data to PRD page
+- [ ] "Generate Stories" from PRD passes data to Stories page
+- [ ] "Generate Mockups" from Stories passes data to Mockups page
+- [ ] Data passed via URL params or sessionStorage
+- [ ] Pre-populated input shows "Using data from previous step"
 
 **Size:** M | **Priority:** P1
 
@@ -1400,13 +1565,13 @@
 
 | Phase | Stories | Ralph Tasks | P1 | P2 | P3 |
 |-------|---------|-------------|----|----|-----|
-| Phase 1: Foundation | 10 | 14 | 14 | 0 | 0 |
+| Phase 1: Foundation | 14 | 18 | 17 | 1 | 0 |
 | Phase 2: Project Shell | 5 | 8 | 7 | 1 | 0 |
-| Phase 3: Core Stages | 25 | 31 | 19 | 12 | 0 |
-| Phase 4: Quick Convert | 7 | 18 | 12 | 6 | 0 |
+| Phase 3: Core Stages | 28 | 34 | 20 | 14 | 0 |
+| Phase 4: Quick Convert | 10 | 21 | 13 | 8 | 0 |
 | Phase 5: Mockups & Export | 12 | 12 | 3 | 7 | 2 |
 | Phase 6: Polish | 6 | 14 | 0 | 12 | 2 |
-| **Total** | **65** | **97** | **55** | **38** | **4** |
+| **Total** | **75** | **107** | **60** | **43** | **4** |
 
 ---
 

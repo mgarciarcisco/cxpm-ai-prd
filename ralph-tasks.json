@@ -118,6 +118,38 @@
           "size": "S",
           "priority": "P1",
           "dependsOn": ["P1-008a"]
+        },
+        {
+          "id": "P1-011",
+          "title": "Auto-Update Stage Status on Content Change",
+          "description": "Automatically update stage statuses when content changes.\n\n**What to do:**\n- Adding first requirement updates requirements_status from 'empty' to 'has_items'\n- Removing all requirements updates to 'empty'\n- Generating PRD updates prd_status from 'empty' to 'draft'\n- Generating stories updates stories_status from 'empty' to 'generated'\n- Generating mockups updates mockups_status from 'empty' to 'generated'\n- First export updates export_status to 'exported'\n\n**Files:**\n- Server actions/API routes for each content type\n\n**Acceptance criteria:**\n- All status transitions work automatically\n- Progress recalculates on status change\n- npm run typecheck passes",
+          "size": "M",
+          "priority": "P1",
+          "dependsOn": ["P1-001"]
+        },
+        {
+          "id": "P1-012",
+          "title": "Create Stage Status API Endpoints",
+          "description": "Create dedicated API endpoints for stage status.\n\n**What to do:**\n- GET /api/projects/{id}/progress returns all stage statuses\n- PATCH /api/projects/{id}/stages/{stage} updates individual stage status\n- Status changes trigger progress recalculation\n\n**Files:**\n- API route files\n\n**Acceptance criteria:**\n- GET endpoint returns all statuses\n- PATCH endpoint updates individual stage\n- Progress recalculates\n- npm run typecheck passes",
+          "size": "S",
+          "priority": "P1",
+          "dependsOn": ["P1-001"]
+        },
+        {
+          "id": "P1-013",
+          "title": "Dashboard Archive Filter",
+          "description": "Add archived projects filter to dashboard.\n\n**What to do:**\n- Add 'Archived' option to filter dropdown\n- Archived projects show with visual indicator\n- Can unarchive from project settings\n- Archived hidden from default view\n\n**Files:**\n- app/dashboard/page.tsx\n- components/dashboard/StageFilter.tsx\n\n**Acceptance criteria:**\n- Filter includes Archived option\n- Visual indicator on archived projects\n- Archived hidden by default\n- npm run typecheck passes",
+          "size": "S",
+          "priority": "P2",
+          "dependsOn": ["P1-008c", "P2-003"]
+        },
+        {
+          "id": "P1-014",
+          "title": "Create Confirmation Dialog Component",
+          "description": "Create reusable confirmation dialog.\n\n**What to do:**\n- Support title, message, confirm/cancel buttons\n- Support 'type to confirm' pattern for destructive actions\n- Support warning/danger variants\n- Accessible (focus trap, escape to close)\n\n**Files:**\n- components/ui/ConfirmationDialog.tsx\n\n**Acceptance criteria:**\n- All variants work\n- Type-to-confirm works\n- Accessible\n- npm run typecheck passes",
+          "size": "S",
+          "priority": "P1",
+          "dependsOn": []
         }
       ]
     },
@@ -434,6 +466,30 @@
           "size": "S",
           "priority": "P2",
           "dependsOn": ["P3-017"]
+        },
+        {
+          "id": "P3-026",
+          "title": "User Stories Stage - Delete Story",
+          "description": "Add delete functionality for user stories.\n\n**What to do:**\n- Delete button on story card (alongside Edit)\n- Confirmation dialog before delete\n- Story removed from list\n- Counts update in header summary\n- Order of remaining stories preserved\n\n**Files:**\n- components/stories/StoryCard.tsx\n\n**Acceptance criteria:**\n- Delete button visible\n- Confirmation works\n- Story removed correctly\n- Counts update\n- npm run typecheck passes",
+          "size": "S",
+          "priority": "P1",
+          "dependsOn": ["P3-017", "P1-014"]
+        },
+        {
+          "id": "P3-027",
+          "title": "PRD Stage - Write Manually",
+          "description": "Allow manual PRD creation without AI generation.\n\n**What to do:**\n- 'Write Manually' button in empty state opens editor directly\n- Empty textarea with helpful placeholder text\n- Can save without AI generation\n- Status updates to 'draft' on first save\n- Same Preview/Edit tabs as generated PRD\n\n**Files:**\n- components/stages/PRDStage.tsx\n\n**Acceptance criteria:**\n- Can write PRD manually\n- Saves correctly\n- Status updates\n- npm run typecheck passes",
+          "size": "S",
+          "priority": "P2",
+          "dependsOn": ["P3-008", "P3-011"]
+        },
+        {
+          "id": "P3-028",
+          "title": "PRD Stage - Save Status Indicator",
+          "description": "Show save status indicator for PRD edits.\n\n**What to do:**\n- Shows 'Saved' when no pending changes\n- Shows 'Saving...' during auto-save\n- Shows 'Unsaved changes' when modified but not saved\n- Visual indicator near edit area\n- Updates in real-time\n\n**Files:**\n- components/stages/PRDStage.tsx\n\n**Acceptance criteria:**\n- All states show correctly\n- Updates in real-time\n- npm run typecheck passes",
+          "size": "S",
+          "priority": "P2",
+          "dependsOn": ["P3-011"]
         }
       ]
     },
@@ -560,6 +616,30 @@
           "size": "M",
           "priority": "P1",
           "dependsOn": []
+        },
+        {
+          "id": "P4-008",
+          "title": "Quick Convert - Session Storage",
+          "description": "Persist Quick Convert data in session storage.\n\n**What to do:**\n- Results saved to sessionStorage after generation\n- Restored on page revisit (within same session)\n- Clear button to reset and start fresh\n- Warning if navigating away with unsaved changes\n\n**Files:**\n- lib/sessionStorage.ts\n- Quick Convert page components\n\n**Acceptance criteria:**\n- Data persists in session\n- Restored on revisit\n- Clear works\n- npm run typecheck passes",
+          "size": "S",
+          "priority": "P2",
+          "dependsOn": ["P4-002b", "P4-003b", "P4-004b"]
+        },
+        {
+          "id": "P4-009",
+          "title": "Quick Convert - Navigation Warning",
+          "description": "Warn users before leaving with unsaved work.\n\n**What to do:**\n- Browser beforeunload warning when data exists\n- In-app navigation shows confirmation dialog\n- No warning if data was saved to project or downloaded\n- Clear way to dismiss and proceed\n\n**Files:**\n- Quick Convert page components\n- components/quick-convert/NavigationWarning.tsx\n\n**Acceptance criteria:**\n- beforeunload warning works\n- In-app dialog works\n- No false positives after save/download\n- npm run typecheck passes",
+          "size": "S",
+          "priority": "P2",
+          "dependsOn": ["P4-008", "P1-014"]
+        },
+        {
+          "id": "P4-010",
+          "title": "Quick Convert - Data Chaining Between Pages",
+          "description": "Chain conversions together without re-entering data.\n\n**What to do:**\n- 'Generate PRD' from Requirements passes data to PRD page\n- 'Generate Stories' from PRD passes data to Stories page\n- 'Generate Mockups' from Stories passes data to Mockups page\n- Data passed via URL params or sessionStorage\n- Pre-populated input shows 'Using data from previous step'\n\n**Files:**\n- Quick Convert page components\n- lib/dataChaining.ts\n\n**Acceptance criteria:**\n- Reqs → PRD chaining works\n- PRD → Stories chaining works\n- Stories → Mockups chaining works\n- Visual indicator shows\n- npm run typecheck passes",
+          "size": "M",
+          "priority": "P1",
+          "dependsOn": ["P4-002c", "P4-003c", "P4-004c"]
         }
       ]
     },
@@ -785,18 +865,18 @@
     }
   ],
   "summary": {
-    "totalTasks": 97,
+    "totalTasks": 107,
     "byPhase": {
-      "phase-1": 14,
+      "phase-1": 18,
       "phase-2": 8,
-      "phase-3": 31,
-      "phase-4": 18,
+      "phase-3": 34,
+      "phase-4": 21,
       "phase-5": 12,
       "phase-6": 14
     },
     "byPriority": {
-      "P1": 55,
-      "P2": 38,
+      "P1": 60,
+      "P2": 43,
       "P3": 4
     }
   }
