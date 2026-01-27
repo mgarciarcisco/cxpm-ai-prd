@@ -41,14 +41,15 @@ safe_kill() {
 
 show_help() {
     cat <<EOF
-${BOLD}Ralph Wiggum${RESET} - Long-running AI agent loop
+${BOLD}Ralph Wiggum${RESET} - Long-running AI agent loop with dependency-aware task execution
 
 ${BOLD}Usage:${RESET} ./ralph.sh [options] [max_iterations]
 
 ${BOLD}Options:${RESET}
   --init              Initialize Ralph config for current project
   --config            Show current configuration
-  --prd <file>        Use specified PRD file (default: prd.json)
+  --manifest <file>   Use specified manifest file (default: ralph/manifest.json)
+  --prd <file>        Alias for --manifest (legacy support)
   --tool <name>       Use specified AI tool (claude, cursor, opencode, codex, droid, copilot, gemini)
   --cursor            Shorthand for --tool cursor
   --opencode          Shorthand for --tool opencode
@@ -58,16 +59,24 @@ ${BOLD}Options:${RESET}
   --model <name>      Override model selection
   --browser           Enable browser automation
   --no-browser        Disable browser automation
-  --verbose           Show real-time agent output
+  --stream            Show formatted real-time agent output (recommended)
+  --verbose           Show raw JSON stream output (for debugging)
   --dry-run           Preview actions without executing AI
+  --status            Show task status summary and exit
   --help, -h          Show this help message
 
 ${BOLD}Examples:${RESET}
-  ./ralph.sh 5                            Run 5 iterations with default tool
-  ./ralph.sh --cursor 10                  Run 10 iterations using Cursor
-  ./ralph.sh --prd docs/my-prd.json 5     Use custom PRD file
-  ./ralph.sh --verbose 3                  Show real-time output for 3 iterations
-  ./ralph.sh --dry-run                    Preview without running
+  ./ralph.sh 5                                Run 5 iterations with default tool
+  ./ralph.sh --cursor 10                      Run 10 iterations using Cursor
+  ./ralph.sh --manifest custom/tasks.json 5   Use custom manifest file
+  ./ralph.sh --stream 3                       Show formatted streaming output
+  ./ralph.sh --status                         Show task dependency status
+  ./ralph.sh --dry-run                        Preview without running
+
+${BOLD}File Structure:${RESET}
+  ralph/manifest.json   Task definitions with dependencies
+  ralph/progress.txt    Progress log and codebase patterns
+  ralph/prompt.md       Agent instructions
 
 ${BOLD}Configuration:${RESET}
   Run ${CYAN}./ralph.sh --init${RESET} to auto-detect project settings.
@@ -81,12 +90,19 @@ EOF
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/.ralphrc"
-PRD_FILE="${PRD_FILE:-$SCRIPT_DIR/prd.json}"
-PROGRESS_FILE="$SCRIPT_DIR/progress.txt"
+RALPH_DIR="$SCRIPT_DIR/ralph"
+MANIFEST_FILE="${MANIFEST_FILE:-$RALPH_DIR/manifest.json}"
+PROGRESS_FILE="$RALPH_DIR/progress.txt"
+PROMPT_FILE="${PROMPT_FILE:-$RALPH_DIR/prompt.md}"
 ARCHIVE_DIR="$SCRIPT_DIR/archive"
 LOGS_BASE_DIR="$SCRIPT_DIR/logs"
 LAST_BRANCH_FILE="$SCRIPT_DIR/.last-branch"
-PROMPT_FILE="${PROMPT_FILE:-$SCRIPT_DIR/prompt.md}"
+
+# Legacy support - map PRD_FILE to MANIFEST_FILE if provided
+PRD_FILE="${PRD_FILE:-}"
+if [[ -n "$PRD_FILE" ]]; then
+    MANIFEST_FILE="$PRD_FILE"
+fi
 
 # Defaults
 TOOL="claude"
@@ -95,15 +111,19 @@ BROWSER_ENABLED="auto"
 MODEL_OVERRIDE=""
 INIT_MODE=false
 SHOW_CONFIG=false
+SHOW_STATUS=false
 DRY_RUN=false
 VERBOSE=false
+STREAM=false
 
 # Configurable pricing (per million tokens) - can be overridden in .ralphrc
 INPUT_PRICE_PER_M="${INPUT_PRICE_PER_M:-3}"
 OUTPUT_PRICE_PER_M="${OUTPUT_PRICE_PER_M:-15}"
 
-# Configurable completion marker
-COMPLETION_MARKER="${COMPLETION_MARKER:-<promise>COMPLETE</promise>}"
+# Configurable completion markers
+TASK_COMPLETE_PATTERN="<task-complete>"
+TASK_BLOCKED_PATTERN="<task-blocked>"
+ALL_COMPLETE_MARKER="${ALL_COMPLETE_MARKER:-<promise>COMPLETE</promise>}"
 
 # Global state for tracking
 current_step="Thinking"
@@ -185,24 +205,48 @@ while [[ $# -gt 0 ]]; do
       VERBOSE=true
       shift
       ;;
+    --stream)
+      STREAM=true
+      shift
+      ;;
     --model)
       MODEL_OVERRIDE="$2"
       shift 2
       ;;
-    --prd)
-      PRD_FILE="$2"
+    --manifest)
+      MANIFEST_FILE="$2"
       # Convert relative path to absolute
-      if [[ ! "$PRD_FILE" = /* ]]; then
-        PRD_FILE="$SCRIPT_DIR/$PRD_FILE"
+      if [[ ! "$MANIFEST_FILE" = /* ]]; then
+        MANIFEST_FILE="$SCRIPT_DIR/$MANIFEST_FILE"
+      fi
+      shift 2
+      ;;
+    --manifest=*)
+      MANIFEST_FILE="${1#*=}"
+      # Convert relative path to absolute
+      if [[ ! "$MANIFEST_FILE" = /* ]]; then
+        MANIFEST_FILE="$SCRIPT_DIR/$MANIFEST_FILE"
+      fi
+      shift
+      ;;
+    --prd)
+      # Legacy support - map to manifest
+      MANIFEST_FILE="$2"
+      if [[ ! "$MANIFEST_FILE" = /* ]]; then
+        MANIFEST_FILE="$SCRIPT_DIR/$MANIFEST_FILE"
       fi
       shift 2
       ;;
     --prd=*)
-      PRD_FILE="${1#*=}"
-      # Convert relative path to absolute
-      if [[ ! "$PRD_FILE" = /* ]]; then
-        PRD_FILE="$SCRIPT_DIR/$PRD_FILE"
+      # Legacy support - map to manifest
+      MANIFEST_FILE="${1#*=}"
+      if [[ ! "$MANIFEST_FILE" = /* ]]; then
+        MANIFEST_FILE="$SCRIPT_DIR/$MANIFEST_FILE"
       fi
+      shift
+      ;;
+    --status)
+      SHOW_STATUS=true
       shift
       ;;
     *)
@@ -287,6 +331,9 @@ if [ "$SHOW_CONFIG" = true ]; then
     fi
     exit 0
 fi
+
+# Show status mode - deferred until after function definitions
+# (see SHOW_STATUS handling after TASK FUNCTIONS section)
 
 # =============================================================================
 # CLEANUP HANDLER
@@ -516,48 +563,346 @@ print_session_summary() {
 }
 
 # =============================================================================
-# PRD & STORY FUNCTIONS
+# STREAMING FORMATTERS
 # =============================================================================
 
-# Get the next user story to work on from PRD
-get_next_story() {
-    if [ ! -f "$PRD_FILE" ] || ! command -v jq &>/dev/null; then
-        echo ""
-        return
-    fi
+# Format Claude/Cursor stream-json output for human-readable display
+stream_format_claude() {
+    local tmpfile=$1
+    local current_tool=""
+    local in_text_block=false
     
-    # Get first story where passes is false, ordered by priority
-    jq -r '.userStories | sort_by(.priority) | map(select(.passes == false)) | .[0] | "\(.id)|\(.title)|\(.priority)"' "$PRD_FILE" 2>/dev/null || echo ""
-}
-
-# Get count of remaining stories
-get_remaining_count() {
-    if [ ! -f "$PRD_FILE" ] || ! command -v jq &>/dev/null; then
-        echo "?"
-        return
-    fi
-    
-    jq -r '[.userStories[] | select(.passes == false)] | length' "$PRD_FILE" 2>/dev/null || echo "?"
-}
-
-# Show what story is being worked on
-show_current_story() {
-    local story_info
-    story_info=$(get_next_story)
-    
-    if [ -n "$story_info" ] && [ "$story_info" != "null|null|null" ]; then
-        local story_id story_title story_priority remaining
-        story_id=$(echo "$story_info" | cut -d'|' -f1)
-        story_title=$(echo "$story_info" | cut -d'|' -f2)
-        story_priority=$(echo "$story_info" | cut -d'|' -f3)
-        remaining=$(get_remaining_count)
+    # Use tee to capture to file while parsing for display
+    tee "$tmpfile" | while IFS= read -r line; do
+        # Skip empty lines
+        [[ -z "$line" ]] && continue
         
+        # Try to parse as JSON
+        local type
+        type=$(echo "$line" | jq -r '.type // empty' 2>/dev/null) || continue
+        
+        case "$type" in
+            "assistant")
+                # Assistant message with content blocks
+                local text
+                text=$(echo "$line" | jq -r '.message.content[]? | select(.type == "text") | .text // empty' 2>/dev/null)
+                if [[ -n "$text" ]]; then
+                    echo ""
+                    echo -e "${CYAN}$text${RESET}"
+                fi
+                ;;
+            "content_block_start")
+                local block_type
+                block_type=$(echo "$line" | jq -r '.content_block.type // empty' 2>/dev/null)
+                if [[ "$block_type" == "tool_use" ]]; then
+                    current_tool=$(echo "$line" | jq -r '.content_block.name // empty' 2>/dev/null)
+                    echo ""
+                    echo -e "${YELLOW}━━━ $current_tool${RESET}"
+                elif [[ "$block_type" == "text" ]]; then
+                    in_text_block=true
+                fi
+                ;;
+            "content_block_delta")
+                local delta_type
+                delta_type=$(echo "$line" | jq -r '.delta.type // empty' 2>/dev/null)
+                
+                if [[ "$delta_type" == "text_delta" ]]; then
+                    local text
+                    text=$(echo "$line" | jq -r '.delta.text // empty' 2>/dev/null)
+                    [[ -n "$text" ]] && printf "%s" "$text"
+                elif [[ "$delta_type" == "input_json_delta" ]]; then
+                    # Tool input streaming - we can extract useful info
+                    :
+                fi
+                ;;
+            "content_block_stop")
+                if [[ "$in_text_block" == true ]]; then
+                    echo ""
+                    in_text_block=false
+                fi
+                current_tool=""
+                ;;
+            "tool_use")
+                # Full tool use event (some tools send this instead of content_block_start)
+                local tool_name input_preview
+                tool_name=$(echo "$line" | jq -r '.name // empty' 2>/dev/null)
+                
+                echo ""
+                echo -e "${YELLOW}━━━ $tool_name${RESET}"
+                
+                # Show relevant input based on tool type
+                case "$tool_name" in
+                    Read|read)
+                        local path
+                        path=$(echo "$line" | jq -r '.input.path // empty' 2>/dev/null)
+                        [[ -n "$path" ]] && echo -e "  ${DIM}$path${RESET}"
+                        ;;
+                    Write|write|StrReplace)
+                        local path
+                        path=$(echo "$line" | jq -r '.input.path // empty' 2>/dev/null)
+                        [[ -n "$path" ]] && echo -e "  ${DIM}$path${RESET}"
+                        ;;
+                    Shell|Bash|shell|bash)
+                        local cmd
+                        cmd=$(echo "$line" | jq -r '.input.command // empty' 2>/dev/null | head -c 100)
+                        [[ -n "$cmd" ]] && echo -e "  ${DIM}\$ $cmd${RESET}"
+                        ;;
+                    Grep|grep)
+                        local pattern
+                        pattern=$(echo "$line" | jq -r '.input.pattern // empty' 2>/dev/null)
+                        [[ -n "$pattern" ]] && echo -e "  ${DIM}pattern: $pattern${RESET}"
+                        ;;
+                    Glob|glob)
+                        local pattern
+                        pattern=$(echo "$line" | jq -r '.input.glob_pattern // empty' 2>/dev/null)
+                        [[ -n "$pattern" ]] && echo -e "  ${DIM}$pattern${RESET}"
+                        ;;
+                esac
+                ;;
+            "tool_result")
+                echo -e "  ${DIM}✓${RESET}"
+                ;;
+            "result")
+                echo ""
+                echo -e "${GREEN}━━━ Iteration Complete${RESET}"
+                ;;
+        esac
+    done
+}
+
+# Format plain text output (fallback for tools without structured JSON)
+stream_format_plaintext() {
+    local tmpfile=$1
+    
+    # Simple pass-through with basic formatting
+    tee "$tmpfile" | while IFS= read -r line; do
+        # Skip common noise patterns
+        [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+        [[ "$line" =~ ^\? ]] && continue
+        [[ "$line" =~ ^❯ ]] && continue
+        
+        # Highlight common patterns
+        if [[ "$line" =~ ^Thinking ]]; then
+            echo -e "${DIM}$line${RESET}"
+        elif [[ "$line" =~ (Error|error|ERROR) ]]; then
+            echo -e "${RED}$line${RESET}"
+        elif [[ "$line" =~ (Success|success|PASS|pass|✓) ]]; then
+            echo -e "${GREEN}$line${RESET}"
+        elif [[ "$line" =~ (Warning|warning|WARN) ]]; then
+            echo -e "${YELLOW}$line${RESET}"
+        else
+            echo "$line"
+        fi
+    done
+}
+
+# Dispatcher for streaming output based on tool type
+stream_format_output() {
+    local tool=$1
+    local tmpfile=$2
+    
+    case "$tool" in
+        claude|cursor)
+            stream_format_claude "$tmpfile"
+            ;;
+        droid)
+            # Droid uses similar stream-json format
+            stream_format_claude "$tmpfile"
+            ;;
+        opencode|codex|copilot|gemini|*)
+            # Plain text fallback
+            stream_format_plaintext "$tmpfile"
+            ;;
+    esac
+}
+
+# =============================================================================
+# TASK FUNCTIONS (Dependency-Aware)
+# =============================================================================
+
+# Get the next ready task (all dependencies satisfied)
+get_next_task() {
+    if [ ! -f "$MANIFEST_FILE" ] || ! command -v jq &>/dev/null; then
         echo ""
-        printf "  ${BOLD}Story:${RESET}    ${CYAN}%s${RESET} - %s\n" "$story_id" "$story_title"
-        printf "  ${BOLD}Priority:${RESET} %s │ ${BOLD}Remaining:${RESET} %s stories\n" "$story_priority" "$remaining"
+        return
+    fi
+
+    # Get first task where:
+    # - status is "pending"
+    # - all dependsOn tasks have status "completed"
+    jq -r '
+      [.tasks[] | select(.status == "completed") | .id] as $completed |
+      [.tasks[] | select(
+        .status == "pending" and
+        ((.dependsOn | length) == 0 or ((.dependsOn // []) - $completed | length) == 0)
+      )] |
+      sort_by(.phase, .priority) |
+      .[0] // empty |
+      "\(.id)|\(.title)|\(.phase)|\(.priority)"
+    ' "$MANIFEST_FILE" 2>/dev/null || echo ""
+}
+
+# Get task by ID
+get_task_by_id() {
+    local task_id=$1
+    if [ ! -f "$MANIFEST_FILE" ] || ! command -v jq &>/dev/null; then
         echo ""
+        return
+    fi
+
+    jq -r --arg id "$task_id" '.tasks[] | select(.id == $id)' "$MANIFEST_FILE" 2>/dev/null || echo ""
+}
+
+# Get task description for prompt injection
+get_task_description() {
+    local task_id=$1
+    if [ ! -f "$MANIFEST_FILE" ] || ! command -v jq &>/dev/null; then
+        echo ""
+        return
+    fi
+
+    jq -r --arg id "$task_id" '
+      .tasks[] | select(.id == $id) |
+      "**Task ID:** \(.id)\n**Title:** \(.title)\n**Phase:** \(.phase)\n**Priority:** \(.priority)\n**Size:** \(.size)\n\n**Description:**\n\(.description)"
+    ' "$MANIFEST_FILE" 2>/dev/null || echo ""
+}
+
+# Mark task as completed
+mark_task_complete() {
+    local task_id=$1
+    local tmp
+    tmp=$(mktemp)
+
+    jq --arg id "$task_id" '
+      .tasks |= map(if .id == $id then .status = "completed" else . end)
+    ' "$MANIFEST_FILE" > "$tmp" && mv "$tmp" "$MANIFEST_FILE"
+
+    log_success "Task $task_id marked as completed"
+}
+
+# Mark task as blocked
+mark_task_blocked() {
+    local task_id=$1
+    local reason=$2
+    local tmp
+    tmp=$(mktemp)
+
+    jq --arg id "$task_id" --arg reason "$reason" '
+      .tasks |= map(if .id == $id then .status = "blocked" | .blockedReason = $reason else . end)
+    ' "$MANIFEST_FILE" > "$tmp" && mv "$tmp" "$MANIFEST_FILE"
+
+    log_warn "Task $task_id marked as blocked: $reason"
+}
+
+# Get counts for status display
+get_task_counts() {
+    if [ ! -f "$MANIFEST_FILE" ] || ! command -v jq &>/dev/null; then
+        echo "0|0|0|0"
+        return
+    fi
+
+    jq -r '
+      .tasks | {
+        total: length,
+        completed: map(select(.status == "completed")) | length,
+        pending: map(select(.status == "pending")) | length,
+        blocked: map(select(.status == "blocked")) | length
+      } | "\(.total)|\(.completed)|\(.pending)|\(.blocked)"
+    ' "$MANIFEST_FILE" 2>/dev/null || echo "0|0|0|0"
+}
+
+# Get count of ready tasks (pending with deps satisfied)
+get_ready_count() {
+    if [ ! -f "$MANIFEST_FILE" ] || ! command -v jq &>/dev/null; then
+        echo "0"
+        return
+    fi
+
+    jq -r '
+      [.tasks[] | select(.status == "completed") | .id] as $completed |
+      [.tasks[] | select(
+        .status == "pending" and
+        ((.dependsOn | length) == 0 or ((.dependsOn // []) - $completed | length) == 0)
+      )] | length
+    ' "$MANIFEST_FILE" 2>/dev/null || echo "0"
+}
+
+# Show task status summary
+show_task_status() {
+    local counts ready_count
+    counts=$(get_task_counts)
+    ready_count=$(get_ready_count)
+
+    local total completed pending blocked
+    total=$(echo "$counts" | cut -d'|' -f1)
+    completed=$(echo "$counts" | cut -d'|' -f2)
+    pending=$(echo "$counts" | cut -d'|' -f3)
+    blocked=$(echo "$counts" | cut -d'|' -f4)
+
+    local pct=0
+    if [[ $total -gt 0 ]]; then
+        pct=$((completed * 100 / total))
+    fi
+
+    echo ""
+    printf "  ${BOLD}Progress:${RESET}   ${GREEN}%d${RESET}/%d tasks completed (${CYAN}%d%%${RESET})\n" "$completed" "$total" "$pct"
+    printf "  ${BOLD}Ready:${RESET}      ${YELLOW}%d${RESET} tasks ready to work on\n" "$ready_count"
+    printf "  ${BOLD}Pending:${RESET}    %d tasks waiting on dependencies\n" "$((pending - ready_count))"
+    if [[ $blocked -gt 0 ]]; then
+        printf "  ${BOLD}Blocked:${RESET}    ${RED}%d${RESET} tasks blocked\n" "$blocked"
+    fi
+    echo ""
+}
+
+# Show what task is being worked on
+show_current_task() {
+    local task_info
+    task_info=$(get_next_task)
+
+    if [ -n "$task_info" ] && [ "$task_info" != "|||" ]; then
+        local task_id task_title task_phase task_priority
+        task_id=$(echo "$task_info" | cut -d'|' -f1)
+        task_title=$(echo "$task_info" | cut -d'|' -f2)
+        task_phase=$(echo "$task_info" | cut -d'|' -f3)
+        task_priority=$(echo "$task_info" | cut -d'|' -f4)
+
+        show_task_status
+        printf "  ${BOLD}Next Task:${RESET}  ${CYAN}%s${RESET} - %s\n" "$task_id" "$task_title"
+        printf "  ${BOLD}Phase:${RESET}      %s │ ${BOLD}Priority:${RESET} %s\n" "$task_phase" "$task_priority"
+        echo ""
+    else
+        show_task_status
+        log_info "No ready tasks found. Check dependencies or if all tasks are complete."
     fi
 }
+
+# Legacy alias for backward compatibility
+get_next_story() { get_next_task; }
+get_remaining_count() { get_ready_count; }
+show_current_story() { show_current_task; }
+
+# =============================================================================
+# DEFERRED STATUS MODE (needs functions defined above)
+# =============================================================================
+
+if [ "$SHOW_STATUS" = true ]; then
+    if [ ! -f "$MANIFEST_FILE" ]; then
+        log_error "Manifest file not found: $MANIFEST_FILE"
+        exit 1
+    fi
+    print_header "Task Status"
+    log_info "Manifest: $MANIFEST_FILE"
+    show_task_status
+
+    # Show next ready task
+    next_task=$(get_next_task)
+    if [ -n "$next_task" ] && [ "$next_task" != "|||" ]; then
+        task_id=$(echo "$next_task" | cut -d'|' -f1)
+        task_title=$(echo "$next_task" | cut -d'|' -f2)
+        printf "  ${BOLD}Next Task:${RESET}  ${CYAN}%s${RESET} - %s\n\n" "$task_id" "$task_title"
+    fi
+    exit 0
+fi
 
 # Show detailed iteration summary
 show_iteration_summary() {
@@ -692,66 +1037,97 @@ log_info "Ralph Starting... Tool: ${BOLD}$TOOL${RESET} - Max iterations: ${BOLD}
 log_info "Logging session to: $LOG_DIR"
 
 # Archive logic (Modified to be safer)
-if [ -f "$PRD_FILE" ] && [ -f "$LAST_BRANCH_FILE" ]; then
-  CURRENT_BRANCH=$(jq -r '.branchName // empty' "$PRD_FILE" 2>/dev/null || echo "")
+if [ -f "$MANIFEST_FILE" ] && [ -f "$LAST_BRANCH_FILE" ]; then
+  CURRENT_BRANCH=$(jq -r '.branch // empty' "$MANIFEST_FILE" 2>/dev/null || echo "")
   LAST_BRANCH=$(cat "$LAST_BRANCH_FILE" 2>/dev/null || echo "")
-  
+
   if [ -n "$CURRENT_BRANCH" ] && [ -n "$LAST_BRANCH" ] && [ "$CURRENT_BRANCH" != "$LAST_BRANCH" ]; then
     print_header "Archiving Previous Context"
-    FOLDER_NAME=$(echo "$LAST_BRANCH" | sed 's|^ralph/||')
+    FOLDER_NAME=$(echo "$LAST_BRANCH" | sed 's|^ralph/||' | sed 's|^feature/||')
     ARCHIVE_FOLDER="$ARCHIVE_DIR/$RUN_DATE-$FOLDER_NAME"
     mkdir -p "$ARCHIVE_FOLDER"
-    [ -f "$PRD_FILE" ] && cp "$PRD_FILE" "$ARCHIVE_FOLDER/"
+    [ -f "$MANIFEST_FILE" ] && cp "$MANIFEST_FILE" "$ARCHIVE_FOLDER/"
     [ -f "$PROGRESS_FILE" ] && cp "$PROGRESS_FILE" "$ARCHIVE_FOLDER/"
     log_success "Archived to: $ARCHIVE_FOLDER"
-    
+
     # Reset progress
-    echo "# Ralph Progress Log" > "$PROGRESS_FILE"
-    echo "Started: $(date)" >> "$PROGRESS_FILE"
-    echo "---" >> "$PROGRESS_FILE"
+    FEATURE_NAME=$(jq -r '.feature // "Unknown"' "$MANIFEST_FILE" 2>/dev/null || echo "Unknown")
+    cat > "$PROGRESS_FILE" << EOF
+# Ralph Progress Log
+
+Feature: $FEATURE_NAME
+Branch: $CURRENT_BRANCH
+Started: $(date)
+
+## Codebase Patterns
+
+(Add reusable patterns discovered during implementation here)
+
+---
+
+EOF
   fi
 fi
 
-if [ -f "$PRD_FILE" ]; then
-  CURRENT_BRANCH=$(jq -r '.branchName // empty' "$PRD_FILE" 2>/dev/null || echo "")
+if [ -f "$MANIFEST_FILE" ]; then
+  CURRENT_BRANCH=$(jq -r '.branch // empty' "$MANIFEST_FILE" 2>/dev/null || echo "")
   if [ -n "$CURRENT_BRANCH" ]; then echo "$CURRENT_BRANCH" > "$LAST_BRANCH_FILE"; fi
 fi
 
+# Ensure ralph directory exists
+mkdir -p "$RALPH_DIR"
+
 if [ ! -f "$PROGRESS_FILE" ]; then
-  echo "# Ralph Progress Log" > "$PROGRESS_FILE"
-  echo "Started: $(date)" >> "$PROGRESS_FILE"
-  echo "---" >> "$PROGRESS_FILE"
+  FEATURE_NAME=$(jq -r '.feature // "Unknown"' "$MANIFEST_FILE" 2>/dev/null || echo "Unknown")
+  BRANCH_NAME=$(jq -r '.branch // "unknown"' "$MANIFEST_FILE" 2>/dev/null || echo "unknown")
+  cat > "$PROGRESS_FILE" << EOF
+# Ralph Progress Log
+
+Feature: $FEATURE_NAME
+Branch: $BRANCH_NAME
+Started: $(date)
+
+## Codebase Patterns
+
+(Add reusable patterns discovered during implementation here)
+
+---
+
+EOF
 fi
 
 # =============================================================================
 # MAIN LOOP
 # =============================================================================
 
-# Validate PRD file exists
-if [ ! -f "$PRD_FILE" ]; then
-    log_error "PRD file not found: $PRD_FILE"
+# Validate manifest file exists
+if [ ! -f "$MANIFEST_FILE" ]; then
+    log_error "Manifest file not found: $MANIFEST_FILE"
+    log_info "Create one with: ./ralph.sh --init or create ralph/manifest.json manually"
     exit 1
 fi
 
-log_info "PRD file: $PRD_FILE"
+log_info "Manifest: $MANIFEST_FILE"
 
 # Dry-run mode: show what would be run and exit
 if [ "$DRY_RUN" = true ]; then
     print_header "Dry Run Mode"
     log_info "Tool: $TOOL"
     log_info "Max iterations: $MAX_ITERATIONS"
-    log_info "PRD file: $PRD_FILE"
+    log_info "Manifest file: $MANIFEST_FILE"
+    log_info "Progress file: $PROGRESS_FILE"
     log_info "Prompt file: $PROMPT_FILE"
     log_info "Log directory: $LOG_DIR"
     log_info "Config file: ${CONFIG_FILE:-none}"
     [[ -n "${PROJECT_LANG:-}" ]] && log_info "Project: $PROJECT_LANG ${PROJECT_FRAMEWORK:-}"
     [[ -n "$MODEL_OVERRIDE" ]] && log_info "Model override: $MODEL_OVERRIDE"
     log_info "Browser: $BROWSER_ENABLED"
+    log_info "Stream: $STREAM"
     log_info "Verbose: $VERBOSE"
-    
-    # Show next story that would be worked on
-    show_current_story
-    
+
+    # Show task status and next task
+    show_current_task
+
     log_success "Dry run complete. No AI iterations executed."
     exit 0
 fi
@@ -767,13 +1143,34 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   ITERATION_LOG="$LOG_DIR/${i}_iteration.log"
   current_step="Thinking"
 
+  # Get the next task to work on
+  TASK_INFO=$(get_next_task)
+  if [ -z "$TASK_INFO" ] || [ "$TASK_INFO" == "|||" ]; then
+    log_warn "No ready tasks found for iteration $i"
+    continue
+  fi
+
+  CURRENT_TASK_ID=$(echo "$TASK_INFO" | cut -d'|' -f1)
+  CURRENT_TASK_TITLE=$(echo "$TASK_INFO" | cut -d'|' -f2)
+
   # Build Prompt
   FULL_PROMPT_FILE="$LOG_DIR/${i}_prompt_full.md"
   cp "$PROMPT_FILE" "$FULL_PROMPT_FILE"
-  
-  # Append PRD file location (overrides default prd.json reference in prompt)
-  PRD_RELATIVE=$(realpath --relative-to="$SCRIPT_DIR" "$PRD_FILE" 2>/dev/null || basename "$PRD_FILE")
-  echo -e "\n## PRD Location\nThe PRD file for this run is: \`$PRD_RELATIVE\`" >> "$FULL_PROMPT_FILE"
+
+  # Inject task details at the injection point
+  TASK_DETAILS=$(get_task_description "$CURRENT_TASK_ID")
+  # Replace the injection point comment with actual task details
+  if grep -q "<!-- TASK_INJECTION_POINT -->" "$FULL_PROMPT_FILE"; then
+    # Use awk to replace the injection point
+    awk -v task="$TASK_DETAILS" '{gsub(/<!-- TASK_INJECTION_POINT -->/, task); print}' "$FULL_PROMPT_FILE" > "$FULL_PROMPT_FILE.tmp" && mv "$FULL_PROMPT_FILE.tmp" "$FULL_PROMPT_FILE"
+  else
+    # Fallback: append task details at the end
+    echo -e "\n## Assigned Task\n$TASK_DETAILS" >> "$FULL_PROMPT_FILE"
+  fi
+
+  # Append manifest file location
+  MANIFEST_RELATIVE=$(realpath --relative-to="$SCRIPT_DIR" "$MANIFEST_FILE" 2>/dev/null || basename "$MANIFEST_FILE")
+  echo -e "\n## Manifest Location\nThe manifest file for this run is: \`$MANIFEST_RELATIVE\`" >> "$FULL_PROMPT_FILE"
   
   # Append Browser Instructions
   get_browser_instructions >> "$FULL_PROMPT_FILE"
@@ -806,8 +1203,12 @@ for i in $(seq 1 $MAX_ITERATIONS); do
          # Note: --verbose is required when using -p with --output-format stream-json
          CMD="claude --dangerously-skip-permissions --output-format stream-json --verbose"
          if [ -n "$MODEL_OVERRIDE" ]; then CMD="$CMD --model $MODEL_OVERRIDE"; fi
-         if [ "$VERBOSE" = true ]; then
-             echo -e "  ${DIM}[Verbose mode - showing agent output]${RESET}"
+         if [ "$STREAM" = true ]; then
+             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+             echo ""
+             $CMD -p "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
+         elif [ "$VERBOSE" = true ]; then
+             echo -e "  ${DIM}[Verbose mode - raw JSON output]${RESET}"
              echo ""
              $CMD -p "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
          else
@@ -817,8 +1218,12 @@ for i in $(seq 1 $MAX_ITERATIONS); do
          ;;
     cursor)
          CMD="agent --output-format stream-json"
-         if [ "$VERBOSE" = true ]; then
-             echo "  ${DIM}[Verbose mode - showing agent output]${RESET}"
+         if [ "$STREAM" = true ]; then
+             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+             echo ""
+             $CMD -p "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
+         elif [ "$VERBOSE" = true ]; then
+             echo -e "  ${DIM}[Verbose mode - raw JSON output]${RESET}"
              echo ""
              $CMD -p "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
          else
@@ -827,45 +1232,115 @@ for i in $(seq 1 $MAX_ITERATIONS); do
          ai_pid=$!
          ;;
     opencode)
-         OPENCODE_PERMISSION='{"*":"allow"}' opencode run --format json ${MODEL_OVERRIDE:+--model "$MODEL_OVERRIDE"} "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         CMD="opencode run --format json ${MODEL_OVERRIDE:+--model "$MODEL_OVERRIDE"}"
+         if [ "$STREAM" = true ]; then
+             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+             echo ""
+             OPENCODE_PERMISSION='{"*":"allow"}' $CMD "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
+         elif [ "$VERBOSE" = true ]; then
+             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
+             echo ""
+             OPENCODE_PERMISSION='{"*":"allow"}' $CMD "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+         else
+             OPENCODE_PERMISSION='{"*":"allow"}' $CMD "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         fi
          ai_pid=$!
          ;;
     codex)
-         codex exec --full-auto --json "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         if [ "$STREAM" = true ]; then
+             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+             echo ""
+             codex exec --full-auto --json "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
+         elif [ "$VERBOSE" = true ]; then
+             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
+             echo ""
+             codex exec --full-auto --json "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+         else
+             codex exec --full-auto --json "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         fi
          ai_pid=$!
          ;;
     droid)
-         droid exec --output-format stream-json --auto medium "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         if [ "$STREAM" = true ]; then
+             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+             echo ""
+             droid exec --output-format stream-json --auto medium "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
+         elif [ "$VERBOSE" = true ]; then
+             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
+             echo ""
+             droid exec --output-format stream-json --auto medium "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+         else
+             droid exec --output-format stream-json --auto medium "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         fi
          ai_pid=$!
          ;;
     copilot)
          CMD="copilot -p"
          if [ -n "$MODEL_OVERRIDE" ]; then CMD="$CMD --model $MODEL_OVERRIDE"; fi
-         $CMD "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         if [ "$STREAM" = true ]; then
+             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+             echo ""
+             $CMD "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
+         elif [ "$VERBOSE" = true ]; then
+             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
+             echo ""
+             $CMD "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+         else
+             $CMD "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         fi
          ai_pid=$!
          ;;
     gemini)
          if command -v gemini &>/dev/null; then
-             gemini run "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+             GEMINI_CMD="gemini run"
          elif command -v npx &>/dev/null; then
-             npx -y @google/gemini-cli run "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+             GEMINI_CMD="npx -y @google/gemini-cli run"
          else
              log_error "Neither 'gemini' CLI nor 'npx' found."
              exit 1
          fi
+         if [ "$STREAM" = true ]; then
+             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+             echo ""
+             $GEMINI_CMD "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
+         elif [ "$VERBOSE" = true ]; then
+             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
+             echo ""
+             $GEMINI_CMD "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+         else
+             $GEMINI_CMD "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+         fi
          ai_pid=$!
          ;;
     dummy)
-         (
-           echo "[DUMMY] Reading prompt from $FULL_PROMPT_FILE..."
-           sleep 3
+         dummy_output() {
+           echo '{"type":"assistant","message":{"content":[{"type":"text","text":"I will start working on the task..."}]}}'
+           sleep 1
+           echo '{"type":"tool_use","name":"Read","input":{"path":"prd.json"}}'
+           sleep 1
+           echo '{"type":"tool_result","content":"File contents..."}'
+           sleep 1
+           echo '{"type":"tool_use","name":"Shell","input":{"command":"npm run test"}}'
+           sleep 1
+           echo '{"type":"tool_result","content":"All tests passed"}'
            if (( RANDOM % 3 == 0 )); then
               echo '{"type":"result","result":"Task completed","usage":{"input_tokens":1500,"output_tokens":500}}'
               echo "<promise>COMPLETE</promise>"
            else
               echo '{"type":"result","result":"Working on task...","usage":{"input_tokens":1200,"output_tokens":400}}'
            fi
-         ) > "$tmpfile" 2>&1 &
+         }
+         if [ "$STREAM" = true ]; then
+             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+             echo ""
+             dummy_output 2>&1 | stream_format_output "claude" "$tmpfile" &
+         elif [ "$VERBOSE" = true ]; then
+             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
+             echo ""
+             dummy_output 2>&1 | tee "$tmpfile" &
+         else
+             dummy_output > "$tmpfile" 2>&1 &
+         fi
          ai_pid=$!
          ;;
     *)
@@ -874,8 +1349,8 @@ for i in $(seq 1 $MAX_ITERATIONS); do
          ;;
   esac
   
-  # Start progress monitor in background (skip in verbose mode)
-  if [ "$VERBOSE" != true ]; then
+  # Start progress monitor in background (skip in verbose/stream mode)
+  if [ "$VERBOSE" != true ] && [ "$STREAM" != true ]; then
       monitor_progress "$tmpfile" "Iteration $i" &
       monitor_pid=$!
   fi
@@ -947,15 +1422,59 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   rm -f "$tmpfile"
   tmpfile=""
   
-  # Check for completion
-  if echo "$OUTPUT" | grep -qF "$COMPLETION_MARKER"; then
+  # Check for task completion marker and extract task ID
+  if echo "$OUTPUT" | grep -qF "$TASK_COMPLETE_PATTERN"; then
+    local completed_task_id
+    completed_task_id=$(echo "$OUTPUT" | grep -oP '(?<=<task-complete>)[^<]+(?=</task-complete>)' | head -1)
+
+    if [ -n "$completed_task_id" ]; then
+        mark_task_complete "$completed_task_id"
+    fi
+  fi
+
+  # Check for task blocked marker
+  if echo "$OUTPUT" | grep -qF "$TASK_BLOCKED_PATTERN"; then
+    local blocked_info
+    blocked_info=$(echo "$OUTPUT" | grep -oP '(?<=<task-blocked>)[^<]+(?=</task-blocked>)' | head -1)
+
+    if [ -n "$blocked_info" ]; then
+        local blocked_id blocked_reason
+        blocked_id=$(echo "$blocked_info" | cut -d':' -f1)
+        blocked_reason=$(echo "$blocked_info" | cut -d':' -f2-)
+        mark_task_blocked "$blocked_id" "$blocked_reason"
+    fi
+  fi
+
+  # Check if all tasks are complete
+  local ready_count
+  ready_count=$(get_ready_count)
+  local counts
+  counts=$(get_task_counts)
+  local total completed
+  total=$(echo "$counts" | cut -d'|' -f1)
+  completed=$(echo "$counts" | cut -d'|' -f2)
+
+  if [[ "$completed" -eq "$total" ]] || echo "$OUTPUT" | grep -qF "$ALL_COMPLETE_MARKER"; then
     print_header "Mission Accomplished"
-    log_success "Ralph completed all tasks at iteration $i!"
-    
+    log_success "Ralph completed all $total tasks at iteration $i!"
+    show_task_status
+
     SESSION_END=$(date +%s)
     SESSION_DURATION=$((SESSION_END - SESSION_START))
     print_session_summary "$SESSION_DURATION" "$i"
     exit 0
+  fi
+
+  # Check if no more ready tasks (all blocked or waiting)
+  if [[ "$ready_count" -eq 0 ]]; then
+    print_header "No Ready Tasks"
+    log_warn "All remaining tasks are blocked or waiting on dependencies."
+    show_task_status
+
+    SESSION_END=$(date +%s)
+    SESSION_DURATION=$((SESSION_END - SESSION_START))
+    print_session_summary "$SESSION_DURATION" "$i"
+    exit 1
   fi
   
   log_info "Continuing to next iteration..."
