@@ -2,8 +2,63 @@
 
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
+
+if TYPE_CHECKING:
+    pass
+
+
+def calculate_progress(
+    requirements_status: str,
+    prd_status: str,
+    stories_status: str,
+    mockups_status: str,
+    export_status: str,
+) -> int:
+    """Calculate overall progress percentage from stage statuses.
+
+    Each stage contributes 20% when complete.
+    Partial credit:
+    - Requirements: empty=0%, has_items=10%, reviewed=20%
+    - PRD: empty=0%, draft=10%, ready=20%
+    - Stories: empty=0%, generated=10%, refined=20%
+    - Mockups: empty=0%, generated=20%
+    - Export: not_exported=0%, exported=20%
+
+    Returns:
+        Progress percentage (0-100)
+    """
+    progress = 0
+
+    # Requirements stage (max 20%)
+    if requirements_status == "reviewed":
+        progress += 20
+    elif requirements_status == "has_items":
+        progress += 10
+
+    # PRD stage (max 20%)
+    if prd_status == "ready":
+        progress += 20
+    elif prd_status == "draft":
+        progress += 10
+
+    # Stories stage (max 20%)
+    if stories_status == "refined":
+        progress += 20
+    elif stories_status == "generated":
+        progress += 10
+
+    # Mockups stage (max 20%)
+    if mockups_status == "generated":
+        progress += 20
+
+    # Export stage (max 20%)
+    if export_status == "exported":
+        progress += 20
+
+    return progress
 
 
 class RequirementsStatusSchema(str, Enum):
@@ -68,6 +123,18 @@ class ProjectResponse(BaseModel):
     export_status: ExportStatusSchema
 
     model_config = {"from_attributes": True}
+
+    @computed_field
+    @property
+    def progress(self) -> int:
+        """Calculate overall progress percentage from stage statuses."""
+        return calculate_progress(
+            requirements_status=self.requirements_status.value,
+            prd_status=self.prd_status.value,
+            stories_status=self.stories_status.value,
+            mockups_status=self.mockups_status.value,
+            export_status=self.export_status.value,
+        )
 
 
 class ProjectList(BaseModel):

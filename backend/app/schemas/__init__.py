@@ -42,6 +42,7 @@ from app.schemas.project import (
     RequirementsStatusSchema,
     SectionCount,
     StoriesStatusSchema,
+    calculate_progress,
 )
 from app.schemas.requirement import (
     RequirementHistoryResponse,
@@ -77,6 +78,7 @@ __all__ = [
     "StoriesStatusSchema",
     "MockupsStatusSchema",
     "ExportStatusSchema",
+    "calculate_progress",
     # Meeting schemas
     "MeetingUpload",
     "MeetingItemResponse",

@@ -186,3 +186,49 @@ def test_get_project_stats_returns_404_for_missing(test_client: TestClient) -> N
     response = test_client.get(f"/api/projects/{fake_uuid}/stats")
     assert response.status_code == 404
     assert response.json()["detail"] == "Project not found"
+
+
+def test_new_project_has_zero_progress(test_client: TestClient) -> None:
+    """Test that a new project has 0% progress."""
+    response = test_client.post(
+        "/api/projects",
+        json={"name": "Progress Test", "description": "Testing progress"},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert "progress" in data
+    assert data["progress"] == 0
+
+
+def test_project_progress_included_in_response(test_client: TestClient) -> None:
+    """Test that progress is included when fetching a project."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Progress Fetch Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Fetch the project
+    response = test_client.get(f"/api/projects/{project_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert "progress" in data
+    assert isinstance(data["progress"], int)
+    assert 0 <= data["progress"] <= 100
+
+
+def test_project_progress_in_list(test_client: TestClient) -> None:
+    """Test that progress is included when listing projects."""
+    # Create a project
+    test_client.post("/api/projects", json={"name": "List Progress Test"})
+
+    # List projects
+    response = test_client.get("/api/projects")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) > 0
+    # Check that all projects have progress field
+    for project in data:
+        assert "progress" in project
+        assert isinstance(project["progress"], int)
