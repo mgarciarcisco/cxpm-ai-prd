@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.sqlite import CHAR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,6 +23,7 @@ class PRDStatus(str, enum.Enum):
     """Enum for PRD generation status lifecycle."""
     QUEUED = "queued"
     GENERATING = "generating"
+    PARTIAL = "partial"  # Some sections completed, some failed
     READY = "ready"
     FAILED = "failed"
     CANCELLED = "cancelled"
@@ -33,6 +34,9 @@ class PRD(Base):
     """PRD model for storing Product Requirements Documents."""
 
     __tablename__ = "prds"
+    __table_args__ = (
+        UniqueConstraint("project_id", "version", name="uq_prds_project_version"),
+    )
 
     id: Mapped[str] = mapped_column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     project_id: Mapped[str] = mapped_column(CHAR(36), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
@@ -45,6 +49,11 @@ class PRD(Base):
     # Status lifecycle
     status: Mapped[PRDStatus] = mapped_column(SAEnum(PRDStatus), default=PRDStatus.QUEUED, nullable=False)
     error_message = Column(Text, nullable=True)
+
+    # Section progress tracking for staged generation
+    current_stage: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sections_completed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    sections_total: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Audit fields
     created_by: Mapped[str] = mapped_column(String(255), nullable=True)
