@@ -1,5 +1,5 @@
 /**
- * React hook for consuming SSE streams from the staged PRD generation v2 endpoint.
+ * React hook for consuming SSE streams from the staged PRD generation endpoint.
  * Handles section-by-section generation with streaming, parallel sections, and per-section status.
  */
 
@@ -21,7 +21,7 @@ export const SectionStatus = {
 };
 
 /**
- * Custom hook for streaming staged PRD generation results via SSE v2
+ * Custom hook for streaming staged PRD generation results via SSE
  *
  * @param {string} projectId - The project ID to generate PRD for
  * @param {string} mode - The PRD mode ('draft' or 'detailed')
@@ -94,7 +94,7 @@ export function usePRDStreamingV2(projectId, mode, shouldConnect = false) {
   }, []);
 
   /**
-   * Connect to the SSE v2 stream
+   * Connect to the SSE stream
    */
   const connect = useCallback(() => {
     if (!projectId || !mode) return;
@@ -104,7 +104,7 @@ export function usePRDStreamingV2(projectId, mode, shouldConnect = false) {
     setStatus('connecting');
     cleanup();
 
-    const url = `${BASE_URL}/api/projects/${projectId}/prds/stream/v2?mode=${mode}`;
+    const url = `${BASE_URL}/api/projects/${projectId}/prds/stream?mode=${mode}`;
     const eventSource = new EventSource(url);
     eventSourceRef.current = eventSource;
 
