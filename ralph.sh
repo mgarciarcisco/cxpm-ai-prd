@@ -1524,106 +1524,98 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
   # Run the selected tool in background
   PROMPT_CONTENT=$(cat "$FULL_PROMPT_FILE")
   
-  # Helper function to run command with optional verbose output
-  run_agent_cmd() {
-      if [ "$VERBOSE" = true ]; then
-          "$@" 2>&1 | tee "$tmpfile"
-      else
-          "$@" > "$tmpfile" 2>&1
-      fi
-  }
-  
+  # Write prompt to temp file (avoids shell escaping issues)
+  PROMPT_TMP="$LOG_DIR/${i}_prompt_input.txt"
+  echo "$PROMPT_CONTENT" > "$PROMPT_TMP"
+
   case "$TOOL" in
     claude)
          # Note: --verbose is required when using -p with --output-format stream-json
          CMD="claude --dangerously-skip-permissions --output-format stream-json --verbose"
          if [ -n "$MODEL_OVERRIDE" ]; then CMD="$CMD --model $MODEL_OVERRIDE"; fi
+
          if [ "$STREAM" = true ]; then
              echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
              echo ""
-             $CMD -p "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
+             # Run with timeout, stream to formatter
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" | while IFS= read -r line; do
+                 # Simple inline formatting
+                 if echo "$line" | grep -q '"type":"tool_use"'; then
+                     tool_name=$(echo "$line" | jq -r '.name // empty' 2>/dev/null)
+                     [[ -n "$tool_name" ]] && echo -e "${YELLOW}━━━ $tool_name${RESET}"
+                 elif echo "$line" | grep -q '"type":"result"'; then
+                     echo -e "${GREEN}━━━ Iteration Complete${RESET}"
+                 fi
+             done
+             AI_EXIT_CODE=$?
          elif [ "$VERBOSE" = true ]; then
              echo -e "  ${DIM}[Verbose mode - raw JSON output]${RESET}"
              echo ""
-             $CMD -p "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
+             AI_EXIT_CODE=$?
          else
-             $CMD -p "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             AI_EXIT_CODE=$?
          fi
-         ai_pid=$!
          ;;
     cursor)
          CMD="agent --output-format stream-json"
-         if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+         if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
+             [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             $CMD -p "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
-         elif [ "$VERBOSE" = true ]; then
-             echo -e "  ${DIM}[Verbose mode - raw JSON output]${RESET}"
-             echo ""
-             $CMD -p "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
+             AI_EXIT_CODE=$?
          else
-             $CMD -p "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             AI_EXIT_CODE=$?
          fi
-         ai_pid=$!
          ;;
     opencode)
          CMD="opencode run --format json ${MODEL_OVERRIDE:+--model "$MODEL_OVERRIDE"}"
-         if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+         if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
+             [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             OPENCODE_PERMISSION='{"*":"allow"}' $CMD "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
-         elif [ "$VERBOSE" = true ]; then
-             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
-             echo ""
-             OPENCODE_PERMISSION='{"*":"allow"}' $CMD "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+             timeout "$TASK_TIMEOUT" bash -c "OPENCODE_PERMISSION='{\"*\":\"allow\"}' $CMD \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
+             AI_EXIT_CODE=$?
          else
-             OPENCODE_PERMISSION='{"*":"allow"}' $CMD "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+             timeout "$TASK_TIMEOUT" bash -c "OPENCODE_PERMISSION='{\"*\":\"allow\"}' $CMD \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             AI_EXIT_CODE=$?
          fi
-         ai_pid=$!
          ;;
     codex)
-         if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+         if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
+             [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             codex exec --full-auto --json "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
-         elif [ "$VERBOSE" = true ]; then
-             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
-             echo ""
-             codex exec --full-auto --json "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+             timeout "$TASK_TIMEOUT" bash -c "codex exec --full-auto --json \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
+             AI_EXIT_CODE=$?
          else
-             codex exec --full-auto --json "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+             timeout "$TASK_TIMEOUT" bash -c "codex exec --full-auto --json \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             AI_EXIT_CODE=$?
          fi
-         ai_pid=$!
          ;;
     droid)
-         if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+         if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
+             [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             droid exec --output-format stream-json --auto medium "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
-         elif [ "$VERBOSE" = true ]; then
-             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
-             echo ""
-             droid exec --output-format stream-json --auto medium "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+             timeout "$TASK_TIMEOUT" bash -c "droid exec --output-format stream-json --auto medium \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
+             AI_EXIT_CODE=$?
          else
-             droid exec --output-format stream-json --auto medium "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+             timeout "$TASK_TIMEOUT" bash -c "droid exec --output-format stream-json --auto medium \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             AI_EXIT_CODE=$?
          fi
-         ai_pid=$!
          ;;
     copilot)
          CMD="copilot -p"
          if [ -n "$MODEL_OVERRIDE" ]; then CMD="$CMD --model $MODEL_OVERRIDE"; fi
-         if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+         if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
+             [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             $CMD "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
-         elif [ "$VERBOSE" = true ]; then
-             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
-             echo ""
-             $CMD "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+             timeout "$TASK_TIMEOUT" bash -c "$CMD \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
+             AI_EXIT_CODE=$?
          else
-             $CMD "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+             timeout "$TASK_TIMEOUT" bash -c "$CMD \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             AI_EXIT_CODE=$?
          fi
-         ai_pid=$!
          ;;
     gemini)
          if command -v gemini &>/dev/null; then
@@ -1634,18 +1626,15 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
              log_error "Neither 'gemini' CLI nor 'npx' found."
              exit 1
          fi
-         if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+         if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
+             [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             $GEMINI_CMD "$PROMPT_CONTENT" 2>&1 | stream_format_output "$TOOL" "$tmpfile" &
-         elif [ "$VERBOSE" = true ]; then
-             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
-             echo ""
-             $GEMINI_CMD "$PROMPT_CONTENT" 2>&1 | tee "$tmpfile" &
+             timeout "$TASK_TIMEOUT" bash -c "$GEMINI_CMD \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
+             AI_EXIT_CODE=$?
          else
-             $GEMINI_CMD "$PROMPT_CONTENT" > "$tmpfile" 2>&1 &
+             timeout "$TASK_TIMEOUT" bash -c "$GEMINI_CMD \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             AI_EXIT_CODE=$?
          fi
-         ai_pid=$!
          ;;
     dummy)
          dummy_output() {
@@ -1660,73 +1649,34 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
            echo '{"type":"tool_result","content":"All tests passed"}'
            if (( RANDOM % 3 == 0 )); then
               echo '{"type":"result","result":"Task completed","usage":{"input_tokens":1500,"output_tokens":500}}'
-              echo "<promise>COMPLETE</promise>"
+              echo "<task-complete>P1-001</task-complete>"
            else
               echo '{"type":"result","result":"Working on task...","usage":{"input_tokens":1200,"output_tokens":400}}'
            fi
          }
-         if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+         if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
+             [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             dummy_output 2>&1 | stream_format_output "claude" "$tmpfile" &
-         elif [ "$VERBOSE" = true ]; then
-             echo -e "  ${DIM}[Verbose mode - raw output]${RESET}"
-             echo ""
-             dummy_output 2>&1 | tee "$tmpfile" &
+             dummy_output 2>&1 | tee "$tmpfile"
+             AI_EXIT_CODE=$?
          else
-             dummy_output > "$tmpfile" 2>&1 &
+             dummy_output > "$tmpfile" 2>&1
+             AI_EXIT_CODE=$?
          fi
-         ai_pid=$!
          ;;
     *)
          log_error "Unknown tool: $TOOL"
          exit 1
          ;;
   esac
-  
-  # Start progress monitor in background (skip in verbose/stream mode)
-  if [ "$VERBOSE" != true ] && [ "$STREAM" != true ]; then
-      monitor_progress "$tmpfile" "Iteration $i" &
-      monitor_pid=$!
-  fi
-  
-  # Save resume state before running
+
+  # Save resume state
   save_resume_state "$i" "$CURRENT_TASK_ID"
 
-  # Wait for AI to finish with timeout
-  AI_EXIT_CODE=0
+  # Check for timeout (exit code 124)
   TIMEOUT_REACHED=false
-
-  # Monitor with timeout
-  elapsed=0
-  while kill -0 "$ai_pid" 2>/dev/null; do
-      if [[ $elapsed -ge $TASK_TIMEOUT ]]; then
-          log_warn "Task timeout (${TASK_TIMEOUT}s) reached for $CURRENT_TASK_ID"
-          kill -TERM "$ai_pid" 2>/dev/null
-          sleep 2
-          kill -KILL "$ai_pid" 2>/dev/null
-          TIMEOUT_REACHED=true
-          AI_EXIT_CODE=124
-          break
-      fi
-      sleep 1
-      ((elapsed++))
-  done
-
-  # If not timed out, wait for proper exit code
-  if [[ "$TIMEOUT_REACHED" != "true" ]]; then
-      if ! wait "$ai_pid" 2>/dev/null; then
-          AI_EXIT_CODE=$?
-      fi
-  fi
-
-  # Stop the monitor
-  if [ -n "$monitor_pid" ]; then
-      kill "$monitor_pid" 2>/dev/null || true
-      wait "$monitor_pid" 2>/dev/null || true
-      monitor_pid=""
-      # Clear the progress line
-      printf "\r\033[K"
+  if [[ $AI_EXIT_CODE -eq 124 ]]; then
+      TIMEOUT_REACHED=true
   fi
 
   # Read and save result
