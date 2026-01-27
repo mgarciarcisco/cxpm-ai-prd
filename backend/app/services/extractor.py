@@ -71,8 +71,9 @@ def _parse_llm_response(response: str) -> list[dict[str, Any]]:
     if not isinstance(parsed, list):
         raise ExtractionError("LLM response must be a JSON array")
 
-    # Validate each item has required fields
+    # Validate each item has required fields and filter out empty content
     valid_sections = {s.value for s in Section}
+    validated_items = []
     for i, item in enumerate(parsed):
         if not isinstance(item, dict):
             raise ExtractionError(f"Item {i} is not a dictionary")
@@ -82,8 +83,12 @@ def _parse_llm_response(response: str) -> list[dict[str, Any]]:
             raise ExtractionError(f"Item {i} missing 'content' field")
         if item["section"] not in valid_sections:
             raise ExtractionError(f"Item {i} has invalid section: {item['section']}")
+        # Skip items with empty content
+        content = item.get("content", "")
+        if isinstance(content, str) and content.strip():
+            validated_items.append(item)
 
-    return parsed
+    return validated_items
 
 
 def _create_meeting_items(
@@ -351,11 +356,14 @@ def _parse_streaming_json(accumulated: str) -> tuple[list[dict[str, Any]], str]:
                 item_str = cleaned[item_start : i + 1]
                 try:
                     item = json.loads(item_str)
+                    content = item.get("content", "")
                     if (
                         isinstance(item, dict)
                         and "section" in item
                         and "content" in item
                         and item["section"] in valid_sections
+                        and isinstance(content, str)
+                        and content.strip()  # Skip empty content
                     ):
                         parsed_items.append(item)
                 except json.JSONDecodeError:

@@ -278,16 +278,18 @@ function RequirementsPage() {
           <div className="requirements-content">
             {SECTIONS.map((section) => {
               const sectionItems = requirements?.[section.key] || [];
+              // Filter out items with empty content for accurate count
+              const nonEmptyItems = sectionItems.filter(item => item.content && item.content.trim());
               return (
                 <CollapsibleSection
                   key={section.key}
                   title={section.label}
-                  itemCount={sectionItems.length}
+                  itemCount={nonEmptyItems.length}
                   defaultExpanded={true}
                 >
-                  {sectionItems.length > 0 ? (
+                  {nonEmptyItems.length > 0 ? (
                     <div className="requirements-items">
-                      {sectionItems.map((item) => (
+                      {nonEmptyItems.map((item) => (
                         <div key={item.id} className="requirements-item-wrapper">
                           <ItemRow
                             item={item}
