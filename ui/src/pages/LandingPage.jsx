@@ -62,22 +62,22 @@ const features = [
     Icon: ClipboardIcon,
     iconBg: '#FFF3E0',
     iconColor: '#FB8C00',
-    title: 'Generate PRD (v0)',
+    title: 'Generate PRD',
     description: 'Create an early PRD designed to surface clarity and gaps',
     input: 'Meeting recap, notes, or prompt',
     output: 'Draft PRD for review and iteration',
-    link: null
+    link: '/app/prd'
   },
   {
     id: 3,
     Icon: GridListIcon,
-    iconBg: '#FFEBEE',
-    iconColor: '#E53935',
-    title: 'Generate Epics & Jira Tickets',
-    description: 'Break down requirements into actionable development work',
-    input: 'PRD or requirements document',
-    output: 'Epics, stories, and acceptance criteria',
-    link: null
+    iconBg: '#E3F2FD',
+    iconColor: '#1E88E5',
+    title: 'User Stories',
+    description: 'Generate actionable user stories from your requirements',
+    input: 'Requirements from meeting recap',
+    output: 'User stories with acceptance criteria',
+    link: '/app/stories'
   },
   {
     id: 4,

@@ -21,6 +21,8 @@ from app.schemas.meeting import (
 from app.schemas.prd import (
     ExportFormat,
     PaginatedResponse,
+    PRDExportJSON,
+    PRDExportSection,
     PRDGenerateRequest,
     PRDResponse,
     PRDSection,
@@ -46,10 +48,13 @@ from app.schemas.requirement import (
 )
 from app.schemas.user_story import (
     ReorderRequest,
+    STORIES_CSV_COLUMNS,
+    StoriesExportJSON,
     StoriesGenerateRequest,
     StoryBatchResponse,
     StoryBatchStatusResponse,
     StoryExportFormat,
+    StoryExportItem,
     StoryUpdateRequest,
     UserStoryResponse,
 )
@@ -89,6 +94,8 @@ __all__ = [
     # PRD schemas
     "ExportFormat",
     "PaginatedResponse",
+    "PRDExportJSON",
+    "PRDExportSection",
     "PRDGenerateRequest",
     "PRDResponse",
     "PRDSection",
@@ -97,10 +104,13 @@ __all__ = [
     "PRDUpdateRequest",
     # User Story schemas
     "ReorderRequest",
+    "STORIES_CSV_COLUMNS",
+    "StoriesExportJSON",
     "StoriesGenerateRequest",
     "StoryBatchResponse",
     "StoryBatchStatusResponse",
     "StoryExportFormat",
+    "StoryExportItem",
     "StoryUpdateRequest",
     "UserStoryResponse",
 ]

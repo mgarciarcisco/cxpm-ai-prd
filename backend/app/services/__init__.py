@@ -7,6 +7,8 @@ from app.services.extractor import ExtractionError, extract, extract_stream
 from app.services.llm import LLMError, LLMProvider, get_provider
 from app.services.merger import MergeError, suggest_merge
 from app.services.parser import parse_file
+from app.services.prd_generator import PRDGenerator, generate_prd_task
+from app.services.stories_generator import StoriesGenerator, generate_stories_task
 
 __all__ = [
     "parse_file",
@@ -24,4 +26,10 @@ __all__ = [
     "ConflictResult",
     "suggest_merge",
     "MergeError",
+    # PRD Generation
+    "PRDGenerator",
+    "generate_prd_task",
+    # Stories Generation
+    "StoriesGenerator",
+    "generate_stories_task",
 ]

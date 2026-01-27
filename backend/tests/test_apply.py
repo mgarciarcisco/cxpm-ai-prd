@@ -119,7 +119,14 @@ class MockLLMProvider:
     def __init__(self, response: str):
         self.response = response
 
-    def generate(self, prompt: str) -> str:
+    def generate(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        timeout: float | None = None,
+    ) -> str:
         return self.response
 
 

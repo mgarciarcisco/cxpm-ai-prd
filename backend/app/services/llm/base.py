@@ -17,17 +17,27 @@ class LLMProvider(ABC):
     """
 
     @abstractmethod
-    def generate(self, prompt: str) -> str:
+    def generate(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        timeout: float | None = None,
+    ) -> str:
         """Generate a response for the given prompt.
 
         Args:
             prompt: The input prompt to send to the LLM.
+            temperature: Optional temperature for response randomness (0.0-1.0).
+            max_tokens: Optional maximum tokens in the response.
+            timeout: Optional timeout in seconds for this specific request.
 
         Returns:
             The generated text response.
 
         Raises:
-            LLMError: If the generation fails.
+            LLMError: If the generation fails or times out.
         """
         pass
 

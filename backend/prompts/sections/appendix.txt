@@ -1,0 +1,47 @@
+Generate the APPENDIX section of a PRD.
+
+## Project Requirements
+{requirements}
+
+{prior_context}
+
+## Section Guidelines
+
+Provide supporting information:
+
+**Include:**
+- **Glossary**: Define technical terms, acronyms, and domain-specific language used in the PRD
+- **Assumptions**: List assumptions made during PRD creation that should be validated
+- **Out of Scope**: Explicitly list what is NOT included in this initiative (to prevent scope creep)
+- **Related Documents**: References to related PRDs, design docs, research, or external resources
+- **Version History**: Note this is version 1.0 of the PRD
+- **Stakeholders**: Key stakeholders and their roles (if identifiable from requirements)
+
+**Format:**
+
+### Glossary
+| Term | Definition |
+|------|------------|
+| ... | ... |
+
+### Assumptions
+1. Assumption 1 - [Needs validation by: stakeholder/date]
+2. Assumption 2 - [Needs validation by: stakeholder/date]
+
+### Out of Scope
+- Item 1 (reason)
+- Item 2 (reason)
+
+### Related Documents
+- [Document Name](link) - Description
+
+Length: Comprehensive but concise supporting information.
+
+## Output
+
+Return a JSON object:
+{
+  "id": "appendix",
+  "title": "Appendix",
+  "content": "markdown content..."
+}

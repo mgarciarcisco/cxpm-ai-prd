@@ -1,0 +1,43 @@
+Generate the NON-FUNCTIONAL REQUIREMENTS section of a PRD.
+
+## Project Requirements
+{requirements}
+
+{prior_context}
+
+## Section Guidelines
+
+Document quality attributes and constraints:
+
+**Categories to cover:**
+- **Performance**: Response times, throughput, latency targets
+- **Scalability**: Expected load, growth projections, scaling requirements
+- **Security**: Authentication, authorization, data protection, compliance
+- **Reliability**: Uptime targets, fault tolerance, disaster recovery
+- **Accessibility**: WCAG compliance level, supported assistive technologies
+- **Compatibility**: Browsers, devices, operating systems supported
+- **Maintainability**: Code quality, documentation, deployment requirements
+
+**Requirement Format**: Use IDs (NFR-001, NFR-002, etc.)
+
+For each requirement include:
+- **ID**: NFR-XXX
+- **Category**: Performance / Security / etc.
+- **Requirement**: Specific, measurable target
+- **Rationale**: Why this matters
+
+Example:
+| ID | Category | Requirement | Rationale |
+|----|----------|-------------|-----------|
+| NFR-001 | Performance | Page load < 2 seconds | User experience |
+
+Length: 8-15 requirements covering key quality attributes.
+
+## Output
+
+Return a JSON object:
+{
+  "id": "non_functional_requirements",
+  "title": "Non-Functional Requirements",
+  "content": "markdown content..."
+}

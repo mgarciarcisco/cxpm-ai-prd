@@ -1,0 +1,30 @@
+Generate the PROPOSED SOLUTION section of a PRD.
+
+## Project Requirements
+{requirements}
+
+{prior_context}
+
+## Section Guidelines
+
+Describe the solution approach comprehensively:
+- **Solution Overview**: High-level description of the proposed solution (2-3 paragraphs)
+- **Key Features**: Core capabilities the solution will provide
+  - Feature 1: [Name] - [Description]
+  - Feature 2: [Name] - [Description]
+- **User Experience**: How users will interact with the solution
+- **Problem-Solution Fit**: Explicitly connect how each aspect of the solution addresses the problem statement
+- **Differentiators**: What makes this solution approach effective
+
+Focus on WHAT the solution does, not HOW it will be built technically (that's for Technical Considerations).
+
+Length: Solution overview plus 4-8 key features with descriptions.
+
+## Output
+
+Return a JSON object:
+{
+  "id": "proposed_solution",
+  "title": "Proposed Solution",
+  "content": "markdown content..."
+}

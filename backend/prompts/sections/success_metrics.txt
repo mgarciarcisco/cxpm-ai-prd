@@ -1,0 +1,40 @@
+Generate the SUCCESS METRICS section of a PRD.
+
+## Project Requirements
+{requirements}
+
+{prior_context}
+
+## Section Guidelines
+
+Define how success will be measured:
+
+**For each metric include:**
+- **Metric Name**: Clear, descriptive name
+- **Definition**: Exactly what is being measured and how
+- **Baseline**: Current state (if known) or "To be established"
+- **Target**: Specific target value
+- **Timeframe**: When the target should be achieved
+- **Measurement Method**: How data will be collected
+
+**Metric Categories:**
+- **Business Metrics**: Revenue, cost savings, market share
+- **User Metrics**: Adoption, engagement, satisfaction (NPS, CSAT)
+- **Product Metrics**: Feature usage, completion rates, error rates
+- **Operational Metrics**: Support tickets, deployment frequency
+
+Format as a table:
+| Metric | Baseline | Target | Timeframe | Measurement |
+|--------|----------|--------|-----------|-------------|
+| User adoption | 0 | 1000 MAU | 3 months | Analytics |
+
+Length: 6-10 key metrics covering business and product outcomes.
+
+## Output
+
+Return a JSON object:
+{
+  "id": "success_metrics",
+  "title": "Success Metrics",
+  "content": "markdown content..."
+}

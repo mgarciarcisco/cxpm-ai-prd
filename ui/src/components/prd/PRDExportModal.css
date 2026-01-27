@@ -1,0 +1,180 @@
+.prd-export-modal {
+  min-width: 320px;
+}
+
+.prd-export-description {
+  margin: 0 0 1.25rem 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.prd-export-formats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.prd-export-format-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.prd-export-format-option:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.prd-export-format-option--selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.prd-export-format-option--selected:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.prd-export-format-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 0.375rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.prd-export-format-option--selected .prd-export-format-icon {
+  color: #3b82f6;
+  background: white;
+}
+
+.prd-export-format-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex-grow: 1;
+}
+
+.prd-export-format-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.9375rem;
+}
+
+.prd-export-format-desc {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.prd-export-format-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.prd-export-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.prd-export-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.prd-export-cancel-btn {
+  padding: 0.625rem 1.25rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.prd-export-cancel-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.prd-export-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prd-export-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: #3b82f6;
+  border: 1px solid #3b82f6;
+  border-radius: 0.375rem;
+  color: white;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.prd-export-download-btn:hover:not(:disabled) {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.prd-export-download-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.prd-export-spinner {
+  animation: prd-export-spin 1s linear infinite;
+}
+
+@keyframes prd-export-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Focus styles */
+.prd-export-format-option:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.prd-export-cancel-btn:focus,
+.prd-export-download-btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

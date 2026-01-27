@@ -32,27 +32,50 @@ class OllamaProvider(LLMProvider):
         self.model = model or settings.OLLAMA_MODEL
         self.timeout = timeout or settings.LLM_TIMEOUT
 
-    def generate(self, prompt: str) -> str:
+    # Default LLM generation settings
+    DEFAULT_TEMPERATURE = 0.7
+    DEFAULT_MAX_TOKENS = 4096
+
+    def generate(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        timeout: float | None = None,
+    ) -> str:
         """Generate a response using Ollama's /api/generate endpoint.
 
         Args:
             prompt: The input prompt to send to the LLM.
+            temperature: Optional temperature for response randomness (0.0-1.0).
+            max_tokens: Optional maximum tokens in the response (num_predict in Ollama).
+            timeout: Optional timeout in seconds for this specific request.
 
         Returns:
             The generated text response.
 
         Raises:
-            LLMError: If Ollama is not available or generation fails.
+            LLMError: If Ollama is not available, generation fails, or times out.
         """
+        # Use provided values or fall back to defaults
+        actual_temperature = temperature if temperature is not None else self.DEFAULT_TEMPERATURE
+        actual_max_tokens = max_tokens if max_tokens is not None else self.DEFAULT_MAX_TOKENS
+        actual_timeout = timeout if timeout is not None else self.timeout
+
         url = f"{self.base_url}/api/generate"
         payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": False,
+            "options": {
+                "temperature": actual_temperature,
+                "num_predict": actual_max_tokens,  # Ollama uses num_predict for max tokens
+            },
         }
 
         try:
-            with httpx.Client(timeout=self.timeout) as client:
+            with httpx.Client(timeout=actual_timeout) as client:
                 response = client.post(url, json=payload)
                 response.raise_for_status()
                 data = response.json()

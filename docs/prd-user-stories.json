@@ -115,7 +115,7 @@
         "LLM configuration uses temperature=0.7, max_tokens=8000, timeout=120 for PRD generation"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Use with_for_update() for row locking. Check for cancelled status before starting generation. LLM config should be centralized in config/llm.py or similar."
     },
     {
@@ -136,7 +136,7 @@
         "All PRD read/write endpoints enforce project access for the current user"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Use BackgroundTasks for generation. Export endpoint should return StreamingResponse with appropriate content-type."
     },
     {
@@ -150,7 +150,7 @@
         "OpenAPI docs show PRD endpoints under 'prds' tag"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Follow the pattern used for existing routers in main.py."
     },
     {
@@ -166,7 +166,7 @@
         "API service functions added to ui/src/services/api.js: generatePRD(), getPRDStatus(), cancelPRDGeneration(), getPRD(), updatePRD(), listPRDs(), deletePRD(), exportPRD()"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Follow existing LandingPage patterns. Use existing project API to fetch project list. API functions should follow existing patterns in api.js."
     },
     {
@@ -185,7 +185,7 @@
         "On cancelled status, clears loading state"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Use useState for isGenerating, cooldownUntil, status, error. Polling should continue until status is ready/failed/cancelled."
     },
     {
@@ -203,7 +203,7 @@
         "Collapse/expand all button in sidebar"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Use useMemo with debounce for auto-save. Handle beforeunload event for unsaved changes warning."
     },
     {
@@ -218,7 +218,7 @@
         "Current version is highlighted in selector"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Export downloads from /prds/{id}/export?format=markdown|json. Version selector fetches list from /projects/{id}/prds."
     },
     {
@@ -232,7 +232,7 @@
         "Card is enabled (not grayed out)"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Find the features array in LandingPage.jsx and update the PRD card to enabled: true."
     },
     {
@@ -246,7 +246,7 @@
         "All routes are protected by authentication"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "Follow existing route patterns in App.jsx. Import the new page components."
     },
     {
@@ -262,7 +262,7 @@
         "Prompts include {requirements_by_section} placeholder"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": "Prompts should instruct LLM to follow INVEST principles and create sprint-sized stories."
     },
     {
@@ -282,7 +282,7 @@
         "LLM configuration uses temperature=0.5, max_tokens=4000, timeout=90 for story generation"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "notes": "Use with_for_update() for row locking on story number. Check for cancelled status before starting. LLM config should be centralized in config/llm.py or similar."
     },
     {
@@ -305,7 +305,7 @@
         "All stories read/write endpoints enforce project access for the current user"
       ],
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "notes": "CSV export should have pipe-separated acceptance criteria. Use BackgroundTasks for generation."
     },
     {
@@ -319,7 +319,7 @@
         "OpenAPI docs show stories endpoints under 'stories' tag"
       ],
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "notes": "Follow the pattern used for existing routers in main.py."
     },
     {
@@ -335,7 +335,7 @@
         "API service functions added to ui/src/services/api.js: generateStories(), getBatchStatus(), cancelStoryGeneration(), listStories(), getStory(), updateStory(), deleteStory(), listBatches(), deleteBatch(), reorderStories(), exportStories()"
       ],
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "notes": "Follow PRDLandingPage patterns. Reuse project selector component if available. API functions should follow existing patterns in api.js."
     },
     {
@@ -354,7 +354,7 @@
         "Info dialog warns that regeneration adds stories (doesn't replace)"
       ],
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "notes": "Unlike PRD, stories append on regeneration. Show info dialog before generate to clarify this behavior."
     },
     {
@@ -370,7 +370,7 @@
         "Delete button shows confirmation dialog before deleting"
       ],
       "priority": 22,
-      "passes": false,
+      "passes": true,
       "notes": "Use existing card component patterns. Story ID should be visually prominent."
     },
     {
@@ -389,7 +389,7 @@
         "Warning shown when closing with unsaved changes"
       ],
       "priority": 23,
-      "passes": false,
+      "passes": true,
       "notes": "Consider using a drag-and-drop library for acceptance criteria reordering."
     },
     {
@@ -404,7 +404,7 @@
         "Filename includes project name and format extension"
       ],
       "priority": 24,
-      "passes": false,
+      "passes": true,
       "notes": "CSV format uses pipe separators for acceptance criteria column."
     },
     {
@@ -419,7 +419,7 @@
         "Deleting batch removes all stories in that batch"
       ],
       "priority": 25,
-      "passes": false,
+      "passes": true,
       "notes": "Batch deletion confirmation should show number of stories that will be deleted."
     },
     {
@@ -433,7 +433,7 @@
         "Card is enabled (not grayed out)"
       ],
       "priority": 26,
-      "passes": false,
+      "passes": true,
       "notes": "Find the features array in LandingPage.jsx and update the Stories card to enabled: true."
     },
     {
@@ -446,7 +446,7 @@
         "All routes are protected by authentication"
       ],
       "priority": 27,
-      "passes": false,
+      "passes": true,
       "notes": "Follow existing route patterns in App.jsx. Import the new page components."
     },
     {
@@ -464,7 +464,7 @@
         "Mock LLM responses are used for consistent testing"
       ],
       "priority": 28,
-      "passes": false,
+      "passes": true,
       "notes": "Use pytest fixtures for mock_llm and db_session. See implementation plan for mock response format."
     },
     {
@@ -482,7 +482,7 @@
         "Tests use test client and mock LLM"
       ],
       "priority": 29,
-      "passes": false,
+      "passes": true,
       "notes": "Use FastAPI TestClient. Create fixtures for project_with_requirements and existing_prd."
     },
     {
@@ -499,7 +499,7 @@
         "Mock LLM responses are used for consistent testing"
       ],
       "priority": 30,
-      "passes": false,
+      "passes": true,
       "notes": "Create mock response with multiple stories. Test that story_number continues from max even after deletions."
     },
     {
@@ -517,7 +517,7 @@
         "Tests use React Testing Library"
       ],
       "priority": 31,
-      "passes": false,
+      "passes": true,
       "notes": "Mock API calls and timers. Test accessibility with @testing-library/jest-dom."
     },
     {
@@ -535,7 +535,7 @@
         "Tests handle async generation with proper timeouts"
       ],
       "priority": 32,
-      "passes": false,
+      "passes": true,
       "notes": "Use Playwright's toBeVisible with longer timeout for generation. Mock LLM in CI for faster tests."
     },
     {
@@ -549,7 +549,7 @@
         "Export endpoints conform to the documented schemas"
       ],
       "priority": 33,
-      "passes": false,
+      "passes": true,
       "notes": "Keep v1 scope to Markdown/JSON/CSV only. Use acceptance criteria formatting rule from plan (pipe-separated)."
     },
     {
@@ -562,7 +562,7 @@
         "Unauthorized access returns appropriate HTTP status (401/403) per existing patterns"
       ],
       "priority": 34,
-      "passes": false,
+      "passes": true,
       "notes": "Follow existing project access patterns. Ensure read/list endpoints enforce access."
     },
     {
@@ -575,7 +575,7 @@
         "No duplicate versions exist for a single project"
       ],
       "priority": 35,
-      "passes": false,
+      "passes": true,
       "notes": "Ensure version generation is tied to record creation rather than a separate service call."
     },
     {
@@ -597,7 +597,7 @@
         "Tests use test client and mock LLM"
       ],
       "priority": 36,
-      "passes": false,
+      "passes": true,
       "notes": "Use FastAPI TestClient. Create fixtures for project_with_requirements, existing_batch, and existing_stories."
     },
     {
@@ -615,8 +615,93 @@
         "Failed generation allows retry without page refresh"
       ],
       "priority": 37,
-      "passes": false,
+      "passes": true,
       "notes": "Test these scenarios in both unit and integration tests. Frontend should map error codes to user-friendly messages."
+    },
+    {
+      "id": "US-038",
+      "title": "Fix story number locking to prevent duplicates in concurrent generation",
+      "description": "As a developer, I want story number assignment to be atomic for the entire batch, so that concurrent story generations never produce duplicate story numbers.",
+      "acceptanceCriteria": [
+        "Row-level lock on Project is acquired BEFORE the loop that creates stories",
+        "Lock is held for the entire batch of stories, not acquired/released per story",
+        "All stories in a batch are assigned sequential numbers in a single transaction",
+        "_get_next_story_number() is called once with count parameter, or lock is moved outside loop",
+        "Concurrent generation requests for same project produce non-overlapping story numbers",
+        "Test verifies no duplicate story_number values exist for a project after concurrent generations",
+        "Background task generate_stories_task() also uses the atomic batch approach"
+      ],
+      "priority": 38,
+      "passes": true,
+      "notes": "FIXED: Replaced _get_next_story_number() with _reserve_story_numbers(project_id, count) that reserves all story numbers atomically before the loop. Lock is held until transaction commits."
+    },
+    {
+      "id": "US-039",
+      "title": "Fix labels filter to use proper JSON array matching",
+      "description": "As a developer, I want the labels filter to correctly match labels in JSON arrays, so that filtering by label returns only stories that actually have that label.",
+      "acceptanceCriteria": [
+        "Filtering by label 'frontend' does NOT match stories with label 'not-frontend'",
+        "Filtering by label 'api' does NOT match stories with label 'api-v2' or 'legacy-api'",
+        "Labels filter correctly handles labels at any position in the array",
+        "Labels filter works with single label and multiple labels",
+        "Test case added: story with labels ['not-frontend', 'backend'] is NOT returned when filtering by 'frontend'",
+        "Test case added: story with labels ['frontend', 'api'] IS returned when filtering by 'frontend'"
+      ],
+      "priority": 39,
+      "passes": true,
+      "notes": "FIXED: Replaced simple LIKE pattern with exact array element matching using OR conditions for all positions (single element, first, middle, last) with both space and no-space variants to handle JSON serialization differences."
+    },
+    {
+      "id": "US-040",
+      "title": "Apply LLM configuration parameters to provider calls",
+      "description": "As a developer, I want LLM configuration (timeout, temperature, max_tokens) to be applied when calling the provider, so that generation has proper timeout protection and consistent behavior.",
+      "acceptanceCriteria": [
+        "PRD_LLM_TIMEOUT (120s) is passed to provider and enforced during PRD generation",
+        "PRD_LLM_TEMPERATURE (0.7) is passed to provider for PRD generation",
+        "PRD_LLM_MAX_TOKENS (8000) is passed to provider for PRD generation",
+        "STORIES_LLM_TIMEOUT (90s) is passed to provider and enforced during story generation",
+        "STORIES_LLM_TEMPERATURE (0.5) is passed to provider for story generation",
+        "STORIES_LLM_MAX_TOKENS (4000) is passed to provider for story generation",
+        "LLM provider's generate() method accepts timeout, temperature, max_tokens parameters",
+        "If LLM call exceeds timeout, GenerationTimeoutError or LLMError with timeout message is raised",
+        "Test verifies timeout is enforced (mock slow LLM response)"
+      ],
+      "priority": 40,
+      "passes": true,
+      "notes": "FIXED: Updated LLMProvider base class and all implementations (Claude, Ollama) to accept temperature, max_tokens, timeout in generate(). Updated prd_generator.py and stories_generator.py to pass their respective config constants. Added TimeoutLLMProvider mock and comprehensive tests."
+    },
+    {
+      "id": "US-041",
+      "title": "Add database unique constraints for version and story number",
+      "description": "As a developer, I want database-level unique constraints on PRD version and story number, so that data integrity is enforced even if application logic fails.",
+      "acceptanceCriteria": [
+        "Unique constraint exists on (project_id, version) for prds table",
+        "Unique constraint exists on (project_id, story_number) for user_stories table",
+        "Alembic migration adds both constraints",
+        "Attempting to insert duplicate version raises IntegrityError",
+        "Attempting to insert duplicate story_number raises IntegrityError",
+        "Existing data passes constraint validation (no duplicates exist)",
+        "Migration can be rolled back"
+      ],
+      "priority": 41,
+      "passes": true,
+      "notes": "SHOULD FIX for v1. Provides defense-in-depth against race conditions. Application logic handles uniqueness, but DB constraint is the safety net. Use CREATE UNIQUE INDEX for the constraints."
+    },
+    {
+      "id": "US-042",
+      "title": "Add session rollback before error status commit in background tasks",
+      "description": "As a developer, I want background tasks to rollback any pending transaction before committing error status, so that failed operations don't leave the database in an inconsistent state.",
+      "acceptanceCriteria": [
+        "generate_prd_task() calls db.rollback() before setting status=failed and committing",
+        "generate_stories_task() calls db.rollback() before setting status=failed and committing",
+        "Rollback is called in each exception handler before the error commit",
+        "Test verifies that partial story creation is rolled back on error",
+        "Test verifies that PRD in bad state is cleaned up on error",
+        "After rollback, only the error status update is committed"
+      ],
+      "priority": 42,
+      "passes": true,
+      "notes": "FIXED: Added db.rollback() in each exception handler in both generate_prd_task() and generate_stories_task(). After rollback, re-fetch the PRD/batch from database to re-attach to session before updating error status and committing."
     }
   ]
 }

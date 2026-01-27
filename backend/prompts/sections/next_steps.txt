@@ -1,0 +1,60 @@
+Generate the NEXT STEPS section of a PRD (DRAFT mode).
+
+## Project Requirements
+{requirements}
+
+{prior_context}
+
+## Section Guidelines
+
+Provide a clear action plan to move from DRAFT to complete PRD:
+
+**Structure:**
+
+### Immediate Actions (This Week)
+Actions that should happen right away:
+- Schedule stakeholder meetings
+- Gather missing information
+- Clarify critical questions
+
+### Short-term Actions (Next 2-4 Weeks)
+Actions to address major gaps:
+- Conduct user research
+- Technical spike/POC
+- Business case development
+
+### Before PRD Finalization
+Checklist of items needed before PRD can be marked complete:
+- [ ] All open questions answered
+- [ ] Stakeholder sign-off obtained
+- [ ] Technical feasibility confirmed
+- [ ] Resource allocation confirmed
+
+**For each action include:**
+- **Action**: Specific, actionable task
+- **Owner**: Role or person responsible
+- **Timeline**: When it should be done
+- **Dependency**: What it depends on (if any)
+- **Output**: What deliverable is expected
+
+**Format:**
+### [Timeframe]
+| Action | Owner | Timeline | Output |
+|--------|-------|----------|--------|
+| ... | ... | ... | ... |
+
+### Stakeholders to Engage
+List key people/roles to involve:
+- [Role] - For [purpose]
+- [Role] - For [purpose]
+
+Length: 8-15 specific next steps organized by timeframe.
+
+## Output
+
+Return a JSON object:
+{
+  "id": "next_steps",
+  "title": "Next Steps",
+  "content": "markdown content..."
+}

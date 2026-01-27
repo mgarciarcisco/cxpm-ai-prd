@@ -46,7 +46,7 @@ class StoryBatch(Base):
 
     # Relationships
     project = relationship("Project", back_populates="story_batches")
-    stories = relationship("UserStory", back_populates="batch", cascade="all, delete-orphan")
+    stories = relationship("UserStory", back_populates="batch")
 
     def __repr__(self) -> str:
         return f"<StoryBatch(id={self.id}, format={self.format}, story_count={self.story_count}, status={self.status})>"
