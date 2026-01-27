@@ -238,6 +238,139 @@ Alternative: Compute status dynamically from related records (more accurate but 
 4. Existing functionality remains accessible
 5. New users understand the journey without documentation
 
+## Addendum: Quick Mode (v1)
+
+**Date:** 2026-01-27
+**Status:** Proposed
+
+### Overview
+
+In addition to the project-centric journey, provide a "Quick Mode" for one-off conversions without project overhead. This serves users who want to experiment, do ad-hoc conversions, or test the AI capabilities before committing to a full project.
+
+### Use Cases
+
+| Mode | Mental Model | When to Use |
+|------|--------------|-------------|
+| Project Mode | "I'm building something" | Full journey, tracked progress, multiple iterations |
+| Quick Mode | "I just want to try this" | One-off conversions, experimentation, no commitment |
+
+**Quick Mode examples:**
+- "I have meeting notes, let me quickly see what requirements the AI extracts"
+- "I want to test PRD generation before creating a real project"
+- "Quick conversion of some bullet points to user stories for a different tool"
+
+### UI Implementation
+
+#### Dashboard Entry Points
+
+The Dashboard offers two distinct entry points:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Welcome back, [User]                                           │
+│                                                                 │
+│  ┌──────────────────────────┐  ┌──────────────────────────┐    │
+│  │  ➕  New Project          │  │  ⚡ Quick Convert         │    │
+│  │  Full journey with       │  │  One-off conversion,     │    │
+│  │  tracked progress        │  │  no project required     │    │
+│  └──────────────────────────┘  └──────────────────────────┘    │
+│                                                                 │
+│  Your Projects                                                  │
+│  ...                                                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Quick Convert View
+
+A simplified, single-page conversion interface without the project stepper:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  ← Back to Dashboard                                            │
+│                                                                 │
+│  Quick Convert                                                  │
+│                                                                 │
+│  What do you want to create?                                    │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐   │
+│  │ Requirements│ │    PRD     │ │User Stories│ │  Mockups   │   │
+│  └────────────┘ └────────────┘ └────────────┘ └────────────┘   │
+│                                                                 │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                 │
+│  [Selected conversion interface]                                │
+│                                                                 │
+│  - Input area (paste text, upload file, etc.)                   │
+│  - Generate button                                              │
+│  - Output preview                                               │
+│                                                                 │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                 │
+│  [After generation]                                             │
+│  ┌─────────────────────┐  ┌─────────────────────┐              │
+│  │  📥 Download         │  │  📁 Save to Project  │              │
+│  └─────────────────────┘  └─────────────────────┘              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Save to Project Flow
+
+When user clicks "Save to Project" after a quick conversion:
+
+1. **Modal appears** with options:
+   - Create new project (with name/description fields)
+   - Add to existing project (dropdown of user's projects)
+
+2. **On save:**
+   - Creates/updates project with the generated content
+   - Navigates to Project View at the relevant stage
+   - Stage status updates automatically
+
+```
+┌─────────────────────────────────────────┐
+│  Save to Project                        │
+│                                         │
+│  ○ Create new project                   │
+│    Name: [________________________]     │
+│    Description: [_________________]     │
+│                                         │
+│  ○ Add to existing project              │
+│    [Select project          ▼]          │
+│                                         │
+│  ┌─────────┐  ┌─────────────────────┐  │
+│  │ Cancel  │  │  Save & View Project │  │
+│  └─────────┘  └─────────────────────┘  │
+└─────────────────────────────────────────┘
+```
+
+### Conversion Types
+
+| Output | Input Options | Notes |
+|--------|---------------|-------|
+| Requirements | Meeting transcript, raw notes, paste text | Extracts structured requirements |
+| PRD | Requirements (paste or select), brief description | Generates PRD document |
+| User Stories | Requirements, PRD, or brief description | Generates story cards |
+| Mockups | User stories, feature description, or sketch | Generates UI mockups |
+
+### Data Handling
+
+- Quick conversions are **not persisted** until explicitly saved
+- Browser session storage may hold temporary results for page refresh resilience
+- Clear warning if user navigates away with unsaved results
+
+### Benefits
+
+1. **Lower barrier to entry** - Try before committing to a project
+2. **Faster experimentation** - No project setup overhead
+3. **Flexibility** - Serve both structured and ad-hoc workflows
+4. **Conversion funnel** - Users who experiment often convert to project mode
+
+### Migration Notes
+
+- Existing standalone pages (PRDGeneratorPage, etc.) can be adapted for Quick Mode
+- No need to maintain two full UIs - Quick Mode is intentionally simpler
+- Project Mode is the primary experience; Quick Mode is the on-ramp
+
 ## Future Considerations
 
 - **Team collaboration:** Activity feed, comments, assignments
