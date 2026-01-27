@@ -2,7 +2,11 @@
 
 **Date:** 2026-01-27
 **Branch:** feature/project-journey-ui
-**Related:** [Implementation Plan](./2026-01-27-implementation-plan.md)
+**Related:**
+- [Implementation Plan](./2026-01-27-implementation-plan.md)
+- [Ralph Sizing Analysis](./2026-01-27-ralph-sizing-analysis.md)
+
+**Note:** Stories marked with 🔷 have been broken down into Ralph-sized subtasks.
 
 ---
 
@@ -130,7 +134,7 @@
 
 ---
 
-### P1-008: Create Dashboard Page
+### 🔷 P1-008: Create Dashboard Page
 
 **As a** user
 **I want** a dashboard showing all my projects
@@ -148,6 +152,36 @@
 - [ ] Empty state when no projects exist
 
 **Size:** L | **Priority:** P1
+
+#### Ralph Subtasks:
+
+**P1-008a: Dashboard Route and Layout**
+- Create `/dashboard` route
+- Welcome header with user's name
+- Two action card placeholders: "New Project" and "Quick Convert"
+- "Your Projects" section heading
+- Basic page structure
+
+**P1-008b: Dashboard Project Grid**
+- Fetch projects API call
+- Grid layout for ProjectCard components
+- Default sort by last updated
+- Loading state while fetching
+
+**P1-008c: Dashboard Filter Dropdown**
+- Filter dropdown component (All, Requirements, PRD, User Stories, Mockups, Export)
+- Filter logic to show only matching projects
+- Persist filter in URL query param
+
+**P1-008d: Dashboard Search**
+- Search input component
+- Filter projects by name (client-side)
+- Debounced search
+- Clear search button
+
+**P1-008e: Dashboard Empty State**
+- Show EmptyState when no projects exist
+- Different message for "no projects" vs "no results"
 
 ---
 
@@ -187,7 +221,7 @@
 
 ## Phase 2: Project View Shell
 
-### P2-001: Create Project View Shell
+### 🔷 P2-001: Create Project View Shell
 
 **As a** user
 **I want** a project detail view with stage navigation
@@ -203,6 +237,31 @@
 - [ ] Defaults to first incomplete stage (or Requirements if all empty)
 
 **Size:** L | **Priority:** P1
+
+#### Ralph Subtasks:
+
+**P2-001a: Project View Route and Header**
+- Create `/projects/{id}` route
+- Fetch project by ID
+- Display project name and description
+- Settings gear icon (placeholder action)
+- Loading and error states
+
+**P2-001b: Project View Breadcrumbs**
+- Integrate Breadcrumbs component
+- Dynamic breadcrumbs: Dashboard / {Project Name} / {Stage Name}
+- Update on stage change
+
+**P2-001c: Project View Stepper Integration**
+- Add StageStepper component
+- Pass stage statuses from project data
+- Highlight current stage
+- Handle stage click navigation
+
+**P2-001d: Project View Content Area**
+- Content area that renders based on current stage
+- Stage component switching logic
+- Default to first incomplete stage on load
 
 ---
 
@@ -296,7 +355,7 @@
 
 ---
 
-### P3-002: Requirements Stage - Add Meeting Modal
+### 🔷 P3-002: Requirements Stage - Add Meeting Modal
 
 **As a** user
 **I want** to extract requirements from meeting notes
@@ -312,6 +371,31 @@
 - [ ] "Add to Project" saves selected items
 
 **Size:** L | **Priority:** P1
+
+#### Ralph Subtasks:
+
+**P3-002a: Add Meeting Modal UI**
+- Modal component with textarea
+- File upload zone (.txt, .md)
+- "Extract Requirements" button
+- Basic modal open/close logic
+
+**P3-002b: Add Meeting File Upload**
+- File upload handling
+- Read file contents
+- Populate textarea from file
+- File type validation
+
+**P3-002c: Add Meeting AI Extraction**
+- Call AI extraction API
+- Processing state with spinner
+- Error handling
+
+**P3-002d: Add Meeting Results Display**
+- Display extracted requirements in sections
+- Checkboxes for selection/deselection
+- "Add to Project" button
+- Save selected items to project
 
 ---
 
@@ -469,7 +553,7 @@
 
 ---
 
-### P3-012: PRD Stage - Version History
+### 🔷 P3-012: PRD Stage - Version History
 
 **As a** user
 **I want** to see and restore previous PRD versions
@@ -484,6 +568,24 @@
 - [ ] New version created on each generation or significant edit
 
 **Size:** M | **Priority:** P2
+
+#### Ralph Subtasks:
+
+**P3-012a: PRD Version Storage**
+- Database model for PRD versions
+- API to save new version
+- API to list versions for a PRD
+- Migration
+
+**P3-012b: PRD Version History UI**
+- Version indicator in stage header ("Version X")
+- History dropdown showing versions with timestamps
+- Click to preview a version
+
+**P3-012c: PRD Version Restore**
+- "Restore" button on version preview
+- Restore logic (creates new version from old content)
+- Success feedback
 
 ---
 
@@ -728,7 +830,7 @@
 
 ---
 
-### P4-002: Quick Convert - Requirements Page
+### 🔷 P4-002: Quick Convert - Requirements Page
 
 **As a** user
 **I want** to extract requirements without creating a project
@@ -746,9 +848,30 @@
 
 **Size:** L | **Priority:** P1
 
+#### Ralph Subtasks:
+
+**P4-002a: QC Requirements Route and Input UI**
+- Create `/quick-convert/requirements` route
+- Back link to Quick Convert landing
+- Textarea for input
+- File upload zone (.txt, .md)
+- "Extract Requirements" button
+
+**P4-002b: QC Requirements Processing and Results**
+- Call AI extraction API
+- Processing state with spinner
+- Display results in collapsible sections
+- Checkboxes for selection
+- Inline edit capability
+
+**P4-002c: QC Requirements Actions**
+- "Save to Project" button (opens SaveToProjectModal)
+- "Generate PRD" button (navigates with data)
+- "Download" button (JSON/Markdown)
+
 ---
 
-### P4-003: Quick Convert - PRD Page
+### 🔷 P4-003: Quick Convert - PRD Page
 
 **As a** user
 **I want** to generate a PRD without creating a project
@@ -767,9 +890,30 @@
 
 **Size:** L | **Priority:** P1
 
+#### Ralph Subtasks:
+
+**P4-003a: QC PRD Route and Input UI**
+- Create `/quick-convert/prd` route
+- Back link to Quick Convert landing
+- Input source toggle (Paste Text / From Reqs)
+- Appropriate textarea for each mode
+- PRD type toggle (Detailed / Brief)
+- "Generate PRD" button
+
+**P4-003b: QC PRD Streaming and Result Display**
+- Call PRD generation API
+- Section streaming display
+- Progress indicator
+- Preview/Edit tabs for result
+
+**P4-003c: QC PRD Actions**
+- "Save to Project" button
+- "Generate Stories" button (navigates with data)
+- "Download" button (Markdown)
+
 ---
 
-### P4-004: Quick Convert - User Stories Page
+### 🔷 P4-004: Quick Convert - User Stories Page
 
 **As a** user
 **I want** to generate user stories without creating a project
@@ -787,9 +931,31 @@
 
 **Size:** L | **Priority:** P1
 
+#### Ralph Subtasks:
+
+**P4-004a: QC Stories Route and Input UI**
+- Create `/quick-convert/stories` route
+- Back link to Quick Convert landing
+- Input source toggle (Paste Text / From PRD / From Reqs)
+- Format options (Standard, Gherkin, JTBD)
+- Include options checkboxes
+- "Generate Stories" button
+
+**P4-004b: QC Stories Generation and Display**
+- Call stories generation API
+- Display story cards with all details
+- Checkbox for selection
+- Inline edit capability
+
+**P4-004c: QC Stories Reorder and Actions**
+- Drag-and-drop reorder
+- "Save to Project" button
+- "Generate Mockups" button
+- "Download" button (JSON/Markdown)
+
 ---
 
-### P4-005: Quick Convert - Mockups Page
+### 🔷 P4-005: Quick Convert - Mockups Page
 
 **As a** user
 **I want** to generate mockups without creating a project
@@ -808,6 +974,28 @@
 - [ ] Actions: Save to Project (primary), Variations, Download
 
 **Size:** L | **Priority:** P2 (depends on mockup API)
+
+#### Ralph Subtasks:
+
+**P4-005a: QC Mockups Route and Input UI**
+- Create `/quick-convert/mockups` route
+- Back link to Quick Convert landing
+- Input source toggle (Describe UI / From Stories)
+- Textarea with example placeholder
+- Style options (Wireframe, Low-fi, High-fi)
+- Device multi-select
+- "Generate Mockup" button
+
+**P4-005b: QC Mockups Generation and Display**
+- Call mockup generation API
+- Display generated mockup image
+- Loading state
+
+**P4-005c: QC Mockups Refine and Actions**
+- Refine textarea
+- "Regenerate" button
+- "3 Variations" button
+- "Save to Project", "Download" buttons
 
 ---
 
@@ -1076,7 +1264,7 @@
 
 ---
 
-### P6-003: Loading States
+### 🔷 P6-003: Loading States
 
 **As a** user
 **I want** to see loading indicators throughout the app
@@ -1090,9 +1278,23 @@
 
 **Size:** M | **Priority:** P2
 
+#### Ralph Subtasks:
+
+**P6-003a: Dashboard Loading Skeleton**
+- Skeleton cards for project grid
+- Loading state for action cards
+
+**P6-003b: Project View Loading Skeleton**
+- Skeleton for project header
+- Skeleton for stage content
+
+**P6-003c: Stage Content Loading States**
+- Loading indicators for each stage
+- Consistent spinner/skeleton components
+
 ---
 
-### P6-004: Error States
+### 🔷 P6-004: Error States
 
 **As a** user
 **I want** to see helpful error messages
@@ -1106,9 +1308,26 @@
 
 **Size:** M | **Priority:** P2
 
+#### Ralph Subtasks:
+
+**P6-004a: API Error Toast Notifications**
+- Toast component for errors
+- Integrate with API calls
+- Dismissable notifications
+
+**P6-004b: Generation Error Handling**
+- Error state for PRD generation
+- Error state for story generation
+- Retry button functionality
+
+**P6-004c: 404 and Network Errors**
+- 404 page with redirect
+- Network offline detection
+- Offline message display
+
 ---
 
-### P6-005: Mobile Responsive
+### 🔷 P6-005: Mobile Responsive
 
 **As a** user
 **I want** the app to work well on mobile
@@ -1123,9 +1342,26 @@
 
 **Size:** L | **Priority:** P2
 
+#### Ralph Subtasks:
+
+**P6-005a: Dashboard Mobile Layout**
+- Single column project cards
+- Stacked action cards
+- Responsive search/filter
+
+**P6-005b: Project View Mobile Layout**
+- Horizontal scrollable stepper
+- Responsive stage content
+- Mobile-friendly header
+
+**P6-005c: Modals Full-Screen Mobile**
+- Full-screen modals on mobile
+- Touch-friendly form inputs
+- Mobile-optimized buttons
+
 ---
 
-### P6-006: Keyboard Navigation & Accessibility
+### 🔷 P6-006: Keyboard Navigation & Accessibility
 
 **As a** user
 **I want** to navigate with keyboard
@@ -1141,24 +1377,41 @@
 
 **Size:** L | **Priority:** P2
 
+#### Ralph Subtasks:
+
+**P6-006a: Tab Order and Focus States**
+- Logical tab order throughout app
+- Visible focus indicators
+- Skip links where appropriate
+
+**P6-006b: Modal Focus Trapping**
+- Focus trap in all modals
+- Escape key closes modals
+- Focus returns to trigger on close
+
+**P6-006c: ARIA Labels and Screen Reader**
+- ARIA labels on buttons, inputs
+- ARIA live regions for dynamic content
+- Screen reader testing
+
 ---
 
 ## Summary
 
-| Phase | Stories | P1 | P2 | P3 |
-|-------|---------|----|----|-----|
-| Phase 1: Foundation | 10 | 10 | 0 | 0 |
-| Phase 2: Project Shell | 5 | 4 | 1 | 0 |
-| Phase 3: Core Stages | 25 | 15 | 10 | 0 |
-| Phase 4: Quick Convert | 7 | 5 | 2 | 0 |
-| Phase 5: Mockups & Export | 12 | 3 | 7 | 2 |
-| Phase 6: Polish | 6 | 0 | 4 | 2 |
-| **Total** | **65** | **37** | **24** | **4** |
+| Phase | Stories | Ralph Tasks | P1 | P2 | P3 |
+|-------|---------|-------------|----|----|-----|
+| Phase 1: Foundation | 10 | 14 | 14 | 0 | 0 |
+| Phase 2: Project Shell | 5 | 8 | 7 | 1 | 0 |
+| Phase 3: Core Stages | 25 | 31 | 19 | 12 | 0 |
+| Phase 4: Quick Convert | 7 | 18 | 12 | 6 | 0 |
+| Phase 5: Mockups & Export | 12 | 12 | 3 | 7 | 2 |
+| Phase 6: Polish | 6 | 14 | 0 | 12 | 2 |
+| **Total** | **65** | **97** | **55** | **38** | **4** |
 
 ---
 
 ## Next Steps
 
-1. Review and refine stories
+1. Create ralph-tasks.json for Ralph execution
 2. Begin Phase 1 implementation
 3. Track progress in project management tool
