@@ -4,59 +4,74 @@ You are an autonomous coding agent working on a software project. The orchestrat
 
 ## Context Files
 
+- **Patterns:** `ralph/patterns.md` - Curated codebase patterns (READ THIS FIRST)
 - **Manifest:** `ralph/manifest.json` - All tasks with dependencies and status
-- **Progress:** `ralph/progress.txt` - Running log of completed work and patterns
+- **History:** `ralph/history.jsonl` - Structured completion log (you write to this)
 - **This prompt:** `ralph/prompt.md` - Your instructions
+
+> **Note:** Recent history and dependency context are **injected below** by ralph.sh.
+> You don't need to read history.jsonl - just write to it when done.
 
 ## Your Task
 
 **IMPORTANT: Read files ONE AT A TIME, not in parallel. Wait for each read to complete before starting the next.**
 
-1. Read `ralph/progress.txt` - Check the **Codebase Patterns** section FIRST for important context
-2. Read `ralph/manifest.json` - Find your assigned task (passed via TASK_ID below)
+1. Read `ralph/patterns.md` - Check for relevant codebase patterns FIRST
+2. Review the **Injected Context** section below (recent completions, dependency info)
 3. Verify you're on the correct branch (from manifest's `branch` field). If not, check it out or create from main.
 4. Implement the assigned task completely
 5. Run quality checks (typecheck, lint, test - use whatever this project requires)
 6. Update CLAUDE.md files if you discover reusable patterns (see below)
 7. If checks pass, commit ALL changes with message: `feat: [TASK_ID] - [Task Title]`
-8. Append your progress to `ralph/progress.txt`
-9. Signal completion (see Stop Condition below)
+8. Log your completion to `ralph/history.jsonl` (see format below)
+9. If you discovered a reusable pattern, add it to `ralph/patterns.md`
+10. Signal completion (see Stop Condition below)
 
 ## Assigned Task
 
 The orchestrator will append the task details below this line:
 <!-- TASK_INJECTION_POINT -->
 
-## Progress Report Format
+## Logging Completion
 
-APPEND to `ralph/progress.txt` (never replace, always append):
+After committing, APPEND a JSON line to `ralph/history.jsonl`:
 
-```
-## [Date/Time] - [TASK_ID]: [Task Title]
-- What was implemented
-- Files changed
-- **Learnings for future iterations:**
-  - Patterns discovered (e.g., "this codebase uses X for Y")
-  - Gotchas encountered (e.g., "don't forget to update Z when changing W")
-  - Useful context (e.g., "component X lives in folder Y")
----
+```json
+{"task":"P1-001","title":"Add Stage Status Fields","date":"2026-01-27T12:30:00","files":["prisma/schema.prisma","lib/api/projects.ts"],"learnings":["Use Prisma enums for status fields","Migrations need default values for existing rows"]}
 ```
 
-The learnings section is critical - it helps future iterations avoid repeating mistakes and understand the codebase better.
+**Fields:**
+- `task`: Task ID (required)
+- `title`: Task title (required)
+- `date`: ISO timestamp (required)
+- `files`: Array of files created/modified (required, can be empty)
+- `learnings`: Array of learnings for future iterations (required, can be empty)
 
-## Consolidate Patterns
+**Important:** Each entry must be a single line (JSONL format). Do NOT pretty-print.
 
-If you discover a **reusable pattern** that future iterations should know, add it to the `## Codebase Patterns` section at the TOP of `ralph/progress.txt` (create it if it doesn't exist). This section should consolidate the most important learnings:
-
+Use this bash command to append:
+```bash
+echo '{"task":"P1-001","title":"...","date":"'$(date -Iseconds)'","files":[...],"learnings":[...]}' >> ralph/history.jsonl
 ```
-## Codebase Patterns
-- Use `sql<number>` template for aggregations
+
+## Adding Patterns
+
+If you discover a **reusable pattern**, add it to `ralph/patterns.md` under the appropriate section:
+
+```markdown
+## Database & API
+
+- Use Prisma enums for status fields
 - Always use `IF NOT EXISTS` for migrations
-- Export types from actions.ts for UI components
 - Server actions go in `app/actions/` directory
 ```
 
-Only add patterns that are **general and reusable**, not task-specific details.
+**Only add patterns that are:**
+- General and reusable across multiple tasks
+- Not task-specific implementation details
+- Helpful for future iterations
+
+**Keep patterns.md small and curated** - it's read every iteration.
 
 ## Update CLAUDE.md Files
 
@@ -77,12 +92,18 @@ Before committing, check if any edited files have learnings worth preserving in 
 - "Tests require the dev server running on PORT 3000"
 - "Field names must match the template exactly"
 
-**Do NOT add:**
+**Where to put learnings:**
+
+| Learning Type | Where to Add |
+|---------------|--------------|
+| Module-specific (e.g., "this component needs X") | CLAUDE.md in that directory |
+| Project-wide (e.g., "use Prisma enums for status") | `ralph/patterns.md` |
+| Task-specific (e.g., "files I changed") | `ralph/history.jsonl` |
+
+**Do NOT add to CLAUDE.md:**
 - Task-specific implementation details
 - Temporary debugging notes
-- Information already in progress.txt
-
-Only update CLAUDE.md if you have **genuinely reusable knowledge** that would help future work in that directory.
+- Things already in patterns.md or history.jsonl
 
 ## Using Subagents for Parallel Work
 
@@ -106,7 +127,7 @@ You have access to Claude Code's `Task` tool to spawn subagents. Use them to par
 ```
 1. Spawn subagent (background): "Run npm run typecheck and report errors"
 2. Spawn subagent (background): "Run npm test and report failures"
-3. While tests run, update progress.txt with learnings
+3. While tests run, prepare history.jsonl entry
 4. Check test results, fix any issues
 ```
 
@@ -168,5 +189,6 @@ When the task is **fully complete** and **committed**:
 - Work on ONE task per iteration
 - Commit frequently (but only working code)
 - Keep CI green
-- Read the Codebase Patterns section in progress.txt BEFORE starting work
+- Read `ralph/patterns.md` BEFORE starting work
+- Log completion to `ralph/history.jsonl` AFTER committing
 - The orchestrator handles task status updates - you just implement and commit

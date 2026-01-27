@@ -92,8 +92,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/.ralphrc"
 RALPH_DIR="$SCRIPT_DIR/ralph"
 MANIFEST_FILE="${MANIFEST_FILE:-$RALPH_DIR/manifest.json}"
-PROGRESS_FILE="$RALPH_DIR/progress.txt"
+PATTERNS_FILE="$RALPH_DIR/patterns.md"
+HISTORY_FILE="$RALPH_DIR/history.jsonl"
 PROMPT_FILE="${PROMPT_FILE:-$RALPH_DIR/prompt.md}"
+
+# Legacy - keep for backward compatibility
+PROGRESS_FILE="$RALPH_DIR/progress.txt"
 ARCHIVE_DIR="$SCRIPT_DIR/archive"
 LOGS_BASE_DIR="$SCRIPT_DIR/logs"
 LAST_BRANCH_FILE="$SCRIPT_DIR/.last-branch"
@@ -882,6 +886,138 @@ get_remaining_count() { get_ready_count; }
 show_current_story() { show_current_task; }
 
 # =============================================================================
+# CONTEXT INJECTION FUNCTIONS
+# =============================================================================
+
+# Get dependencies of a task
+get_task_dependencies() {
+    local task_id=$1
+    if [ ! -f "$MANIFEST_FILE" ] || ! command -v jq &>/dev/null; then
+        echo ""
+        return
+    fi
+
+    jq -r --arg id "$task_id" '
+      .tasks[] | select(.id == $id) | .dependsOn // [] | .[]
+    ' "$MANIFEST_FILE" 2>/dev/null || echo ""
+}
+
+# Get last N entries from history
+get_recent_history() {
+    local count=${1:-3}
+    if [ ! -f "$HISTORY_FILE" ]; then
+        echo ""
+        return
+    fi
+
+    tail -n "$count" "$HISTORY_FILE" 2>/dev/null || echo ""
+}
+
+# Get history entry for a specific task
+get_task_history() {
+    local task_id=$1
+    if [ ! -f "$HISTORY_FILE" ]; then
+        echo ""
+        return
+    fi
+
+    grep "\"task\":\"$task_id\"" "$HISTORY_FILE" 2>/dev/null | tail -1 || echo ""
+}
+
+# Build context injection for prompt
+build_context_injection() {
+    local task_id=$1
+    local context=""
+
+    # Header
+    context+="## Injected Context (from ralph.sh)\n\n"
+    context+="> This context is auto-injected. You don't need to read history.jsonl.\n"
+    context+="> DO read patterns.md for codebase patterns.\n\n"
+
+    # Recent completions
+    context+="### Recent Completions\n\n"
+    local recent
+    recent=$(get_recent_history 3)
+    if [ -n "$recent" ]; then
+        echo "$recent" | while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                local t_id t_title t_files
+                t_id=$(echo "$line" | jq -r '.task // "?"')
+                t_title=$(echo "$line" | jq -r '.title // "?"')
+                t_files=$(echo "$line" | jq -r '.files // [] | join(", ")')
+                context+="- **$t_id**: $t_title\n"
+                if [ -n "$t_files" ] && [ "$t_files" != "" ]; then
+                    context+="  - Files: $t_files\n"
+                fi
+            fi
+        done
+    else
+        context+="(No tasks completed yet)\n"
+    fi
+    context+="\n"
+
+    # Dependency context
+    local deps
+    deps=$(get_task_dependencies "$task_id")
+    if [ -n "$deps" ]; then
+        context+="### Your Task Depends On\n\n"
+        for dep in $deps; do
+            local dep_history
+            dep_history=$(get_task_history "$dep")
+            if [ -n "$dep_history" ]; then
+                local dep_title dep_files dep_learnings
+                dep_title=$(echo "$dep_history" | jq -r '.title // "?"')
+                dep_files=$(echo "$dep_history" | jq -r '.files // [] | join(", ")')
+                dep_learnings=$(echo "$dep_history" | jq -r '.learnings // [] | join("; ")')
+                context+="**$dep** - $dep_title\n"
+                if [ -n "$dep_files" ] && [ "$dep_files" != "" ]; then
+                    context+="- Files touched: $dep_files\n"
+                fi
+                if [ -n "$dep_learnings" ] && [ "$dep_learnings" != "" ]; then
+                    context+="- Key learnings: $dep_learnings\n"
+                fi
+                context+="\n"
+            else
+                context+="**$dep** - (completed, no history entry)\n\n"
+            fi
+        done
+    fi
+
+    context+="---\n"
+
+    echo -e "$context"
+}
+
+# Append entry to history.jsonl (called after task completion)
+append_history() {
+    local task_id=$1
+    local title=$2
+    local files=$3      # comma-separated
+    local learnings=$4  # comma-separated
+
+    local files_json="[]"
+    local learnings_json="[]"
+
+    if [ -n "$files" ]; then
+        files_json=$(echo "$files" | jq -R 'split(",") | map(gsub("^\\s+|\\s+$";""))')
+    fi
+    if [ -n "$learnings" ]; then
+        learnings_json=$(echo "$learnings" | jq -R 'split(",") | map(gsub("^\\s+|\\s+$";""))')
+    fi
+
+    local entry
+    entry=$(jq -n \
+        --arg task "$task_id" \
+        --arg title "$title" \
+        --arg date "$(date -Iseconds)" \
+        --argjson files "$files_json" \
+        --argjson learnings "$learnings_json" \
+        '{task: $task, title: $title, date: $date, files: $files, learnings: $learnings}')
+
+    echo "$entry" >> "$HISTORY_FILE"
+}
+
+# =============================================================================
 # DEFERRED STATUS MODE (needs functions defined above)
 # =============================================================================
 
@@ -1157,20 +1293,30 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   FULL_PROMPT_FILE="$LOG_DIR/${i}_prompt_full.md"
   cp "$PROMPT_FILE" "$FULL_PROMPT_FILE"
 
+  # Build context injection (recent history + dependency context)
+  CONTEXT_INJECTION=$(build_context_injection "$CURRENT_TASK_ID")
+
   # Inject task details at the injection point
   TASK_DETAILS=$(get_task_description "$CURRENT_TASK_ID")
-  # Replace the injection point comment with actual task details
+
+  # Combine context + task details
+  FULL_INJECTION="${CONTEXT_INJECTION}\n\n## Assigned Task\n\n${TASK_DETAILS}"
+
+  # Replace the injection point comment with context + task details
   if grep -q "<!-- TASK_INJECTION_POINT -->" "$FULL_PROMPT_FILE"; then
-    # Use awk to replace the injection point
-    awk -v task="$TASK_DETAILS" '{gsub(/<!-- TASK_INJECTION_POINT -->/, task); print}' "$FULL_PROMPT_FILE" > "$FULL_PROMPT_FILE.tmp" && mv "$FULL_PROMPT_FILE.tmp" "$FULL_PROMPT_FILE"
+    # Use awk to replace the injection point (escape special chars)
+    ESCAPED_INJECTION=$(echo -e "$FULL_INJECTION" | sed 's/[&/\]/\\&/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+    sed -i "s|<!-- TASK_INJECTION_POINT -->|$ESCAPED_INJECTION|g" "$FULL_PROMPT_FILE" 2>/dev/null || \
+      awk -v injection="$FULL_INJECTION" '{gsub(/<!-- TASK_INJECTION_POINT -->/, injection); print}' "$FULL_PROMPT_FILE" > "$FULL_PROMPT_FILE.tmp" && mv "$FULL_PROMPT_FILE.tmp" "$FULL_PROMPT_FILE"
   else
-    # Fallback: append task details at the end
-    echo -e "\n## Assigned Task\n$TASK_DETAILS" >> "$FULL_PROMPT_FILE"
+    # Fallback: append at the end
+    echo -e "\n$FULL_INJECTION" >> "$FULL_PROMPT_FILE"
   fi
 
-  # Append manifest file location
+  # Append file locations
   MANIFEST_RELATIVE=$(realpath --relative-to="$SCRIPT_DIR" "$MANIFEST_FILE" 2>/dev/null || basename "$MANIFEST_FILE")
-  echo -e "\n## Manifest Location\nThe manifest file for this run is: \`$MANIFEST_RELATIVE\`" >> "$FULL_PROMPT_FILE"
+  PATTERNS_RELATIVE=$(realpath --relative-to="$SCRIPT_DIR" "$PATTERNS_FILE" 2>/dev/null || basename "$PATTERNS_FILE")
+  echo -e "\n## File Locations\n- Manifest: \`$MANIFEST_RELATIVE\`\n- Patterns: \`$PATTERNS_RELATIVE\` (READ THIS for codebase patterns)" >> "$FULL_PROMPT_FILE"
   
   # Append Browser Instructions
   get_browser_instructions >> "$FULL_PROMPT_FILE"

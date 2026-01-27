@@ -1,12 +1,11 @@
-# Ralph Progress Log
+# Ralph Progress Log (DEPRECATED)
+
+> **This file is deprecated.** Progress is now tracked in:
+> - `ralph/patterns.md` - Curated codebase patterns
+> - `ralph/history.jsonl` - Structured task completion log
+>
+> This file is kept for backward compatibility only.
 
 Feature: Project Journey UI
 Branch: feature/project-journey-ui
-Started: Tue Jan 27 12:27:47 PST 2026
-
-## Codebase Patterns
-
-(Add reusable patterns discovered during implementation here)
-
----
-
+Migrated: 2026-01-27
