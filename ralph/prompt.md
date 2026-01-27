@@ -84,6 +84,37 @@ Before committing, check if any edited files have learnings worth preserving in 
 
 Only update CLAUDE.md if you have **genuinely reusable knowledge** that would help future work in that directory.
 
+## Using Subagents for Parallel Work
+
+You have access to Claude Code's `Task` tool to spawn subagents. Use them to parallelize work **within this task iteration**:
+
+**Good uses of subagents:**
+- **Exploration:** Spawn agents to search codebase patterns while you plan
+- **Testing:** Run tests in background while you implement next piece
+- **Verification:** Check multiple files/patterns simultaneously
+- **Research:** Gather context from different parts of codebase in parallel
+
+**Example - implementing a new component:**
+```
+1. Spawn subagent: "Find existing button component patterns in components/ui/"
+2. Spawn subagent: "Check how other pages fetch project data"
+3. While those run, read the task requirements carefully
+4. Use findings to implement with consistent patterns
+```
+
+**Example - after implementation:**
+```
+1. Spawn subagent (background): "Run npm run typecheck and report errors"
+2. Spawn subagent (background): "Run npm test and report failures"
+3. While tests run, update progress.txt with learnings
+4. Check test results, fix any issues
+```
+
+**Do NOT use subagents for:**
+- Working on other tasks (stay focused on assigned task)
+- Making commits (only main agent commits)
+- Modifying manifest.json (orchestrator handles this)
+
 ## Quality Requirements
 
 - ALL commits must pass the project's quality checks (typecheck, lint, test)
