@@ -1,10 +1,14 @@
 """PRD API endpoints for generating, managing, and exporting Product Requirements Documents."""
 
 import json
+import logging
 import re
+import sys
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.responses import Response
@@ -230,11 +234,15 @@ async def stream_prd_generation(
         EventSourceResponse streaming the generation events.
     """
     # Verify project exists
+    logger.warning(f"[PRD Stream] Request received for project {project_id}, mode={mode}")
+    print(f"[PRD Stream] Request received for project {project_id}, mode={mode}", flush=True)
     project = _get_project_or_404(project_id, db)
+    logger.warning(f"[PRD Stream] Project found: {project.name}")
 
     async def event_generator() -> AsyncIterator[dict[str, Any]]:
         """Generate SSE events for staged PRD streaming."""
         try:
+            logger.warning("[PRD Stream] Starting event generator, yielding status event...")
             # Emit initial status event
             yield {
                 "event": "status",
@@ -245,6 +253,7 @@ async def stream_prd_generation(
                     "staged": True,
                 }),
             }
+            logger.warning("[PRD Stream] Status event yielded")
 
             # Create generator and stream sections using staged approach
             generator = PRDGenerator(db)

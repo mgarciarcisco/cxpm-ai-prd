@@ -97,7 +97,11 @@ export function usePRDStreamingV2(projectId, mode, shouldConnect = false) {
    * Connect to the SSE stream
    */
   const connect = useCallback(() => {
-    if (!projectId || !mode) return;
+    console.log('[PRD Streaming] connect() called', { projectId, mode, BASE_URL });
+    if (!projectId || !mode) {
+      console.log('[PRD Streaming] Missing projectId or mode, returning early');
+      return;
+    }
 
     // Reset state
     resetState();
@@ -105,6 +109,7 @@ export function usePRDStreamingV2(projectId, mode, shouldConnect = false) {
     cleanup();
 
     const url = `${BASE_URL}/api/projects/${projectId}/prds/stream?mode=${mode}`;
+    console.log('[PRD Streaming] Creating EventSource:', url);
     const eventSource = new EventSource(url);
     eventSourceRef.current = eventSource;
 
@@ -310,7 +315,9 @@ export function usePRDStreamingV2(projectId, mode, shouldConnect = false) {
 
   // Connect when shouldConnect becomes true
   useEffect(() => {
+    console.log('[PRD Streaming] useEffect triggered', { shouldConnect, projectId, mode });
     if (shouldConnect && projectId && mode) {
+      console.log('[PRD Streaming] All conditions met, calling connect()');
       connect();
     }
 
