@@ -1489,11 +1489,14 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
   FULL_INJECTION="${CONTEXT_INJECTION}\n\n## Assigned Task\n\n${TASK_DETAILS}"
 
   # Replace the injection point comment with context + task details
-  if grep -q "<!-- TASK_INJECTION_POINT -->" "$FULL_PROMPT_FILE"; then
-    # Use awk to replace the injection point (escape special chars)
-    ESCAPED_INJECTION=$(echo -e "$FULL_INJECTION" | sed 's/[&/\]/\\&/g' | sed ':a;N;$!ba;s/\n/\\n/g')
-    sed -i "s|<!-- TASK_INJECTION_POINT -->|$ESCAPED_INJECTION|g" "$FULL_PROMPT_FILE" 2>/dev/null || \
-      awk -v injection="$FULL_INJECTION" '{gsub(/<!-- TASK_INJECTION_POINT -->/, injection); print}' "$FULL_PROMPT_FILE" > "$FULL_PROMPT_FILE.tmp" && mv "$FULL_PROMPT_FILE.tmp" "$FULL_PROMPT_FILE"
+  # Use a robust method that handles special characters
+  if grep -qn "<!-- TASK_INJECTION_POINT -->" "$FULL_PROMPT_FILE"; then
+    INJECT_LINE=$(grep -n "<!-- TASK_INJECTION_POINT -->" "$FULL_PROMPT_FILE" | head -1 | cut -d: -f1)
+    {
+      head -n $((INJECT_LINE - 1)) "$FULL_PROMPT_FILE"
+      echo -e "$FULL_INJECTION"
+      tail -n +$((INJECT_LINE + 1)) "$FULL_PROMPT_FILE"
+    } > "$FULL_PROMPT_FILE.new" && mv "$FULL_PROMPT_FILE.new" "$FULL_PROMPT_FILE"
   else
     # Fallback: append at the end
     echo -e "\n$FULL_INJECTION" >> "$FULL_PROMPT_FILE"
