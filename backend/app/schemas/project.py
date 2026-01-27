@@ -1,8 +1,42 @@
 """Pydantic schemas for Project API request/response validation."""
 
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel
+
+
+class RequirementsStatusSchema(str, Enum):
+    """Status for the Requirements stage."""
+    empty = "empty"
+    has_items = "has_items"
+    reviewed = "reviewed"
+
+
+class PRDStageStatusSchema(str, Enum):
+    """Status for the PRD stage."""
+    empty = "empty"
+    draft = "draft"
+    ready = "ready"
+
+
+class StoriesStatusSchema(str, Enum):
+    """Status for the User Stories stage."""
+    empty = "empty"
+    generated = "generated"
+    refined = "refined"
+
+
+class MockupsStatusSchema(str, Enum):
+    """Status for the Mockups stage."""
+    empty = "empty"
+    generated = "generated"
+
+
+class ExportStatusSchema(str, Enum):
+    """Status for the Export stage."""
+    not_exported = "not_exported"
+    exported = "exported"
 
 
 class ProjectCreate(BaseModel):
@@ -27,6 +61,11 @@ class ProjectResponse(BaseModel):
     description: str | None = None
     created_at: datetime
     updated_at: datetime
+    requirements_status: RequirementsStatusSchema
+    prd_status: PRDStageStatusSchema
+    stories_status: StoriesStatusSchema
+    mockups_status: MockupsStatusSchema
+    export_status: ExportStatusSchema
 
     model_config = {"from_attributes": True}
 

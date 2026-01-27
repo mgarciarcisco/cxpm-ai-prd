@@ -16,6 +16,12 @@ def test_create_project(test_client: TestClient) -> None:
     assert "id" in data
     assert "created_at" in data
     assert "updated_at" in data
+    # Check stage status fields default to initial values
+    assert data["requirements_status"] == "empty"
+    assert data["prd_status"] == "empty"
+    assert data["stories_status"] == "empty"
+    assert data["mockups_status"] == "empty"
+    assert data["export_status"] == "not_exported"
 
 
 def test_create_project_without_description(test_client: TestClient) -> None:
@@ -62,6 +68,12 @@ def test_get_project_by_id(test_client: TestClient) -> None:
     assert data["id"] == project_id
     assert data["name"] == "Get Test"
     assert data["description"] == "Test retrieval"
+    # Verify stage status fields are returned
+    assert "requirements_status" in data
+    assert "prd_status" in data
+    assert "stories_status" in data
+    assert "mockups_status" in data
+    assert "export_status" in data
 
 
 def test_get_project_returns_404_for_missing(test_client: TestClient) -> None:

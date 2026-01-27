@@ -31,12 +31,17 @@ from app.schemas.prd import (
     PRDUpdateRequest,
 )
 from app.schemas.project import (
+    ExportStatusSchema,
+    MockupsStatusSchema,
+    PRDStageStatusSchema,
     ProjectCreate,
     ProjectList,
     ProjectResponse,
     ProjectStatsResponse,
     ProjectUpdate,
+    RequirementsStatusSchema,
     SectionCount,
+    StoriesStatusSchema,
 )
 from app.schemas.requirement import (
     RequirementHistoryResponse,
@@ -67,6 +72,11 @@ __all__ = [
     "ProjectList",
     "SectionCount",
     "ProjectStatsResponse",
+    "RequirementsStatusSchema",
+    "PRDStageStatusSchema",
+    "StoriesStatusSchema",
+    "MockupsStatusSchema",
+    "ExportStatusSchema",
     # Meeting schemas
     "MeetingUpload",
     "MeetingItemResponse",
