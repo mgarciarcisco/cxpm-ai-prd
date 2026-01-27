@@ -63,6 +63,7 @@ ${BOLD}Options:${RESET}
   --verbose           Show raw JSON stream output (for debugging)
   --dry-run           Preview actions without executing AI
   --status            Show task status summary and exit
+  --resume            Resume from last saved state after crash/interrupt
   --help, -h          Show this help message
 
 ${BOLD}Examples:${RESET}
@@ -119,6 +120,14 @@ SHOW_STATUS=false
 DRY_RUN=false
 VERBOSE=false
 STREAM=false
+RESUME_MODE=false
+
+# Resilience settings
+MAX_RETRIES=${MAX_RETRIES:-3}
+RETRY_DELAY=${RETRY_DELAY:-30}
+MAX_CONSECUTIVE_FAILURES=${MAX_CONSECUTIVE_FAILURES:-3}
+RATE_LIMIT_WAIT=${RATE_LIMIT_WAIT:-60}
+TASK_TIMEOUT=${TASK_TIMEOUT:-600}  # 10 minutes per task
 
 # Configurable pricing (per million tokens) - can be overridden in .ralphrc
 INPUT_PRICE_PER_M="${INPUT_PRICE_PER_M:-3}"
@@ -253,6 +262,10 @@ while [[ $# -gt 0 ]]; do
       SHOW_STATUS=true
       shift
       ;;
+    --resume)
+      RESUME_MODE=true
+      shift
+      ;;
     *)
       if [[ "$1" =~ ^[0-9]+$ ]]; then
         MAX_ITERATIONS="$1"
@@ -345,18 +358,19 @@ fi
 
 cleanup() {
     local exit_code=$?
-    
+
     # Kill background processes safely
     safe_kill "${monitor_pid:-}"
     safe_kill "${ai_pid:-}"
-    
+
     # Remove temp file
     [[ -n "${tmpfile:-}" ]] && rm -f "$tmpfile"
-    
+
     # Show message on interrupt
     if [[ $exit_code -eq 130 ]]; then
         printf "\n"
-        log_warn "Interrupted! Cleaned up."
+        log_warn "Interrupted! State saved."
+        log_info "Run with --resume to continue from where you left off."
     fi
 }
 
@@ -1018,6 +1032,149 @@ append_history() {
 }
 
 # =============================================================================
+# RESILIENCE FUNCTIONS
+# =============================================================================
+
+# Track consecutive failures
+consecutive_failures=0
+
+# Retry a command with exponential backoff
+retry_with_backoff() {
+    local max_retries=$1
+    local delay=$2
+    shift 2
+    local cmd=("$@")
+
+    local attempt=1
+    while [[ $attempt -le $max_retries ]]; do
+        if "${cmd[@]}"; then
+            return 0
+        fi
+
+        local exit_code=$?
+        log_warn "Attempt $attempt/$max_retries failed (exit code: $exit_code)"
+
+        if [[ $attempt -lt $max_retries ]]; then
+            local wait_time=$((delay * attempt))  # Exponential backoff
+            log_info "Waiting ${wait_time}s before retry..."
+            sleep "$wait_time"
+        fi
+
+        ((attempt++))
+    done
+
+    return 1
+}
+
+# Check if error is rate limiting
+is_rate_limited() {
+    local output=$1
+    if echo "$output" | grep -qiE "rate.?limit|too.?many.?requests|429|quota|throttl"; then
+        return 0
+    fi
+    return 1
+}
+
+# Check if error is context overflow
+is_context_overflow() {
+    local output=$1
+    if echo "$output" | grep -qiE "context.*(length|limit|overflow|exceed)|token.*(limit|exceed)|too.?long"; then
+        return 0
+    fi
+    return 1
+}
+
+# Handle task failure
+handle_task_failure() {
+    local task_id=$1
+    local output=$2
+    local reason=$3
+
+    ((consecutive_failures++))
+
+    if is_rate_limited "$output"; then
+        log_warn "Rate limited detected. Waiting ${RATE_LIMIT_WAIT}s..."
+        sleep "$RATE_LIMIT_WAIT"
+        consecutive_failures=0  # Don't count rate limits as failures
+        return 1  # Signal to retry
+    fi
+
+    if is_context_overflow "$output"; then
+        log_error "Context overflow on task $task_id"
+        mark_task_blocked "$task_id" "Context overflow - task may be too large"
+        return 0  # Continue to next task
+    fi
+
+    if [[ $consecutive_failures -ge $MAX_CONSECUTIVE_FAILURES ]]; then
+        log_error "Max consecutive failures ($MAX_CONSECUTIVE_FAILURES) reached. Stopping."
+        return 2  # Signal to stop
+    fi
+
+    log_warn "Task $task_id failed: $reason (consecutive failures: $consecutive_failures)"
+    return 0  # Continue to next task
+}
+
+# Reset failure counter on success
+handle_task_success() {
+    consecutive_failures=0
+}
+
+# Save resume state
+save_resume_state() {
+    local iteration=$1
+    local task_id=$2
+    echo "{\"iteration\":$iteration,\"task\":\"$task_id\",\"timestamp\":\"$(date -Iseconds)\"}" > "$RALPH_DIR/.resume_state"
+}
+
+# Load resume state
+load_resume_state() {
+    if [[ -f "$RALPH_DIR/.resume_state" ]]; then
+        cat "$RALPH_DIR/.resume_state"
+    else
+        echo ""
+    fi
+}
+
+# Clear resume state
+clear_resume_state() {
+    rm -f "$RALPH_DIR/.resume_state"
+}
+
+# Run AI command with timeout
+run_with_timeout() {
+    local timeout_seconds=$1
+    shift
+    local cmd=("$@")
+
+    # Use timeout command if available
+    if command -v timeout &>/dev/null; then
+        timeout --signal=TERM "$timeout_seconds" "${cmd[@]}"
+        return $?
+    fi
+
+    # Fallback: manual timeout with background process
+    "${cmd[@]}" &
+    local pid=$!
+    local elapsed=0
+
+    while [[ $elapsed -lt $timeout_seconds ]]; do
+        if ! kill -0 "$pid" 2>/dev/null; then
+            wait "$pid"
+            return $?
+        fi
+        sleep 1
+        ((elapsed++))
+    done
+
+    # Timeout reached - kill the process
+    log_warn "Process timed out after ${timeout_seconds}s"
+    kill -TERM "$pid" 2>/dev/null
+    sleep 2
+    kill -KILL "$pid" 2>/dev/null
+    return 124  # Same exit code as GNU timeout
+}
+
+# =============================================================================
 # DEFERRED STATUS MODE (needs functions defined above)
 # =============================================================================
 
@@ -1269,8 +1426,37 @@ if [ "$DRY_RUN" = true ]; then
 fi
 
 SESSION_START=$(date +%s)
+START_ITERATION=1
 
-for i in $(seq 1 $MAX_ITERATIONS); do
+# Handle resume mode
+if [ "$RESUME_MODE" = true ]; then
+    RESUME_STATE=$(load_resume_state)
+    if [ -n "$RESUME_STATE" ]; then
+        last_iteration=$(echo "$RESUME_STATE" | jq -r '.iteration // 1')
+        last_task=$(echo "$RESUME_STATE" | jq -r '.task // "unknown"')
+        last_time=$(echo "$RESUME_STATE" | jq -r '.timestamp // "unknown"')
+
+        log_info "Resume state found:"
+        log_info "  Last iteration: $last_iteration"
+        log_info "  Last task: $last_task"
+        log_info "  Time: $last_time"
+
+        # Start from the next iteration
+        START_ITERATION=$((last_iteration + 1))
+
+        if [[ $START_ITERATION -gt $MAX_ITERATIONS ]]; then
+            log_warn "Resume would exceed max iterations. Starting fresh."
+            START_ITERATION=1
+            clear_resume_state
+        else
+            log_info "Resuming from iteration $START_ITERATION"
+        fi
+    else
+        log_info "No resume state found. Starting fresh."
+    fi
+fi
+
+for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
   print_header "Iteration $i of $MAX_ITERATIONS"
   
   # Show what story will be worked on
@@ -1501,9 +1687,36 @@ for i in $(seq 1 $MAX_ITERATIONS); do
       monitor_pid=$!
   fi
   
-  # Wait for AI to finish
-  wait "$ai_pid" 2>/dev/null || true
-  
+  # Save resume state before running
+  save_resume_state "$i" "$CURRENT_TASK_ID"
+
+  # Wait for AI to finish with timeout
+  AI_EXIT_CODE=0
+  TIMEOUT_REACHED=false
+
+  # Monitor with timeout
+  elapsed=0
+  while kill -0 "$ai_pid" 2>/dev/null; do
+      if [[ $elapsed -ge $TASK_TIMEOUT ]]; then
+          log_warn "Task timeout (${TASK_TIMEOUT}s) reached for $CURRENT_TASK_ID"
+          kill -TERM "$ai_pid" 2>/dev/null
+          sleep 2
+          kill -KILL "$ai_pid" 2>/dev/null
+          TIMEOUT_REACHED=true
+          AI_EXIT_CODE=124
+          break
+      fi
+      sleep 1
+      ((elapsed++))
+  done
+
+  # If not timed out, wait for proper exit code
+  if [[ "$TIMEOUT_REACHED" != "true" ]]; then
+      if ! wait "$ai_pid" 2>/dev/null; then
+          AI_EXIT_CODE=$?
+      fi
+  fi
+
   # Stop the monitor
   if [ -n "$monitor_pid" ]; then
       kill "$monitor_pid" 2>/dev/null || true
@@ -1512,9 +1725,52 @@ for i in $(seq 1 $MAX_ITERATIONS); do
       # Clear the progress line
       printf "\r\033[K"
   fi
-  
+
   # Read and save result
   OUTPUT=$(cat "$tmpfile" 2>/dev/null || echo "")
+
+  # Check for timeout
+  if [[ "$TIMEOUT_REACHED" == "true" ]]; then
+      log_warn "Task $CURRENT_TASK_ID timed out after ${TASK_TIMEOUT}s"
+      mark_task_blocked "$CURRENT_TASK_ID" "Timed out - task may be too complex or stuck"
+      ((consecutive_failures++))
+
+      if [[ $consecutive_failures -ge $MAX_CONSECUTIVE_FAILURES ]]; then
+          log_error "Max consecutive failures ($MAX_CONSECUTIVE_FAILURES) reached."
+          SESSION_END=$(date +%s)
+          SESSION_DURATION=$((SESSION_END - SESSION_START))
+          print_session_summary "$SESSION_DURATION" "$i"
+          exit 1
+      fi
+
+      log_info "Skipping to next task..."
+      continue
+  fi
+
+  # Check for AI execution failure
+  if [[ -z "$OUTPUT" ]] || [[ $AI_EXIT_CODE -ne 0 ]]; then
+      log_warn "AI execution failed or returned empty output (exit code: $AI_EXIT_CODE)"
+
+      # Handle the failure
+      handle_task_failure "$CURRENT_TASK_ID" "$OUTPUT" "AI execution failed"
+      failure_code=$?
+
+      if [[ $failure_code -eq 1 ]]; then
+          # Retry this iteration (rate limit)
+          log_info "Retrying iteration $i..."
+          continue
+      elif [[ $failure_code -eq 2 ]]; then
+          # Max failures reached, stop
+          SESSION_END=$(date +%s)
+          SESSION_DURATION=$((SESSION_END - SESSION_START))
+          print_session_summary "$SESSION_DURATION" "$i"
+          exit 1
+      fi
+
+      # Continue to next task
+      log_info "Skipping to next task..."
+      continue
+  fi
   cp "$tmpfile" "$ITERATION_LOG" 2>/dev/null || true
   
   # Parse tokens and cost
@@ -1568,35 +1824,62 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   rm -f "$tmpfile"
   tmpfile=""
   
+  # Check for errors in output (rate limit, context overflow)
+  if is_rate_limited "$OUTPUT"; then
+      log_warn "Rate limit detected in output. Waiting ${RATE_LIMIT_WAIT}s..."
+      sleep "$RATE_LIMIT_WAIT"
+      log_info "Retrying iteration $i..."
+      continue
+  fi
+
+  if is_context_overflow "$OUTPUT"; then
+      log_error "Context overflow detected for task $CURRENT_TASK_ID"
+      mark_task_blocked "$CURRENT_TASK_ID" "Context overflow - task may be too large"
+      log_info "Continuing to next task..."
+      continue
+  fi
+
   # Check for task completion marker and extract task ID
+  TASK_COMPLETED=false
   if echo "$OUTPUT" | grep -qF "$TASK_COMPLETE_PATTERN"; then
-    local completed_task_id
     completed_task_id=$(echo "$OUTPUT" | grep -oP '(?<=<task-complete>)[^<]+(?=</task-complete>)' | head -1)
 
     if [ -n "$completed_task_id" ]; then
         mark_task_complete "$completed_task_id"
+        handle_task_success
+        TASK_COMPLETED=true
+        log_success "Task $completed_task_id completed successfully"
     fi
   fi
 
-  # Check for task blocked marker
-  if echo "$OUTPUT" | grep -qF "$TASK_BLOCKED_PATTERN"; then
-    local blocked_info
-    blocked_info=$(echo "$OUTPUT" | grep -oP '(?<=<task-blocked>)[^<]+(?=</task-blocked>)' | head -1)
+  # If no completion marker, check if task was blocked
+  if [[ "$TASK_COMPLETED" != "true" ]]; then
+      # Check for task blocked marker
+      if echo "$OUTPUT" | grep -qF "$TASK_BLOCKED_PATTERN"; then
+          blocked_info=$(echo "$OUTPUT" | grep -oP '(?<=<task-blocked>)[^<]+(?=</task-blocked>)' | head -1)
+          if [ -n "$blocked_info" ]; then
+              blocked_id=$(echo "$blocked_info" | cut -d':' -f1)
+              blocked_reason=$(echo "$blocked_info" | cut -d':' -f2-)
+              mark_task_blocked "$blocked_id" "$blocked_reason"
+          fi
+      else
+          # No completion or blocked marker - task didn't finish properly
+          log_warn "Task $CURRENT_TASK_ID did not signal completion"
+          ((consecutive_failures++))
 
-    if [ -n "$blocked_info" ]; then
-        local blocked_id blocked_reason
-        blocked_id=$(echo "$blocked_info" | cut -d':' -f1)
-        blocked_reason=$(echo "$blocked_info" | cut -d':' -f2-)
-        mark_task_blocked "$blocked_id" "$blocked_reason"
-    fi
+          if [[ $consecutive_failures -ge $MAX_CONSECUTIVE_FAILURES ]]; then
+              log_error "Max consecutive failures ($MAX_CONSECUTIVE_FAILURES) reached."
+              SESSION_END=$(date +%s)
+              SESSION_DURATION=$((SESSION_END - SESSION_START))
+              print_session_summary "$SESSION_DURATION" "$i"
+              exit 1
+          fi
+      fi
   fi
 
   # Check if all tasks are complete
-  local ready_count
   ready_count=$(get_ready_count)
-  local counts
   counts=$(get_task_counts)
-  local total completed
   total=$(echo "$counts" | cut -d'|' -f1)
   completed=$(echo "$counts" | cut -d'|' -f2)
 
@@ -1604,6 +1887,9 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     print_header "Mission Accomplished"
     log_success "Ralph completed all $total tasks at iteration $i!"
     show_task_status
+
+    # Clear resume state on successful completion
+    clear_resume_state
 
     SESSION_END=$(date +%s)
     SESSION_DURATION=$((SESSION_END - SESSION_START))
