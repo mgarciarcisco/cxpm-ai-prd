@@ -1,8 +1,59 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { get } from '../services/api';
 import ProjectCard from '../components/projects/ProjectCard';
+import StageFilter from '../components/dashboard/StageFilter';
 import './DashboardPage.css';
+
+/**
+ * Default stage definitions for determining current stage
+ */
+const DEFAULT_STAGES = [
+  { id: 'requirements', label: 'Requirements' },
+  { id: 'prd', label: 'PRD' },
+  { id: 'stories', label: 'User Stories' },
+  { id: 'mockups', label: 'Mockups' },
+  { id: 'export', label: 'Export' },
+];
+
+/**
+ * Maps stage status to a normalized status for display
+ */
+function getStageStatus(stageId, project) {
+  const statusMap = {
+    requirements: { empty: 'empty', has_items: 'in_progress', reviewed: 'complete' },
+    prd: { empty: 'empty', draft: 'in_progress', ready: 'complete' },
+    stories: { empty: 'empty', generated: 'in_progress', refined: 'complete' },
+    mockups: { empty: 'empty', generated: 'complete' },
+    export: { not_exported: 'empty', exported: 'complete' },
+  };
+
+  const fieldMap = {
+    requirements: 'requirements_status',
+    prd: 'prd_status',
+    stories: 'stories_status',
+    mockups: 'mockups_status',
+    export: 'export_status',
+  };
+
+  const fieldName = fieldMap[stageId];
+  const rawStatus = project[fieldName] || 'empty';
+  return statusMap[stageId]?.[rawStatus] || 'empty';
+}
+
+/**
+ * Determines the current active stage based on project statuses
+ * The current stage is the first incomplete stage, or the last stage if all complete
+ */
+function getCurrentStage(project) {
+  for (const stage of DEFAULT_STAGES) {
+    const status = getStageStatus(stage.id, project);
+    if (status !== 'complete') {
+      return stage;
+    }
+  }
+  return DEFAULT_STAGES[DEFAULT_STAGES.length - 1];
+}
 
 /**
  * Dashboard page with welcome header, action cards, and projects section.
@@ -12,9 +63,13 @@ function DashboardPage() {
   // User name would come from auth context in a real app
   const userName = 'User';
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Get filter value from URL query param
+  const stageFilter = searchParams.get('stage') || 'all';
 
   // Fetch projects and their stats
   const fetchProjects = useCallback(async () => {
@@ -62,6 +117,28 @@ function DashboardPage() {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  // Handle filter change - update URL query param
+  const handleFilterChange = useCallback((value) => {
+    if (value === 'all') {
+      // Remove stage param if 'all' is selected
+      searchParams.delete('stage');
+      setSearchParams(searchParams);
+    } else {
+      setSearchParams({ stage: value });
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Filter projects based on current stage
+  const filteredProjects = useMemo(() => {
+    if (stageFilter === 'all') {
+      return projects;
+    }
+    return projects.filter((project) => {
+      const currentStage = getCurrentStage(project);
+      return currentStage.id === stageFilter;
+    });
+  }, [projects, stageFilter]);
 
   // Placeholder handlers for edit and delete
   const handleEditProject = (project) => {
@@ -115,6 +192,7 @@ function DashboardPage() {
         <div className="dashboard__projects-section">
           <div className="dashboard__section-header">
             <h2 className="dashboard__section-title">Your Projects</h2>
+            <StageFilter value={stageFilter} onChange={handleFilterChange} />
           </div>
 
           {/* Loading State */}
@@ -141,9 +219,9 @@ function DashboardPage() {
           )}
 
           {/* Projects Grid */}
-          {!loading && !error && projects.length > 0 && (
+          {!loading && !error && filteredProjects.length > 0 && (
             <div className="dashboard__projects-grid">
-              {projects.map((project) => (
+              {filteredProjects.map((project) => (
                 <ProjectCard
                   key={project.id}
                   project={project}
@@ -153,6 +231,28 @@ function DashboardPage() {
                   onDelete={handleDeleteProject}
                 />
               ))}
+            </div>
+          )}
+
+          {/* Empty State - no projects matching filter */}
+          {!loading && !error && projects.length > 0 && filteredProjects.length === 0 && (
+            <div className="dashboard__empty">
+              <div className="dashboard__empty-icon">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="12" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M42 42L30 30" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <h3 className="dashboard__empty-title">No projects found</h3>
+              <p className="dashboard__empty-description">
+                No projects match the selected stage filter. Try selecting a different stage or view all projects.
+              </p>
+              <button
+                className="dashboard__clear-filter-btn"
+                onClick={() => handleFilterChange('all')}
+              >
+                View All Projects
+              </button>
             </div>
           )}
 

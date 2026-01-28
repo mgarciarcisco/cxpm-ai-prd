@@ -224,6 +224,23 @@
   max-width: 320px;
 }
 
+.dashboard__clear-filter-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #FFFFFF;
+  background-color: #4ECDC4;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.dashboard__clear-filter-btn:hover {
+  background-color: #3dbdb5;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .dashboard__projects-grid {
