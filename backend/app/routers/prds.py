@@ -695,6 +695,7 @@ def restore_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDResponse:
 
     Creates a new PRD with the next version number, copying the title, sections,
     and raw_markdown from the source PRD. The new PRD is immediately set to ready status.
+    Also updates the project's prd_status to 'ready'.
 
     Args:
         prd_id: The PRD to restore from (can be any historical version).
@@ -707,6 +708,8 @@ def restore_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDResponse:
         HTTPException 400: If source PRD is not in ready/archived status.
         HTTPException 404: If PRD not found.
     """
+    from app.models import PRDStageStatus
+
     # Get the source PRD
     source_prd = _get_prd_or_404(prd_id, db)
 
@@ -737,6 +740,12 @@ def restore_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDResponse:
         updated_by=None,
     )
     db.add(new_prd)
+
+    # Update project's prd_status to ready
+    project = db.query(Project).filter(Project.id == source_prd.project_id).first()
+    if project:
+        project.prd_status = PRDStageStatus.ready
+
     db.commit()
     db.refresh(new_prd)
 
