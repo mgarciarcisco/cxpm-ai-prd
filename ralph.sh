@@ -1535,19 +1535,10 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
          if [ -n "$MODEL_OVERRIDE" ]; then CMD="$CMD --model $MODEL_OVERRIDE"; fi
 
          if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming - tool calls]${RESET}"
+             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
              echo ""
-             # Run with timeout, tee to file, filter and display with perl (unbuffered)
-             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" | perl -ne '
-                 BEGIN { $| = 1; }  # unbuffered output
-                 if (/"type":"tool_use".*"name":"([^"]+)"/) {
-                     print "\e[33m▶ $1\e[0m\n";
-                 } elsif (/"name":"([^"]+)".*"type":"tool_use"/) {
-                     print "\e[33m▶ $1\e[0m\n";
-                 } elsif (/"type":"result"/) {
-                     print "\e[32m✓ Iteration Complete\e[0m\n";
-                 }
-             '
+             # Run with timeout, pipe through stream formatter
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | stream_format_claude "$tmpfile"
              AI_EXIT_CODE=${PIPESTATUS[0]}
          elif [ "$VERBOSE" = true ]; then
              echo -e "  ${DIM}[Verbose mode - raw JSON output]${RESET}"
