@@ -5,6 +5,9 @@
 
 set -euo pipefail
 
+# Debug: trap errors to show where script fails
+trap 'echo "[ERROR] Script failed at line $LINENO: $BASH_COMMAND" >&2' ERR
+
 # =============================================================================
 # OPTION - Colors and formatting
 # =============================================================================
@@ -487,7 +490,7 @@ parse_ai_result() {
         cursor)
             # Cursor agent: parse stream-json output
             local result_line
-            result_line=$(echo "$result" | grep '"type":"result"' | tail -1)
+            result_line=$(echo "$result" | grep '"type":"result"' | tail -1 || true)
             
             if [[ -n "$result_line" ]]; then
                 response=$(echo "$result_line" | jq -r '.result // "Task completed"' 2>/dev/null || echo "Task completed")
@@ -504,7 +507,7 @@ parse_ai_result() {
         droid)
             # Droid stream-json parsing
             local completion_line
-            completion_line=$(echo "$result" | grep '"type":"completion"' | tail -1)
+            completion_line=$(echo "$result" | grep '"type":"completion"' | tail -1 || true)
             
             if [[ -n "$completion_line" ]]; then
                 response=$(echo "$completion_line" | jq -r '.finalText // "Task completed"' 2>/dev/null || echo "Task completed")
@@ -524,7 +527,7 @@ parse_ai_result() {
         claude|*)
             # Claude Code stream-json parsing
             local result_line
-            result_line=$(echo "$result" | grep '"type":"result"' | tail -1)
+            result_line=$(echo "$result" | grep '"type":"result"' | tail -1 || true)
             
             if [[ -n "$result_line" ]]; then
                 response=$(echo "$result_line" | jq -r '.result // "No result text"' 2>/dev/null || echo "Could not parse result")
@@ -809,9 +812,19 @@ mark_task_complete() {
     local tmp
     tmp=$(mktemp)
 
-    jq --arg id "$task_id" '
+    if ! jq --arg id "$task_id" '
       .tasks |= map(if .id == $id then .status = "completed" else . end)
-    ' "$MANIFEST_FILE" > "$tmp" && mv "$tmp" "$MANIFEST_FILE"
+    ' "$MANIFEST_FILE" > "$tmp"; then
+        log_error "Failed to update manifest for task $task_id"
+        rm -f "$tmp"
+        return 1
+    fi
+
+    if ! mv "$tmp" "$MANIFEST_FILE"; then
+        log_error "Failed to write manifest file for task $task_id"
+        rm -f "$tmp"
+        return 1
+    fi
 
     log_success "Task $task_id marked as completed"
 }
@@ -823,9 +836,19 @@ mark_task_blocked() {
     local tmp
     tmp=$(mktemp)
 
-    jq --arg id "$task_id" --arg reason "$reason" '
+    if ! jq --arg id "$task_id" --arg reason "$reason" '
       .tasks |= map(if .id == $id then .status = "blocked" | .blockedReason = $reason else . end)
-    ' "$MANIFEST_FILE" > "$tmp" && mv "$tmp" "$MANIFEST_FILE"
+    ' "$MANIFEST_FILE" > "$tmp"; then
+        log_error "Failed to update manifest for blocked task $task_id"
+        rm -f "$tmp"
+        return 1
+    fi
+
+    if ! mv "$tmp" "$MANIFEST_FILE"; then
+        log_error "Failed to write manifest file for blocked task $task_id"
+        rm -f "$tmp"
+        return 1
+    fi
 
     log_warn "Task $task_id marked as blocked: $reason"
 }
@@ -1078,7 +1101,7 @@ retry_with_backoff() {
             sleep "$wait_time"
         fi
 
-        ((attempt++))
+        attempt=$((attempt + 1))
     done
 
     return 1
@@ -1108,7 +1131,7 @@ handle_task_failure() {
     local output=$2
     local reason=$3
 
-    ((consecutive_failures++))
+    consecutive_failures=$((consecutive_failures + 1))
 
     if is_rate_limited "$output"; then
         log_warn "Rate limited detected. Waiting ${RATE_LIMIT_WAIT}s..."
@@ -1181,7 +1204,7 @@ run_with_timeout() {
             return $?
         fi
         sleep 1
-        ((elapsed++))
+        elapsed=$((elapsed + 1))
     done
 
     # Timeout reached - kill the process
@@ -1231,19 +1254,25 @@ show_iteration_summary() {
         return
     fi
     
-    # Check for errors in output
-    if grep -q "Error:" "$log_file" 2>/dev/null; then
-        echo -e "  ${RED}Agent Error:${RESET}"
-        grep "Error:" "$log_file" | head -3 | while IFS= read -r line; do
-            echo -e "    ${DIM}$line${RESET}"
-        done
-        echo -e "  ${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-        return
+    # Check for actual errors in result (not just any "Error:" string in JSON)
+    local result_check
+    result_check=$(grep '"type":"result"' "$log_file" | tail -1 || true)
+    if [ -n "$result_check" ]; then
+        local is_error
+        is_error=$(echo "$result_check" | jq -r '.is_error // false' 2>/dev/null)
+        if [ "$is_error" = "true" ]; then
+            echo -e "  ${RED}Agent Error:${RESET}"
+            local error_msg
+            error_msg=$(echo "$result_check" | jq -r '.result // "Unknown error"' 2>/dev/null | head -5)
+            echo -e "    ${DIM}$error_msg${RESET}"
+            echo -e "  ${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+            return
+        fi
     fi
     
     # Extract result from Claude output
     local result_line
-    result_line=$(grep '"type":"result"' "$log_file" | tail -1)
+    result_line=$(grep '"type":"result"' "$log_file" | tail -1 || true)
     
     if [ -n "$result_line" ] && command -v jq &>/dev/null; then
         # Extract key fields
@@ -1556,15 +1585,16 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
              echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
              echo ""
              # Run with timeout, pipe through stream formatter
-             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | stream_format_claude "$tmpfile"
+             # Use || true to prevent pipefail from exiting script before capturing exit code
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | stream_format_claude "$tmpfile" || true
              AI_EXIT_CODE=${PIPESTATUS[0]}
          elif [ "$VERBOSE" = true ]; then
              echo -e "  ${DIM}[Verbose mode - raw JSON output]${RESET}"
              echo ""
-             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
-             AI_EXIT_CODE=$?
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" || true
+             AI_EXIT_CODE=${PIPESTATUS[0]}
          else
-             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1" || true
              AI_EXIT_CODE=$?
          fi
          ;;
@@ -1573,10 +1603,10 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
          if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
              [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
-             AI_EXIT_CODE=$?
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" || true
+             AI_EXIT_CODE=${PIPESTATUS[0]}
          else
-             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1" || true
              AI_EXIT_CODE=$?
          fi
          ;;
@@ -1585,10 +1615,10 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
          if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
              [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             timeout "$TASK_TIMEOUT" bash -c "OPENCODE_PERMISSION='{\"*\":\"allow\"}' $CMD \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
-             AI_EXIT_CODE=$?
+             timeout "$TASK_TIMEOUT" bash -c "OPENCODE_PERMISSION='{\"*\":\"allow\"}' $CMD \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" || true
+             AI_EXIT_CODE=${PIPESTATUS[0]}
          else
-             timeout "$TASK_TIMEOUT" bash -c "OPENCODE_PERMISSION='{\"*\":\"allow\"}' $CMD \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             timeout "$TASK_TIMEOUT" bash -c "OPENCODE_PERMISSION='{\"*\":\"allow\"}' $CMD \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1" || true
              AI_EXIT_CODE=$?
          fi
          ;;
@@ -1596,10 +1626,10 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
          if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
              [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             timeout "$TASK_TIMEOUT" bash -c "codex exec --full-auto --json \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
-             AI_EXIT_CODE=$?
+             timeout "$TASK_TIMEOUT" bash -c "codex exec --full-auto --json \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" || true
+             AI_EXIT_CODE=${PIPESTATUS[0]}
          else
-             timeout "$TASK_TIMEOUT" bash -c "codex exec --full-auto --json \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             timeout "$TASK_TIMEOUT" bash -c "codex exec --full-auto --json \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1" || true
              AI_EXIT_CODE=$?
          fi
          ;;
@@ -1607,10 +1637,10 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
          if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
              [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             timeout "$TASK_TIMEOUT" bash -c "droid exec --output-format stream-json --auto medium \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
-             AI_EXIT_CODE=$?
+             timeout "$TASK_TIMEOUT" bash -c "droid exec --output-format stream-json --auto medium \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" || true
+             AI_EXIT_CODE=${PIPESTATUS[0]}
          else
-             timeout "$TASK_TIMEOUT" bash -c "droid exec --output-format stream-json --auto medium \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             timeout "$TASK_TIMEOUT" bash -c "droid exec --output-format stream-json --auto medium \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1" || true
              AI_EXIT_CODE=$?
          fi
          ;;
@@ -1620,10 +1650,10 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
          if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
              [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             timeout "$TASK_TIMEOUT" bash -c "$CMD \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
-             AI_EXIT_CODE=$?
+             timeout "$TASK_TIMEOUT" bash -c "$CMD \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" || true
+             AI_EXIT_CODE=${PIPESTATUS[0]}
          else
-             timeout "$TASK_TIMEOUT" bash -c "$CMD \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             timeout "$TASK_TIMEOUT" bash -c "$CMD \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1" || true
              AI_EXIT_CODE=$?
          fi
          ;;
@@ -1639,10 +1669,10 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
          if [ "$STREAM" = true ] || [ "$VERBOSE" = true ]; then
              [[ "$STREAM" = true ]] && echo -e "  ${DIM}[Streaming mode]${RESET}" || echo -e "  ${DIM}[Verbose mode]${RESET}"
              echo ""
-             timeout "$TASK_TIMEOUT" bash -c "$GEMINI_CMD \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile"
-             AI_EXIT_CODE=$?
+             timeout "$TASK_TIMEOUT" bash -c "$GEMINI_CMD \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" || true
+             AI_EXIT_CODE=${PIPESTATUS[0]}
          else
-             timeout "$TASK_TIMEOUT" bash -c "$GEMINI_CMD \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1"
+             timeout "$TASK_TIMEOUT" bash -c "$GEMINI_CMD \"\$(cat '$PROMPT_TMP')\" > '$tmpfile' 2>&1" || true
              AI_EXIT_CODE=$?
          fi
          ;;
@@ -1696,7 +1726,7 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
   if [[ "$TIMEOUT_REACHED" == "true" ]]; then
       log_warn "Task $CURRENT_TASK_ID timed out after ${TASK_TIMEOUT}s"
       mark_task_blocked "$CURRENT_TASK_ID" "Timed out - task may be too complex or stuck"
-      ((consecutive_failures++))
+      consecutive_failures=$((consecutive_failures + 1))
 
       if [[ $consecutive_failures -ge $MAX_CONSECUTIVE_FAILURES ]]; then
           log_error "Max consecutive failures ($MAX_CONSECUTIVE_FAILURES) reached."
@@ -1793,13 +1823,15 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
     completed_task_id=$(echo "$OUTPUT" | grep -oP '(?<=<task-complete>)[^<]+(?=</task-complete>)' | head -1)
 
     if [ -n "$completed_task_id" ]; then
-        mark_task_complete "$completed_task_id"
+        if ! mark_task_complete "$completed_task_id"; then
+            log_warn "Could not update manifest, but continuing..."
+        fi
         handle_task_success
         TASK_COMPLETED=true
         log_success "Task $completed_task_id completed successfully"
 
         # Track for review batch
-        ((TASKS_SINCE_REVIEW++))
+        TASKS_SINCE_REVIEW=$((TASKS_SINCE_REVIEW + 1))
 
         # Trigger review if batch is ready and --with-review is enabled
         if [[ "$WITH_REVIEW" == "true" ]] && [[ $TASKS_SINCE_REVIEW -ge $REVIEW_BATCH_SIZE ]]; then
@@ -1861,7 +1893,7 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
       else
           # No completion or blocked marker - task didn't finish properly
           log_warn "Task $CURRENT_TASK_ID did not signal completion"
-          ((consecutive_failures++))
+          consecutive_failures=$((consecutive_failures + 1))
 
           if [[ $consecutive_failures -ge $MAX_CONSECUTIVE_FAILURES ]]; then
               log_error "Max consecutive failures ($MAX_CONSECUTIVE_FAILURES) reached."
