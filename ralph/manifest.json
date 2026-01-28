@@ -89,7 +89,7 @@
         "P1-006"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-008b",
@@ -102,7 +102,7 @@
         "P1-005"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-008c",
@@ -114,7 +114,7 @@
         "P1-008b"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-008d",
@@ -126,7 +126,7 @@
         "P1-008b"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-008e",
@@ -139,7 +139,7 @@
         "P1-006"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-009",
@@ -151,7 +151,7 @@
         "P1-008a"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-010",
@@ -163,7 +163,7 @@
         "P1-008a"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-011",
@@ -175,7 +175,7 @@
         "P1-001"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-012",
@@ -187,7 +187,7 @@
         "P1-001"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-013",
@@ -200,7 +200,7 @@
         "P2-003"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-014",
@@ -210,7 +210,7 @@
       "priority": "P1",
       "dependsOn": [],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P2-001a",
@@ -222,7 +222,7 @@
         "P1-001"
       ],
       "phase": 2,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P2-001b",
@@ -235,7 +235,7 @@
         "P1-003"
       ],
       "phase": 2,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P2-001c",
@@ -248,7 +248,7 @@
         "P1-004"
       ],
       "phase": 2,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P2-001d",
@@ -260,7 +260,7 @@
         "P2-001c"
       ],
       "phase": 2,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P2-002",
@@ -272,7 +272,7 @@
         "P2-001d"
       ],
       "phase": 2,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P2-003",
@@ -284,7 +284,7 @@
         "P2-001a"
       ],
       "phase": 2,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P2-004",
@@ -296,7 +296,7 @@
         "P1-007"
       ],
       "phase": 2,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P2-005",
@@ -306,7 +306,7 @@
       "priority": "P1",
       "dependsOn": [],
       "phase": 2,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-001",
@@ -319,7 +319,7 @@
         "P1-006"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-002a",
@@ -331,7 +331,7 @@
         "P3-001"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-002b",
@@ -343,7 +343,7 @@
         "P3-002a"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-002c",
@@ -355,7 +355,7 @@
         "P3-002b"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-002d",
@@ -367,7 +367,7 @@
         "P3-002c"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-003",
@@ -379,7 +379,7 @@
         "P3-001"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-004",
@@ -392,7 +392,7 @@
         "P3-003"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-005",
@@ -404,7 +404,7 @@
         "P3-004"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-006",
@@ -416,7 +416,7 @@
         "P3-004"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-007",
@@ -429,7 +429,7 @@
         "P2-005"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-008",
@@ -442,7 +442,7 @@
         "P1-006"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-009",
@@ -454,7 +454,7 @@
         "P3-008"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-010",
@@ -466,7 +466,7 @@
         "P3-009"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-011",
@@ -478,7 +478,7 @@
         "P3-010"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-012a",
@@ -490,7 +490,7 @@
         "P3-011"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-012b",
@@ -502,7 +502,7 @@
         "P3-012a"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-012c",
@@ -514,7 +514,7 @@
         "P3-012b"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-013",
@@ -526,7 +526,7 @@
         "P3-012a"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-014",
@@ -539,7 +539,7 @@
         "P2-005"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-015",
@@ -552,7 +552,7 @@
         "P1-006"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-016",
@@ -564,7 +564,7 @@
         "P3-015"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-017",
@@ -576,7 +576,7 @@
         "P1-007"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-018",
@@ -588,7 +588,7 @@
         "P3-017"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-019",
@@ -600,7 +600,7 @@
         "P3-017"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-020",
@@ -612,7 +612,7 @@
         "P3-017"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-021",
@@ -624,7 +624,7 @@
         "P3-020"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-022",
@@ -636,7 +636,7 @@
         "P3-016"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-023",
@@ -648,7 +648,7 @@
         "P3-017"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-024",
@@ -661,7 +661,7 @@
         "P2-005"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-025",
@@ -673,7 +673,7 @@
         "P3-017"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-026",
@@ -686,7 +686,7 @@
         "P1-014"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-027",
@@ -699,7 +699,7 @@
         "P3-011"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P3-028",
@@ -711,7 +711,7 @@
         "P3-011"
       ],
       "phase": 3,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-001",
@@ -723,7 +723,7 @@
         "P1-010"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-002a",
@@ -735,7 +735,7 @@
         "P4-001"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-002b",
@@ -747,7 +747,7 @@
         "P4-002a"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-002c",
@@ -760,7 +760,7 @@
         "P4-006"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-003a",
@@ -772,7 +772,7 @@
         "P4-001"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-003b",
@@ -784,7 +784,7 @@
         "P4-003a"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-003c",
@@ -797,7 +797,7 @@
         "P4-006"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-004a",
@@ -809,7 +809,7 @@
         "P4-001"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-004b",
@@ -822,7 +822,7 @@
         "P3-017"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-004c",
@@ -835,7 +835,7 @@
         "P4-006"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-005a",
@@ -884,7 +884,7 @@
         "P1-009"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-007",
@@ -894,7 +894,7 @@
       "priority": "P1",
       "dependsOn": [],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-008",
@@ -935,7 +935,7 @@
         "P4-004c"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-001",
