@@ -1535,19 +1535,18 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
          if [ -n "$MODEL_OVERRIDE" ]; then CMD="$CMD --model $MODEL_OVERRIDE"; fi
 
          if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming mode - formatted output]${RESET}"
+             echo -e "  ${DIM}[Streaming mode - showing tool calls]${RESET}"
              echo ""
-             # Run with timeout, stream to formatter
-             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" | while IFS= read -r line; do
-                 # Simple inline formatting
+             # Run with timeout, tee to file and filter for display
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" | grep --line-buffered -E '"type":"(tool_use|result)"' | while IFS= read -r line; do
                  if echo "$line" | grep -q '"type":"tool_use"'; then
                      tool_name=$(echo "$line" | jq -r '.name // empty' 2>/dev/null)
-                     [[ -n "$tool_name" ]] && echo -e "${YELLOW}━━━ $tool_name${RESET}"
+                     [[ -n "$tool_name" ]] && echo -e "${YELLOW}▶ $tool_name${RESET}"
                  elif echo "$line" | grep -q '"type":"result"'; then
-                     echo -e "${GREEN}━━━ Iteration Complete${RESET}"
+                     echo -e "${GREEN}✓ Iteration Complete${RESET}"
                  fi
              done
-             AI_EXIT_CODE=$?
+             AI_EXIT_CODE=${PIPESTATUS[0]}
          elif [ "$VERBOSE" = true ]; then
              echo -e "  ${DIM}[Verbose mode - raw JSON output]${RESET}"
              echo ""
@@ -1777,22 +1776,7 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
   rm -f "$tmpfile"
   tmpfile=""
   
-  # Check for errors in output (rate limit, context overflow)
-  if is_rate_limited "$OUTPUT"; then
-      log_warn "Rate limit detected in output. Waiting ${RATE_LIMIT_WAIT}s..."
-      sleep "$RATE_LIMIT_WAIT"
-      log_info "Retrying iteration $i..."
-      continue
-  fi
-
-  if is_context_overflow "$OUTPUT"; then
-      log_error "Context overflow detected for task $CURRENT_TASK_ID"
-      mark_task_blocked "$CURRENT_TASK_ID" "Context overflow - task may be too large"
-      log_info "Continuing to next task..."
-      continue
-  fi
-
-  # Check for task completion marker and extract task ID
+  # Check for task completion marker FIRST (before error checks)
   TASK_COMPLETED=false
   if echo "$OUTPUT" | grep -qF "$TASK_COMPLETE_PATTERN"; then
     completed_task_id=$(echo "$OUTPUT" | grep -oP '(?<=<task-complete>)[^<]+(?=</task-complete>)' | head -1)
@@ -1803,6 +1787,23 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
         TASK_COMPLETED=true
         log_success "Task $completed_task_id completed successfully"
     fi
+  fi
+
+  # Only check for errors if task didn't complete successfully
+  if [[ "$TASK_COMPLETED" != "true" ]]; then
+      if is_rate_limited "$OUTPUT"; then
+          log_warn "Rate limit detected in output. Waiting ${RATE_LIMIT_WAIT}s..."
+          sleep "$RATE_LIMIT_WAIT"
+          log_info "Retrying iteration $i..."
+          continue
+      fi
+
+      if is_context_overflow "$OUTPUT"; then
+          log_error "Context overflow detected for task $CURRENT_TASK_ID"
+          mark_task_blocked "$CURRENT_TASK_ID" "Context overflow - task may be too large"
+          log_info "Continuing to next task..."
+          continue
+      fi
   fi
 
   # If no completion marker, check if task was blocked
