@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Markdown from 'react-markdown';
 import { EmptyState } from '../common/EmptyState';
 import { StageActions } from '../stage/StageActions';
+import { ConfirmationDialog } from '../common/ConfirmationDialog';
 import GeneratePRDModal from '../prd/GeneratePRDModal';
 import VersionHistory from '../prd/VersionHistory';
 import { usePRDStreamingV2, SectionStatus } from '../../hooks/usePRDStreamingV2';
@@ -60,6 +61,9 @@ function PRDStage({ project, onProjectUpdate }) {
 
   // Restore feedback state
   const [restoreFeedback, setRestoreFeedback] = useState(null); // { type: 'success'|'error', message: string }
+
+  // Regenerate confirmation dialog state
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
 
   // Use the PRD streaming hook
   const {
@@ -190,6 +194,19 @@ function PRDStage({ project, onProjectUpdate }) {
 
   const handleRetry = () => {
     retry();
+  };
+
+  // Handle regenerate button click - show confirmation first
+  const handleRegenerateClick = () => {
+    setShowRegenerateConfirm(true);
+  };
+
+  // Handle regenerate confirmation - opens the generate modal
+  const handleRegenerateConfirm = () => {
+    setShowRegenerateConfirm(false);
+    // The current PRD is automatically saved to history when a new one is generated
+    // because the generate endpoint creates a new version
+    setShowGenerateModal(true);
   };
 
   // Parse markdown content into sections for API update
@@ -758,6 +775,20 @@ function PRDStage({ project, onProjectUpdate }) {
                 onRestore={handleVersionRestore}
                 previewingVersionId={previewVersion?.id}
               />
+              {/* Regenerate button */}
+              <button
+                className="prd-viewer__regenerate-btn"
+                onClick={handleRegenerateClick}
+                disabled={isViewingOldVersion || isGenerating}
+                title={isViewingOldVersion ? 'Return to current version to regenerate' : 'Regenerate PRD from requirements'}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 4v6h-6" />
+                  <path d="M1 20v-6h6" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+                Regenerate
+              </button>
             </div>
             <div className="prd-viewer__meta">
               {/* Restore feedback notification */}
@@ -833,6 +864,27 @@ function PRDStage({ project, onProjectUpdate }) {
               : { label: 'Mark as Ready', onClick: handleMarkAsReady, loading: markingAsReady, disabled: isViewingOldVersion }
           }
         />
+
+        {/* Regenerate Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={showRegenerateConfirm}
+          onClose={() => setShowRegenerateConfirm(false)}
+          onConfirm={handleRegenerateConfirm}
+          title="Regenerate PRD?"
+          message="The current PRD will be saved to version history. A new PRD will be generated from your requirements, replacing the current content."
+          confirmLabel="Regenerate"
+          cancelLabel="Cancel"
+          variant="warning"
+        />
+
+        {/* Generate PRD Modal */}
+        {showGenerateModal && (
+          <GeneratePRDModal
+            projectId={project?.id}
+            onClose={() => setShowGenerateModal(false)}
+            onGenerate={handleGenerate}
+          />
+        )}
       </div>
     );
   }
