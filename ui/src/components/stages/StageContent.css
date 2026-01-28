@@ -1,0 +1,57 @@
+.stage-content {
+  min-height: 300px;
+}
+
+.stage-content__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 2rem;
+  text-align: center;
+  background-color: var(--color-bg-subtle, #f9fafb);
+  border: 1px dashed var(--color-border, #e5e7eb);
+  border-radius: 8px;
+}
+
+.stage-content__placeholder-icon {
+  color: var(--color-text-tertiary, #9ca3af);
+  margin-bottom: 1rem;
+}
+
+.stage-content__placeholder-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+  margin: 0 0 0.5rem 0;
+}
+
+.stage-content__placeholder-text {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  max-width: 320px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Stage-specific theming */
+.stage-content--requirements .stage-content__placeholder-icon {
+  color: var(--color-stage-requirements, #6366f1);
+}
+
+.stage-content--prd .stage-content__placeholder-icon {
+  color: var(--color-stage-prd, #8b5cf6);
+}
+
+.stage-content--stories .stage-content__placeholder-icon {
+  color: var(--color-stage-stories, #ec4899);
+}
+
+.stage-content--mockups .stage-content__placeholder-icon {
+  color: var(--color-stage-mockups, #f59e0b);
+}
+
+.stage-content--export .stage-content__placeholder-icon {
+  color: var(--color-stage-export, #10b981);
+}

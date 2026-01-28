@@ -3,6 +3,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { get } from '../services/api';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { StageStepper } from '../components/common/StageStepper';
+import {
+  RequirementsStage,
+  PRDStage,
+  UserStoriesStage,
+  MockupsStage,
+  ExportStage,
+} from '../components/stages';
 import './ProjectViewPage.css';
 
 /**
@@ -17,6 +24,15 @@ const STAGE_LABELS = {
   stories: 'User Stories',
   mockups: 'Mockups',
   export: 'Export',
+};
+
+// Map stage IDs to their corresponding components
+const STAGE_COMPONENTS = {
+  requirements: RequirementsStage,
+  prd: PRDStage,
+  stories: UserStoriesStage,
+  mockups: MockupsStage,
+  export: ExportStage,
 };
 
 /**
@@ -147,6 +163,19 @@ function ProjectViewPage() {
     return items;
   };
 
+  // Render the current stage component
+  const renderStageContent = () => {
+    const StageComponent = STAGE_COMPONENTS[currentStage];
+    if (!StageComponent) {
+      return (
+        <div className="project-view__placeholder">
+          <p>Unknown stage: {currentStage}</p>
+        </div>
+      );
+    }
+    return <StageComponent project={project} />;
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -254,11 +283,9 @@ function ProjectViewPage() {
           onStageClick={handleStageClick}
         />
 
-        {/* Stage content - will be replaced with actual stage components in P2-001d */}
+        {/* Stage content area - renders the current stage component */}
         <div className="project-view__content">
-          <div className="project-view__placeholder">
-            <p>Stage content will be displayed here</p>
-          </div>
+          {renderStageContent()}
         </div>
       </div>
     </main>
