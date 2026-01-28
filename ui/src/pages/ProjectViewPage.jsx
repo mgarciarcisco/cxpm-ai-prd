@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { get } from '../services/api';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
+import { StageStepper } from '../components/common/StageStepper';
 import './ProjectViewPage.css';
 
 /**
@@ -18,13 +19,80 @@ const STAGE_LABELS = {
   export: 'Export',
 };
 
+/**
+ * Maps backend stage statuses to StageStepper status format.
+ * StageStepper uses: 'empty', 'in_progress', 'complete'
+ * Backend uses stage-specific status enums.
+ */
+function mapStageStatuses(project) {
+  if (!project) return {};
+
+  // Map requirements status
+  const requirementsMap = {
+    empty: 'empty',
+    has_items: 'in_progress',
+    reviewed: 'complete',
+  };
+
+  // Map PRD status
+  const prdMap = {
+    empty: 'empty',
+    draft: 'in_progress',
+    ready: 'complete',
+  };
+
+  // Map stories status
+  const storiesMap = {
+    empty: 'empty',
+    generated: 'in_progress',
+    refined: 'complete',
+  };
+
+  // Map mockups status
+  const mockupsMap = {
+    empty: 'empty',
+    generated: 'complete',
+  };
+
+  // Map export status
+  const exportMap = {
+    not_exported: 'empty',
+    exported: 'complete',
+  };
+
+  return {
+    requirements: requirementsMap[project.requirements_status] || 'empty',
+    prd: prdMap[project.prd_status] || 'empty',
+    stories: storiesMap[project.stories_status] || 'empty',
+    mockups: mockupsMap[project.mockups_status] || 'empty',
+    export: exportMap[project.export_status] || 'empty',
+  };
+}
+
+/**
+ * Determines the current active stage based on statuses.
+ * Returns the first stage that is not complete, or the last stage if all are complete.
+ */
+function determineCurrentStage(statuses) {
+  const stageOrder = ['requirements', 'prd', 'stories', 'mockups', 'export'];
+
+  for (const stage of stageOrder) {
+    if (statuses[stage] !== 'complete') {
+      return stage;
+    }
+  }
+
+  // All stages complete, return the last one
+  return 'export';
+}
+
 function ProjectViewPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // eslint-disable-next-line no-unused-vars
-  const [currentStage, setCurrentStage] = useState(null); // Will be set by stepper in P2-001c
+  const [currentStage, setCurrentStage] = useState('requirements');
 
   const fetchProject = useCallback(async () => {
     try {
@@ -32,6 +100,10 @@ function ProjectViewPage() {
       setError(null);
       const projectData = await get(`/api/projects/${id}`);
       setProject(projectData);
+
+      // Determine current stage from project statuses
+      const statuses = mapStageStatuses(projectData);
+      setCurrentStage(determineCurrentStage(statuses));
     } catch (err) {
       setError(err.message || 'Failed to load project');
     } finally {
@@ -47,6 +119,16 @@ function ProjectViewPage() {
     // Placeholder - will be implemented in P2-003 (Project Settings Modal)
     console.log('Settings clicked for project:', id);
   };
+
+  // Handle stage click - navigate to stage and update current stage
+  const handleStageClick = (stageId) => {
+    setCurrentStage(stageId);
+    // Navigate to stage URL - will render different stage content in future tasks
+    navigate(`/projects/${id}/${stageId}`);
+  };
+
+  // Get mapped stage statuses for the stepper
+  const stageStatuses = mapStageStatuses(project);
 
   // Build breadcrumb items dynamically
   const getBreadcrumbItems = () => {
@@ -165,7 +247,14 @@ function ProjectViewPage() {
           </button>
         </header>
 
-        {/* Placeholder for stage content - will be added in P2-001c and P2-001d */}
+        {/* Stage Stepper */}
+        <StageStepper
+          statuses={stageStatuses}
+          currentStage={currentStage}
+          onStageClick={handleStageClick}
+        />
+
+        {/* Stage content - will be replaced with actual stage components in P2-001d */}
         <div className="project-view__content">
           <div className="project-view__placeholder">
             <p>Stage content will be displayed here</p>
