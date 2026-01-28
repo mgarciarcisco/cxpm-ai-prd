@@ -147,10 +147,10 @@ function PRDStage({ project, onProjectUpdate }) {
         loadPRDFromId(streamPrdId);
       }
     }
-  }, [streamStatus, onProjectUpdate, streamPrdId]);
+  }, [streamStatus, onProjectUpdate, streamPrdId, loadPRDFromId]);
 
   // Load PRD from a specific ID (used after generation)
-  const loadPRDFromId = async (prdId) => {
+  const loadPRDFromId = useCallback(async (prdId) => {
     try {
       setLoadingPRD(true);
       const fullPrd = await getPRD(prdId);
@@ -163,7 +163,7 @@ function PRDStage({ project, onProjectUpdate }) {
     } finally {
       setLoadingPRD(false);
     }
-  };
+  }, []);
 
   // Handle stream error
   useEffect(() => {
