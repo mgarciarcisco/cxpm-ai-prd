@@ -14,6 +14,7 @@ function AddMeetingModal({ onClose, onExtract }) {
   const [content, setContent] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState(null);
+  const [fileError, setFileError] = useState(null);
   const fileInputRef = useRef(null);
 
   const hasContent = content.trim().length > 0;
@@ -29,9 +30,11 @@ function AddMeetingModal({ onClose, onExtract }) {
 
   const handleFileRead = (file) => {
     if (!isValidFileType(file)) {
+      setFileError(`Invalid file type. Please upload a .txt or .md file.`);
       return;
     }
 
+    setFileError(null);
     const reader = new FileReader();
     reader.onload = (e) => {
       setContent(e.target.result);
@@ -81,6 +84,7 @@ function AddMeetingModal({ onClose, onExtract }) {
   const handleClearFile = () => {
     setFileName(null);
     setContent('');
+    setFileError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -159,6 +163,17 @@ function AddMeetingModal({ onClose, onExtract }) {
             Supports .txt and .md files
           </span>
         </div>
+
+        {fileError && (
+          <div className="add-meeting-modal__file-error" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{fileError}</span>
+          </div>
+        )}
 
         {fileName && (
           <div className="add-meeting-modal__file-info">
