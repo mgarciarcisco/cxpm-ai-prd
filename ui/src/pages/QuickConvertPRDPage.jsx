@@ -2,6 +2,8 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Markdown from 'react-markdown';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
+import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
+import { useNavigationWarning } from '../hooks/useNavigationWarning';
 import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
 import './QuickConvertPRDPage.css';
 
@@ -108,6 +110,20 @@ function QuickConvertPRDPage() {
 
   // Session storage state
   const [restoredFromSession, setRestoredFromSession] = useState(false);
+
+  // Track if data has been saved or downloaded (no warning needed after these actions)
+  const [dataSaved, setDataSaved] = useState(false);
+
+  // Navigation warning - warn when there's generated PRD that hasn't been saved/downloaded
+  const hasUnsavedWork = generatedPRD !== null && !dataSaved;
+  const {
+    showDialog: showNavWarning,
+    confirmNavigation,
+    cancelNavigation,
+  } = useNavigationWarning({
+    hasUnsavedChanges: hasUnsavedWork,
+    message: 'You have unsaved PRD content. Are you sure you want to leave?',
+  });
 
   // Restore data from session storage on mount (only if not from navigation state)
   useEffect(() => {
@@ -305,6 +321,7 @@ function QuickConvertPRDPage() {
     setActiveTab('preview');
     setEditContent('');
     setRestoredFromSession(false);
+    setDataSaved(false);
     clearSession(STORAGE_KEYS.PRD);
   };
 
@@ -322,6 +339,8 @@ function QuickConvertPRDPage() {
   const handleGenerateStories = () => {
     // Pass the PRD markdown content to the stories page
     const prdMarkdown = activeTab === 'edit' ? editContent : generatedPRD?.markdown;
+    // Mark as saved since we're passing data to next step (data is being used)
+    setDataSaved(true);
     navigate('/quick-convert/stories', {
       state: { prdText: prdMarkdown },
     });
@@ -390,6 +409,8 @@ function QuickConvertPRDPage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    // Mark as saved after download
+    setDataSaved(true);
   };
 
   // Render the input form (when no results yet and not generating)
@@ -840,7 +861,11 @@ function QuickConvertPRDPage() {
       {/* Save to Project Modal */}
       {showSaveModal && (
         <SaveToProjectModal
-          onClose={() => setShowSaveModal(false)}
+          onClose={() => {
+            setShowSaveModal(false);
+            // Mark as saved when modal closes (save was triggered)
+            setDataSaved(true);
+          }}
           dataType="prd"
           data={{
             title: 'Generated PRD',
@@ -849,6 +874,18 @@ function QuickConvertPRDPage() {
           }}
         />
       )}
+
+      {/* Navigation Warning Dialog */}
+      <ConfirmationDialog
+        isOpen={showNavWarning}
+        onClose={cancelNavigation}
+        onConfirm={confirmNavigation}
+        title="Leave page?"
+        message="You have unsaved PRD content. If you leave now, your generated PRD will be lost."
+        confirmLabel="Leave"
+        cancelLabel="Stay"
+        variant="warning"
+      />
     </main>
   );
 }

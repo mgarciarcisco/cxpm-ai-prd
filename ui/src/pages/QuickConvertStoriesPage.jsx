@@ -2,6 +2,8 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { StoryEditModal } from '../components/stories/StoryEditModal';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
+import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
+import { useNavigationWarning } from '../hooks/useNavigationWarning';
 import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
 import './QuickConvertStoriesPage.css';
 
@@ -185,6 +187,20 @@ function QuickConvertStoriesPage() {
   // Session storage state
   const [restoredFromSession, setRestoredFromSession] = useState(false);
 
+  // Track if data has been saved or downloaded (no warning needed after these actions)
+  const [dataSaved, setDataSaved] = useState(false);
+
+  // Navigation warning - warn when there's generated stories that haven't been saved/downloaded
+  const hasUnsavedWork = generatedStories !== null && !dataSaved;
+  const {
+    showDialog: showNavWarning,
+    confirmNavigation,
+    cancelNavigation,
+  } = useNavigationWarning({
+    hasUnsavedChanges: hasUnsavedWork,
+    message: 'You have unsaved user stories. Are you sure you want to leave?',
+  });
+
   // Restore data from session storage on mount (only if not from navigation state)
   useEffect(() => {
     if (location.state?.prdText) return; // Don't restore if coming from PRD page
@@ -331,6 +347,7 @@ function QuickConvertStoriesPage() {
     setGenerationError(null);
     setGenerationProgress(0);
     setRestoredFromSession(false);
+    setDataSaved(false);
     clearSession(STORAGE_KEYS.STORIES);
   };
 
@@ -441,6 +458,8 @@ function QuickConvertStoriesPage() {
       alert('Please select at least one story to generate mockups.');
       return;
     }
+    // Mark as saved since we're passing data to next step (data is being used)
+    setDataSaved(true);
     // Navigate to mockups page with stories data
     navigate('/quick-convert/mockups', {
       state: {
@@ -478,6 +497,8 @@ function QuickConvertStoriesPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    // Mark as saved after download
+    setDataSaved(true);
   };
 
   // Get selected count
@@ -1032,11 +1053,27 @@ function QuickConvertStoriesPage() {
       {/* Save to Project Modal */}
       {showSaveModal && (
         <SaveToProjectModal
-          onClose={() => setShowSaveModal(false)}
+          onClose={() => {
+            setShowSaveModal(false);
+            // Mark as saved when modal closes (save was triggered)
+            setDataSaved(true);
+          }}
           dataType="stories"
           data={generatedStories?.filter(s => s.selected) || []}
         />
       )}
+
+      {/* Navigation Warning Dialog */}
+      <ConfirmationDialog
+        isOpen={showNavWarning}
+        onClose={cancelNavigation}
+        onConfirm={confirmNavigation}
+        title="Leave page?"
+        message="You have unsaved user stories. If you leave now, your generated stories will be lost."
+        confirmLabel="Leave"
+        cancelLabel="Stay"
+        variant="warning"
+      />
     </main>
   );
 }

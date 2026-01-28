@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
+import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
+import { useNavigationWarning } from '../hooks/useNavigationWarning';
 import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
 import './QuickConvertMockupsPage.css';
 
@@ -125,6 +127,20 @@ function QuickConvertMockupsPage() {
 
   // Session storage state
   const [restoredFromSession, setRestoredFromSession] = useState(false);
+
+  // Track if data has been saved or downloaded (no warning needed after these actions)
+  const [dataSaved, setDataSaved] = useState(false);
+
+  // Navigation warning - warn when there's generated mockups that haven't been saved/downloaded
+  const hasUnsavedWork = generatedMockups !== null && !dataSaved;
+  const {
+    showDialog: showNavWarning,
+    confirmNavigation,
+    cancelNavigation,
+  } = useNavigationWarning({
+    hasUnsavedChanges: hasUnsavedWork,
+    message: 'You have unsaved mockups. Are you sure you want to leave?',
+  });
 
   // Pre-fill content if navigated from stories page
   useEffect(() => {
@@ -355,6 +371,7 @@ function QuickConvertMockupsPage() {
     setFromPreviousStep(false);
     setRefinePrompt('');
     setRestoredFromSession(false);
+    setDataSaved(false);
     clearSession(STORAGE_KEYS.MOCKUPS);
   };
 
@@ -374,6 +391,8 @@ function QuickConvertMockupsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    // Mark as saved after download
+    setDataSaved(true);
   };
 
   const handleDownloadAll = () => {
@@ -381,6 +400,8 @@ function QuickConvertMockupsPage() {
     generatedMockups.forEach((mockup, index) => {
       setTimeout(() => handleDownload(mockup), index * 200);
     });
+    // Mark as saved after download
+    setDataSaved(true);
   };
 
   // Device icons
@@ -864,11 +885,27 @@ function QuickConvertMockupsPage() {
       {/* Save to Project Modal */}
       {showSaveModal && (
         <SaveToProjectModal
-          onClose={handleCloseSaveModal}
+          onClose={() => {
+            handleCloseSaveModal();
+            // Mark as saved when modal closes (save was triggered)
+            setDataSaved(true);
+          }}
           dataType="mockups"
           data={generatedMockups}
         />
       )}
+
+      {/* Navigation Warning Dialog */}
+      <ConfirmationDialog
+        isOpen={showNavWarning}
+        onClose={cancelNavigation}
+        onConfirm={confirmNavigation}
+        title="Leave page?"
+        message="You have unsaved mockups. If you leave now, your generated mockups will be lost."
+        confirmLabel="Leave"
+        cancelLabel="Stay"
+        variant="warning"
+      />
     </main>
   );
 }

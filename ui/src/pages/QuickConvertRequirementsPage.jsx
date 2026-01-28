@@ -1,6 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
+import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
+import { useNavigationWarning } from '../hooks/useNavigationWarning';
 import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
 import './QuickConvertRequirementsPage.css';
 
@@ -54,6 +56,20 @@ function QuickConvertRequirementsPage() {
 
   // Session storage state
   const [restoredFromSession, setRestoredFromSession] = useState(false);
+
+  // Track if data has been saved or downloaded (no warning needed after these actions)
+  const [dataSaved, setDataSaved] = useState(false);
+
+  // Navigation warning - warn when there's extracted data that hasn't been saved/downloaded
+  const hasUnsavedWork = extractedItems !== null && !dataSaved;
+  const {
+    showDialog: showNavWarning,
+    confirmNavigation,
+    cancelNavigation,
+  } = useNavigationWarning({
+    hasUnsavedChanges: hasUnsavedWork,
+    message: 'You have unsaved requirements. Are you sure you want to leave?',
+  });
 
   // Restore data from session storage on mount
   useEffect(() => {
@@ -299,6 +315,7 @@ function QuickConvertRequirementsPage() {
     setContent('');
     setFileName(null);
     setRestoredFromSession(false);
+    setDataSaved(false);
     clearSession(STORAGE_KEYS.REQUIREMENTS);
   };
 
@@ -345,6 +362,9 @@ function QuickConvertRequirementsPage() {
       })
       .join('\n\n');
 
+    // Mark as saved since we're passing data to next step (data is being used)
+    setDataSaved(true);
+
     navigate('/quick-convert/prd', {
       state: {
         requirements: selectedItems,
@@ -367,6 +387,8 @@ function QuickConvertRequirementsPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    // Mark as saved after download
+    setDataSaved(true);
   };
 
   // Download as Markdown
@@ -389,6 +411,8 @@ function QuickConvertRequirementsPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    // Mark as saved after download
+    setDataSaved(true);
   };
 
   // Render the input form (when no results yet)
@@ -800,11 +824,27 @@ function QuickConvertRequirementsPage() {
       {/* Save to Project Modal */}
       {showSaveModal && (
         <SaveToProjectModal
-          onClose={() => setShowSaveModal(false)}
+          onClose={() => {
+            setShowSaveModal(false);
+            // Mark as saved when modal closes (save was triggered)
+            setDataSaved(true);
+          }}
           dataType="requirements"
           data={getSelectedItems()}
         />
       )}
+
+      {/* Navigation Warning Dialog */}
+      <ConfirmationDialog
+        isOpen={showNavWarning}
+        onClose={cancelNavigation}
+        onConfirm={confirmNavigation}
+        title="Leave page?"
+        message="You have unsaved requirements. If you leave now, your extracted data will be lost."
+        confirmLabel="Leave"
+        cancelLabel="Stay"
+        variant="warning"
+      />
     </main>
   );
 }
