@@ -4,6 +4,7 @@ import { get } from '../services/api';
 import ProjectCard from '../components/projects/ProjectCard';
 import StageFilter from '../components/dashboard/StageFilter';
 import ProjectSearch from '../components/dashboard/ProjectSearch';
+import NewProjectModal from '../components/dashboard/NewProjectModal';
 import EmptyState from '../components/common/EmptyState';
 import './DashboardPage.css';
 
@@ -69,6 +70,7 @@ function DashboardPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
 
   // Get filter values from URL query params
   const stageFilter = searchParams.get('stage') || 'all';
@@ -188,7 +190,11 @@ function DashboardPage() {
 
         {/* Action Cards */}
         <div className="dashboard__actions">
-          <Link to="/app" className="action-card action-card--primary">
+          <button
+            type="button"
+            className="action-card action-card--primary"
+            onClick={() => setShowNewProjectModal(true)}
+          >
             <div className="action-card__icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -199,7 +205,7 @@ function DashboardPage() {
               <h3 className="action-card__title">New Project</h3>
               <p className="action-card__description">Create a new project to organize requirements, PRDs, and user stories</p>
             </div>
-          </Link>
+          </button>
 
           <Link to="/quick-convert" className="action-card action-card--secondary">
             <div className="action-card__icon">
@@ -304,13 +310,22 @@ function DashboardPage() {
               title="No projects yet"
               description="Create your first project to start organizing requirements and generating PRDs."
               actionButton={
-                <Link to="/app" className="empty-state-link-btn">
+                <button
+                  type="button"
+                  className="empty-state-link-btn"
+                  onClick={() => setShowNewProjectModal(true)}
+                >
                   Create Project
-                </Link>
+                </button>
               }
             />
           )}
         </div>
+
+        {/* New Project Modal */}
+        {showNewProjectModal && (
+          <NewProjectModal onClose={() => setShowNewProjectModal(false)} />
+        )}
       </section>
     </main>
   );
