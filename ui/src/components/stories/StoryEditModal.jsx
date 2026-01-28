@@ -6,7 +6,16 @@ import './StoryEditModal.css';
  * StoryEditModal component for editing user story details.
  *
  * @param {Object} story - The user story to edit
- * @param {function} onSave - Callback when story is saved, receives updated story data
+ * @param {string} story.id - UUID of the story
+ * @param {string} story.story_id - Formatted story ID (e.g., "US-001")
+ * @param {string} story.title - Story title
+ * @param {string} story.description - Story description
+ * @param {Array<string>} story.acceptance_criteria - List of acceptance criteria
+ * @param {string} story.size - Story size (xs, s, m, l, xl)
+ * @param {string} story.priority - Story priority (low, medium, high, critical)
+ * @param {Array<string>} story.labels - List of labels
+ * @param {string} story.status - Story status (draft, ready, exported)
+ * @param {function} onSave - Callback when story is saved, receives (storyId, updatedData)
  * @param {function} onClose - Callback when modal is closed
  * @param {boolean} isSaving - Whether save is in progress
  */
@@ -23,6 +32,7 @@ export function StoryEditModal({
     story?.acceptance_criteria || []
   );
   const [size, setSize] = useState(story?.size?.toLowerCase?.() || 'm');
+  const [priority, setPriority] = useState(story?.priority?.toLowerCase?.() || 'medium');
   const [labels, setLabels] = useState(story?.labels || []);
   const [status, setStatus] = useState(story?.status || 'draft');
 
@@ -41,6 +51,14 @@ export function StoryEditModal({
     { value: 'xl', label: 'XL' },
   ];
 
+  // Available priorities
+  const PRIORITY_OPTIONS = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'critical', label: 'Critical' },
+  ];
+
   // Available statuses
   const STATUS_OPTIONS = [
     { value: 'draft', label: 'Draft' },
@@ -55,11 +73,12 @@ export function StoryEditModal({
       title !== story.title ||
       description !== story.description ||
       JSON.stringify(acceptanceCriteria) !== JSON.stringify(story.acceptance_criteria || []) ||
-      size !== story.size ||
+      size !== (story.size?.toLowerCase?.() || 'm') ||
+      priority !== (story.priority?.toLowerCase?.() || 'medium') ||
       JSON.stringify(labels) !== JSON.stringify(story.labels || []) ||
       status !== story.status
     );
-  }, [story, title, description, acceptanceCriteria, size, labels, status]);
+  }, [story, title, description, acceptanceCriteria, size, priority, labels, status]);
 
   // Handle close with unsaved changes warning
   const handleClose = useCallback(() => {
@@ -79,12 +98,13 @@ export function StoryEditModal({
       description: description.trim(),
       acceptance_criteria: acceptanceCriteria.filter(c => c.trim()),
       size,
+      priority,
       labels: labels.filter(l => l.trim()),
       status,
     };
 
     onSave(story.id, updatedData);
-  }, [story, title, description, acceptanceCriteria, size, labels, status, isSaving, onSave]);
+  }, [story, title, description, acceptanceCriteria, size, priority, labels, status, isSaving, onSave]);
 
   // --- Acceptance Criteria Management ---
 
@@ -322,10 +342,10 @@ export function StoryEditModal({
             </div>
           </div>
 
-          {/* Size and Status Row */}
+          {/* Size, Priority, and Status Row */}
           <div className="story-edit-row">
             {/* Size Selector */}
-            <div className="story-edit-field story-edit-field--half">
+            <div className="story-edit-field story-edit-field--third">
               <label htmlFor="story-size" className="story-edit-label">
                 Size
               </label>
@@ -345,8 +365,26 @@ export function StoryEditModal({
               </p>
             </div>
 
+            {/* Priority Selector */}
+            <div className="story-edit-field story-edit-field--third">
+              <label htmlFor="story-priority" className="story-edit-label">
+                Priority
+              </label>
+              <select
+                id="story-priority"
+                className="story-edit-select"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                disabled={isSaving}
+              >
+                {PRIORITY_OPTIONS.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Status Selector */}
-            <div className="story-edit-field story-edit-field--half">
+            <div className="story-edit-field story-edit-field--third">
               <label htmlFor="story-status" className="story-edit-label">
                 Status
               </label>
