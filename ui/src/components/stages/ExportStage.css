@@ -226,6 +226,17 @@
   border-color: #10B981;
 }
 
+/* Blue Checkbox Variant */
+.export-checkbox--blue input[type="checkbox"]:checked + .export-checkbox__checkmark--blue {
+  background-color: #3B82F6;
+  border-color: #3B82F6;
+}
+
+.export-checkbox--blue input[type="checkbox"]:focus + .export-checkbox__checkmark--blue {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
+
 .export-checkbox input[type="checkbox"]:checked + .export-checkbox__checkmark::after {
   content: '';
   width: 5px;
@@ -294,6 +305,20 @@
 .export-card__button:disabled {
   background-color: #D1D5DB;
   cursor: not-allowed;
+}
+
+/* Blue Button Variant */
+.export-card__button--blue {
+  background-color: #3B82F6;
+}
+
+.export-card__button--blue:hover:not(:disabled) {
+  background-color: #2563EB;
+}
+
+.export-card__button--blue:focus {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
 }
 
 /* Loading Spinner */

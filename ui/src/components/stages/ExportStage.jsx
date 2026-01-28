@@ -160,8 +160,15 @@ function ExportStage({ project }) {
     prd: true,
     stories: true,
   });
+  const [selectedJsonItems, setSelectedJsonItems] = useState({
+    requirements: true,
+    prd: true,
+    stories: true,
+  });
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingJson, setIsExportingJson] = useState(false);
   const [exportError, setExportError] = useState(null);
+  const [jsonExportError, setJsonExportError] = useState(null);
 
   const handleCheckboxChange = (itemId) => {
     setSelectedItems(prev => ({
@@ -171,7 +178,16 @@ function ExportStage({ project }) {
     setExportError(null);
   };
 
+  const handleJsonCheckboxChange = (itemId) => {
+    setSelectedJsonItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId],
+    }));
+    setJsonExportError(null);
+  };
+
   const hasSelectedItems = Object.values(selectedItems).some(Boolean);
+  const hasSelectedJsonItems = Object.values(selectedJsonItems).some(Boolean);
 
   const handleMarkdownExport = async () => {
     if (!project?.id || !hasSelectedItems) return;
@@ -236,6 +252,75 @@ function ExportStage({ project }) {
       setExportError(err.message || 'Failed to export project data');
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleJsonExport = async () => {
+    if (!project?.id || !hasSelectedJsonItems) return;
+
+    setIsExportingJson(true);
+    setJsonExportError(null);
+
+    try {
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        project: {
+          id: project.id,
+          name: project.name,
+        },
+      };
+
+      // Fetch selected items
+      if (selectedJsonItems.requirements) {
+        try {
+          const requirements = await get(`/api/projects/${project.id}/requirements`);
+          exportData.requirements = requirements;
+        } catch (err) {
+          console.warn('Could not fetch requirements:', err.message);
+        }
+      }
+
+      if (selectedJsonItems.prd) {
+        try {
+          const prdsResponse = await listPRDs(project.id, { limit: 1 });
+          if (prdsResponse.items && prdsResponse.items.length > 0) {
+            exportData.prd = prdsResponse.items[0];
+          }
+        } catch (err) {
+          console.warn('Could not fetch PRD:', err.message);
+        }
+      }
+
+      if (selectedJsonItems.stories) {
+        try {
+          const storiesResponse = await listStories(project.id, { limit: 100 });
+          if (storiesResponse.items && storiesResponse.items.length > 0) {
+            exportData.stories = storiesResponse.items;
+          }
+        } catch (err) {
+          console.warn('Could not fetch stories:', err.message);
+        }
+      }
+
+      // Check if any data was fetched
+      const hasData = exportData.requirements || exportData.prd || exportData.stories;
+      if (!hasData) {
+        setJsonExportError('No data available to export. Generate some content first.');
+        return;
+      }
+
+      // Generate and download JSON
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const projectSlug = slugifyFilename(project.name);
+      const date = new Date().toISOString().split('T')[0];
+      triggerDownload(blob, `${projectSlug}-export-${date}.json`);
+
+    } catch (err) {
+      console.error('JSON export failed:', err);
+      setJsonExportError(err.message || 'Failed to export project data');
+    } finally {
+      setIsExportingJson(false);
     }
   };
 
@@ -343,21 +428,70 @@ function ExportStage({ project }) {
           </button>
         </div>
 
-        {/* JSON Export Card - Coming in P5-011 */}
-        <div className="export-card export-card--blue export-card--disabled" style={{ marginTop: '1rem' }}>
-          <div className="export-card__icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 18L22 12L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M8 6L2 12L8 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+        {/* JSON Export Card */}
+        <div className="export-card export-card--blue export-card--expanded" style={{ marginTop: '1rem' }}>
+          <div className="export-card__header">
+            <div className="export-card__icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 18L22 12L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 6L2 12L8 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div className="export-card__content">
+              <h3 className="export-card__title">Export as JSON</h3>
+              <p className="export-card__description">Select items to include in your JSON export.</p>
+            </div>
           </div>
-          <div className="export-card__content">
-            <h3 className="export-card__title">
-              Export as JSON
-              <span className="export-card__badge">Coming Soon</span>
-            </h3>
-            <p className="export-card__description">Download the complete project data in JSON format for integration with other tools.</p>
+
+          {/* Checkboxes */}
+          <div className="export-card__checkboxes">
+            {exportCheckboxes.map(item => (
+              <label key={item.id} className="export-checkbox export-checkbox--blue">
+                <input
+                  type="checkbox"
+                  checked={selectedJsonItems[item.id]}
+                  onChange={() => handleJsonCheckboxChange(item.id)}
+                  disabled={isExportingJson}
+                />
+                <span className="export-checkbox__checkmark export-checkbox__checkmark--blue" />
+                <span className="export-checkbox__text">
+                  <span className="export-checkbox__label">{item.label}</span>
+                  <span className="export-checkbox__description">{item.description}</span>
+                </span>
+              </label>
+            ))}
           </div>
+
+          {/* Error message */}
+          {jsonExportError && (
+            <div className="export-card__error">
+              {jsonExportError}
+            </div>
+          )}
+
+          {/* Export Button */}
+          <button
+            className="export-card__button export-card__button--blue"
+            onClick={handleJsonExport}
+            disabled={!hasSelectedJsonItems || isExportingJson}
+            type="button"
+          >
+            {isExportingJson ? (
+              <>
+                <span className="export-card__spinner" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 2.5V10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M4.5 7L8 10.5L11.5 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2.5 13.5H13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                Download JSON
+              </>
+            )}
+          </button>
         </div>
       </section>
 
