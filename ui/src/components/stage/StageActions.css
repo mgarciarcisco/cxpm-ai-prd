@@ -1,0 +1,134 @@
+.stage-actions {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  padding: 1rem 0;
+  margin-top: auto;
+  z-index: 10;
+}
+
+.stage-actions__container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.stage-actions__buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stage-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.stage-actions__btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.stage-actions__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary button - prominent styling */
+.stage-actions__btn--primary {
+  background: #4ecdc4;
+  color: white;
+  border: none;
+}
+
+.stage-actions__btn--primary:hover:not(:disabled) {
+  background: #3dbdb5;
+}
+
+/* Secondary button - outlined styling */
+.stage-actions__btn--secondary {
+  background: white;
+  color: #4ecdc4;
+  border: 1px solid #4ecdc4;
+}
+
+.stage-actions__btn--secondary:hover:not(:disabled) {
+  background: rgba(78, 205, 196, 0.1);
+}
+
+/* Tertiary button - text-only styling */
+.stage-actions__btn--tertiary {
+  background: transparent;
+  color: #6b7280;
+  border: none;
+  padding: 0.625rem 1rem;
+}
+
+.stage-actions__btn--tertiary:hover:not(:disabled) {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+/* Helper text */
+.stage-actions__helper {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Spinner animation */
+.stage-actions__spinner {
+  animation: stage-actions-spin 1s linear infinite;
+}
+
+@keyframes stage-actions-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .stage-actions {
+    padding: 1rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+  }
+
+  .stage-actions__container {
+    align-items: stretch;
+  }
+
+  .stage-actions__buttons {
+    flex-direction: column-reverse;
+    width: 100%;
+  }
+
+  .stage-actions__btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .stage-actions__helper {
+    text-align: center;
+  }
+}
