@@ -77,12 +77,14 @@ function QuickConvertPRDPage() {
   const [content, setContent] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [inputSource, setInputSource] = useState('requirements');
+  const [fromPreviousStep, setFromPreviousStep] = useState(false);
 
   // Pre-fill content if navigated from requirements extraction
   useEffect(() => {
     if (location.state?.requirementsText) {
       setContent(location.state.requirementsText);
       setInputSource('requirements');
+      setFromPreviousStep(true);
     }
   }, [location.state]);
   const [prdType, setPrdType] = useState('detailed');
@@ -339,6 +341,15 @@ function QuickConvertPRDPage() {
           <label htmlFor="prd-content" className="qc-prd__label">
             {INPUT_SOURCES[inputSource].label}
           </label>
+          {fromPreviousStep && (
+            <div className="qc-prd__chained-indicator">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <span>Using data from previous step</span>
+            </div>
+          )}
           <textarea
             id="prd-content"
             className="qc-prd__textarea"
@@ -347,6 +358,7 @@ function QuickConvertPRDPage() {
             onChange={(e) => {
               setContent(e.target.value);
               if (fileName) setFileName(null);
+              if (fromPreviousStep) setFromPreviousStep(false);
             }}
             rows={12}
           />

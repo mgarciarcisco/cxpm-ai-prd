@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { StoryEditModal } from '../components/stories/StoryEditModal';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
 import './QuickConvertStoriesPage.css';
@@ -138,8 +138,20 @@ const generateSimulatedStories = (inputText, format, includeOptions) => {
  * Allows users to paste a PRD or feature description, then generate user stories.
  */
 function QuickConvertStoriesPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [inputSource, setInputSource] = useState('prd');
+  const [fromPreviousStep, setFromPreviousStep] = useState(false);
+
+  // Pre-fill content if navigated from PRD generation
+  useEffect(() => {
+    if (location.state?.prdText) {
+      setContent(location.state.prdText);
+      setInputSource('prd');
+      setFromPreviousStep(true);
+    }
+  }, [location.state]);
   const [storyFormat, setStoryFormat] = useState('standard');
   const [includeOptions, setIncludeOptions] = useState({
     acceptanceCriteria: true,
@@ -399,9 +411,13 @@ function QuickConvertStoriesPage() {
       alert('Please select at least one story to generate mockups.');
       return;
     }
-    // Store in sessionStorage for the mockups page to use
-    sessionStorage.setItem('qc-stories-for-mockups', JSON.stringify(selectedStories));
-    window.location.href = '/quick-convert/mockups';
+    // Navigate to mockups page with stories data
+    navigate('/quick-convert/mockups', {
+      state: {
+        stories: selectedStories,
+        source: 'stories-generation',
+      },
+    });
   };
 
   const handleDownload = () => {
@@ -487,6 +503,15 @@ function QuickConvertStoriesPage() {
           <label htmlFor="stories-content" className="qc-stories__label">
             {INPUT_SOURCES[inputSource].label}
           </label>
+          {fromPreviousStep && (
+            <div className="qc-stories__chained-indicator">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <span>Using data from previous step</span>
+            </div>
+          )}
           <textarea
             id="stories-content"
             className="qc-stories__textarea"
@@ -495,6 +520,7 @@ function QuickConvertStoriesPage() {
             onChange={(e) => {
               setContent(e.target.value);
               if (fileName) setFileName(null);
+              if (fromPreviousStep) setFromPreviousStep(false);
             }}
             rows={12}
           />

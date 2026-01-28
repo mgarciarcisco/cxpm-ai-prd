@@ -129,6 +129,25 @@
   font-size: 0.875rem;
 }
 
+/* Chained data indicator */
+.qc-prd__chained-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #FAF5FF 0%, #EDE9FE 100%);
+  border: 1px solid #C4B5FD;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #7C3AED;
+  margin-bottom: 0.75rem;
+}
+
+.qc-prd__chained-indicator svg {
+  flex-shrink: 0;
+}
+
 .qc-prd__textarea {
   width: 100%;
   padding: 0.75rem;
