@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Markdown from 'react-markdown';
+import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
 import './QuickConvertPRDPage.css';
 
 // Input source options
@@ -72,7 +73,9 @@ const generateSectionContent = (sectionId, _inputText, _prdType) => {
  */
 function QuickConvertPRDPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [content, setContent] = useState('');
+  const [showSaveModal, setShowSaveModal] = useState(false);
   const [inputSource, setInputSource] = useState('requirements');
 
   // Pre-fill content if navigated from requirements extraction
@@ -274,6 +277,40 @@ function QuickConvertPRDPage() {
   // Get sorted sections for display
   const getSortedSections = () => {
     return Object.values(sections).sort((a, b) => a.order - b.order);
+  };
+
+  // Handle Save to Project button click
+  const handleSaveToProject = () => {
+    setShowSaveModal(true);
+  };
+
+  // Handle Generate Stories - navigate to stories page with PRD content
+  const handleGenerateStories = () => {
+    // Pass the PRD markdown content to the stories page
+    const prdMarkdown = activeTab === 'edit' ? editContent : generatedPRD?.markdown;
+    navigate('/quick-convert/stories', {
+      state: { prdText: prdMarkdown },
+    });
+  };
+
+  // Handle Download - download PRD as Markdown file
+  const handleDownload = () => {
+    const markdownContent = activeTab === 'edit' ? editContent : generatedPRD?.markdown;
+    if (!markdownContent) return;
+
+    // Create a title from the first section or use default
+    const title = 'PRD_' + new Date().toISOString().split('T')[0];
+
+    // Create blob and trigger download
+    const blob = new Blob([markdownContent], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Render the input form (when no results yet and not generating)
@@ -616,6 +653,46 @@ function QuickConvertPRDPage() {
           )}
         </div>
       </div>
+
+      {/* Action buttons */}
+      <div className="qc-prd__result-actions">
+        <button
+          type="button"
+          className="qc-prd__action-btn qc-prd__action-btn--secondary"
+          onClick={handleDownload}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Download
+        </button>
+        <button
+          type="button"
+          className="qc-prd__action-btn qc-prd__action-btn--secondary"
+          onClick={handleSaveToProject}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </svg>
+          Save to Project
+        </button>
+        <button
+          type="button"
+          className="qc-prd__action-btn qc-prd__action-btn--primary"
+          onClick={handleGenerateStories}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+            <line x1="12" y1="16" x2="12" y2="8" />
+          </svg>
+          Generate Stories
+        </button>
+      </div>
     </div>
   );
 
@@ -659,6 +736,19 @@ function QuickConvertPRDPage() {
         {generatedPRD && !isGenerating && renderResult()}
         {!generatedPRD && !isGenerating && !generationError && renderInputForm()}
       </section>
+
+      {/* Save to Project Modal */}
+      {showSaveModal && (
+        <SaveToProjectModal
+          onClose={() => setShowSaveModal(false)}
+          dataType="prd"
+          data={{
+            title: 'Generated PRD',
+            sections: generatedPRD?.sections || [],
+            markdown: activeTab === 'edit' ? editContent : generatedPRD?.markdown,
+          }}
+        />
+      )}
     </main>
   );
 }

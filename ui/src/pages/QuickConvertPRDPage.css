@@ -913,6 +913,58 @@
   background-color: #FAFAFA;
 }
 
+/* Result Action Buttons */
+.qc-prd__result-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.qc-prd__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qc-prd__action-btn--secondary {
+  background-color: #FFFFFF;
+  color: #374151;
+  border: 1px solid #D1D5DB;
+}
+
+.qc-prd__action-btn--secondary:hover {
+  background-color: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.qc-prd__action-btn--secondary:focus {
+  outline: 2px solid #9333EA;
+  outline-offset: 2px;
+}
+
+.qc-prd__action-btn--primary {
+  background-color: #9333EA;
+  color: #FFFFFF;
+  border: 1px solid #9333EA;
+}
+
+.qc-prd__action-btn--primary:hover {
+  background-color: #7E22CE;
+  border-color: #7E22CE;
+}
+
+.qc-prd__action-btn--primary:focus {
+  outline: 2px solid #9333EA;
+  outline-offset: 2px;
+}
+
 /* ============================================================
    Responsive
    ============================================================ */
@@ -993,5 +1045,14 @@
   .qc-prd__editor {
     padding: 1rem;
     min-height: 300px;
+  }
+
+  .qc-prd__result-actions {
+    flex-direction: column;
+  }
+
+  .qc-prd__action-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
