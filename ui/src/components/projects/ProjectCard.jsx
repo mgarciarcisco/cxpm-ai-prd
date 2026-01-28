@@ -2,8 +2,160 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import './ProjectCard.css'
 
+/**
+ * Default stage definitions for the mini stepper
+ */
+const DEFAULT_STAGES = [
+  { id: 'requirements', label: 'Requirements' },
+  { id: 'prd', label: 'PRD' },
+  { id: 'stories', label: 'User Stories' },
+  { id: 'mockups', label: 'Mockups' },
+  { id: 'export', label: 'Export' },
+];
+
+/**
+ * Maps stage status to a normalized status for display
+ * @param {string} stageId - The stage identifier
+ * @param {Object} project - The project with status fields
+ * @returns {'empty' | 'in_progress' | 'complete'}
+ */
+function getStageStatus(stageId, project) {
+  const statusMap = {
+    requirements: {
+      empty: 'empty',
+      has_items: 'in_progress',
+      reviewed: 'complete',
+    },
+    prd: {
+      empty: 'empty',
+      draft: 'in_progress',
+      ready: 'complete',
+    },
+    stories: {
+      empty: 'empty',
+      generated: 'in_progress',
+      refined: 'complete',
+    },
+    mockups: {
+      empty: 'empty',
+      generated: 'complete',
+    },
+    export: {
+      not_exported: 'empty',
+      exported: 'complete',
+    },
+  };
+
+  const fieldMap = {
+    requirements: 'requirements_status',
+    prd: 'prd_status',
+    stories: 'stories_status',
+    mockups: 'mockups_status',
+    export: 'export_status',
+  };
+
+  const fieldName = fieldMap[stageId];
+  const rawStatus = project[fieldName] || 'empty';
+  return statusMap[stageId]?.[rawStatus] || 'empty';
+}
+
+/**
+ * Determines the current active stage based on project statuses
+ * The current stage is the first incomplete stage, or the last stage if all complete
+ * @param {Object} project - The project with status fields
+ * @returns {Object} - { id, label } of current stage
+ */
+function getCurrentStage(project) {
+  for (const stage of DEFAULT_STAGES) {
+    const status = getStageStatus(stage.id, project);
+    if (status !== 'complete') {
+      return stage;
+    }
+  }
+  // All stages complete, return last stage
+  return DEFAULT_STAGES[DEFAULT_STAGES.length - 1];
+}
+
+/**
+ * Returns the status indicator character based on stage status
+ * @param {'empty' | 'in_progress' | 'complete'} status
+ * @returns {string}
+ */
+function getStatusIndicator(status) {
+  switch (status) {
+    case 'complete':
+      return '●';
+    case 'in_progress':
+      return '◐';
+    case 'empty':
+    default:
+      return '○';
+  }
+}
+
+/**
+ * Formats a date as "Updated X ago"
+ * @param {string|Date} dateString
+ * @returns {string}
+ */
+function formatTimeAgo(dateString) {
+  if (!dateString) return 'No activity yet';
+
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffSeconds < 60) {
+    return 'Updated just now';
+  } else if (diffMinutes < 60) {
+    return `Updated ${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+  } else if (diffHours < 24) {
+    return `Updated ${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  } else if (diffDays < 7) {
+    return `Updated ${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+  } else if (diffWeeks < 4) {
+    return `Updated ${diffWeeks} week${diffWeeks !== 1 ? 's' : ''} ago`;
+  } else if (diffMonths < 12) {
+    return `Updated ${diffMonths} month${diffMonths !== 1 ? 's' : ''} ago`;
+  } else {
+    return `Updated ${diffYears} year${diffYears !== 1 ? 's' : ''} ago`;
+  }
+}
+
+/**
+ * Mini stepper component showing stage progress as dots
+ */
+function MiniStepper({ project }) {
+  return (
+    <div className="project-card__mini-stepper" aria-label="Stage progress">
+      {DEFAULT_STAGES.map((stage) => {
+        const status = getStageStatus(stage.id, project);
+        return (
+          <span
+            key={stage.id}
+            className={`project-card__mini-stepper-dot project-card__mini-stepper-dot--${status}`}
+            title={`${stage.label}: ${status.replace('_', ' ')}`}
+            aria-label={`${stage.label}: ${status.replace('_', ' ')}`}
+          >
+            {getStatusIndicator(status)}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function ProjectCard({ project, meetingCount, lastActivity, onEdit, onDelete }) {
   const navigate = useNavigate()
+  const currentStage = getCurrentStage(project);
+  const progress = project.progress ?? 0;
 
   const handleCardClick = () => {
     navigate(`/app/projects/${project.id}`)
@@ -19,23 +171,13 @@ function ProjectCard({ project, meetingCount, lastActivity, onEdit, onDelete }) 
     onDelete(project)
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'No activity yet'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
-
   return (
     <div className="project-card" onClick={handleCardClick}>
-      <div className="project-card-header">
-        <h3 className="project-card-name">{project.name}</h3>
-        <div className="project-card-actions">
+      <div className="project-card__header">
+        <h3 className="project-card__name">{project.name}</h3>
+        <div className="project-card__actions">
           <button
-            className="project-card-action-btn"
+            className="project-card__action-btn"
             onClick={handleEditClick}
             aria-label="Edit project"
           >
@@ -44,7 +186,7 @@ function ProjectCard({ project, meetingCount, lastActivity, onEdit, onDelete }) 
             </svg>
           </button>
           <button
-            className="project-card-action-btn project-card-action-btn--delete"
+            className="project-card__action-btn project-card__action-btn--delete"
             onClick={handleDeleteClick}
             aria-label="Delete project"
           >
@@ -55,11 +197,25 @@ function ProjectCard({ project, meetingCount, lastActivity, onEdit, onDelete }) 
           </button>
         </div>
       </div>
-      <p className="project-card-description">
+
+      <p className="project-card__description">
         {project.description || 'No description'}
       </p>
-      <div className="project-card-footer">
-        <div className="project-card-stat">
+
+      <div className="project-card__progress-section">
+        <MiniStepper project={project} />
+        <div className="project-card__progress-info">
+          <span className="project-card__stage-badge">
+            {currentStage.label}
+          </span>
+          <span className="project-card__progress-percent">
+            {progress}%
+          </span>
+        </div>
+      </div>
+
+      <div className="project-card__footer">
+        <div className="project-card__stat">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M11.667 2.33334H2.33366C1.59728 2.33334 1.00033 2.9303 1.00033 3.66668V11.6667C1.00033 12.4031 1.59728 13 2.33366 13H11.667C12.4034 13 13.0003 12.4031 13.0003 11.6667V3.66668C13.0003 2.9303 12.4034 2.33334 11.667 2.33334Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M9.66699 1V3.66667" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -68,12 +224,12 @@ function ProjectCard({ project, meetingCount, lastActivity, onEdit, onDelete }) 
           </svg>
           <span>{meetingCount ?? 0} meeting{meetingCount !== 1 ? 's' : ''}</span>
         </div>
-        <div className="project-card-stat">
+        <div className="project-card__stat">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M7 3.66666V7L9 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span>{formatDate(lastActivity)}</span>
+          <span>{formatTimeAgo(lastActivity || project.updated_at)}</span>
         </div>
       </div>
     </div>

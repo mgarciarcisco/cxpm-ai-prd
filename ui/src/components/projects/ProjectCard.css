@@ -13,6 +13,149 @@
   transform: translateY(-2px);
 }
 
+/* Header */
+.project-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.project-card__name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0;
+  line-height: 1.4;
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+/* Actions */
+.project-card__actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.project-card__action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.625rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #9CA3AF;
+  transition: all 0.15s ease;
+}
+
+.project-card__action-btn:hover {
+  background-color: #F3F4F6;
+  color: #4B5563;
+}
+
+.project-card__action-btn--delete:hover {
+  background-color: #FEF2F2;
+  color: #DC2626;
+}
+
+/* Description */
+.project-card__description {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Progress section */
+.project-card__progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
+}
+
+/* Mini stepper */
+.project-card__mini-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.project-card__mini-stepper-dot {
+  font-size: 0.875rem;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.project-card__mini-stepper-dot--empty {
+  color: #D1D5DB;
+}
+
+.project-card__mini-stepper-dot--in_progress {
+  color: #F59E0B;
+}
+
+.project-card__mini-stepper-dot--complete {
+  color: #10B981;
+}
+
+/* Progress info row */
+.project-card__progress-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Stage badge */
+.project-card__stage-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  background-color: rgba(78, 205, 196, 0.1);
+  color: #0D9488;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+/* Progress percentage */
+.project-card__progress-percent {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4B5563;
+}
+
+/* Footer */
+.project-card__footer {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #F3F4F6;
+}
+
+.project-card__stat {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #9CA3AF;
+}
+
+.project-card__stat svg {
+  flex-shrink: 0;
+}
+
+/* Legacy class support (for backwards compatibility) */
 .project-card-header {
   display: flex;
   justify-content: space-between;
