@@ -118,6 +118,12 @@
   margin: 0;
 }
 
+.dashboard__filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 /* Projects Grid */
 .dashboard__projects-grid {
   display: grid;
@@ -255,6 +261,18 @@
 
   .dashboard__welcome {
     font-size: 1.5rem;
+  }
+
+  .dashboard__section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .dashboard__filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
   }
 
   .dashboard__projects-grid {

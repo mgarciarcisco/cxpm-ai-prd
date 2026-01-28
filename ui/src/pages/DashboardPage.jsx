@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { get } from '../services/api';
 import ProjectCard from '../components/projects/ProjectCard';
 import StageFilter from '../components/dashboard/StageFilter';
+import ProjectSearch from '../components/dashboard/ProjectSearch';
 import './DashboardPage.css';
 
 /**
@@ -68,8 +69,9 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Get filter value from URL query param
+  // Get filter values from URL query params
   const stageFilter = searchParams.get('stage') || 'all';
+  const searchQuery = searchParams.get('search') || '';
 
   // Fetch projects and their stats
   const fetchProjects = useCallback(async () => {
@@ -120,25 +122,48 @@ function DashboardPage() {
 
   // Handle filter change - update URL query param
   const handleFilterChange = useCallback((value) => {
+    const newParams = new URLSearchParams(searchParams);
     if (value === 'all') {
-      // Remove stage param if 'all' is selected
-      searchParams.delete('stage');
-      setSearchParams(searchParams);
+      newParams.delete('stage');
     } else {
-      setSearchParams({ stage: value });
+      newParams.set('stage', value);
     }
+    setSearchParams(newParams);
   }, [searchParams, setSearchParams]);
 
-  // Filter projects based on current stage
-  const filteredProjects = useMemo(() => {
-    if (stageFilter === 'all') {
-      return projects;
+  // Handle search change - update URL query param
+  const handleSearchChange = useCallback((value) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === '') {
+      newParams.delete('search');
+    } else {
+      newParams.set('search', value);
     }
-    return projects.filter((project) => {
-      const currentStage = getCurrentStage(project);
-      return currentStage.id === stageFilter;
-    });
-  }, [projects, stageFilter]);
+    setSearchParams(newParams);
+  }, [searchParams, setSearchParams]);
+
+  // Filter projects based on stage and search query
+  const filteredProjects = useMemo(() => {
+    let result = projects;
+
+    // Filter by stage
+    if (stageFilter !== 'all') {
+      result = result.filter((project) => {
+        const currentStage = getCurrentStage(project);
+        return currentStage.id === stageFilter;
+      });
+    }
+
+    // Filter by search query (case-insensitive name match)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((project) =>
+        project.name?.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  }, [projects, stageFilter, searchQuery]);
 
   // Placeholder handlers for edit and delete
   const handleEditProject = (project) => {
@@ -192,7 +217,10 @@ function DashboardPage() {
         <div className="dashboard__projects-section">
           <div className="dashboard__section-header">
             <h2 className="dashboard__section-title">Your Projects</h2>
-            <StageFilter value={stageFilter} onChange={handleFilterChange} />
+            <div className="dashboard__filters">
+              <ProjectSearch value={searchQuery} onChange={handleSearchChange} />
+              <StageFilter value={stageFilter} onChange={handleFilterChange} />
+            </div>
           </div>
 
           {/* Loading State */}
@@ -234,7 +262,7 @@ function DashboardPage() {
             </div>
           )}
 
-          {/* Empty State - no projects matching filter */}
+          {/* Empty State - no projects matching filter/search */}
           {!loading && !error && projects.length > 0 && filteredProjects.length === 0 && (
             <div className="dashboard__empty">
               <div className="dashboard__empty-icon">
@@ -245,13 +273,18 @@ function DashboardPage() {
               </div>
               <h3 className="dashboard__empty-title">No projects found</h3>
               <p className="dashboard__empty-description">
-                No projects match the selected stage filter. Try selecting a different stage or view all projects.
+                {searchQuery.trim()
+                  ? `No projects match "${searchQuery}". Try a different search term or clear filters.`
+                  : 'No projects match the selected stage filter. Try selecting a different stage or view all projects.'}
               </p>
               <button
                 className="dashboard__clear-filter-btn"
-                onClick={() => handleFilterChange('all')}
+                onClick={() => {
+                  handleFilterChange('all');
+                  handleSearchChange('');
+                }}
               >
-                View All Projects
+                Clear Filters
               </button>
             </div>
           )}
