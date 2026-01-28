@@ -38,3 +38,21 @@
   background-color: #fee2e2;
   color: #dc2626;
 }
+
+/* Empty/Not Started - Gray */
+.status-badge--empty {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* In Progress - Yellow */
+.status-badge--in-progress {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+/* Complete - Green */
+.status-badge--complete {
+  background-color: #dcfce7;
+  color: #15803d;
+}
