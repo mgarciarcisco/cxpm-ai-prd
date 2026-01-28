@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { EmptyState } from '../common/EmptyState';
+import GeneratePRDModal from '../prd/GeneratePRDModal';
 import './StageContent.css';
 import './PRDStage.css';
 
@@ -8,7 +9,8 @@ import './PRDStage.css';
  * Shows empty state when no PRD exists, with options to generate from requirements or write manually.
  * Shows warning if requirements are not yet reviewed.
  */
-function PRDStage({ project }) {
+function PRDStage({ project, onStartGeneration }) {
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   // Check if PRD exists (prd_status !== 'empty')
   const hasPRD = project?.prd_status && project.prd_status !== 'empty';
 
@@ -35,10 +37,17 @@ function PRDStage({ project }) {
     </svg>
   );
 
-  // Handlers (placeholders for now - will be implemented in P3-009 and P3-027)
+  // Open the generate modal
   const handleGenerateFromReqs = () => {
-    console.log('Generate PRD from requirements');
-    // TODO: Open GeneratePRDModal (P3-009)
+    setShowGenerateModal(true);
+  };
+
+  // Handle generation start from modal
+  const handleGenerate = (mode) => {
+    setShowGenerateModal(false);
+    if (onStartGeneration) {
+      onStartGeneration(mode);
+    }
   };
 
   const handleWriteManually = () => {
@@ -82,6 +91,15 @@ function PRDStage({ project }) {
             </button>
           ]}
         />
+
+        {/* Generate PRD Modal */}
+        {showGenerateModal && (
+          <GeneratePRDModal
+            projectId={project?.id}
+            onClose={() => setShowGenerateModal(false)}
+            onGenerate={handleGenerate}
+          />
+        )}
       </div>
     );
   }
