@@ -1,0 +1,13 @@
+{
+  "config": {
+    "batchSize": 8,
+    "thresholds": {
+      "rejectOn": ["critical"],
+      "trackAsDebt": ["major"],
+      "noteOnly": ["minor", "suggestion"]
+    },
+    "maxRetries": 3
+  },
+  "reviews": [],
+  "techDebt": []
+}
