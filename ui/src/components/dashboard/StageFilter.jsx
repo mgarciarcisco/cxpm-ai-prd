@@ -14,6 +14,7 @@ export function StageFilter({ value = 'all', onChange }) {
     { value: 'stories', label: 'User Stories' },
     { value: 'mockups', label: 'Mockups' },
     { value: 'export', label: 'Export' },
+    { value: 'archived', label: 'Archived' },
   ];
 
   const handleChange = (e) => {

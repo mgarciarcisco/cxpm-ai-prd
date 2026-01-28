@@ -171,10 +171,19 @@ function ProjectCard({ project, meetingCount, lastActivity, onEdit, onDelete }) 
     onDelete(project)
   }
 
+  const isArchived = project.archived === true;
+
   return (
-    <div className="project-card" onClick={handleCardClick}>
+    <div className={`project-card${isArchived ? ' project-card--archived' : ''}`} onClick={handleCardClick}>
       <div className="project-card__header">
-        <h3 className="project-card__name">{project.name}</h3>
+        <div className="project-card__name-row">
+          <h3 className="project-card__name">{project.name}</h3>
+          {isArchived && (
+            <span className="project-card__archived-badge" title="Archived">
+              Archived
+            </span>
+          )}
+        </div>
         <div className="project-card__actions">
           <button
             className="project-card__action-btn"

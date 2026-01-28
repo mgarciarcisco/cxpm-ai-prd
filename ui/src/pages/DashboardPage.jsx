@@ -149,12 +149,21 @@ function DashboardPage() {
   const filteredProjects = useMemo(() => {
     let result = projects;
 
-    // Filter by stage
-    if (stageFilter !== 'all') {
-      result = result.filter((project) => {
-        const currentStage = getCurrentStage(project);
-        return currentStage.id === stageFilter;
-      });
+    // Filter by archived status and stage
+    if (stageFilter === 'archived') {
+      // Show only archived projects
+      result = result.filter((project) => project.archived === true);
+    } else {
+      // Hide archived projects by default
+      result = result.filter((project) => project.archived !== true);
+
+      // Filter by stage
+      if (stageFilter !== 'all') {
+        result = result.filter((project) => {
+          const currentStage = getCurrentStage(project);
+          return currentStage.id === stageFilter;
+        });
+      }
     }
 
     // Filter by search query (case-insensitive name match)
