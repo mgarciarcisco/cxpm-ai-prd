@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Markdown from 'react-markdown';
 import { EmptyState } from '../common/EmptyState';
+import { StageActions } from '../stage/StageActions';
 import GeneratePRDModal from '../prd/GeneratePRDModal';
 import { usePRDStreamingV2, SectionStatus } from '../../hooks/usePRDStreamingV2';
-import { getPRD, updatePRD, listPRDs } from '../../services/api';
+import { getPRD, updatePRD, listPRDs, patch } from '../../services/api';
 import './StageContent.css';
 import './PRDStage.css';
 
@@ -49,6 +50,9 @@ function PRDStage({ project, onProjectUpdate }) {
 
   // Refs for debounce
   const saveTimeoutRef = useRef(null);
+
+  // Mark as Ready state
+  const [markingAsReady, setMarkingAsReady] = useState(false);
 
   // Use the PRD streaming hook
   const {
@@ -278,6 +282,27 @@ function PRDStage({ project, onProjectUpdate }) {
     }
   };
 
+  // Handle Mark as Ready - updates prd_status to 'ready'
+  const handleMarkAsReady = async () => {
+    if (!project?.id) return;
+
+    try {
+      setMarkingAsReady(true);
+      await patch(`/api/projects/${project.id}/stages/prd`, { status: 'ready' });
+      // Notify parent to refresh project data
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
+    } catch (err) {
+      console.error('Failed to mark as ready:', err);
+    } finally {
+      setMarkingAsReady(false);
+    }
+  };
+
+  // Determine if PRD is already ready
+  const isReady = project?.prd_status === 'ready';
+
   // Get sorted sections for rendering
   const sortedSections = getSortedSections();
   const completedCount = getCompletedCount();
@@ -484,6 +509,15 @@ function PRDStage({ project, onProjectUpdate }) {
             )}
           </div>
         </div>
+
+        {/* Stage Actions */}
+        <StageActions
+          primaryAction={
+            isReady
+              ? { label: 'Ready', onClick: () => {}, disabled: true }
+              : { label: 'Mark as Ready', onClick: handleMarkAsReady, loading: markingAsReady }
+          }
+        />
       </div>
     );
   }
@@ -622,6 +656,15 @@ function PRDStage({ project, onProjectUpdate }) {
             )}
           </div>
         </div>
+
+        {/* Stage Actions */}
+        <StageActions
+          primaryAction={
+            isReady
+              ? { label: 'Ready', onClick: () => {}, disabled: true }
+              : { label: 'Mark as Ready', onClick: handleMarkAsReady, loading: markingAsReady }
+          }
+        />
       </div>
     );
   }
