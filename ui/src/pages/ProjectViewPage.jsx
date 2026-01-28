@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { get } from '../services/api';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { StageStepper } from '../components/common/StageStepper';
+import ProjectSettingsModal from '../components/project/ProjectSettingsModal';
 import {
   RequirementsStage,
   PRDStage,
@@ -111,6 +112,7 @@ function ProjectViewPage() {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Derive currentStage from URL (or default to requirements while loading)
   const currentStage = urlStage && VALID_STAGES.includes(urlStage) ? urlStage : null;
@@ -143,9 +145,16 @@ function ProjectViewPage() {
   }, [loading, project, currentStage, id, navigate]);
 
   const handleSettingsClick = () => {
-    // Placeholder - will be implemented in P2-003 (Project Settings Modal)
-    console.log('Settings clicked for project:', id);
+    setShowSettingsModal(true);
   };
+
+  const handleProjectUpdated = useCallback((updatedProject) => {
+    setProject(updatedProject);
+  }, []);
+
+  const handleProjectDeleted = useCallback(() => {
+    // Navigation to dashboard is handled by the modal
+  }, []);
 
   // Handle stage click - navigate to stage URL
   const handleStageClick = (stageId) => {
@@ -316,6 +325,16 @@ function ProjectViewPage() {
           {renderStageContent()}
         </div>
       </div>
+
+      {/* Project Settings Modal */}
+      {showSettingsModal && (
+        <ProjectSettingsModal
+          project={project}
+          onClose={() => setShowSettingsModal(false)}
+          onProjectUpdated={handleProjectUpdated}
+          onProjectDeleted={handleProjectDeleted}
+        />
+      )}
     </main>
   );
 }

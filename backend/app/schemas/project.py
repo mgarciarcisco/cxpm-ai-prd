@@ -106,6 +106,7 @@ class ProjectUpdate(BaseModel):
 
     name: str | None = None
     description: str | None = None
+    archived: bool | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -114,6 +115,7 @@ class ProjectResponse(BaseModel):
     id: str
     name: str
     description: str | None = None
+    archived: bool = False
     created_at: datetime
     updated_at: datetime
     requirements_status: RequirementsStatusSchema
