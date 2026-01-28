@@ -17,6 +17,7 @@ import DashboardPage from './pages/DashboardPage'
 import ProjectViewPage from './pages/ProjectViewPage'
 import QuickConvertPage from './pages/QuickConvertPage'
 import QuickConvertRequirementsPage from './pages/QuickConvertRequirementsPage'
+import QuickConvertPRDPage from './pages/QuickConvertPRDPage'
 import './App.css'
 
 function App() {
@@ -96,6 +97,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/quick-convert" element={<QuickConvertPage />} />
           <Route path="/quick-convert/requirements" element={<QuickConvertRequirementsPage />} />
+          <Route path="/quick-convert/prd" element={<QuickConvertPRDPage />} />
           <Route path="/projects/:id" element={<ProjectViewPage />} />
           <Route path="/projects/:id/:stage" element={<ProjectViewPage />} />
           <Route path="/app" element={<ProjectsPage />} />
