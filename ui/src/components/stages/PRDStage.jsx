@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Markdown from 'react-markdown';
 import { EmptyState } from '../common/EmptyState';
 import GeneratePRDModal from '../prd/GeneratePRDModal';
+import { usePRDStreamingV2, SectionStatus } from '../../hooks/usePRDStreamingV2';
 import './StageContent.css';
 import './PRDStage.css';
 
@@ -8,14 +10,46 @@ import './PRDStage.css';
  * PRD stage content component.
  * Shows empty state when no PRD exists, with options to generate from requirements or write manually.
  * Shows warning if requirements are not yet reviewed.
+ * Supports section-by-section streaming during PRD generation.
  */
-function PRDStage({ project, onStartGeneration }) {
+function PRDStage({ project, onProjectUpdate }) {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationMode, setGenerationMode] = useState(null);
+
+  // Use the PRD streaming hook
+  const {
+    getSortedSections,
+    getCompletedCount,
+    getTotalCount,
+    status: streamStatus,
+    error: streamError,
+    retry,
+  } = usePRDStreamingV2(project?.id, generationMode, isGenerating);
+
   // Check if PRD exists (prd_status !== 'empty')
   const hasPRD = project?.prd_status && project.prd_status !== 'empty';
 
   // Check if requirements are complete (reviewed)
   const requirementsComplete = project?.requirements_status === 'reviewed';
+
+  // Handle stream completion
+  useEffect(() => {
+    if (streamStatus === 'complete' || streamStatus === 'partial') {
+      setIsGenerating(false);
+      // Refresh project data to update prd_status
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
+    }
+  }, [streamStatus, onProjectUpdate]);
+
+  // Handle stream error
+  useEffect(() => {
+    if (streamStatus === 'error') {
+      setIsGenerating(false);
+    }
+  }, [streamStatus]);
 
   // PRD document icon
   const prdIcon = (
@@ -43,17 +77,186 @@ function PRDStage({ project, onStartGeneration }) {
   };
 
   // Handle generation start from modal
-  const handleGenerate = (mode) => {
+  const handleGenerate = useCallback((mode) => {
     setShowGenerateModal(false);
-    if (onStartGeneration) {
-      onStartGeneration(mode);
-    }
-  };
+    setGenerationMode(mode);
+    setIsGenerating(true);
+  }, []);
 
   const handleWriteManually = () => {
     console.log('Write PRD manually');
     // TODO: Open PRD editor directly (P3-027)
   };
+
+  const handleRetry = () => {
+    retry();
+  };
+
+  // Get sorted sections for rendering
+  const sortedSections = getSortedSections();
+  const completedCount = getCompletedCount();
+  const totalCount = getTotalCount();
+
+  // Show generation view when generating
+  if (isGenerating || (sortedSections.length > 0 && streamStatus !== 'complete' && streamStatus !== 'partial' && streamStatus !== 'error')) {
+    return (
+      <div className="stage-content stage-content--prd">
+        <div className="prd-generation">
+          {/* Progress indicator */}
+          <div className="prd-generation__header">
+            <div className="prd-generation__progress">
+              <div className="prd-generation__spinner" />
+              <span className="prd-generation__status">
+                {totalCount > 0
+                  ? `Generating... Section ${completedCount + 1} of ${totalCount}`
+                  : 'Starting generation...'}
+              </span>
+            </div>
+            <div className="prd-generation__mode">
+              {generationMode === 'detailed' ? 'Detailed' : 'Brief'} PRD
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          {totalCount > 0 && (
+            <div className="prd-generation__progress-bar">
+              <div
+                className="prd-generation__progress-fill"
+                style={{ width: `${(completedCount / totalCount) * 100}%` }}
+              />
+            </div>
+          )}
+
+          {/* Sections */}
+          <div className="prd-generation__sections">
+            {sortedSections.map((section) => (
+              <div
+                key={section.id}
+                className={`prd-section prd-section--${section.status}`}
+              >
+                {/* Section header */}
+                <div className="prd-section__header">
+                  <span className="prd-section__status-icon">
+                    {section.status === SectionStatus.COMPLETED && (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                    {section.status === SectionStatus.GENERATING && (
+                      <div className="prd-section__spinner" />
+                    )}
+                    {section.status === SectionStatus.PENDING && (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2"/>
+                      </svg>
+                    )}
+                    {section.status === SectionStatus.FAILED && (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    )}
+                  </span>
+                  <span className="prd-section__title">
+                    {section.title || formatSectionId(section.id)}
+                  </span>
+                </div>
+
+                {/* Section content - show for completed or generating sections */}
+                {(section.status === SectionStatus.COMPLETED || section.status === SectionStatus.GENERATING) && section.content && (
+                  <div className="prd-section__content">
+                    <Markdown>{section.content}</Markdown>
+                  </div>
+                )}
+
+                {/* Pending placeholder */}
+                {section.status === SectionStatus.PENDING && (
+                  <div className="prd-section__placeholder">
+                    Waiting to generate...
+                  </div>
+                )}
+
+                {/* Failed message */}
+                {section.status === SectionStatus.FAILED && (
+                  <div className="prd-section__error">
+                    {section.error || 'Failed to generate this section'}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if generation failed
+  if (streamStatus === 'error') {
+    return (
+      <div className="stage-content stage-content--prd">
+        <div className="prd-error">
+          <div className="prd-error__icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="2"/>
+              <path d="M24 14v12M24 30v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h3 className="prd-error__title">Generation Failed</h3>
+          <p className="prd-error__message">{streamError}</p>
+          <div className="prd-error__actions">
+            <button onClick={handleRetry}>Try Again</button>
+            <button className="secondary" onClick={() => setIsGenerating(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show completed PRD with sections
+  if ((streamStatus === 'complete' || streamStatus === 'partial') && sortedSections.length > 0) {
+    return (
+      <div className="stage-content stage-content--prd">
+        <div className="prd-content">
+          {/* Completion notice */}
+          <div className="prd-content__header">
+            <span className="prd-content__title">
+              Product Requirements Document
+            </span>
+            {streamStatus === 'partial' && (
+              <span className="prd-content__warning">
+                Some sections failed to generate
+              </span>
+            )}
+          </div>
+
+          {/* Sections */}
+          <div className="prd-content__sections">
+            {sortedSections.map((section) => (
+              <div
+                key={section.id}
+                className={`prd-section prd-section--${section.status}`}
+              >
+                <h2 className="prd-section__title">
+                  {section.title || formatSectionId(section.id)}
+                </h2>
+                {section.status === SectionStatus.COMPLETED && section.content && (
+                  <div className="prd-section__content">
+                    <Markdown>{section.content}</Markdown>
+                  </div>
+                )}
+                {section.status === SectionStatus.FAILED && (
+                  <div className="prd-section__error">
+                    {section.error || 'Failed to generate this section'}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Empty state - no PRD yet
   if (!hasPRD) {
@@ -104,7 +307,7 @@ function PRDStage({ project, onStartGeneration }) {
     );
   }
 
-  // PRD exists - placeholder for P3-010, P3-011 (view/edit PRD)
+  // PRD exists - placeholder for P3-011 (view/edit PRD)
   return (
     <div className="stage-content stage-content--prd">
       <div className="stage-content__placeholder">
@@ -118,6 +321,18 @@ function PRDStage({ project, onStartGeneration }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Format a section ID into a readable title
+ * e.g., 'problem_statement' -> 'Problem Statement'
+ */
+function formatSectionId(sectionId) {
+  if (!sectionId) return 'Section';
+  return sectionId
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 export default PRDStage;
