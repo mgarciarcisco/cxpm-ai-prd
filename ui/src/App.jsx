@@ -93,6 +93,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/projects/:id" element={<ProjectViewPage />} />
+          <Route path="/projects/:id/:stage" element={<ProjectViewPage />} />
           <Route path="/app" element={<ProjectsPage />} />
           <Route path="/app/projects/:id" element={<ProjectDashboard />} />
           <Route path="/app/projects/:id/meetings/new" element={<UploadMeetingPage />} />

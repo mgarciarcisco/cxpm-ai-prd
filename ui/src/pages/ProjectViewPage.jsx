@@ -102,13 +102,18 @@ function determineCurrentStage(statuses) {
   return 'export';
 }
 
+// Valid stage IDs for URL validation
+const VALID_STAGES = ['requirements', 'prd', 'stories', 'mockups', 'export'];
+
 function ProjectViewPage() {
-  const { id } = useParams();
+  const { id, stage: urlStage } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentStage, setCurrentStage] = useState('requirements');
+
+  // Derive currentStage from URL (or default to requirements while loading)
+  const currentStage = urlStage && VALID_STAGES.includes(urlStage) ? urlStage : null;
 
   const fetchProject = useCallback(async () => {
     try {
@@ -116,10 +121,6 @@ function ProjectViewPage() {
       setError(null);
       const projectData = await get(`/api/projects/${id}`);
       setProject(projectData);
-
-      // Determine current stage from project statuses
-      const statuses = mapStageStatuses(projectData);
-      setCurrentStage(determineCurrentStage(statuses));
     } catch (err) {
       setError(err.message || 'Failed to load project');
     } finally {
@@ -131,15 +132,23 @@ function ProjectViewPage() {
     fetchProject();
   }, [fetchProject]);
 
+  // Redirect to appropriate stage when project is loaded and no valid stage in URL
+  useEffect(() => {
+    if (!loading && project && !currentStage) {
+      // No stage in URL (or invalid stage), redirect to first incomplete stage
+      const statuses = mapStageStatuses(project);
+      const targetStage = determineCurrentStage(statuses);
+      navigate(`/projects/${id}/${targetStage}`, { replace: true });
+    }
+  }, [loading, project, currentStage, id, navigate]);
+
   const handleSettingsClick = () => {
     // Placeholder - will be implemented in P2-003 (Project Settings Modal)
     console.log('Settings clicked for project:', id);
   };
 
-  // Handle stage click - navigate to stage and update current stage
+  // Handle stage click - navigate to stage URL
   const handleStageClick = (stageId) => {
-    setCurrentStage(stageId);
-    // Navigate to stage URL - will render different stage content in future tasks
     navigate(`/projects/${id}/${stageId}`);
   };
 
@@ -243,6 +252,25 @@ function ProjectViewPage() {
             <Link to="/dashboard" className="project-view__back-link">
               Back to Dashboard
             </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Waiting for redirect to appropriate stage (no valid stage in URL)
+  if (!currentStage) {
+    return (
+      <main className="main-content">
+        <div className="project-view">
+          <div className="project-view__loading">
+            <div className="project-view__loading-spinner" aria-label="Redirecting">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25"/>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <p className="project-view__loading-text">Redirecting...</p>
           </div>
         </div>
       </main>
