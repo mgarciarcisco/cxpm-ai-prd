@@ -1,0 +1,111 @@
+/* Requirements Stage Layout */
+.requirements-stage__sections {
+  margin-top: 24px;
+}
+
+/* Loading State */
+.requirements-stage__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 16px;
+}
+
+.requirements-stage__loading-spinner {
+  animation: spin 1s linear infinite;
+  color: var(--color-primary, #6366f1);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.requirements-stage__loading-text {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+}
+
+/* Error State */
+.requirements-stage__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 16px;
+  padding: 24px;
+  background-color: #fef2f2;
+  border-radius: 8px;
+}
+
+.requirements-stage__error-text {
+  font-size: 0.875rem;
+  color: #dc2626;
+  margin: 0;
+  text-align: center;
+}
+
+.requirements-stage__retry-btn {
+  padding: 8px 16px;
+  background-color: var(--color-primary, #6366f1);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.requirements-stage__retry-btn:hover {
+  background-color: var(--color-primary-hover, #4f46e5);
+}
+
+/* Header Action Buttons */
+.requirements-stage__action-btn {
+  padding: 8px 14px;
+  background-color: var(--color-primary, #6366f1);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.requirements-stage__action-btn:hover {
+  background-color: var(--color-primary-hover, #4f46e5);
+}
+
+.requirements-stage__action-btn:focus-visible {
+  outline: 2px solid var(--color-primary, #6366f1);
+  outline-offset: 2px;
+}
+
+.requirements-stage__action-btn--secondary {
+  background-color: transparent;
+  color: var(--color-text-secondary, #6b7280);
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+
+.requirements-stage__action-btn--secondary:hover {
+  background-color: var(--color-bg-subtle, #f9fafb);
+  border-color: var(--color-border-hover, #d1d5db);
+  color: var(--color-text-primary, #1f2937);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .requirements-stage__sections {
+    margin-top: 16px;
+  }
+}

@@ -1,0 +1,203 @@
+.requirement-section {
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background-color: var(--color-bg-primary, #ffffff);
+}
+
+/* Section Header */
+.requirement-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.requirement-section__header:hover {
+  background-color: var(--color-bg-subtle, #f9fafb);
+}
+
+.requirement-section__header:focus-visible {
+  outline: 2px solid var(--color-primary, #6366f1);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+.requirement-section__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Chevron icon rotation */
+.requirement-section__chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary, #9ca3af);
+  transition: transform 0.2s ease;
+}
+
+.requirement-section--expanded .requirement-section__chevron {
+  transform: rotate(90deg);
+}
+
+.requirement-section__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.requirement-section__count {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+/* Add Button */
+.requirement-section__add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background-color: transparent;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  opacity: 0;
+}
+
+.requirement-section__header:hover .requirement-section__add-btn,
+.requirement-section__add-btn:focus-visible {
+  opacity: 1;
+}
+
+.requirement-section__add-btn:hover {
+  background-color: var(--color-primary, #6366f1);
+  border-color: var(--color-primary, #6366f1);
+  color: #ffffff;
+}
+
+.requirement-section__add-btn:focus-visible {
+  outline: 2px solid var(--color-primary, #6366f1);
+  outline-offset: 2px;
+}
+
+/* Section List */
+.requirement-section__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 16px 12px 16px;
+}
+
+.requirement-section__empty {
+  padding: 12px 0;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+/* Requirement Item */
+.requirement-section__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 8px;
+  margin: 0 -8px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.requirement-section__item:hover {
+  background-color: var(--color-bg-subtle, #f9fafb);
+}
+
+.requirement-section__bullet {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary, #9ca3af);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.requirement-section__content {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-text-primary, #1f2937);
+  word-break: break-word;
+}
+
+/* Action buttons (edit/delete) */
+.requirement-section__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.requirement-section__item:hover .requirement-section__actions,
+.requirement-section__item:focus-within .requirement-section__actions {
+  opacity: 1;
+}
+
+.requirement-section__action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-tertiary, #9ca3af);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.requirement-section__action-btn:hover {
+  background-color: var(--color-bg-subtle, #f3f4f6);
+  color: var(--color-text-primary, #1f2937);
+}
+
+.requirement-section__action-btn--delete:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.requirement-section__action-btn:focus-visible {
+  outline: 2px solid var(--color-primary, #6366f1);
+  outline-offset: 1px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .requirement-section__header {
+    padding: 10px 12px;
+  }
+
+  .requirement-section__list {
+    padding: 0 12px 10px 12px;
+  }
+
+  .requirement-section__actions {
+    opacity: 1;
+  }
+
+  .requirement-section__add-btn {
+    opacity: 1;
+  }
+}

@@ -1,19 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { EmptyState } from '../common/EmptyState';
+import { StageHeader } from '../stage/StageHeader';
 import AddMeetingModal from '../requirements/AddMeetingModal';
 import AddManuallyModal from '../requirements/AddManuallyModal';
+import RequirementSection, { SECTION_ORDER } from '../requirements/RequirementSection';
+import { get } from '../../services/api';
 import './StageContent.css';
+import './RequirementsStage.css';
+
+/**
+ * Map requirements status to stage header status format.
+ */
+function mapRequirementsStatus(status) {
+  const statusMap = {
+    empty: 'empty',
+    has_items: 'in_progress',
+    reviewed: 'complete',
+  };
+  return statusMap[status] || 'empty';
+}
+
+/**
+ * Map requirements status to human-readable label.
+ */
+function getStatusLabel(status) {
+  const labelMap = {
+    empty: 'Empty',
+    has_items: 'In Progress',
+    reviewed: 'Reviewed',
+  };
+  return labelMap[status] || 'Empty';
+}
 
 /**
  * Requirements stage content component.
  * Shows empty state when no requirements exist, with options to add from meeting or manually.
+ * Shows requirements list grouped by sections when requirements exist.
  */
 function RequirementsStage({ project }) {
   const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
   const [showAddManuallyModal, setShowAddManuallyModal] = useState(false);
+  const [addToSection, setAddToSection] = useState(null);
+  const [requirements, setRequirements] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Check if there are any requirements (requirements_status !== 'empty')
   const hasRequirements = project?.requirements_status && project.requirements_status !== 'empty';
+
+  // Fetch requirements when component mounts or project changes
+  const fetchRequirements = useCallback(async () => {
+    if (!project?.id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await get(`/api/projects/${project.id}/requirements`);
+      setRequirements(data);
+    } catch (err) {
+      setError(err.message || 'Failed to load requirements');
+      console.error('Error fetching requirements:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [project?.id]);
+
+  useEffect(() => {
+    if (hasRequirements) {
+      fetchRequirements();
+    }
+  }, [hasRequirements, fetchRequirements]);
+
+  // Calculate total count across all sections
+  const getTotalCount = () => {
+    if (!requirements) return 0;
+    return SECTION_ORDER.reduce((total, section) => {
+      return total + (requirements[section]?.length || 0);
+    }, 0);
+  };
+
+  // Build subtitle showing item count and section breakdown
+  const getSubtitle = () => {
+    const totalCount = getTotalCount();
+    const sectionsWithItems = SECTION_ORDER.filter(
+      (section) => requirements?.[section]?.length > 0
+    ).length;
+
+    if (totalCount === 0) return 'No requirements added yet';
+
+    const itemWord = totalCount === 1 ? 'item' : 'items';
+    const sectionWord = sectionsWithItems === 1 ? 'section' : 'sections';
+    return `${totalCount} ${itemWord} across ${sectionsWithItems} ${sectionWord}`;
+  };
 
   // Requirements icon SVG
   const requirementsIcon = (
@@ -34,18 +112,39 @@ function RequirementsStage({ project }) {
   const handleSaveRequirements = (savedCount) => {
     console.log('Requirements saved:', savedCount);
     setShowAddMeetingModal(false);
-    // TODO: Refresh project data to show new requirements (P3-004)
+    // Refresh requirements list
+    fetchRequirements();
   };
 
-  // Handle Add Manually button click
+  // Handle Add Manually button click (from empty state or header)
   const handleAddManually = () => {
+    setAddToSection(null);
+    setShowAddManuallyModal(true);
+  };
+
+  // Handle Add button click from a specific section
+  const handleAddToSection = (section) => {
+    setAddToSection(section);
     setShowAddManuallyModal(true);
   };
 
   // Handle requirement added manually
   const handleRequirementAdded = (requirement) => {
     console.log('Requirement added:', requirement);
-    // TODO: Refresh project data to show new requirements (P3-004)
+    // Refresh requirements list
+    fetchRequirements();
+  };
+
+  // Handle edit requirement (placeholder - will be implemented in P3-005)
+  const handleEditRequirement = (id) => {
+    console.log('Edit requirement:', id);
+    // TODO: Implement inline editing (P3-005)
+  };
+
+  // Handle delete requirement (placeholder - will be implemented in P3-006)
+  const handleDeleteRequirement = (id) => {
+    console.log('Delete requirement:', id);
+    // TODO: Implement delete confirmation (P3-006)
   };
 
   // Empty state - no requirements yet
@@ -79,12 +178,83 @@ function RequirementsStage({ project }) {
     );
   }
 
-  // TODO: Requirements list view (P3-004)
+  // Loading state
+  if (loading && !requirements) {
+    return (
+      <div className="stage-content stage-content--requirements">
+        <div className="requirements-stage__loading">
+          <div className="requirements-stage__loading-spinner" aria-label="Loading requirements">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25"/>
+              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <p className="requirements-stage__loading-text">Loading requirements...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && !requirements) {
+    return (
+      <div className="stage-content stage-content--requirements">
+        <div className="requirements-stage__error">
+          <p className="requirements-stage__error-text">{error}</p>
+          <button
+            className="requirements-stage__retry-btn"
+            onClick={fetchRequirements}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Requirements list view
   return (
     <div className="stage-content stage-content--requirements">
-      <div className="stage-content__placeholder">
-        <p>Requirements list coming soon (P3-004)</p>
+      {/* Stage Header with total count */}
+      <StageHeader
+        title="Requirements"
+        subtitle={getSubtitle()}
+        status={mapRequirementsStatus(project?.requirements_status)}
+        statusLabel={getStatusLabel(project?.requirements_status)}
+        actions={
+          <>
+            <button
+              className="requirements-stage__action-btn"
+              onClick={handleAddMeeting}
+            >
+              Add Meeting
+            </button>
+            <button
+              className="requirements-stage__action-btn requirements-stage__action-btn--secondary"
+              onClick={handleAddManually}
+            >
+              Add Manually
+            </button>
+          </>
+        }
+      />
+
+      {/* Requirements Sections */}
+      <div className="requirements-stage__sections">
+        {SECTION_ORDER.map((section) => (
+          <RequirementSection
+            key={section}
+            section={section}
+            items={requirements?.[section] || []}
+            onAdd={handleAddToSection}
+            onEdit={handleEditRequirement}
+            onDelete={handleDeleteRequirement}
+            defaultExpanded={requirements?.[section]?.length > 0}
+          />
+        ))}
       </div>
+
+      {/* Modals */}
       {showAddMeetingModal && (
         <AddMeetingModal
           projectId={project?.id}
@@ -95,7 +265,11 @@ function RequirementsStage({ project }) {
       {showAddManuallyModal && (
         <AddManuallyModal
           projectId={project?.id}
-          onClose={() => setShowAddManuallyModal(false)}
+          defaultSection={addToSection}
+          onClose={() => {
+            setShowAddManuallyModal(false);
+            setAddToSection(null);
+          }}
           onAdd={handleRequirementAdded}
         />
       )}

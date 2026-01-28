@@ -22,11 +22,15 @@ const SECTIONS = [
  *
  * @param {object} props
  * @param {string} props.projectId - Project ID for API call
+ * @param {string} [props.defaultSection] - Optional pre-selected section key
  * @param {function} props.onClose - Callback to close modal
  * @param {function} [props.onAdd] - Callback when a requirement is added (receives the added requirement)
  */
-function AddManuallyModal({ projectId, onClose, onAdd }) {
-  const [section, setSection] = useState(SECTIONS[0].value);
+function AddManuallyModal({ projectId, defaultSection, onClose, onAdd }) {
+  const initialSection = defaultSection && SECTIONS.some(s => s.value === defaultSection)
+    ? defaultSection
+    : SECTIONS[0].value;
+  const [section, setSection] = useState(initialSection);
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
