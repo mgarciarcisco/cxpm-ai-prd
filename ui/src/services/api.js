@@ -66,6 +66,28 @@ export async function put(endpoint, data) {
 }
 
 /**
+ * Make a PATCH request to the API
+ * @param {string} endpoint - API endpoint
+ * @param {object} data - JSON body to send
+ * @returns {Promise<any>} - Parsed JSON response
+ * @throws {Error} - Error with message on non-ok response
+ */
+export async function patch(endpoint, data) {
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Request failed with status ${response.status}`);
+  }
+  return response.json();
+}
+
+/**
  * Make a DELETE request to the API
  * @param {string} endpoint - API endpoint
  * @returns {Promise<void>}

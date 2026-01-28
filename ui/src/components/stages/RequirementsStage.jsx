@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { EmptyState } from '../common/EmptyState';
 import { StageHeader } from '../stage/StageHeader';
+import { StageActions } from '../stage/StageActions';
 import AddMeetingModal from '../requirements/AddMeetingModal';
 import AddManuallyModal from '../requirements/AddManuallyModal';
 import RequirementSection, { SECTION_ORDER } from '../requirements/RequirementSection';
-import { get, put } from '../../services/api';
+import { get, put, patch } from '../../services/api';
 import './StageContent.css';
 import './RequirementsStage.css';
 
@@ -37,13 +38,14 @@ function getStatusLabel(status) {
  * Shows empty state when no requirements exist, with options to add from meeting or manually.
  * Shows requirements list grouped by sections when requirements exist.
  */
-function RequirementsStage({ project }) {
+function RequirementsStage({ project, onProjectUpdate }) {
   const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
   const [showAddManuallyModal, setShowAddManuallyModal] = useState(false);
   const [addToSection, setAddToSection] = useState(null);
   const [requirements, setRequirements] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [markingAsReviewed, setMarkingAsReviewed] = useState(false);
 
   // Check if there are any requirements (requirements_status !== 'empty')
   const hasRequirements = project?.requirements_status && project.requirements_status !== 'empty';
@@ -182,6 +184,27 @@ function RequirementsStage({ project }) {
     // TODO: Implement delete confirmation (P3-006)
   };
 
+  // Handle Mark as Reviewed - updates requirements_status to 'reviewed'
+  const handleMarkAsReviewed = async () => {
+    if (!project?.id) return;
+
+    try {
+      setMarkingAsReviewed(true);
+      await patch(`/api/projects/${project.id}/stages/requirements`, { status: 'reviewed' });
+      // Notify parent to refresh project data
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
+    } catch (err) {
+      console.error('Failed to mark as reviewed:', err);
+    } finally {
+      setMarkingAsReviewed(false);
+    }
+  };
+
+  // Determine if requirements are already reviewed
+  const isReviewed = project?.requirements_status === 'reviewed';
+
   // Empty state - no requirements yet
   if (!hasRequirements) {
     return (
@@ -308,6 +331,15 @@ function RequirementsStage({ project }) {
           onAdd={handleRequirementAdded}
         />
       )}
+
+      {/* Stage Actions */}
+      <StageActions
+        primaryAction={
+          isReviewed
+            ? { label: 'Generate PRD', onClick: () => console.log('Generate PRD'), disabled: true }
+            : { label: 'Mark as Reviewed', onClick: handleMarkAsReviewed, loading: markingAsReviewed }
+        }
+      />
     </div>
   );
 }

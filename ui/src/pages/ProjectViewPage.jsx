@@ -191,7 +191,7 @@ function ProjectViewPage() {
         </div>
       );
     }
-    return <StageComponent project={project} />;
+    return <StageComponent project={project} onProjectUpdate={fetchProject} />;
   };
 
   // Loading state
