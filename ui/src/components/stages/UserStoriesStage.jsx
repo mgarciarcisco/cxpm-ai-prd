@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { EmptyState } from '../common/EmptyState';
 import { StageActions } from '../stage/StageActions';
 import GenerateStoriesModal from '../stories/GenerateStoriesModal';
 import { StoryCard } from '../stories/StoryCard';
 import { StoryEditModal } from '../stories/StoryEditModal';
-import { listStories, updateStory, deleteStory, patch } from '../../services/api';
+import { listStories, updateStory, deleteStory, patch, reorderStories } from '../../services/api';
 import './StageContent.css';
 import './UserStoriesStage.css';
 
@@ -27,6 +27,11 @@ function UserStoriesStage({ project, onProjectUpdate }) {
 
   // Mark as refined state
   const [markingAsRefined, setMarkingAsRefined] = useState(false);
+
+  // Drag and drop state
+  const [draggedStoryId, setDraggedStoryId] = useState(null);
+  const [dragOverStoryId, setDragOverStoryId] = useState(null);
+  const dragNodeRef = useRef(null);
 
   // Check if there are any user stories (stories_status !== 'empty')
   const hasStories = project?.stories_status && project.stories_status !== 'empty';
@@ -153,6 +158,90 @@ function UserStoriesStage({ project, onProjectUpdate }) {
     }
   };
 
+  // Handle drag start
+  const handleDragStart = (e, storyId) => {
+    setDraggedStoryId(storyId);
+    dragNodeRef.current = e.target;
+
+    // Set drag data
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', storyId);
+
+    // Add dragging class after a short delay for visual feedback
+    setTimeout(() => {
+      if (dragNodeRef.current) {
+        dragNodeRef.current.classList.add('story-card--dragging');
+      }
+    }, 0);
+  };
+
+  // Handle drag end
+  const handleDragEnd = () => {
+    setDraggedStoryId(null);
+    setDragOverStoryId(null);
+
+    if (dragNodeRef.current) {
+      dragNodeRef.current.classList.remove('story-card--dragging');
+    }
+    dragNodeRef.current = null;
+  };
+
+  // Handle drag over
+  const handleDragOver = (e, storyId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    if (storyId !== draggedStoryId) {
+      setDragOverStoryId(storyId);
+    }
+  };
+
+  // Handle drag leave
+  const handleDragLeave = (e) => {
+    // Only clear dragOverStoryId if leaving the actual card element
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverStoryId(null);
+    }
+  };
+
+  // Handle drop - reorder stories and persist to database
+  const handleDrop = async (e, targetStoryId) => {
+    e.preventDefault();
+
+    if (!draggedStoryId || draggedStoryId === targetStoryId) {
+      handleDragEnd();
+      return;
+    }
+
+    // Find indices
+    const draggedIndex = stories.findIndex(s => s.id === draggedStoryId);
+    const targetIndex = stories.findIndex(s => s.id === targetStoryId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      handleDragEnd();
+      return;
+    }
+
+    // Create new order
+    const newStories = [...stories];
+    const [draggedStory] = newStories.splice(draggedIndex, 1);
+    newStories.splice(targetIndex, 0, draggedStory);
+
+    // Optimistically update UI
+    setStories(newStories);
+    handleDragEnd();
+
+    // Persist to database
+    try {
+      const storyIds = newStories.map(s => s.id);
+      await reorderStories(project.id, storyIds);
+    } catch (err) {
+      console.error('Failed to persist story order:', err);
+      // Reload stories on error to restore original order
+      loadStories();
+    }
+  };
+
   // Empty state - no stories yet
   if (!hasStories) {
     return (
@@ -228,13 +317,28 @@ function UserStoriesStage({ project, onProjectUpdate }) {
 
         <div className="stories-stage__list">
           {stories.map((story) => (
-            <StoryCard
+            <div
               key={story.id}
-              story={story}
-              onEdit={handleEditStory}
-              onDelete={handleDeleteStory}
-              showDragHandle={false}
-            />
+              className={`stories-stage__card-wrapper ${
+                dragOverStoryId === story.id ? 'stories-stage__card-wrapper--drag-over' : ''
+              } ${draggedStoryId === story.id ? 'stories-stage__card-wrapper--dragging' : ''}`}
+              draggable
+              onDragStart={(e) => handleDragStart(e, story.id)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, story.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, story.id)}
+            >
+              <StoryCard
+                story={story}
+                onEdit={handleEditStory}
+                onDelete={handleDeleteStory}
+                showDragHandle={true}
+                dragHandleProps={{
+                  onMouseDown: (e) => e.stopPropagation(),
+                }}
+              />
+            </div>
           ))}
         </div>
       </div>
