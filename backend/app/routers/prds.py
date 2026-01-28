@@ -29,7 +29,7 @@ from app.schemas import (
     PRDSummary,
     PRDUpdateRequest,
 )
-from app.services import generate_prd_task
+from app.services import generate_prd_task, update_export_status
 from app.services.llm import LLMError
 from app.services.prd_generator import PRDGenerator
 
@@ -667,7 +667,10 @@ def export_prd(
         content = json.dumps(export_data, indent=2)
         filename = f"{filename_base}-prd-v{prd.version}.json"
         media_type = "application/json"
-    
+
+    # Auto-update project's export_status on first export
+    update_export_status(str(prd.project_id), db)
+
     return Response(
         content=content,
         media_type=media_type,

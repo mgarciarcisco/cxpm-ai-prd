@@ -17,7 +17,7 @@ from app.schemas import (
     RequirementSourceResponse,
     RequirementUpdate,
 )
-from app.services import export_markdown
+from app.services import export_markdown, update_export_status, update_requirements_status
 
 router = APIRouter(prefix="/api", tags=["requirements"])
 
@@ -126,6 +126,9 @@ def export_project_requirements(
     filename_slug = _slugify_filename(project.name)  # type: ignore[arg-type]
     filename = f"{filename_slug}-requirements.md"
 
+    # Auto-update project's export_status on first export
+    update_export_status(project_id, db)
+
     return Response(
         content=markdown_content,
         media_type="text/markdown",
@@ -194,6 +197,9 @@ def delete_requirement(
     if not requirement:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
 
+    # Store project_id before soft-delete for status update
+    project_id = requirement.project_id
+
     # Soft-delete by setting is_active to False
     requirement.is_active = False  # type: ignore[assignment]
 
@@ -208,6 +214,10 @@ def delete_requirement(
     db.add(history_entry)
 
     db.commit()
+
+    # Auto-update requirements stage status based on remaining requirements count
+    update_requirements_status(project_id, db)
+
     return None
 
 

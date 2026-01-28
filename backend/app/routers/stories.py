@@ -35,7 +35,7 @@ from app.schemas import (
     StoryUpdateRequest,
     UserStoryResponse,
 )
-from app.services import generate_stories_task
+from app.services import generate_stories_task, update_export_status
 from app.services.llm import LLMError
 from app.services.stories_generator import StoriesGenerator
 
@@ -707,6 +707,9 @@ def export_stories(
         content = _export_json(stories)
         filename = f"{filename_base}-stories.json"
         media_type = "application/json"
+
+    # Auto-update project's export_status on first export
+    update_export_status(project_id, db)
 
     return Response(
         content=content,

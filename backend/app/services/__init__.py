@@ -8,6 +8,13 @@ from app.services.llm import LLMError, LLMProvider, get_provider
 from app.services.merger import MergeError, suggest_merge
 from app.services.parser import parse_file
 from app.services.prd_generator import PRDGenerator, generate_prd_task
+from app.services.stage_status import (
+    update_export_status,
+    update_mockups_status,
+    update_prd_status,
+    update_requirements_status,
+    update_stories_status,
+)
 from app.services.stories_generator import StoriesGenerator, generate_stories_task
 
 __all__ = [
@@ -32,4 +39,10 @@ __all__ = [
     # Stories Generation
     "StoriesGenerator",
     "generate_stories_task",
+    # Stage Status Updates
+    "update_requirements_status",
+    "update_prd_status",
+    "update_stories_status",
+    "update_mockups_status",
+    "update_export_status",
 ]

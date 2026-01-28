@@ -1327,6 +1327,11 @@ class PRDGenerator:
         self.db.commit()
         self.db.refresh(prd)
 
+        # Auto-update project's prd_status based on PRD state
+        # Import locally to avoid circular imports
+        from app.services.stage_status import update_prd_status
+        update_prd_status(str(prd.project_id), self.db)
+
         return next_version
 
 

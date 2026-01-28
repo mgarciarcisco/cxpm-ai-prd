@@ -355,6 +355,11 @@ class StoriesGenerator:
         self.db.commit()
         self.db.refresh(batch)
 
+        # Auto-update project's stories_status based on stories state
+        # Import locally to avoid circular imports
+        from app.services.stage_status import update_stories_status
+        update_stories_status(project_id, self.db)
+
         # Yield completion event
         yield {
             "type": "complete",
@@ -698,6 +703,11 @@ def generate_stories_task(
         batch.status = StoryBatchStatus.READY
         # Commit releases the lock acquired by _reserve_story_numbers
         db.commit()
+
+        # Auto-update project's stories_status based on stories state
+        # Import locally to avoid circular imports
+        from app.services.stage_status import update_stories_status
+        update_stories_status(batch.project_id, db)
 
     except NoRequirementsError as e:
         # Rollback any pending changes before recording error status

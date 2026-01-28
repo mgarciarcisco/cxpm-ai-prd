@@ -47,6 +47,7 @@ from app.services import (
     extract_stream,
     parse_file,
     suggest_merge,
+    update_requirements_status,
 )
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
@@ -796,5 +797,8 @@ def resolve_meeting(
 
     # Commit all changes
     db.commit()
+
+    # Auto-update requirements stage status based on new requirements count
+    update_requirements_status(project_id, db)
 
     return counts
