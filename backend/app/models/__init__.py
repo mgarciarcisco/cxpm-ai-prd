@@ -15,7 +15,7 @@ from app.models.project import (
 from app.models.requirement import Requirement
 from app.models.requirement_history import Action, Actor, RequirementHistory
 from app.models.requirement_source import RequirementSource
-from app.models.user_story import StoryFormat, StorySize, StoryStatus, UserStory
+from app.models.user_story import StoryFormat, StoryPriority, StorySize, StoryStatus, UserStory
 from app.models.story_batch import StoryBatch, StoryBatchStatus
 
 __all__ = [
@@ -42,6 +42,7 @@ __all__ = [
     "PRDStatus",
     "UserStory",
     "StoryFormat",
+    "StoryPriority",
     "StoryStatus",
     "StorySize",
     "StoryBatch",

@@ -35,6 +35,13 @@ class StorySize(str, enum.Enum):
     XL = "xl"
 
 
+class StoryPriority(str, enum.Enum):
+    """Enum for user story priority levels."""
+    P1 = "p1"
+    P2 = "p2"
+    P3 = "p3"
+
+
 class UserStory(Base):
     """UserStory model for storing user stories with metadata."""
 
@@ -54,6 +61,7 @@ class UserStory(Base):
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     labels = Column(JSON, nullable=True)
     size: Mapped[StorySize] = mapped_column(SAEnum(StorySize), nullable=True)
+    priority: Mapped[StoryPriority] = mapped_column(SAEnum(StoryPriority), nullable=True)
     requirement_ids = Column(JSON, nullable=True)
 
     # Status lifecycle

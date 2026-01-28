@@ -6,7 +6,7 @@ from enum import Enum
 from pydantic import BaseModel
 
 from app.models.story_batch import StoryBatchStatus
-from app.models.user_story import StoryFormat, StorySize, StoryStatus
+from app.models.user_story import StoryFormat, StoryPriority, StorySize, StoryStatus
 
 
 class StoryExportFormat(str, Enum):
@@ -46,6 +46,7 @@ class UserStoryResponse(BaseModel):
     order: int
     labels: list[str] | None = None
     size: StorySize | None = None
+    priority: StoryPriority | None = None
     requirement_ids: list[str] | None = None
     status: StoryStatus
     created_by: str | None = None
@@ -64,7 +65,7 @@ class StoryUpdateRequest(BaseModel):
     labels: list[str] | None = None
     size: StorySize | None = None
     status: StoryStatus | None = None
-    priority: str | None = None
+    priority: StoryPriority | None = None
 
 
 class StoryCreateRequest(BaseModel):
@@ -74,7 +75,7 @@ class StoryCreateRequest(BaseModel):
     acceptance_criteria: list[str] | None = None
     labels: list[str] | None = None
     size: StorySize | None = StorySize.M
-    priority: str | None = "medium"
+    priority: StoryPriority | None = StoryPriority.P2
     status: StoryStatus | None = StoryStatus.DRAFT
 
 

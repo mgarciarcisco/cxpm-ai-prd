@@ -130,6 +130,7 @@ def _story_to_response(story: UserStory) -> UserStoryResponse:
         order=story.order,
         labels=story.labels,
         size=story.size,
+        priority=story.priority,
         requirement_ids=story.requirement_ids,
         status=story.status,
         created_by=story.created_by,
@@ -542,6 +543,7 @@ def create_story(
         acceptance_criteria=request.acceptance_criteria or [],
         labels=request.labels or [],
         size=request.size,
+        priority=request.priority,
         status=request.status or StoryStatus.DRAFT,
         order=next_order,
         created_by=None,  # Would be set from auth context
@@ -587,6 +589,9 @@ def update_story(
 
     if update_data.size is not None:
         story.size = update_data.size
+
+    if update_data.priority is not None:
+        story.priority = update_data.priority
 
     if update_data.status is not None:
         story.status = update_data.status
