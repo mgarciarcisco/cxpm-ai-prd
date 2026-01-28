@@ -38,6 +38,17 @@ function UserStoriesStage({ project, onProjectUpdate }) {
   // Filters state
   const [filters, setFilters] = useState({ size: 'all', priority: 'all', search: '' });
 
+  // Collect all unique labels from all stories (for autocomplete)
+  const allLabels = useMemo(() => {
+    const labelSet = new Set();
+    stories.forEach((story) => {
+      if (story.labels && Array.isArray(story.labels)) {
+        story.labels.forEach((label) => labelSet.add(label));
+      }
+    });
+    return Array.from(labelSet).sort();
+  }, [stories]);
+
   // Filtered stories based on current filters
   const filteredStories = useMemo(() => {
     return stories.filter((story) => {
@@ -198,6 +209,55 @@ function UserStoriesStage({ project, onProjectUpdate }) {
     } catch (err) {
       console.error('Failed to delete story:', err);
       throw err; // Re-throw to keep modal open on error
+    }
+  };
+
+  // Handle adding a label to a story
+  const handleLabelAdd = async (storyId, labelText) => {
+    const story = stories.find((s) => s.id === storyId);
+    if (!story) return;
+
+    const currentLabels = story.labels || [];
+    // Avoid duplicates (case-insensitive)
+    if (currentLabels.some((l) => l.toLowerCase() === labelText.toLowerCase())) {
+      return;
+    }
+
+    const newLabels = [...currentLabels, labelText];
+
+    // Optimistic update
+    setStories((prev) =>
+      prev.map((s) => (s.id === storyId ? { ...s, labels: newLabels } : s))
+    );
+
+    try {
+      await updateStory(storyId, { labels: newLabels });
+    } catch (err) {
+      console.error('Failed to add label:', err);
+      // Revert on error
+      await loadStories();
+    }
+  };
+
+  // Handle removing a label from a story
+  const handleLabelRemove = async (storyId, labelText) => {
+    const story = stories.find((s) => s.id === storyId);
+    if (!story) return;
+
+    const currentLabels = story.labels || [];
+    const newLabels = currentLabels.filter((l) => l !== labelText);
+
+    // Optimistic update
+    setStories((prev) =>
+      prev.map((s) => (s.id === storyId ? { ...s, labels: newLabels } : s))
+    );
+
+    try {
+      await updateStory(storyId, { labels: newLabels });
+    } catch (err) {
+      console.error('Failed to remove label:', err);
+      // Revert on error
+      await loadStories();
     }
   };
 
@@ -436,6 +496,9 @@ function UserStoriesStage({ project, onProjectUpdate }) {
                   story={story}
                   onEdit={handleEditStory}
                   onDelete={handleDeleteStory}
+                  onLabelAdd={handleLabelAdd}
+                  onLabelRemove={handleLabelRemove}
+                  allLabels={allLabels}
                   showDragHandle={true}
                   dragHandleProps={{
                     onMouseDown: (e) => e.stopPropagation(),

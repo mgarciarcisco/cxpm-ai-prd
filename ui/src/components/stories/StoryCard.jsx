@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Modal from '../common/Modal';
+import { LabelInput } from './LabelInput';
 import './StoryCard.css';
 
 /**
@@ -18,6 +19,9 @@ import './StoryCard.css';
  * @param {string} story.format - Story format (classic, job_story)
  * @param {function} onEdit - Callback when edit button is clicked
  * @param {function} onDelete - Callback when story is deleted
+ * @param {function} onLabelAdd - Callback when a label is added, receives (storyId, labelText)
+ * @param {function} onLabelRemove - Callback when a label is removed, receives (storyId, labelText)
+ * @param {Array<string>} allLabels - All labels used across stories (for autocomplete)
  * @param {boolean} defaultExpanded - Whether the card starts expanded (default: false)
  * @param {boolean} showDragHandle - Whether to show the drag handle (default: true)
  * @param {Object} dragHandleProps - Props for the drag handle (from react-beautiful-dnd or similar)
@@ -26,6 +30,9 @@ export function StoryCard({
   story,
   onEdit,
   onDelete,
+  onLabelAdd,
+  onLabelRemove,
+  allLabels = [],
   defaultExpanded = false,
   showDragHandle = true,
   dragHandleProps = {},
@@ -242,19 +249,20 @@ export function StoryCard({
               </div>
             )}
 
-            {/* All Labels (in expanded view) */}
-            {story.labels && story.labels.length > 0 && (
-              <div className="story-card-section">
-                <h4 className="story-card-section-title">Labels</h4>
-                <div className="story-card-all-labels">
-                  {story.labels.map((label, index) => (
-                    <span key={index} className="story-card-label story-card-label--expanded">
-                      {label}
-                    </span>
-                  ))}
-                </div>
+            {/* Labels (editable in expanded view) */}
+            <div className="story-card-section">
+              <h4 className="story-card-section-title">Labels</h4>
+              <div className="story-card-labels-edit">
+                <LabelInput
+                  labels={story.labels || []}
+                  allLabels={allLabels}
+                  onAdd={(labelText) => onLabelAdd && onLabelAdd(story.id, labelText)}
+                  onRemove={(labelText) => onLabelRemove && onLabelRemove(story.id, labelText)}
+                  disabled={false}
+                  size="default"
+                />
               </div>
-            )}
+            </div>
 
             {/* Action Buttons */}
             <div className="story-card-actions">
