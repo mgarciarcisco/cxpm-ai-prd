@@ -7,7 +7,7 @@
   text-align: center;
 }
 
-.empty-state-icon {
+.empty-state__icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,19 +17,19 @@
   color: #9CA3AF;
 }
 
-.empty-state-icon svg {
+.empty-state__icon svg {
   width: 48px;
   height: 48px;
 }
 
-.empty-state-title {
+.empty-state__title {
   font-size: 18px;
   font-weight: 600;
   color: #1F2937;
   margin: 0 0 8px 0;
 }
 
-.empty-state-description {
+.empty-state__description {
   font-size: 14px;
   color: #6B7280;
   margin: 0 0 24px 0;
@@ -37,11 +37,19 @@
   line-height: 1.5;
 }
 
-.empty-state-action {
-  margin-top: 0;
+.empty-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
 }
 
-.empty-state-action button {
+.empty-state__action {
+  display: inline-flex;
+}
+
+.empty-state__action button {
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 500;
@@ -53,11 +61,30 @@
   transition: background-color 0.2s ease;
 }
 
-.empty-state-action button:hover {
+.empty-state__action button:hover {
   background-color: #3DBDB5;
 }
 
-.empty-state-action button:focus {
+.empty-state__action button:focus {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
+/* Secondary button variant for use with multiple actions */
+.empty-state__action button.secondary,
+.empty-state__action--secondary button {
+  color: #4ECDC4;
+  background-color: transparent;
+  border: 1px solid #4ECDC4;
+}
+
+.empty-state__action button.secondary:hover,
+.empty-state__action--secondary button:hover {
+  background-color: rgba(78, 205, 196, 0.1);
+}
+
+.empty-state__action button.secondary:focus,
+.empty-state__action--secondary button:focus {
   outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
