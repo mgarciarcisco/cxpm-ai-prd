@@ -1,0 +1,258 @@
+/* Dashboard Section */
+.dashboard-section {
+  padding: 0;
+}
+
+.dashboard-description {
+  color: #6B7280;
+  font-size: 0.875rem;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Dashboard Actions */
+.dashboard-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+}
+
+.dashboard-btn--primary {
+  background-color: #4ECDC4;
+  color: #FFFFFF;
+}
+
+.dashboard-btn--primary:hover {
+  background-color: #3BB5AD;
+}
+
+.dashboard-btn--secondary {
+  background-color: #F3F4F6;
+  color: #374151;
+}
+
+.dashboard-btn--secondary:hover {
+  background-color: #E5E7EB;
+}
+
+/* Dashboard Content */
+.dashboard-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dashboard Panels */
+.dashboard-panel {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-height: 300px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.panel-header .panel-title {
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.panel-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4B5563;
+  background-color: #F3F4F6;
+  border-radius: 12px;
+}
+
+.panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+/* Requirements Summary */
+.requirements-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.requirements-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.requirement-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background-color: #F9FAFB;
+  border-radius: 6px;
+}
+
+.section-name {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.section-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4ECDC4;
+}
+
+.last-activity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #E5E7EB;
+  font-size: 0.75rem;
+}
+
+.last-activity-label {
+  color: #6B7280;
+}
+
+.last-activity-value {
+  color: #374151;
+  font-weight: 500;
+}
+
+/* Requirements Summary Placeholder */
+.requirements-summary-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #9CA3AF;
+}
+
+.requirements-summary-placeholder svg {
+  margin-bottom: 1rem;
+}
+
+.requirements-summary-placeholder p {
+  font-size: 0.875rem;
+  margin: 0;
+  max-width: 280px;
+}
+
+/* Loading State */
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.dashboard-loading p {
+  margin-top: 1rem;
+  color: #6B7280;
+  font-size: 0.875rem;
+}
+
+/* Error State */
+.dashboard-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.dashboard-error p {
+  color: #DC2626;
+  font-size: 0.875rem;
+  margin: 0 0 1rem 0;
+}
+
+/* Empty State Link Button */
+.empty-state-link-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background-color: #4ECDC4;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.empty-state-link-btn:hover {
+  background-color: #3DBDB5;
+}
+
+.empty-state-link-btn:focus {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .dashboard-actions {
+    flex-direction: column;
+  }
+
+  .dashboard-btn {
+    justify-content: center;
+  }
+
+  .dashboard-panel {
+    min-height: 250px;
+  }
+}

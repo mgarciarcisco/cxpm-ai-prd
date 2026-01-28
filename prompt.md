@@ -4,13 +4,21 @@ You are an autonomous coding agent working on a software project.
 
 ## Your Task
 
+<<<<<<< HEAD
 1. Read the PRD file (see PRD Location section below, or default to `prd.json`)
+=======
+1. Read the PRD at `prd.json` (in the same directory as this file)
+>>>>>>> origin/ralph/meeting-notes-to-requirements
 2. Read the progress log at `progress.txt` (check Codebase Patterns section first)
 3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
 4. Pick the **highest priority** user story where `passes: false`
 5. Implement that single user story
 6. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
+<<<<<<< HEAD
 7. Update CLAUDE.md files if you discover reusable patterns (see below)
+=======
+7. Update AGENTS.md files if you discover reusable patterns (see below)
+>>>>>>> origin/ralph/meeting-notes-to-requirements
 8. If checks pass, commit ALL changes with message: `feat: [Story ID] - [Story Title]`
 9. Update the PRD to set `passes: true` for the completed story
 10. Append your progress to `progress.txt`
@@ -20,6 +28,10 @@ You are an autonomous coding agent working on a software project.
 APPEND to progress.txt (never replace, always append):
 ```
 ## [Date/Time] - [Story ID]
+<<<<<<< HEAD
+=======
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+>>>>>>> origin/ralph/meeting-notes-to-requirements
 - What was implemented
 - Files changed
 - **Learnings for future iterations:**
@@ -29,6 +41,11 @@ APPEND to progress.txt (never replace, always append):
 ---
 ```
 
+<<<<<<< HEAD
+=======
+Include the thread URL so future iterations can use the `read_thread` tool to reference previous work if needed.
+
+>>>>>>> origin/ralph/meeting-notes-to-requirements
 The learnings section is critical - it helps future iterations avoid repeating mistakes and understand the codebase better.
 
 ## Consolidate Patterns
@@ -44,12 +61,21 @@ If you discover a **reusable pattern** that future iterations should know, add i
 
 Only add patterns that are **general and reusable**, not story-specific details.
 
+<<<<<<< HEAD
 ## Update CLAUDE.md Files
 
 Before committing, check if any edited files have learnings worth preserving in nearby CLAUDE.md files:
 
 1. **Identify directories with edited files** - Look at which directories you modified
 2. **Check for existing CLAUDE.md** - Look for CLAUDE.md in those directories or parent directories
+=======
+## Update AGENTS.md Files
+
+Before committing, check if any edited files have learnings worth preserving in nearby AGENTS.md files:
+
+1. **Identify directories with edited files** - Look at which directories you modified
+2. **Check for existing AGENTS.md** - Look for AGENTS.md in those directories or parent directories
+>>>>>>> origin/ralph/meeting-notes-to-requirements
 3. **Add valuable learnings** - If you discovered something future developers/agents should know:
    - API patterns or conventions specific to that module
    - Gotchas or non-obvious requirements
@@ -57,7 +83,11 @@ Before committing, check if any edited files have learnings worth preserving in 
    - Testing approaches for that area
    - Configuration or environment requirements
 
+<<<<<<< HEAD
 **Examples of good CLAUDE.md additions:**
+=======
+**Examples of good AGENTS.md additions:**
+>>>>>>> origin/ralph/meeting-notes-to-requirements
 - "When modifying X, also update Y to keep them in sync"
 - "This module uses pattern Z for all API calls"
 - "Tests require the dev server running on PORT 3000"
@@ -68,7 +98,11 @@ Before committing, check if any edited files have learnings worth preserving in 
 - Temporary debugging notes
 - Information already in progress.txt
 
+<<<<<<< HEAD
 Only update CLAUDE.md if you have **genuinely reusable knowledge** that would help future work in that directory.
+=======
+Only update AGENTS.md if you have **genuinely reusable knowledge** that would help future work in that directory.
+>>>>>>> origin/ralph/meeting-notes-to-requirements
 
 ## Quality Requirements
 
@@ -77,6 +111,7 @@ Only update CLAUDE.md if you have **genuinely reusable knowledge** that would he
 - Keep changes focused and minimal
 - Follow existing code patterns
 
+<<<<<<< HEAD
 ## Browser Testing (If Available)
 
 For any story that changes UI, verify it works in the browser if you have browser testing tools configured (e.g., via MCP):
@@ -86,6 +121,18 @@ For any story that changes UI, verify it works in the browser if you have browse
 3. Take a screenshot if helpful for the progress log
 
 If no browser tools are available, note in your progress report that manual browser verification is needed.
+=======
+## Browser Testing (Required for Frontend Stories)
+
+For any story that changes UI, you MUST verify it works in the browser:
+
+1. Load the `dev-browser` skill
+2. Navigate to the relevant page
+3. Verify the UI changes work as expected
+4. Take a screenshot if helpful for the progress log
+
+A frontend story is NOT complete until browser verification passes.
+>>>>>>> origin/ralph/meeting-notes-to-requirements
 
 ## Stop Condition
 
@@ -102,4 +149,7 @@ If there are still stories with `passes: false`, end your response normally (ano
 - Commit frequently
 - Keep CI green
 - Read the Codebase Patterns section in progress.txt before starting
+<<<<<<< HEAD
 - Cache invalidation: 2026-01-26T21:55-v2
+=======
+>>>>>>> origin/ralph/meeting-notes-to-requirements

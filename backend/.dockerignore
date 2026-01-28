@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Database (will be in data volume)
+*.db
+
+# Alembic
+alembic/versions/__pycache__/
+
+# Other
+.git/
+.gitignore
+*.md

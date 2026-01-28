@@ -1,0 +1,377 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { ItemRow } from '../../src/components/common/ItemRow'
+
+// Mock the api module
+vi.mock('../../src/services/api', () => ({
+  put: vi.fn(),
+  del: vi.fn()
+}))
+
+import { put, del } from '../../src/services/api'
+
+describe('ItemRow', () => {
+  const mockItem = {
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    content: 'Test item content',
+    section: 'problems'
+  }
+
+  const defaultProps = {
+    item: mockItem,
+    onEdit: vi.fn(),
+    onDelete: vi.fn(),
+    draggable: false
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('Basic Rendering', () => {
+    it('renders item content', () => {
+      render(<ItemRow {...defaultProps} />)
+      expect(screen.getByText('Test item content')).toBeInTheDocument()
+    })
+
+    it('renders edit button', () => {
+      render(<ItemRow {...defaultProps} />)
+      expect(screen.getByLabelText('Edit item')).toBeInTheDocument()
+    })
+
+    it('renders delete button', () => {
+      render(<ItemRow {...defaultProps} />)
+      expect(screen.getByLabelText('Delete item')).toBeInTheDocument()
+    })
+
+    it('renders drag handle', () => {
+      render(<ItemRow {...defaultProps} />)
+      expect(screen.getByLabelText('Drag to reorder')).toBeInTheDocument()
+    })
+  })
+
+  describe('Inline Editing', () => {
+    it('switches to edit mode when edit button is clicked', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      // Should show textarea with current content
+      expect(screen.getByDisplayValue('Test item content')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+    })
+
+    it('allows editing content in textarea', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: 'Updated content' } })
+
+      expect(screen.getByDisplayValue('Updated content')).toBeInTheDocument()
+    })
+
+    it('cancels edit and restores original content', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      // Enter edit mode
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      // Change content
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: 'Modified content' } })
+
+      // Cancel
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+      // Should show original content, not modified
+      expect(screen.getByText('Test item content')).toBeInTheDocument()
+      expect(screen.queryByDisplayValue('Modified content')).not.toBeInTheDocument()
+    })
+
+    it('saves changes via API when save button is clicked', async () => {
+      const updatedItem = { ...mockItem, content: 'Updated content' }
+      put.mockResolvedValue(updatedItem)
+
+      render(<ItemRow {...defaultProps} />)
+
+      // Enter edit mode
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      // Change content
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: 'Updated content' } })
+
+      // Save
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => {
+        expect(put).toHaveBeenCalledWith(`/api/meeting-items/${mockItem.id}`, {
+          content: 'Updated content'
+        })
+        expect(defaultProps.onEdit).toHaveBeenCalledWith(updatedItem)
+      })
+    })
+
+    it('displays error message when save fails', async () => {
+      put.mockRejectedValue(new Error('Failed to save'))
+
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: 'Updated content' } })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to save')).toBeInTheDocument()
+      })
+    })
+
+    it('disables save button when content is empty', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: '' } })
+
+      expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    })
+
+    it('disables save button when content is only whitespace', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: '   ' } })
+
+      expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    })
+
+    it('cancels edit on Escape key', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: 'Modified' } })
+      fireEvent.keyDown(textarea, { key: 'Escape' })
+
+      // Should exit edit mode
+      expect(screen.getByText('Test item content')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+    })
+
+    it('saves on Ctrl+Enter', async () => {
+      const updatedItem = { ...mockItem, content: 'Saved via keyboard' }
+      put.mockResolvedValue(updatedItem)
+
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: 'Saved via keyboard' } })
+      fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true })
+
+      await waitFor(() => {
+        expect(put).toHaveBeenCalledWith(`/api/meeting-items/${mockItem.id}`, {
+          content: 'Saved via keyboard'
+        })
+      })
+    })
+
+    it('shows "Saving..." text while save is in progress', async () => {
+      put.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve(mockItem), 100)))
+
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: 'Updated' } })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+      expect(screen.getByText('Saving...')).toBeInTheDocument()
+    })
+  })
+
+  describe('Delete Confirmation', () => {
+    it('shows confirmation dialog when delete button is clicked', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Delete item'))
+
+      expect(screen.getByText('Delete this item?')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+    })
+
+    it('cancels delete when cancel button is clicked', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Delete item'))
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+      // Should return to normal view
+      expect(screen.getByText('Test item content')).toBeInTheDocument()
+      expect(screen.queryByText('Delete this item?')).not.toBeInTheDocument()
+    })
+
+    it('deletes item via API when confirm button is clicked', async () => {
+      del.mockResolvedValue()
+
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Delete item'))
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+      await waitFor(() => {
+        expect(del).toHaveBeenCalledWith(`/api/meeting-items/${mockItem.id}`)
+        expect(defaultProps.onDelete).toHaveBeenCalledWith(mockItem)
+      })
+    })
+
+    it('displays error message when delete fails', async () => {
+      del.mockRejectedValue(new Error('Delete failed'))
+
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Delete item'))
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+      await waitFor(() => {
+        expect(screen.getByText('Delete failed')).toBeInTheDocument()
+      })
+    })
+
+    it('shows "Deleting..." text while delete is in progress', async () => {
+      del.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
+
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Delete item'))
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+      expect(screen.getByText('Deleting...')).toBeInTheDocument()
+    })
+
+    it('disables buttons while delete is in progress', async () => {
+      del.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
+
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Delete item'))
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+      expect(screen.getByText('Deleting...').closest('button')).toBeDisabled()
+    })
+  })
+
+  describe('Drag and Drop', () => {
+    it('applies dragging class when isDragging is true', () => {
+      render(<ItemRow {...defaultProps} isDragging={true} />)
+
+      const row = screen.getByText('Test item content').closest('.item-row')
+      expect(row).toHaveClass('item-row--dragging')
+    })
+
+    it('applies drag-over class when isDragOver is true', () => {
+      render(<ItemRow {...defaultProps} isDragOver={true} />)
+
+      const row = screen.getByText('Test item content').closest('.item-row')
+      expect(row).toHaveClass('item-row--drag-over')
+    })
+
+    it('sets draggable attribute when draggable prop is true', () => {
+      render(<ItemRow {...defaultProps} draggable={true} />)
+
+      const row = screen.getByText('Test item content').closest('.item-row')
+      expect(row).toHaveAttribute('draggable', 'true')
+    })
+
+    it('calls onDragStart when dragging starts', () => {
+      const onDragStart = vi.fn()
+      render(<ItemRow {...defaultProps} draggable={true} onDragStart={onDragStart} />)
+
+      const row = screen.getByText('Test item content').closest('.item-row')
+      fireEvent.dragStart(row)
+
+      expect(onDragStart).toHaveBeenCalled()
+    })
+
+    it('calls onDragEnd when dragging ends', () => {
+      const onDragEnd = vi.fn()
+      render(<ItemRow {...defaultProps} draggable={true} onDragEnd={onDragEnd} />)
+
+      const row = screen.getByText('Test item content').closest('.item-row')
+      fireEvent.dragEnd(row)
+
+      expect(onDragEnd).toHaveBeenCalled()
+    })
+
+    it('calls onDragOver when dragged over', () => {
+      const onDragOver = vi.fn()
+      render(<ItemRow {...defaultProps} onDragOver={onDragOver} />)
+
+      const row = screen.getByText('Test item content').closest('.item-row')
+      fireEvent.dragOver(row)
+
+      expect(onDragOver).toHaveBeenCalled()
+    })
+
+    it('calls onDrop when dropped', () => {
+      const onDrop = vi.fn()
+      render(<ItemRow {...defaultProps} onDrop={onDrop} />)
+
+      const row = screen.getByText('Test item content').closest('.item-row')
+      fireEvent.drop(row)
+
+      expect(onDrop).toHaveBeenCalled()
+    })
+  })
+
+  describe('Edge Cases', () => {
+    it('handles item without onEdit callback', () => {
+      render(<ItemRow item={mockItem} onDelete={vi.fn()} />)
+
+      // Should render without errors
+      expect(screen.getByText('Test item content')).toBeInTheDocument()
+    })
+
+    it('handles item without onDelete callback', () => {
+      render(<ItemRow item={mockItem} onEdit={vi.fn()} />)
+
+      // Should render without errors
+      expect(screen.getByText('Test item content')).toBeInTheDocument()
+    })
+
+    it('trims whitespace from content before saving', async () => {
+      const updatedItem = { ...mockItem, content: 'Trimmed content' }
+      put.mockResolvedValue(updatedItem)
+
+      render(<ItemRow {...defaultProps} />)
+
+      fireEvent.click(screen.getByLabelText('Edit item'))
+
+      const textarea = screen.getByDisplayValue('Test item content')
+      fireEvent.change(textarea, { target: { value: '  Trimmed content  ' } })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => {
+        expect(put).toHaveBeenCalledWith(`/api/meeting-items/${mockItem.id}`, {
+          content: 'Trimmed content'
+        })
+      })
+    })
+  })
+})

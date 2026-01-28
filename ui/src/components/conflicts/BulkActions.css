@@ -1,0 +1,57 @@
+/* BulkActions Container */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Bulk Action Button Base */
+.bulk-actions-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bulk-actions-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary Button (Accept AI) */
+.bulk-actions-btn--primary {
+  background-color: #F59E0B;
+  color: #FFFFFF;
+}
+
+.bulk-actions-btn--primary:hover:not(:disabled) {
+  background-color: #D97706;
+}
+
+.bulk-actions-btn--primary:focus:not(:disabled) {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
+
+.bulk-actions-btn--primary svg {
+  fill: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .bulk-actions {
+    flex-wrap: wrap;
+  }
+
+  .bulk-actions-btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 140px;
+  }
+}

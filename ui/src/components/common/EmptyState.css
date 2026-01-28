@@ -1,0 +1,63 @@
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: #9CA3AF;
+}
+
+.empty-state-icon svg {
+  width: 48px;
+  height: 48px;
+}
+
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 8px 0;
+}
+
+.empty-state-description {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0 0 24px 0;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.empty-state-action {
+  margin-top: 0;
+}
+
+.empty-state-action button {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background-color: #4ECDC4;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.empty-state-action button:hover {
+  background-color: #3DBDB5;
+}
+
+.empty-state-action button:focus {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}

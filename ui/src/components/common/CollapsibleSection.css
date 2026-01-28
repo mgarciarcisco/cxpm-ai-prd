@@ -1,0 +1,70 @@
+.collapsible-section {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  margin-bottom: 0.75rem;
+}
+
+.collapsible-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  transition: background-color 0.2s;
+}
+
+.collapsible-section-header:hover {
+  background-color: #f9fafb;
+}
+
+.collapsible-section-header:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+.collapsible-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.collapsible-section-chevron {
+  transition: transform 0.2s ease-in-out;
+}
+
+.collapsible-section-chevron--expanded {
+  transform: rotate(90deg);
+}
+
+.collapsible-section-title {
+  flex: 1;
+  color: #111827;
+}
+
+.collapsible-section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.5rem;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+
+.collapsible-section-content {
+  padding: 0 1rem 1rem 1rem;
+  border-top: 1px solid #e5e7eb;
+}

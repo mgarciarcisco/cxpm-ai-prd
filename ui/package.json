@@ -5,16 +5,33 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "crypto-browserify": "^3.12.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "crypto-browserify": "^3.12.0"
+    "react-router-dom": "^7.12.0",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@playwright/test": "^1.57.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.14.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.5"
+    "jsdom": "^27.4.0",
+    "vite": "^6.0.5",
+    "vitest": "^4.0.18"
   },
   "overrides": {
     "rollup": "^4.28.1"
