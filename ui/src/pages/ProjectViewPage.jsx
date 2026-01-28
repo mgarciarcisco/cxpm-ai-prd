@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { get } from '../services/api';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import './ProjectViewPage.css';
 
 /**
@@ -8,11 +9,22 @@ import './ProjectViewPage.css';
  * Displays project header with name, description, and settings gear.
  * Route: /projects/:id
  */
+// Stage labels for breadcrumb display
+const STAGE_LABELS = {
+  requirements: 'Requirements',
+  prd: 'PRD',
+  stories: 'User Stories',
+  mockups: 'Mockups',
+  export: 'Export',
+};
+
 function ProjectViewPage() {
   const { id } = useParams();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [currentStage, setCurrentStage] = useState(null); // Will be set by stepper in P2-001c
 
   const fetchProject = useCallback(async () => {
     try {
@@ -34,6 +46,23 @@ function ProjectViewPage() {
   const handleSettingsClick = () => {
     // Placeholder - will be implemented in P2-003 (Project Settings Modal)
     console.log('Settings clicked for project:', id);
+  };
+
+  // Build breadcrumb items dynamically
+  const getBreadcrumbItems = () => {
+    const items = [
+      { label: 'Dashboard', href: '/dashboard' },
+    ];
+
+    if (project) {
+      items.push({ label: project.name, href: `/projects/${id}` });
+    }
+
+    if (currentStage && STAGE_LABELS[currentStage]) {
+      items.push({ label: STAGE_LABELS[currentStage] });
+    }
+
+    return items;
   };
 
   // Loading state
@@ -112,6 +141,9 @@ function ProjectViewPage() {
   return (
     <main className="main-content">
       <div className="project-view">
+        {/* Breadcrumbs Navigation */}
+        <Breadcrumbs items={getBreadcrumbItems()} />
+
         {/* Project Header */}
         <header className="project-view__header">
           <div className="project-view__header-content">
