@@ -623,6 +623,60 @@ def archive_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDStatusResponse
     )
 
 
+@router.post("/prds/{prd_id}/restore", response_model=PRDResponse)
+def restore_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDResponse:
+    """Restore a historical PRD version by creating a new version with its content.
+
+    Creates a new PRD with the next version number, copying the title, sections,
+    and raw_markdown from the source PRD. The new PRD is immediately set to ready status.
+
+    Args:
+        prd_id: The PRD to restore from (can be any historical version).
+        db: Database session.
+
+    Returns:
+        The newly created PRD with restored content.
+
+    Raises:
+        HTTPException 400: If source PRD is not in ready/archived status.
+        HTTPException 404: If PRD not found.
+    """
+    # Get the source PRD
+    source_prd = _get_prd_or_404(prd_id, db)
+
+    # Only allow restoring from ready or archived PRDs
+    if source_prd.status not in (PRDStatus.READY, PRDStatus.ARCHIVED):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot restore from PRD with status '{source_prd.status.value}'. Only ready or archived PRDs can be restored.",
+        )
+
+    # Calculate next version number for this project
+    max_version = db.query(func.max(PRD.version)).filter(
+        PRD.project_id == source_prd.project_id,
+        PRD.deleted_at.is_(None),
+    ).scalar()
+    next_version = (max_version or 0) + 1
+
+    # Create new PRD with content from source
+    new_prd = PRD(
+        project_id=source_prd.project_id,
+        version=next_version,
+        title=source_prd.title,
+        mode=source_prd.mode,
+        sections=source_prd.sections,
+        raw_markdown=source_prd.raw_markdown,
+        status=PRDStatus.READY,
+        created_by=None,  # Would be set from auth context
+        updated_by=None,
+    )
+    db.add(new_prd)
+    db.commit()
+    db.refresh(new_prd)
+
+    return _prd_to_response(new_prd)
+
+
 @router.get("/prds/{prd_id}/export")
 def export_prd(
     prd_id: str,

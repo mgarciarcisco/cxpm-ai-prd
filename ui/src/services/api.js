@@ -188,6 +188,15 @@ export async function deletePRD(prdId) {
 }
 
 /**
+ * Restore a historical PRD version by creating a new version with its content
+ * @param {string} prdId - PRD UUID to restore from
+ * @returns {Promise<object>} - Newly created PRD object
+ */
+export async function restorePRD(prdId) {
+  return post(`/api/prds/${prdId}/restore`, {});
+}
+
+/**
  * Export PRD in specified format
  * @param {string} prdId - PRD UUID
  * @param {string} format - Export format ('markdown' or 'json')

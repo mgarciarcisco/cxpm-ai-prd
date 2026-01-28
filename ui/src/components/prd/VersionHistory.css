@@ -259,3 +259,39 @@
 .version-history__item-loading {
   color: #64748b;
 }
+
+/* Restore button */
+.version-history__restore {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: #3b82f6;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: white;
+  font-family: inherit;
+  margin-left: 0.5rem;
+}
+
+.version-history__restore:hover {
+  background: #2563eb;
+}
+
+.version-history__restore:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.version-history__restore:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.version-history__restore svg {
+  flex-shrink: 0;
+}

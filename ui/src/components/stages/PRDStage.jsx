@@ -58,6 +58,9 @@ function PRDStage({ project, onProjectUpdate }) {
   // Version preview state
   const [previewVersion, setPreviewVersion] = useState(null);
 
+  // Restore feedback state
+  const [restoreFeedback, setRestoreFeedback] = useState(null); // { type: 'success'|'error', message: string }
+
   // Use the PRD streaming hook
   const {
     getSortedSections,
@@ -315,6 +318,28 @@ function PRDStage({ project, onProjectUpdate }) {
     setPreviewVersion(null);
   }, []);
 
+  // Handle version restore - updates PRD data to the newly created version
+  const handleVersionRestore = useCallback((newPrd) => {
+    // Update PRD data to the newly created version
+    setPrdData(newPrd);
+    setEditContent(newPrd.raw_markdown || '');
+    setLastUpdated(newPrd.updated_at);
+    setSaveStatus('saved');
+    // Clear preview state since we're now on the new (restored) version
+    setPreviewVersion(null);
+    // Show success feedback
+    setRestoreFeedback({
+      type: 'success',
+      message: `Restored as Version ${newPrd.version}`,
+    });
+    // Clear feedback after 3 seconds
+    setTimeout(() => setRestoreFeedback(null), 3000);
+    // Notify parent to refresh project data
+    if (onProjectUpdate) {
+      onProjectUpdate();
+    }
+  }, [onProjectUpdate]);
+
   // Determine if PRD is already ready
   const isReady = project?.prd_status === 'ready';
 
@@ -501,10 +526,24 @@ function PRDStage({ project, onProjectUpdate }) {
                   currentPrdId={prdData.id}
                   currentVersion={prdData.version}
                   onVersionLoad={handleVersionLoad}
+                  onRestore={handleVersionRestore}
+                  previewingVersionId={previewVersion?.id}
                 />
               )}
             </div>
             <div className="prd-viewer__meta">
+              {/* Restore feedback notification */}
+              {restoreFeedback && (
+                <span className={`prd-viewer__feedback prd-viewer__feedback--${restoreFeedback.type}`}>
+                  {restoreFeedback.type === 'success' && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                  )}
+                  {restoreFeedback.message}
+                </span>
+              )}
               {streamStatus === 'partial' && !isViewingOldVersion && (
                 <span className="prd-viewer__warning">
                   Some sections failed to generate
@@ -716,9 +755,23 @@ function PRDStage({ project, onProjectUpdate }) {
                 currentPrdId={prdData.id}
                 currentVersion={prdData.version}
                 onVersionLoad={handleVersionLoad}
+                onRestore={handleVersionRestore}
+                previewingVersionId={previewVersion?.id}
               />
             </div>
             <div className="prd-viewer__meta">
+              {/* Restore feedback notification */}
+              {restoreFeedback && (
+                <span className={`prd-viewer__feedback prd-viewer__feedback--${restoreFeedback.type}`}>
+                  {restoreFeedback.type === 'success' && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                  )}
+                  {restoreFeedback.message}
+                </span>
+              )}
               {!isViewingOldVersion && lastUpdated && (
                 <span className="prd-viewer__timestamp">
                   Last edited {formatTimeAgo(lastUpdated)}

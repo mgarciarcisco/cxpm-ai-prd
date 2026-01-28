@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { listPRDs, getPRD } from '../../services/api';
+import { listPRDs, getPRD, restorePRD } from '../../services/api';
 import './VersionHistory.css';
 
 /**
@@ -11,13 +11,16 @@ import './VersionHistory.css';
  * @param {number} props.currentVersion - Current PRD version number
  * @param {function} props.onVersionSelect - Callback when a version is selected for preview
  * @param {function} props.onVersionLoad - Callback when version data is loaded (receives PRD data)
+ * @param {function} props.onRestore - Callback when a version is successfully restored (receives new PRD data)
+ * @param {string} props.previewingVersionId - ID of version currently being previewed (for restore button)
  */
-function VersionHistory({ projectId, currentPrdId, currentVersion, onVersionSelect, onVersionLoad }) {
+function VersionHistory({ projectId, currentPrdId, currentVersion, onVersionSelect, onVersionLoad, onRestore, previewingVersionId }) {
   const [isOpen, setIsOpen] = useState(false);
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [previewingId, setPreviewingId] = useState(null);
+  const [restoring, setRestoring] = useState(false);
   const dropdownRef = useRef(null);
 
   // Fetch versions when dropdown opens
@@ -107,6 +110,25 @@ function VersionHistory({ projectId, currentPrdId, currentVersion, onVersionSele
     }
   };
 
+  // Handle restore - creates a new version from the previewing version
+  const handleRestore = async () => {
+    if (!previewingVersionId) return;
+
+    setRestoring(true);
+    try {
+      const newPrd = await restorePRD(previewingVersionId);
+      // Notify parent of successful restore
+      if (onRestore) {
+        onRestore(newPrd);
+      }
+    } catch (err) {
+      console.error('Failed to restore version:', err);
+      setError('Failed to restore version');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -143,6 +165,9 @@ function VersionHistory({ projectId, currentPrdId, currentVersion, onVersionSele
   if (!currentVersion) {
     return null;
   }
+
+  // Check if we're previewing a historical version (not the current one)
+  const isPreviewingOldVersion = previewingVersionId && previewingVersionId !== currentPrdId;
 
   return (
     <div className="version-history" ref={dropdownRef}>
@@ -182,6 +207,38 @@ function VersionHistory({ projectId, currentPrdId, currentVersion, onVersionSele
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
+
+      {/* Restore button - shown when previewing a historical version */}
+      {isPreviewingOldVersion && (
+        <button
+          type="button"
+          className="version-history__restore"
+          onClick={handleRestore}
+          disabled={restoring}
+          title="Restore this version as a new version"
+        >
+          {restoring ? (
+            <svg className="version-history__spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
+            </svg>
+          ) : (
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+          )}
+          <span>{restoring ? 'Restoring...' : 'Restore'}</span>
+        </button>
+      )}
 
       {isOpen && (
         <div className="version-history__dropdown" role="listbox">
