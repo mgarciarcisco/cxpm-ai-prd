@@ -1535,17 +1535,19 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
          if [ -n "$MODEL_OVERRIDE" ]; then CMD="$CMD --model $MODEL_OVERRIDE"; fi
 
          if [ "$STREAM" = true ]; then
-             echo -e "  ${DIM}[Streaming mode - showing tool calls]${RESET}"
+             echo -e "  ${DIM}[Streaming - tool calls]${RESET}"
              echo ""
-             # Run with timeout, tee to file and filter for display
-             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" | grep --line-buffered -E '"type":"(tool_use|result)"' | while IFS= read -r line; do
-                 if echo "$line" | grep -q '"type":"tool_use"'; then
-                     tool_name=$(echo "$line" | jq -r '.name // empty' 2>/dev/null)
-                     [[ -n "$tool_name" ]] && echo -e "${YELLOW}▶ $tool_name${RESET}"
-                 elif echo "$line" | grep -q '"type":"result"'; then
-                     echo -e "${GREEN}✓ Iteration Complete${RESET}"
-                 fi
-             done
+             # Run with timeout, tee to file, filter and display with perl (unbuffered)
+             timeout "$TASK_TIMEOUT" bash -c "$CMD -p \"\$(cat '$PROMPT_TMP')\" 2>&1" | tee "$tmpfile" | perl -ne '
+                 BEGIN { $| = 1; }  # unbuffered output
+                 if (/"type":"tool_use".*"name":"([^"]+)"/) {
+                     print "\e[33m▶ $1\e[0m\n";
+                 } elsif (/"name":"([^"]+)".*"type":"tool_use"/) {
+                     print "\e[33m▶ $1\e[0m\n";
+                 } elsif (/"type":"result"/) {
+                     print "\e[32m✓ Iteration Complete\e[0m\n";
+                 }
+             '
              AI_EXIT_CODE=${PIPESTATUS[0]}
          elif [ "$VERBOSE" = true ]; then
              echo -e "  ${DIM}[Verbose mode - raw JSON output]${RESET}"
