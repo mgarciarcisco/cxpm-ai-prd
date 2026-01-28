@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { StoryEditModal } from '../components/stories/StoryEditModal';
+import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
 import './QuickConvertStoriesPage.css';
 
 // Input source options
@@ -160,6 +161,13 @@ function QuickConvertStoriesPage() {
   // Edit modal state
   const [editingStory, setEditingStory] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Save to project modal state
+  const [showSaveModal, setShowSaveModal] = useState(false);
+
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const hasContent = content.trim().length > 0;
 
@@ -328,6 +336,102 @@ function QuickConvertStoriesPage() {
   // Delete story
   const handleDeleteStory = (storyId) => {
     setGeneratedStories(prev => prev.filter(story => story.id !== storyId));
+  };
+
+  // Card drag and drop handlers for reordering
+  const handleCardDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    // Add a slight delay to show the drag visual
+    e.target.style.opacity = '0.5';
+  };
+
+  const handleCardDragEnd = (e) => {
+    e.target.style.opacity = '1';
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleCardDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleCardDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleCardDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    setGeneratedStories(prev => {
+      const newStories = [...prev];
+      const [draggedItem] = newStories.splice(draggedIndex, 1);
+      newStories.splice(dropIndex, 0, draggedItem);
+      // Re-assign story_ids based on new order
+      return newStories.map((story, idx) => ({
+        ...story,
+        story_id: `US-${String(idx + 1).padStart(3, '0')}`,
+      }));
+    });
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  // Action handlers
+  const handleSaveToProject = () => {
+    setShowSaveModal(true);
+  };
+
+  const handleGenerateMockups = () => {
+    // Get selected stories and navigate to mockups page
+    const selectedStories = generatedStories?.filter(s => s.selected) || [];
+    if (selectedStories.length === 0) {
+      alert('Please select at least one story to generate mockups.');
+      return;
+    }
+    // Store in sessionStorage for the mockups page to use
+    sessionStorage.setItem('qc-stories-for-mockups', JSON.stringify(selectedStories));
+    window.location.href = '/quick-convert/mockups';
+  };
+
+  const handleDownload = () => {
+    const selectedStories = generatedStories?.filter(s => s.selected) || [];
+    if (selectedStories.length === 0) {
+      alert('Please select at least one story to download.');
+      return;
+    }
+
+    // Format stories for download
+    const downloadData = selectedStories.map(story => ({
+      id: story.story_id,
+      title: story.title,
+      description: story.description,
+      acceptance_criteria: story.acceptance_criteria || [],
+      size: story.size,
+      priority: story.priority,
+      labels: story.labels || [],
+    }));
+
+    // Create and download JSON file
+    const blob = new Blob([JSON.stringify(downloadData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `user-stories-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Get selected count
@@ -628,24 +732,92 @@ function QuickConvertStoriesPage() {
         </div>
       </div>
 
-      {/* Selection controls */}
-      <div className="qc-stories__selection-controls">
-        <button
-          type="button"
-          className="qc-stories__select-all-btn"
-          onClick={handleSelectAll}
-        >
-          {generatedStories?.every(s => s.selected) ? 'Deselect All' : 'Select All'}
-        </button>
+      {/* Action bar */}
+      <div className="qc-stories__action-bar">
+        <div className="qc-stories__action-bar-left">
+          <button
+            type="button"
+            className="qc-stories__select-all-btn"
+            onClick={handleSelectAll}
+          >
+            {generatedStories?.every(s => s.selected) ? 'Deselect All' : 'Select All'}
+          </button>
+          <span className="qc-stories__reorder-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <polyline points="19 12 12 19 5 12" />
+            </svg>
+            Drag to reorder
+          </span>
+        </div>
+        <div className="qc-stories__action-bar-right">
+          <button
+            type="button"
+            className="qc-stories__action-btn qc-stories__action-btn--secondary"
+            onClick={handleDownload}
+            disabled={selectedCount === 0}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download
+          </button>
+          <button
+            type="button"
+            className="qc-stories__action-btn qc-stories__action-btn--secondary"
+            onClick={handleGenerateMockups}
+            disabled={selectedCount === 0}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="3" y1="9" x2="21" y2="9" />
+              <line x1="9" y1="21" x2="9" y2="9" />
+            </svg>
+            Generate Mockups
+          </button>
+          <button
+            type="button"
+            className="qc-stories__action-btn qc-stories__action-btn--primary"
+            onClick={handleSaveToProject}
+            disabled={selectedCount === 0}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Save to Project
+          </button>
+        </div>
       </div>
 
       {/* Story cards */}
       <div className="qc-stories__cards">
-        {generatedStories?.map((story) => (
+        {generatedStories?.map((story, index) => (
           <div
             key={story.id}
-            className={`qc-stories__card ${story.selected ? 'qc-stories__card--selected' : ''}`}
+            className={`qc-stories__card ${story.selected ? 'qc-stories__card--selected' : ''} ${dragOverIndex === index ? 'qc-stories__card--drag-over' : ''}`}
+            draggable
+            onDragStart={(e) => handleCardDragStart(e, index)}
+            onDragEnd={handleCardDragEnd}
+            onDragOver={(e) => handleCardDragOver(e, index)}
+            onDragLeave={handleCardDragLeave}
+            onDrop={(e) => handleCardDrop(e, index)}
           >
+            {/* Drag handle */}
+            <div className="qc-stories__card-drag-handle" title="Drag to reorder">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="8" y1="6" x2="8" y2="6.01" />
+                <line x1="16" y1="6" x2="16" y2="6.01" />
+                <line x1="8" y1="12" x2="8" y2="12.01" />
+                <line x1="16" y1="12" x2="16" y2="12.01" />
+                <line x1="8" y1="18" x2="8" y2="18.01" />
+                <line x1="16" y1="18" x2="16" y2="18.01" />
+              </svg>
+            </div>
+
             {/* Checkbox */}
             <div className="qc-stories__card-checkbox">
               <input
@@ -787,6 +959,15 @@ function QuickConvertStoriesPage() {
           onSave={handleSaveStory}
           onClose={() => setEditingStory(null)}
           isSaving={isSaving}
+        />
+      )}
+
+      {/* Save to Project Modal */}
+      {showSaveModal && (
+        <SaveToProjectModal
+          onClose={() => setShowSaveModal(false)}
+          dataType="stories"
+          data={generatedStories?.filter(s => s.selected) || []}
         />
       )}
     </main>

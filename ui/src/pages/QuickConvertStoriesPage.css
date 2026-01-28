@@ -892,6 +892,118 @@
    Responsive
    ============================================================ */
 
+/* ============================================================
+   Action Bar
+   ============================================================ */
+
+.qc-stories__action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.qc-stories__action-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.qc-stories__action-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qc-stories__reorder-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #9CA3AF;
+}
+
+.qc-stories__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qc-stories__action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qc-stories__action-btn--secondary {
+  background: white;
+  color: #374151;
+  border: 1px solid #D1D5DB;
+}
+
+.qc-stories__action-btn--secondary:hover:not(:disabled) {
+  background: #F3F4F6;
+  border-color: #9CA3AF;
+}
+
+.qc-stories__action-btn--primary {
+  background: #3B82F6;
+  color: white;
+  border: 1px solid #3B82F6;
+}
+
+.qc-stories__action-btn--primary:hover:not(:disabled) {
+  background: #2563EB;
+  border-color: #2563EB;
+}
+
+/* ============================================================
+   Drag and Drop
+   ============================================================ */
+
+.qc-stories__card-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  flex-shrink: 0;
+  color: #D1D5DB;
+  cursor: grab;
+  transition: color 0.15s ease;
+}
+
+.qc-stories__card-drag-handle:hover {
+  color: #9CA3AF;
+}
+
+.qc-stories__card-drag-handle:active {
+  cursor: grabbing;
+}
+
+.qc-stories__card--drag-over {
+  border-color: #3B82F6;
+  border-style: dashed;
+  background: #EFF6FF;
+}
+
+.qc-stories__card[draggable="true"] {
+  cursor: default;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
 @media (max-width: 640px) {
   .qc-stories__header {
     flex-direction: column;
@@ -932,5 +1044,26 @@
   .qc-stories__format-option,
   .qc-stories__include-option {
     padding: 0.875rem;
+  }
+
+  .qc-stories__action-bar {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .qc-stories__action-bar-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .qc-stories__action-bar-right {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .qc-stories__action-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
   }
 }
