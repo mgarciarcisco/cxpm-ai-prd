@@ -28,11 +28,11 @@ function RequirementsStage({ project }) {
     setShowAddMeetingModal(true);
   };
 
-  // Handle Extract Requirements - called when extraction starts
-  const handleExtractRequirements = (jobId) => {
-    // TODO: Navigate to meeting extraction view or start streaming (P3-003)
-    console.log('Extraction started, jobId:', jobId);
+  // Handle Save Requirements - called when requirements are saved from the modal
+  const handleSaveRequirements = (savedCount) => {
+    console.log('Requirements saved:', savedCount);
     setShowAddMeetingModal(false);
+    // TODO: Refresh project data to show new requirements (P3-004)
   };
 
   // Handle Add Manually button click
@@ -58,7 +58,7 @@ function RequirementsStage({ project }) {
           <AddMeetingModal
             projectId={project?.id}
             onClose={() => setShowAddMeetingModal(false)}
-            onExtract={handleExtractRequirements}
+            onSave={handleSaveRequirements}
           />
         )}
       </div>
@@ -75,7 +75,7 @@ function RequirementsStage({ project }) {
         <AddMeetingModal
           projectId={project?.id}
           onClose={() => setShowAddMeetingModal(false)}
-          onExtract={handleExtractRequirements}
+          onSave={handleSaveRequirements}
         />
       )}
     </div>
