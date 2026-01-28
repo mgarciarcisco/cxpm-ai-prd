@@ -41,6 +41,29 @@
   flex: 1;
 }
 
+/* Drag Handle */
+.story-card-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 24px;
+  color: #9CA3AF;
+  cursor: grab;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.story-card-drag-handle:hover {
+  color: #6B7280;
+  background-color: #F3F4F6;
+}
+
+.story-card-drag-handle:active {
+  cursor: grabbing;
+}
+
 .story-card-header-right {
   display: flex;
   align-items: center;
@@ -138,6 +161,38 @@
 .story-card-size--xl {
   background-color: #FECACA;
   color: #DC2626;
+}
+
+/* Priority Badge */
+.story-card-priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: capitalize;
+}
+
+.story-card-priority--critical {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+.story-card-priority--high {
+  background-color: #FED7AA;
+  color: #EA580C;
+}
+
+.story-card-priority--medium {
+  background-color: #FEF3C7;
+  color: #D97706;
+}
+
+.story-card-priority--low {
+  background-color: #DBEAFE;
+  color: #1D4ED8;
 }
 
 /* Expand Button */

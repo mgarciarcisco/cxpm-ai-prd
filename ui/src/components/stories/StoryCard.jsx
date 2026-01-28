@@ -12,18 +12,23 @@ import './StoryCard.css';
  * @param {string} story.description - Story description
  * @param {Array<string>} story.acceptance_criteria - List of acceptance criteria
  * @param {string} story.size - Story size (XS, S, M, L, XL)
+ * @param {string} story.priority - Story priority (low, medium, high, critical)
  * @param {Array<string>} story.labels - List of labels
  * @param {string} story.status - Story status (draft, ready, exported)
  * @param {string} story.format - Story format (classic, job_story)
  * @param {function} onEdit - Callback when edit button is clicked
  * @param {function} onDelete - Callback when story is deleted
  * @param {boolean} defaultExpanded - Whether the card starts expanded (default: false)
+ * @param {boolean} showDragHandle - Whether to show the drag handle (default: true)
+ * @param {Object} dragHandleProps - Props for the drag handle (from react-beautiful-dnd or similar)
  */
 export function StoryCard({
   story,
   onEdit,
   onDelete,
   defaultExpanded = false,
+  showDragHandle = true,
+  dragHandleProps = {},
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -78,6 +83,22 @@ export function StoryCard({
     }
   };
 
+  // Priority color mapping
+  const getPriorityClass = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'critical':
+        return 'story-card-priority--critical';
+      case 'high':
+        return 'story-card-priority--high';
+      case 'medium':
+        return 'story-card-priority--medium';
+      case 'low':
+        return 'story-card-priority--low';
+      default:
+        return '';
+    }
+  };
+
   // Status color mapping
   const getStatusClass = (status) => {
     switch (status?.toLowerCase()) {
@@ -97,6 +118,30 @@ export function StoryCard({
         {/* Header - Click to expand/collapse */}
         <div className="story-card-header" onClick={toggleExpanded}>
           <div className="story-card-header-left">
+            {/* Drag Handle */}
+            {showDragHandle && (
+              <span
+                className="story-card-drag-handle"
+                {...dragHandleProps}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle cx="5" cy="3" r="1.5" fill="currentColor" />
+                  <circle cx="11" cy="3" r="1.5" fill="currentColor" />
+                  <circle cx="5" cy="8" r="1.5" fill="currentColor" />
+                  <circle cx="11" cy="8" r="1.5" fill="currentColor" />
+                  <circle cx="5" cy="13" r="1.5" fill="currentColor" />
+                  <circle cx="11" cy="13" r="1.5" fill="currentColor" />
+                </svg>
+              </span>
+            )}
+
             {/* Story ID Badge */}
             <span className="story-card-id">{story.story_id}</span>
 
@@ -125,6 +170,13 @@ export function StoryCard({
             <span className={`story-card-size ${getSizeColor(story.size)}`}>
               {(story.size || 'm').toUpperCase()}
             </span>
+
+            {/* Priority Badge (if available) */}
+            {story.priority && (
+              <span className={`story-card-priority ${getPriorityClass(story.priority)}`}>
+                {story.priority.charAt(0).toUpperCase() + story.priority.slice(1).toLowerCase()}
+              </span>
+            )}
 
             {/* Expand/Collapse Icon */}
             <button
