@@ -64,6 +64,8 @@ ${BOLD}Options:${RESET}
   --dry-run           Preview actions without executing AI
   --status            Show task status summary and exit
   --resume            Resume from last saved state after crash/interrupt
+  --with-review       Auto-run code review after every batch (default: 8 tasks)
+  --review-batch N    Set review batch size (implies --with-review)
   --help, -h          Show this help message
 
 ${BOLD}Examples:${RESET}
@@ -73,6 +75,8 @@ ${BOLD}Examples:${RESET}
   ./ralph.sh --stream 3                       Show formatted streaming output
   ./ralph.sh --status                         Show task dependency status
   ./ralph.sh --dry-run                        Preview without running
+  ./ralph.sh --with-review --stream 200       Run with auto code review every 8 tasks
+  ./ralph.sh --review-batch 5 --stream 100    Run with review every 5 tasks
 
 ${BOLD}File Structure:${RESET}
   ralph/manifest.json   Task definitions with dependencies
@@ -121,6 +125,11 @@ DRY_RUN=false
 VERBOSE=false
 STREAM=false
 RESUME_MODE=false
+
+# Review integration
+WITH_REVIEW=false
+REVIEW_BATCH_SIZE=${REVIEW_BATCH_SIZE:-8}
+TASKS_SINCE_REVIEW=0
 
 # Resilience settings
 MAX_RETRIES=${MAX_RETRIES:-3}
@@ -265,6 +274,15 @@ while [[ $# -gt 0 ]]; do
     --resume)
       RESUME_MODE=true
       shift
+      ;;
+    --with-review)
+      WITH_REVIEW=true
+      shift
+      ;;
+    --review-batch)
+      REVIEW_BATCH_SIZE="$2"
+      WITH_REVIEW=true
+      shift 2
       ;;
     *)
       if [[ "$1" =~ ^[0-9]+$ ]]; then
@@ -1779,6 +1797,37 @@ for i in $(seq $START_ITERATION $MAX_ITERATIONS); do
         handle_task_success
         TASK_COMPLETED=true
         log_success "Task $completed_task_id completed successfully"
+
+        # Track for review batch
+        ((TASKS_SINCE_REVIEW++))
+
+        # Trigger review if batch is ready and --with-review is enabled
+        if [[ "$WITH_REVIEW" == "true" ]] && [[ $TASKS_SINCE_REVIEW -ge $REVIEW_BATCH_SIZE ]]; then
+            print_header "Auto-Review Triggered"
+            log_info "Completed $TASKS_SINCE_REVIEW tasks since last review"
+            log_info "Running code review..."
+            echo ""
+
+            # Run review.sh with same streaming preference
+            REVIEW_CMD="$SCRIPT_DIR/review.sh"
+            if [[ "$STREAM" == "true" ]]; then
+                REVIEW_CMD="$REVIEW_CMD --stream"
+            elif [[ "$VERBOSE" == "true" ]]; then
+                REVIEW_CMD="$REVIEW_CMD --verbose"
+            fi
+
+            if $REVIEW_CMD --force; then
+                log_success "Review complete"
+            else
+                log_warn "Review encountered issues (check logs)"
+            fi
+
+            # Reset counter
+            TASKS_SINCE_REVIEW=0
+
+            print_header "Resuming Implementation"
+            log_info "Checking for FIX tasks (P0 priority)..."
+        fi
     fi
   fi
 
