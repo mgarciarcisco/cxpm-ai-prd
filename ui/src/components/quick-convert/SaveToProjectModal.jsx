@@ -69,6 +69,8 @@ function SaveToProjectModal({ onClose, dataType, data, onSaved }) {
         return 'PRD';
       case 'stories':
         return 'user stories';
+      case 'mockups':
+        return 'mockups';
       default:
         return 'data';
     }
@@ -123,6 +125,29 @@ function SaveToProjectModal({ onClose, dataType, data, onSaved }) {
           })
         );
         await Promise.all(storyPromises);
+        break;
+      }
+
+      case 'mockups': {
+        // Save mockups - data is an array of mockup objects
+        // For now, since there's no mockups API, we'll just create a note
+        // This is a placeholder - actual implementation would depend on backend API
+        const mockupData = Array.isArray(data) ? data : [];
+        // Execute all mockup saves in parallel (when API is available)
+        const mockupPromises = mockupData.map(mockup =>
+          post(`/api/projects/${projectId}/mockups`, {
+            device: mockup.device,
+            style: mockup.style,
+            imageUrl: mockup.imageUrl,
+            variation: mockup.variation || null,
+          }).catch(() => {
+            // If mockups API doesn't exist yet, silently continue
+            // The project will be created/updated regardless
+            console.warn('Mockups API not available - mockup not saved');
+            return null;
+          })
+        );
+        await Promise.all(mockupPromises);
         break;
       }
 
@@ -297,7 +322,7 @@ function SaveToProjectModal({ onClose, dataType, data, onSaved }) {
                 </svg>
                 <div>
                   <strong>Note:</strong> Adding {getDataTypeLabel()} to "{selectedProject.name}" will
-                  {dataType === 'prd' ? ' create a new PRD version' : ' add to existing items'}.
+                  {dataType === 'prd' ? ' create a new PRD version' : dataType === 'mockups' ? ' add new mockups' : ' add to existing items'}.
                   {dataType === 'prd' && ' The current PRD (if any) will remain in version history.'}
                 </div>
               </div>

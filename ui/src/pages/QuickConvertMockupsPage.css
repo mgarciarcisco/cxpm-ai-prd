@@ -683,6 +683,97 @@
   border-left: 1px solid #E5E7EB;
 }
 
+/* Refine Section */
+.qc-mockups__refine-section {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.qc-mockups__refine-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.qc-mockups__refine-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #111827;
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.qc-mockups__refine-textarea:focus {
+  outline: none;
+  border-color: #F97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+.qc-mockups__refine-textarea::placeholder {
+  color: #9CA3AF;
+}
+
+.qc-mockups__refine-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.qc-mockups__refine-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qc-mockups__refine-btn:focus {
+  outline: 2px solid #F97316;
+  outline-offset: 2px;
+}
+
+.qc-mockups__refine-btn--primary {
+  background: #F97316;
+  border: 1px solid #F97316;
+  color: white;
+}
+
+.qc-mockups__refine-btn--primary:hover:not(:disabled) {
+  background: #EA580C;
+  border-color: #EA580C;
+}
+
+.qc-mockups__refine-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qc-mockups__refine-btn--secondary {
+  background: white;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.qc-mockups__refine-btn--secondary:hover {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
 /* Action Bar */
 .qc-mockups__action-bar {
   display: flex;
@@ -943,5 +1034,15 @@
 
   .qc-mockups__cards {
     grid-template-columns: 1fr;
+  }
+
+  /* Refine section responsive */
+  .qc-mockups__refine-actions {
+    flex-direction: column;
+  }
+
+  .qc-mockups__refine-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

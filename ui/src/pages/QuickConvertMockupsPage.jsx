@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
 import './QuickConvertMockupsPage.css';
 
 // Placeholder mockup images for simulation
@@ -114,6 +115,12 @@ function QuickConvertMockupsPage() {
   const [generationError, setGenerationError] = useState(null);
   const [generatedMockups, setGeneratedMockups] = useState(null);
   const [generationProgress, setGenerationProgress] = useState(0);
+
+  // Refine state
+  const [refinePrompt, setRefinePrompt] = useState('');
+
+  // Save to Project modal state
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   // Pre-fill content if navigated from stories page
   useEffect(() => {
@@ -235,12 +242,73 @@ function QuickConvertMockupsPage() {
     setGenerationError(null);
     setGeneratedMockups(null);
     setGenerationProgress(0);
+    setRefinePrompt('');
 
     try {
       const mockups = await simulateGeneration();
       setGeneratedMockups(mockups);
     } catch (error) {
       setGenerationError(error.message || 'Generation failed. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Regenerate mockups with optional refinement
+  const handleRegenerate = async () => {
+    if (!generatedMockups) return;
+
+    setIsGenerating(true);
+    setGenerationError(null);
+    setGenerationProgress(0);
+
+    try {
+      const mockups = await simulateGeneration();
+      setGeneratedMockups(mockups);
+      setRefinePrompt(''); // Clear refine prompt after regeneration
+    } catch (error) {
+      setGenerationError(error.message || 'Regeneration failed. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Generate 3 variations of the current mockups
+  const handleGenerateVariations = async () => {
+    if (!generatedMockups) return;
+
+    setIsGenerating(true);
+    setGenerationError(null);
+    setGenerationProgress(0);
+
+    try {
+      // For each existing mockup, generate 3 variations
+      const allVariations = [];
+      const originalDevices = generatedMockups.map(m => m.device);
+
+      for (let variation = 1; variation <= 3; variation++) {
+        for (let i = 0; i < originalDevices.length; i++) {
+          const device = originalDevices[i];
+          // Simulate delay per mockup
+          await new Promise(resolve => setTimeout(resolve, 400 + Math.random() * 300));
+
+          allVariations.push({
+            id: `mockup-${Date.now()}-${device}-v${variation}`,
+            device,
+            style: selectedStyle,
+            imageUrl: PLACEHOLDER_MOCKUPS[device],
+            createdAt: new Date().toISOString(),
+            variation,
+          });
+
+          setGenerationProgress(allVariations.length);
+        }
+      }
+
+      setGeneratedMockups(allVariations);
+      setRefinePrompt('');
+    } catch (error) {
+      setGenerationError(error.message || 'Failed to generate variations. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -257,6 +325,15 @@ function QuickConvertMockupsPage() {
     setGenerationError(null);
     setGenerationProgress(0);
     setFromPreviousStep(false);
+    setRefinePrompt('');
+  };
+
+  const handleSaveToProject = () => {
+    setShowSaveModal(true);
+  };
+
+  const handleCloseSaveModal = () => {
+    setShowSaveModal(false);
   };
 
   const handleDownload = (mockup) => {
@@ -376,14 +453,69 @@ function QuickConvertMockupsPage() {
         </div>
       </div>
 
+      {/* Refine Section */}
+      <div className="qc-mockups__refine-section">
+        <label htmlFor="refine-prompt" className="qc-mockups__refine-label">
+          Refine Mockups
+        </label>
+        <textarea
+          id="refine-prompt"
+          className="qc-mockups__refine-textarea"
+          placeholder="Describe changes you'd like to make (e.g., 'Make the header more prominent', 'Add a sidebar navigation', 'Use warmer colors')..."
+          value={refinePrompt}
+          onChange={(e) => setRefinePrompt(e.target.value)}
+          rows={3}
+        />
+        <div className="qc-mockups__refine-actions">
+          <button
+            type="button"
+            className="qc-mockups__refine-btn qc-mockups__refine-btn--primary"
+            onClick={handleRegenerate}
+            disabled={!refinePrompt.trim()}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M23 4v6h-6" />
+              <path d="M1 20v-6h6" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+            Regenerate
+          </button>
+          <button
+            type="button"
+            className="qc-mockups__refine-btn qc-mockups__refine-btn--secondary"
+            onClick={handleGenerateVariations}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+            </svg>
+            3 Variations
+          </button>
+        </div>
+      </div>
+
       {/* Action bar */}
       <div className="qc-mockups__action-bar">
         <div className="qc-mockups__action-bar-left">
           <span className="qc-mockups__devices-info">
-            {generatedMockups?.map(m => m.device).join(', ')}
+            {[...new Set(generatedMockups?.map(m => m.device))].join(', ')}
           </span>
         </div>
         <div className="qc-mockups__action-bar-right">
+          <button
+            type="button"
+            className="qc-mockups__action-btn qc-mockups__action-btn--secondary"
+            onClick={handleSaveToProject}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Save to Project
+          </button>
           <button
             type="button"
             className="qc-mockups__action-btn qc-mockups__action-btn--primary"
@@ -406,7 +538,10 @@ function QuickConvertMockupsPage() {
             <div className="qc-mockups__card-header">
               <div className="qc-mockups__card-device">
                 {renderDeviceIcon(mockup.device)}
-                <span>{mockup.device.charAt(0).toUpperCase() + mockup.device.slice(1)}</span>
+                <span>
+                  {mockup.device.charAt(0).toUpperCase() + mockup.device.slice(1)}
+                  {mockup.variation && ` (Variation ${mockup.variation})`}
+                </span>
               </div>
               <button
                 type="button"
@@ -684,6 +819,15 @@ function QuickConvertMockupsPage() {
         {generatedMockups && !isGenerating && renderResults()}
         {!generatedMockups && !isGenerating && !generationError && renderInputForm()}
       </section>
+
+      {/* Save to Project Modal */}
+      {showSaveModal && (
+        <SaveToProjectModal
+          onClose={handleCloseSaveModal}
+          dataType="mockups"
+          data={generatedMockups}
+        />
+      )}
     </main>
   );
 }
