@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
-import { Routes, Route, Link, useLocation } from 'react-router-dom'
+import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
-import LandingPage from './pages/LandingPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDashboard from './pages/ProjectDashboard'
 import UploadMeetingPage from './pages/UploadMeetingPage'
@@ -34,7 +33,7 @@ function App() {
     <div className="app">
       <header className="header">
         <div className="header-left">
-          <Link to="/" className="logo" onClick={closeMobileMenu}>
+          <Link to="/dashboard" className="logo" onClick={closeMobileMenu}>
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="36" height="36" rx="8" fill="#4ECDC4"/>
               <path d="M10 13h16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
@@ -50,8 +49,8 @@ function App() {
 
         <nav className={`header-nav ${mobileMenuOpen ? 'header-nav--open' : ''}`}>
           <Link
-            to="/"
-            className={`header-nav-link ${location.pathname === '/' ? 'header-nav-link--active' : ''}`}
+            to="/dashboard"
+            className={`header-nav-link ${location.pathname === '/dashboard' ? 'header-nav-link--active' : ''}`}
             onClick={closeMobileMenu}
           >
             Home
@@ -90,7 +89,7 @@ function App() {
 
       <ErrorBoundary>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/app" element={<ProjectsPage />} />
           <Route path="/app/projects/:id" element={<ProjectDashboard />} />
