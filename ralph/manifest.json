@@ -35,7 +35,7 @@
       "priority": "P1",
       "dependsOn": [],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-004",
@@ -45,7 +45,7 @@
       "priority": "P1",
       "dependsOn": [],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-005",
@@ -57,7 +57,7 @@
         "P1-004"
       ],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-006",
@@ -67,7 +67,7 @@
       "priority": "P1",
       "dependsOn": [],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-007",
@@ -77,7 +77,7 @@
       "priority": "P1",
       "dependsOn": [],
       "phase": 1,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P1-008a",
@@ -1254,6 +1254,229 @@
         "P6-006b"
       ],
       "phase": 6,
+      "status": "pending"
+    },
+    {
+      "id": "T7-001",
+      "title": "Unit Tests - Progress Calculation Utilities",
+      "description": "Write unit tests for progress calculation functions.\n\n**What to do:**\n- Test calculateProgress() with all status combinations\n- Test edge cases (null values, invalid statuses)\n- Test percentage calculation accuracy\n\n**Files:**\n- Create test file alongside utility (e.g., utils/progress.test.ts)\n\n**Acceptance criteria:**\n- All progress calculation scenarios covered\n- Edge cases handled\n- npm test passes",
+      "size": "S",
+      "priority": "P1",
+      "dependsOn": [
+        "P1-002"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-002",
+      "title": "Unit Tests - Stage Status Utilities",
+      "description": "Write unit tests for stage status helper functions.\n\n**What to do:**\n- Test status enum conversions\n- Test stage completion logic\n- Test status display helpers\n\n**Files:**\n- Create test file for status utilities\n\n**Acceptance criteria:**\n- All status utility functions tested\n- npm test passes",
+      "size": "S",
+      "priority": "P1",
+      "dependsOn": [
+        "P1-001"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-003",
+      "title": "Unit Tests - API Response Transformers",
+      "description": "Write unit tests for API response transformation functions.\n\n**What to do:**\n- Test project data transformation\n- Test requirements list transformation\n- Test PRD/stories response handling\n\n**Acceptance criteria:**\n- API transformers fully tested\n- npm test passes",
+      "size": "S",
+      "priority": "P2",
+      "dependsOn": [
+        "P2-001"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-004",
+      "title": "Component Tests - Stage Stepper",
+      "description": "Write component tests for StageStepper.\n\n**What to do:**\n- Test rendering all 5 stages\n- Test status indicators (empty, in_progress, complete)\n- Test click handlers\n- Test current stage highlighting\n- Test accessibility\n\n**Acceptance criteria:**\n- All stepper states tested\n- Click interactions tested\n- npm test passes",
+      "size": "M",
+      "priority": "P1",
+      "dependsOn": [
+        "P1-004"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-005",
+      "title": "Component Tests - Project Cards",
+      "description": "Write component tests for ProjectCard and ProjectGrid.\n\n**What to do:**\n- Test card rendering with various project states\n- Test progress display\n- Test navigation on click\n- Test empty state\n\n**Acceptance criteria:**\n- Card and grid components tested\n- npm test passes",
+      "size": "M",
+      "priority": "P1",
+      "dependsOn": [
+        "P1-005"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-006",
+      "title": "Component Tests - Empty State and Breadcrumbs",
+      "description": "Write component tests for EmptyState and Breadcrumbs.\n\n**What to do:**\n- Test EmptyState with various props (icon, title, actions)\n- Test Breadcrumbs navigation\n- Test responsive behavior\n\n**Acceptance criteria:**\n- Both components fully tested\n- npm test passes",
+      "size": "S",
+      "priority": "P2",
+      "dependsOn": [
+        "P1-003",
+        "P1-006"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-007",
+      "title": "Integration Tests - Project API Endpoints",
+      "description": "Write integration tests for project-related API endpoints.\n\n**What to do:**\n- Test GET /projects (list)\n- Test GET /projects/:id (detail with stages)\n- Test PATCH /projects/:id (update status)\n- Test stage status updates\n\n**Acceptance criteria:**\n- All project endpoints tested\n- Error cases handled\n- npm test passes",
+      "size": "M",
+      "priority": "P1",
+      "dependsOn": [
+        "P2-001"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-008",
+      "title": "Integration Tests - Requirements API",
+      "description": "Write integration tests for requirements endpoints.\n\n**What to do:**\n- Test CRUD operations for requirements\n- Test bulk operations\n- Test status transitions\n\n**Acceptance criteria:**\n- Requirements API fully tested\n- npm test passes",
+      "size": "M",
+      "priority": "P2",
+      "dependsOn": [
+        "P3-007"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-009",
+      "title": "Integration Tests - Generation APIs",
+      "description": "Write integration tests for PRD and stories generation.\n\n**What to do:**\n- Test PRD generation endpoint\n- Test stories generation endpoint\n- Test regeneration flows\n- Mock AI responses for deterministic tests\n\n**Acceptance criteria:**\n- Generation endpoints tested\n- npm test passes",
+      "size": "M",
+      "priority": "P2",
+      "dependsOn": [
+        "P3-014",
+        "P3-024"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-010",
+      "title": "E2E Test Setup - Playwright Configuration",
+      "description": "Set up Playwright for E2E testing.\n\n**What to do:**\n- Install Playwright and dependencies\n- Configure for the project (baseURL, browsers)\n- Set up test fixtures for authentication\n- Create helper utilities for common actions\n- Add npm scripts for running e2e tests\n\n**Files:**\n- playwright.config.ts\n- e2e/fixtures/\n- e2e/utils/\n- package.json (scripts)\n\n**Acceptance criteria:**\n- Playwright configured and running\n- Basic smoke test passes\n- npx playwright test works",
+      "size": "M",
+      "priority": "P1",
+      "dependsOn": [],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-011",
+      "title": "E2E - Complete Project Journey Flow",
+      "description": "E2E test for the full project journey from creation to export.\n\n**What to do:**\n- Create new project\n- Add requirements\n- Generate PRD\n- Generate user stories\n- Export project\n- Verify all stage transitions\n\n**Files:**\n- e2e/project-journey.spec.ts\n\n**Acceptance criteria:**\n- Full journey completes without errors\n- All stages visited and verified\n- npx playwright test project-journey passes",
+      "size": "L",
+      "priority": "P1",
+      "dependsOn": [
+        "T7-010",
+        "P5-012"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-012",
+      "title": "E2E - Quick Convert Mode Flow",
+      "description": "E2E test for Quick Convert mode.\n\n**What to do:**\n- Navigate to Quick Convert\n- Enter requirements\n- Generate PRD\n- Generate stories\n- Download results\n- Verify session storage behavior\n- Test navigation warning\n\n**Files:**\n- e2e/quick-convert.spec.ts\n\n**Acceptance criteria:**\n- Quick Convert flow works end-to-end\n- Download functionality verified\n- Session behavior correct\n- npx playwright test quick-convert passes",
+      "size": "M",
+      "priority": "P1",
+      "dependsOn": [
+        "T7-010",
+        "P4-010"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-013",
+      "title": "E2E - Requirements Stage CRUD",
+      "description": "E2E test for Requirements stage operations.\n\n**What to do:**\n- Add requirements manually\n- Edit requirements inline\n- Delete requirements\n- Mark as reviewed\n- Verify stage status updates\n\n**Files:**\n- e2e/requirements-stage.spec.ts\n\n**Acceptance criteria:**\n- All CRUD operations work\n- Stage status reflects changes\n- npx playwright test requirements passes",
+      "size": "M",
+      "priority": "P1",
+      "dependsOn": [
+        "T7-010",
+        "P3-007"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-014",
+      "title": "E2E - PRD Generation and Editing",
+      "description": "E2E test for PRD stage functionality.\n\n**What to do:**\n- Generate PRD from requirements\n- Switch between Preview and Edit tabs\n- Edit PRD content\n- Regenerate PRD\n- Mark as ready\n- Verify status persistence\n\n**Files:**\n- e2e/prd-stage.spec.ts\n\n**Acceptance criteria:**\n- PRD generation works\n- Editing saves correctly\n- Regeneration with warning works\n- npx playwright test prd passes",
+      "size": "M",
+      "priority": "P1",
+      "dependsOn": [
+        "T7-010",
+        "P3-014"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-015",
+      "title": "E2E - User Stories Generation",
+      "description": "E2E test for User Stories stage.\n\n**What to do:**\n- Generate stories from PRD\n- View story cards\n- Edit stories\n- Generate more stories\n- Delete stories\n- Mark as refined\n\n**Files:**\n- e2e/stories-stage.spec.ts\n\n**Acceptance criteria:**\n- Story generation works\n- Card interactions work\n- Status updates correctly\n- npx playwright test stories passes",
+      "size": "M",
+      "priority": "P1",
+      "dependsOn": [
+        "T7-010",
+        "P3-024"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-016",
+      "title": "E2E - Export Functionality",
+      "description": "E2E test for Export stage.\n\n**What to do:**\n- Test Markdown export\n- Test JSON export\n- Verify download files\n- Check export history\n\n**Files:**\n- e2e/export-stage.spec.ts\n\n**Acceptance criteria:**\n- Both export formats work\n- Files download correctly\n- History tracks exports\n- npx playwright test export passes",
+      "size": "M",
+      "priority": "P1",
+      "dependsOn": [
+        "T7-010",
+        "P5-012"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-017",
+      "title": "E2E - Project Navigation and Stepper",
+      "description": "E2E test for navigation between stages.\n\n**What to do:**\n- Test stepper navigation\n- Test breadcrumb navigation\n- Test stage locking (cant skip ahead)\n- Test back navigation\n- Verify URL updates\n\n**Files:**\n- e2e/navigation.spec.ts\n\n**Acceptance criteria:**\n- All navigation methods work\n- Stage restrictions enforced\n- URLs update correctly\n- npx playwright test navigation passes",
+      "size": "M",
+      "priority": "P2",
+      "dependsOn": [
+        "T7-010",
+        "P2-001c"
+      ],
+      "phase": 7,
+      "status": "pending"
+    },
+    {
+      "id": "T7-018",
+      "title": "E2E - Error Handling and Edge Cases",
+      "description": "E2E test for error scenarios.\n\n**What to do:**\n- Test API error handling\n- Test network failure recovery\n- Test empty states\n- Test validation errors\n- Test concurrent edits\n\n**Files:**\n- e2e/error-handling.spec.ts\n\n**Acceptance criteria:**\n- Errors handled gracefully\n- User sees appropriate messages\n- App recovers from failures\n- npx playwright test error-handling passes",
+      "size": "M",
+      "priority": "P2",
+      "dependsOn": [
+        "T7-010"
+      ],
+      "phase": 7,
       "status": "pending"
     }
   ]
