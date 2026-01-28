@@ -454,6 +454,11 @@ function UserStoriesStage({ project, onProjectUpdate }) {
             ? { label: 'Refined', onClick: () => {}, disabled: true }
             : { label: 'Mark as Refined', onClick: handleMarkAsRefined, loading: markingAsRefined }
         }
+        secondaryAction={{
+          label: 'Generate More',
+          onClick: handleGenerateFromPRD,
+          disabled: !prdComplete,
+        }}
       />
 
       {/* Story Edit Modal */}
@@ -472,6 +477,15 @@ function UserStoriesStage({ project, onProjectUpdate }) {
           onCreate={handleCreateStory}
           onClose={() => setShowCreateModal(false)}
           isSaving={isSavingStory}
+        />
+      )}
+
+      {/* Generate Stories Modal (for Generate More) */}
+      {showGenerateModal && (
+        <GenerateStoriesModal
+          projectId={project?.id}
+          onClose={() => setShowGenerateModal(false)}
+          onGenerate={handleGenerate}
         />
       )}
     </>
