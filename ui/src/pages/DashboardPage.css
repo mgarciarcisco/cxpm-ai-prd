@@ -118,22 +118,119 @@
   margin: 0;
 }
 
-/* Projects Placeholder (temporary until P1-008b) */
-.dashboard__projects-placeholder {
+/* Projects Grid */
+.dashboard__projects-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+/* Loading State */
+.dashboard__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+}
+
+.dashboard__loading-spinner {
+  color: #4ECDC4;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dashboard__loading-text {
+  margin: 1rem 0 0 0;
+  color: #6B7280;
+  font-size: 0.875rem;
+}
+
+/* Error State */
+.dashboard__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+}
+
+.dashboard__error-text {
+  margin: 0 0 1rem 0;
+  color: #DC2626;
+  font-size: 0.875rem;
+}
+
+.dashboard__retry-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #DC2626;
+  background-color: #FFFFFF;
+  border: 1px solid #DC2626;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dashboard__retry-btn:hover {
+  background-color: #DC2626;
+  color: #FFFFFF;
+}
+
+/* Empty State */
+.dashboard__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
   background-color: #FFFFFF;
   border: 1px dashed #E5E7EB;
   border-radius: 12px;
-  padding: 3rem;
   text-align: center;
 }
 
-.dashboard__projects-placeholder p {
-  color: #9CA3AF;
-  font-size: 0.875rem;
+.dashboard__empty-icon {
+  color: #D1D5DB;
+  margin-bottom: 1rem;
+}
+
+.dashboard__empty-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.dashboard__empty-description {
   margin: 0;
+  font-size: 0.875rem;
+  color: #6B7280;
+  max-width: 320px;
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .dashboard__projects-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard__actions {
     grid-template-columns: 1fr;
@@ -141,6 +238,10 @@
 
   .dashboard__welcome {
     font-size: 1.5rem;
+  }
+
+  .dashboard__projects-grid {
+    grid-template-columns: 1fr;
   }
 }
 
