@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { EmptyState } from '../common/EmptyState';
 import GenerateFromStoriesModal from '../mockups/GenerateFromStoriesModal';
+import DescribeUIModal from '../mockups/DescribeUIModal';
 import './StageContent.css';
 
 /**
@@ -10,6 +11,7 @@ import './StageContent.css';
 function MockupsStage({ project, onProjectUpdate }) {
   // Modal state
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [showDescribeModal, setShowDescribeModal] = useState(false);
 
   // Check if there are any mockups (mockups_status !== 'empty')
   const hasMockups = project?.mockups_status && project.mockups_status !== 'empty';
@@ -46,8 +48,20 @@ function MockupsStage({ project, onProjectUpdate }) {
 
   // Handle Describe Manually button click
   const handleDescribeManually = () => {
-    // TODO: Implement in P5-003 (DescribeUIModal)
-    console.log('Describe mockup manually');
+    setShowDescribeModal(true);
+  };
+
+  // Handle mockup generation from description modal
+  const handleDescribeGenerate = (options) => {
+    console.log('Generate mockup from description:', options);
+    // TODO: Implement actual mockup generation in future task (P5-004)
+    // This will call the mockup generation API with title, description, style, and devices
+    // For now, just log the options
+
+    // Notify parent to refresh project data after generation
+    if (onProjectUpdate) {
+      onProjectUpdate();
+    }
   };
 
   // Empty state - no mockups yet
@@ -87,6 +101,15 @@ function MockupsStage({ project, onProjectUpdate }) {
             onGenerate={handleGenerate}
           />
         )}
+
+        {/* Describe UI Modal */}
+        {showDescribeModal && (
+          <DescribeUIModal
+            projectId={project?.id}
+            onClose={() => setShowDescribeModal(false)}
+            onGenerate={handleDescribeGenerate}
+          />
+        )}
       </>
     );
   }
@@ -104,6 +127,15 @@ function MockupsStage({ project, onProjectUpdate }) {
           projectId={project?.id}
           onClose={() => setShowGenerateModal(false)}
           onGenerate={handleGenerate}
+        />
+      )}
+
+      {/* Describe UI Modal */}
+      {showDescribeModal && (
+        <DescribeUIModal
+          projectId={project?.id}
+          onClose={() => setShowDescribeModal(false)}
+          onGenerate={handleDescribeGenerate}
         />
       )}
     </>
