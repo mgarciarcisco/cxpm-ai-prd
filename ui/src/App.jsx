@@ -14,6 +14,7 @@ import PRDStreamingPage from './pages/PRDStreamingPage'
 import PRDEditorPage from './pages/PRDEditorPage'
 import StoriesLandingPage from './pages/StoriesLandingPage'
 import UserStoriesPage from './pages/UserStoriesPage'
+import DashboardPage from './pages/DashboardPage'
 import './App.css'
 
 function App() {
@@ -90,6 +91,7 @@ function App() {
       <ErrorBoundary>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/app" element={<ProjectsPage />} />
           <Route path="/app/projects/:id" element={<ProjectDashboard />} />
           <Route path="/app/projects/:id/meetings/new" element={<UploadMeetingPage />} />
