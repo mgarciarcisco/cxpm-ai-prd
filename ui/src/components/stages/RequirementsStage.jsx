@@ -28,10 +28,10 @@ function RequirementsStage({ project }) {
     setShowAddMeetingModal(true);
   };
 
-  // Handle Extract Requirements from meeting content
-  const handleExtractRequirements = (content) => {
-    // TODO: Call AI extraction API (P3-002c)
-    console.log('Extract requirements from content:', content);
+  // Handle Extract Requirements - called when extraction starts
+  const handleExtractRequirements = (jobId) => {
+    // TODO: Navigate to meeting extraction view or start streaming (P3-003)
+    console.log('Extraction started, jobId:', jobId);
     setShowAddMeetingModal(false);
   };
 
@@ -56,6 +56,7 @@ function RequirementsStage({ project }) {
         />
         {showAddMeetingModal && (
           <AddMeetingModal
+            projectId={project?.id}
             onClose={() => setShowAddMeetingModal(false)}
             onExtract={handleExtractRequirements}
           />
@@ -72,6 +73,7 @@ function RequirementsStage({ project }) {
       </div>
       {showAddMeetingModal && (
         <AddMeetingModal
+          projectId={project?.id}
           onClose={() => setShowAddMeetingModal(false)}
           onExtract={handleExtractRequirements}
         />

@@ -7,14 +7,17 @@ import './AddMeetingModal.css';
  * Supports pasting content in a textarea or uploading .txt/.md files.
  *
  * @param {object} props
+ * @param {string} props.projectId - Project ID for API call
  * @param {function} props.onClose - Callback to close modal
- * @param {function} [props.onExtract] - Callback when Extract Requirements is clicked (receives content string)
+ * @param {function} [props.onExtract] - Callback when extraction starts (receives jobId/meetingId)
  */
-function AddMeetingModal({ onClose, onExtract }) {
+function AddMeetingModal({ projectId, onClose, onExtract }) {
   const [content, setContent] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState(null);
   const [fileError, setFileError] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [extractError, setExtractError] = useState(null);
   const fileInputRef = useRef(null);
 
   const hasContent = content.trim().length > 0;
@@ -75,9 +78,41 @@ function AddMeetingModal({ onClose, onExtract }) {
     fileInputRef.current?.click();
   };
 
-  const handleExtract = () => {
-    if (hasContent && onExtract) {
-      onExtract(content);
+  const handleExtract = async () => {
+    if (!hasContent || !projectId) return;
+
+    setIsProcessing(true);
+    setExtractError(null);
+
+    try {
+      // Create form data for the upload API
+      const formData = new FormData();
+      formData.append('project_id', projectId);
+      formData.append('title', fileName || 'Meeting Notes');
+      formData.append('meeting_date', new Date().toISOString().split('T')[0]);
+      formData.append('text', content);
+
+      // Call the upload API
+      const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
+      const response = await fetch(`${BASE_URL}/api/meetings/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Upload failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Call onExtract with the job ID so parent can start streaming
+      if (onExtract) {
+        onExtract(data.job_id);
+      }
+    } catch (error) {
+      setExtractError(error.message || 'Failed to start extraction. Please try again.');
+      setIsProcessing(false);
     }
   };
 
@@ -109,8 +144,10 @@ function AddMeetingModal({ onClose, onExtract }) {
             onChange={(e) => {
               setContent(e.target.value);
               if (fileName) setFileName(null);
+              if (extractError) setExtractError(null);
             }}
             rows={10}
+            disabled={isProcessing}
           />
         </div>
 
@@ -119,19 +156,20 @@ function AddMeetingModal({ onClose, onExtract }) {
         </div>
 
         <div
-          className={`add-meeting-modal__upload-zone ${dragActive ? 'add-meeting-modal__upload-zone--active' : ''}`}
-          onDragEnter={handleDrag}
-          onDragOver={handleDrag}
-          onDragLeave={handleDrag}
-          onDrop={handleDrop}
-          onClick={handleUploadClick}
+          className={`add-meeting-modal__upload-zone ${dragActive ? 'add-meeting-modal__upload-zone--active' : ''} ${isProcessing ? 'add-meeting-modal__upload-zone--disabled' : ''}`}
+          onDragEnter={isProcessing ? undefined : handleDrag}
+          onDragOver={isProcessing ? undefined : handleDrag}
+          onDragLeave={isProcessing ? undefined : handleDrag}
+          onDrop={isProcessing ? undefined : handleDrop}
+          onClick={isProcessing ? undefined : handleUploadClick}
           role="button"
-          tabIndex={0}
+          tabIndex={isProcessing ? -1 : 0}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (!isProcessing && (e.key === 'Enter' || e.key === ' ')) {
               handleUploadClick();
             }
           }}
+          aria-disabled={isProcessing}
         >
           <input
             ref={fileInputRef}
@@ -194,6 +232,7 @@ function AddMeetingModal({ onClose, onExtract }) {
               className="add-meeting-modal__file-clear"
               onClick={handleClearFile}
               aria-label="Clear file"
+              disabled={isProcessing}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -203,11 +242,23 @@ function AddMeetingModal({ onClose, onExtract }) {
           </div>
         )}
 
+        {extractError && (
+          <div className="add-meeting-modal__extract-error" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{extractError}</span>
+          </div>
+        )}
+
         <div className="add-meeting-modal__actions">
           <button
             type="button"
             className="add-meeting-modal__cancel-btn"
             onClick={onClose}
+            disabled={isProcessing}
           >
             Cancel
           </button>
@@ -215,9 +266,16 @@ function AddMeetingModal({ onClose, onExtract }) {
             type="button"
             className="add-meeting-modal__extract-btn"
             onClick={handleExtract}
-            disabled={!hasContent}
+            disabled={!hasContent || isProcessing}
           >
-            Extract Requirements
+            {isProcessing ? (
+              <>
+                <span className="add-meeting-modal__spinner" aria-hidden="true" />
+                Processing...
+              </>
+            ) : (
+              'Extract Requirements'
+            )}
           </button>
         </div>
       </div>
