@@ -198,53 +198,37 @@
   color: #FFFFFF;
 }
 
-/* Empty State */
-.dashboard__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
+/* Empty State Container - provides background for EmptyState component */
+.dashboard__projects-section .empty-state {
   background-color: #FFFFFF;
   border: 1px dashed #E5E7EB;
   border-radius: 12px;
-  text-align: center;
 }
 
-.dashboard__empty-icon {
-  color: #D1D5DB;
-  margin-bottom: 1rem;
-}
-
-.dashboard__empty-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.dashboard__empty-description {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #6B7280;
-  max-width: 320px;
-}
-
-.dashboard__clear-filter-btn {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+/* Link styled as button for EmptyState actions */
+.empty-state-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  font-size: 14px;
   font-weight: 500;
-  color: #FFFFFF;
+  color: white;
   background-color: #4ECDC4;
   border: none;
   border-radius: 6px;
+  text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.2s ease;
 }
 
-.dashboard__clear-filter-btn:hover {
-  background-color: #3dbdb5;
+.empty-state-link-btn:hover {
+  background-color: #3DBDB5;
+}
+
+.empty-state-link-btn:focus {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
 }
 
 /* Responsive */

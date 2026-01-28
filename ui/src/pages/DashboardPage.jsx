@@ -4,6 +4,7 @@ import { get } from '../services/api';
 import ProjectCard from '../components/projects/ProjectCard';
 import StageFilter from '../components/dashboard/StageFilter';
 import ProjectSearch from '../components/dashboard/ProjectSearch';
+import EmptyState from '../components/common/EmptyState';
 import './DashboardPage.css';
 
 /**
@@ -264,46 +265,50 @@ function DashboardPage() {
 
           {/* Empty State - no projects matching filter/search */}
           {!loading && !error && projects.length > 0 && filteredProjects.length === 0 && (
-            <div className="dashboard__empty">
-              <div className="dashboard__empty-icon">
+            <EmptyState
+              icon={
                 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="20" cy="20" r="12" stroke="currentColor" strokeWidth="2"/>
                   <path d="M42 42L30 30" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-              </div>
-              <h3 className="dashboard__empty-title">No projects found</h3>
-              <p className="dashboard__empty-description">
-                {searchQuery.trim()
+              }
+              title={searchQuery.trim() ? 'No matching projects' : 'No projects found'}
+              description={
+                searchQuery.trim()
                   ? `No projects match "${searchQuery}". Try a different search term or clear filters.`
-                  : 'No projects match the selected stage filter. Try selecting a different stage or view all projects.'}
-              </p>
-              <button
-                className="dashboard__clear-filter-btn"
-                onClick={() => {
-                  handleFilterChange('all');
-                  handleSearchChange('');
-                }}
-              >
-                Clear Filters
-              </button>
-            </div>
+                  : 'No projects match the selected stage filter. Try selecting a different stage or view all projects.'
+              }
+              actionButton={
+                <button
+                  onClick={() => {
+                    handleFilterChange('all');
+                    handleSearchChange('');
+                  }}
+                >
+                  Clear Filters
+                </button>
+              }
+            />
           )}
 
           {/* Empty State - no projects yet */}
           {!loading && !error && projects.length === 0 && (
-            <div className="dashboard__empty">
-              <div className="dashboard__empty-icon">
+            <EmptyState
+              icon={
                 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="8" y="8" width="32" height="32" rx="4" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4"/>
                   <path d="M24 18V30" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                   <path d="M18 24H30" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-              </div>
-              <h3 className="dashboard__empty-title">No projects yet</h3>
-              <p className="dashboard__empty-description">
-                Create your first project to start organizing requirements and generating PRDs.
-              </p>
-            </div>
+              }
+              title="No projects yet"
+              description="Create your first project to start organizing requirements and generating PRDs."
+              actionButton={
+                <Link to="/app" className="empty-state-link-btn">
+                  Create Project
+                </Link>
+              }
+            />
           )}
         </div>
       </section>
