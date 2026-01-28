@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { EmptyState } from '../common/EmptyState';
+import AddMeetingModal from '../requirements/AddMeetingModal';
 import './StageContent.css';
 
 /**
@@ -7,6 +8,8 @@ import './StageContent.css';
  * Shows empty state when no requirements exist, with options to add from meeting or manually.
  */
 function RequirementsStage({ project }) {
+  const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
+
   // Check if there are any requirements (requirements_status !== 'empty')
   const hasRequirements = project?.requirements_status && project.requirements_status !== 'empty';
 
@@ -22,8 +25,14 @@ function RequirementsStage({ project }) {
 
   // Handle Add Meeting button click
   const handleAddMeeting = () => {
-    // TODO: Open Add Meeting modal (P3-002a)
-    console.log('Add Meeting clicked');
+    setShowAddMeetingModal(true);
+  };
+
+  // Handle Extract Requirements from meeting content
+  const handleExtractRequirements = (content) => {
+    // TODO: Call AI extraction API (P3-002c)
+    console.log('Extract requirements from content:', content);
+    setShowAddMeetingModal(false);
   };
 
   // Handle Add Manually button click
@@ -45,6 +54,12 @@ function RequirementsStage({ project }) {
             <button key="manual" className="secondary" onClick={handleAddManually}>Add Manually</button>
           ]}
         />
+        {showAddMeetingModal && (
+          <AddMeetingModal
+            onClose={() => setShowAddMeetingModal(false)}
+            onExtract={handleExtractRequirements}
+          />
+        )}
       </div>
     );
   }
@@ -55,6 +70,12 @@ function RequirementsStage({ project }) {
       <div className="stage-content__placeholder">
         <p>Requirements list coming soon (P3-004)</p>
       </div>
+      {showAddMeetingModal && (
+        <AddMeetingModal
+          onClose={() => setShowAddMeetingModal(false)}
+          onExtract={handleExtractRequirements}
+        />
+      )}
     </div>
   );
 }
