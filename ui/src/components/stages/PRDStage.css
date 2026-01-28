@@ -1,0 +1,35 @@
+/* PRD Stage Warning Banner */
+.prd-stage__warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background-color: #FEF3C7;
+  border: 1px solid #F59E0B;
+  border-radius: 8px;
+  color: #92400E;
+  font-size: 14px;
+}
+
+.prd-stage__warning-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #D97706;
+}
+
+.prd-stage__warning-text {
+  line-height: 1.4;
+}
+
+/* Disabled button styling for Generate from Reqs when requirements not complete */
+.stage-content--prd .empty-state__action button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stage-content--prd .empty-state__action button:disabled:hover {
+  background-color: #4ECDC4;
+}
