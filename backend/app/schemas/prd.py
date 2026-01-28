@@ -76,6 +76,12 @@ class PRDUpdateRequest(BaseModel):
     sections: list[PRDSection] | None = None
 
 
+class PRDCreateRequest(BaseModel):
+    """Schema for creating a blank PRD (manual creation)."""
+    title: str | None = None
+    sections: list[PRDSection] | None = None
+
+
 # =============================================================================
 # Export Schemas
 # =============================================================================

@@ -22,6 +22,7 @@ from app.models import PRD, PRDMode, PRDStatus, Project
 from app.schemas import (
     ExportFormat,
     PaginatedResponse,
+    PRDCreateRequest,
     PRDGenerateRequest,
     PRDResponse,
     PRDSection,
@@ -199,6 +200,71 @@ def generate_prd(
         error_message=None,
         version=None,
     )
+
+
+@router.post(
+    "/projects/{project_id}/prds",
+    response_model=PRDResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_prd(
+    project_id: str,
+    request: PRDCreateRequest,
+    db: Session = Depends(get_db),
+) -> PRDResponse:
+    """Create a blank PRD for manual writing.
+
+    Creates a PRD record with ready status, allowing immediate editing.
+    The project's prd_status is set to 'draft' until the user marks it as ready.
+
+    Args:
+        project_id: The project UUID.
+        request: Optional title and initial sections.
+        db: Database session.
+
+    Returns:
+        The newly created PRD.
+    """
+    from app.models import PRDStageStatus
+
+    # Verify project exists
+    project = _get_project_or_404(project_id, db)
+
+    # Calculate next version number for this project
+    max_version = db.query(func.max(PRD.version)).filter(
+        PRD.project_id == project_id,
+        PRD.deleted_at.is_(None),
+    ).scalar()
+    next_version = (max_version or 0) + 1
+
+    # Convert sections to dict format if provided
+    sections = None
+    raw_markdown = None
+    if request.sections:
+        sections = [s.model_dump() for s in request.sections]
+        raw_markdown = _generate_markdown(request.title or "", sections)
+
+    # Create PRD record with ready status
+    prd = PRD(
+        project_id=project_id,
+        version=next_version,
+        title=request.title,
+        mode=PRDMode.DRAFT,
+        sections=sections,
+        raw_markdown=raw_markdown,
+        status=PRDStatus.READY,
+        created_by=None,  # Would be set from auth context
+        updated_by=None,
+    )
+    db.add(prd)
+
+    # Update project's prd_status to draft (manual PRD starts as draft)
+    project.prd_status = PRDStageStatus.draft
+
+    db.commit()
+    db.refresh(prd)
+
+    return _prd_to_response(prd)
 
 
 @router.get("/projects/{project_id}/prds/stream")

@@ -188,6 +188,18 @@ export async function deletePRD(prdId) {
 }
 
 /**
+ * Create a blank PRD for manual writing
+ * @param {string} projectId - Project UUID
+ * @param {object} [data] - Optional initial data
+ * @param {string} [data.title] - Optional PRD title
+ * @param {Array} [data.sections] - Optional initial sections
+ * @returns {Promise<object>} - Created PRD object
+ */
+export async function createPRD(projectId, data = {}) {
+  return post(`/api/projects/${projectId}/prds`, data);
+}
+
+/**
  * Restore a historical PRD version by creating a new version with its content
  * @param {string} prdId - PRD UUID to restore from
  * @returns {Promise<object>} - Newly created PRD object

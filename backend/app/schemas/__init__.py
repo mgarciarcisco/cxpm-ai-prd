@@ -21,6 +21,7 @@ from app.schemas.meeting import (
 from app.schemas.prd import (
     ExportFormat,
     PaginatedResponse,
+    PRDCreateRequest,
     PRDExportJSON,
     PRDExportSection,
     PRDGenerateRequest,
@@ -115,6 +116,7 @@ __all__ = [
     # PRD schemas
     "ExportFormat",
     "PaginatedResponse",
+    "PRDCreateRequest",
     "PRDExportJSON",
     "PRDExportSection",
     "PRDGenerateRequest",

@@ -6,11 +6,25 @@ import { ConfirmationDialog } from '../common/ConfirmationDialog';
 import GeneratePRDModal from '../prd/GeneratePRDModal';
 import VersionHistory from '../prd/VersionHistory';
 import { usePRDStreamingV2, SectionStatus } from '../../hooks/usePRDStreamingV2';
-import { getPRD, updatePRD, listPRDs, patch } from '../../services/api';
+import { getPRD, updatePRD, listPRDs, patch, createPRD } from '../../services/api';
 import './StageContent.css';
 import './PRDStage.css';
 
 const DEBOUNCE_DELAY_MS = 1000;
+
+const PRD_PLACEHOLDER = `Write your PRD content in Markdown...
+
+## Problem Statement
+What problem are you solving?
+
+## Goals
+What are the key objectives?
+
+## Target Users
+Who will use this product?
+
+## Solution Overview
+How will you solve the problem?`;
 
 /**
  * PRD stage content component.
@@ -64,6 +78,9 @@ function PRDStage({ project, onProjectUpdate }) {
 
   // Regenerate confirmation dialog state
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+
+  // Manual creation state
+  const [isCreatingManually, setIsCreatingManually] = useState(false);
 
   // Use the PRD streaming hook
   const {
@@ -187,9 +204,30 @@ function PRDStage({ project, onProjectUpdate }) {
     setIsGenerating(true);
   }, []);
 
-  const handleWriteManually = () => {
-    console.log('Write PRD manually');
-    // TODO: Open PRD editor directly (P3-027)
+  const handleWriteManually = async () => {
+    if (!project?.id) return;
+
+    try {
+      setIsCreatingManually(true);
+      // Create a blank PRD
+      const newPrd = await createPRD(project.id, {
+        title: `${project.name || 'Untitled'} PRD`,
+      });
+      // Set PRD data and switch to edit mode
+      setPrdData(newPrd);
+      setEditContent(newPrd.raw_markdown || '');
+      setLastUpdated(newPrd.updated_at);
+      setSaveStatus('saved');
+      setActiveTab('edit');
+      // Notify parent to refresh project data (prd_status is now 'draft')
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
+    } catch (err) {
+      console.error('Failed to create PRD:', err);
+    } finally {
+      setIsCreatingManually(false);
+    }
   };
 
   const handleRetry = () => {
@@ -638,7 +676,7 @@ function PRDStage({ project, onProjectUpdate }) {
                 value={editContent || combinedMarkdown}
                 onChange={handleEditChange}
                 onBlur={handleEditBlur}
-                placeholder="Write your PRD content in Markdown..."
+                placeholder={PRD_PLACEHOLDER}
               />
             )}
           </div>
@@ -687,8 +725,9 @@ function PRDStage({ project, onProjectUpdate }) {
               key="manual"
               className="secondary"
               onClick={handleWriteManually}
+              disabled={isCreatingManually}
             >
-              Write Manually
+              {isCreatingManually ? 'Creating...' : 'Write Manually'}
             </button>
           ]}
         />
@@ -850,7 +889,7 @@ function PRDStage({ project, onProjectUpdate }) {
                 value={editContent}
                 onChange={handleEditChange}
                 onBlur={handleEditBlur}
-                placeholder="Write your PRD content in Markdown..."
+                placeholder={PRD_PLACEHOLDER}
               />
             )}
           </div>
