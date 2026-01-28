@@ -73,11 +73,11 @@ const features = [
     Icon: GridListIcon,
     iconBg: '#E3F2FD',
     iconColor: '#1E88E5',
-    title: 'User Stories',
-    description: 'Generate actionable user stories from your requirements',
+    title: 'Epic Creation',
+    description: 'Create JIRA Epic from requirements',
     input: 'Requirements from meeting recap',
     output: 'User stories with acceptance criteria',
-    link: '/app/stories'
+    link: '/app/jira-epic'
   },
   {
     id: 4,

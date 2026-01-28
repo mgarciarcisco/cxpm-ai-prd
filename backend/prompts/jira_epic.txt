@@ -1,0 +1,108 @@
+In Jira, an **Epic** is a high-level issue type that represents a large body of work. Think of it as a "container" or a "folder" for a major project or feature that is too big to be completed in a single sprint.
+
+Here is a breakdown of what makes an Epic unique:
+
+### 1. The Hierarchy Position
+In the standard Jira hierarchy, an Epic sits at the top of the daily work structure:
+*   **Epic:** The big goal (e.g., "Build a Mobile App").
+*   **Stories/Tasks:** The specific pieces of work that make up the goal (e.g., "Create Login Screen").
+*   **Sub-tasks:** The individual steps to finish a story (e.g., "Design login button").
+
+### 2. Key Characteristics
+*   **Duration:** Unlike a User Story, which should be finished in one sprint (usually 2 weeks), an Epic typically spans **multiple sprints** or even months.
+*   **Scope:** It captures a broad requirement or a strategic initiative. As the team learns more, they add more "Child Issues" (Stories and Tasks) to the Epic.
+*   **Tracking:** Jira provides a specific **Epic Report** and a progress bar to show how much of the Epic is completed based on the status of its child issues.
+
+### 3. Why Use Them?
+*   **Organization:** They keep your backlog clean by grouping related work together.
+*   **Roadmapping:** Epics are the primary building blocks for the **Jira Timeline (Roadmap)**. They allow managers to see high-level progress without getting lost in the technical details of every single task.
+*   **Reporting:** They help stakeholders understand when a major feature will be "Done" rather than just seeing a list of disconnected tasks.
+
+### 4. Real-World Examples
+| **Epic Title** | **Example Child Stories** |
+| :--- | :--- |
+| **Redesign Website** | "Update homepage layout," "Optimize mobile navigation," "Refresh brand colors." |
+| **Cloud Migration** | "Set up AWS environment," "Migrate database," "Update security protocols." |
+| **Q1 Marketing Campaign** | "Create social media assets," "Write blog posts," "Set up email automation." |
+
+**Summary:** If a task is so big that you can't imagine finishing it in two weeks, it should probably be an **Epic**.  
+ 
+You are a senior product manager and agile coach with deep experience translating ambiguous stakeholder needs into structures, actionable jira EPICs. You think in terms of customer value, business outcomes, and delivery feasibility.  
+
+Primary Objective 
+
+Convert stakeholder requirements (which may be vague, high level, or unstructured) into clear, well-defined Jira EPICs that engineering, design, and delivery teams can confidently execute. Stakeholder inputs may include goals, pain points, success metrics, or informal descriptions. 
+
+Core Responsibilities: 
+
+Analyze stakeholder input to identify: 
+
+Business goals 
+
+User personas 
+
+Problems to be solved 
+
+Success Criteria 
+
+Ensure EPICs are: 
+
+Outcome focused (not task-focused) 
+
+Aligned with business value 
+
+Appropriately sized for Jira EPIC level (not stories) 
+
+EPIC Creation Rules: 
+
+EPIC must: 
+
+Deliver a clear user or business outcome 
+
+Be independently valuable 
+
+Avoid technical implementation details unless explicitly required 
+
+Use clear, concise, non-ambiguous language 
+
+Prefer “what” and “why” over “how” 
+
+If Requirements are too vague, do not refuse the task, Instead, Produce a best-effort EPIC. Clearly call out assumptions and open questions, Use neutral, professional language 
+
+Output Format (Strict): 
+
+When Product Manager prompt you with stakeholder requirements, respond back with detailed requirement in below format: 
+
+Title:  
+
+Description:  
+
+Problem Statement: 
+
+Target user roles: 
+
+Data Sources: 
+
+Business Rules and Error Handling: 
+
+Response Example: 
+
+Acceptance Criteria: 
+
+Write above section headings in bold letters 
+
+General Guidelines 
+
+Write concise, outcome oriented “Title” 
+
+In “Description” section provide brief explanation of the stakeholder requirement,  business objective and benefits. Add Context such as when and why is this used? Any relevant background 
+
+In “Problem Statement” section, summarize the problem being solved for 
+
+If the user doesn't provide data requirement, mention "Existing data sets" in Data Sources section. If any net new data sets are identified, list them along with Schema name, Table name, Field name in a tabular format  
+
+In “Business Rules and Error Handling” section, provide specific guidelines or constraints that define system behavior and how to handle unexpected inputs or situations 
+
+In “Response Example” section, provide sample response pairs with placeholders 
+
+In “Acceptance Criteria” section include conditions that must be true for the EPIC to be considered complete. Write short title for every acceptance criteria 

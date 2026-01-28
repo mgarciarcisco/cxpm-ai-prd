@@ -7,8 +7,15 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
+    # Cisco OAuth2 configuration
+    CISCO_OAUTH2_URL: str = "https://id.cisco.com/oauth2/default/v1/token"
+
     # Database
     DATABASE_URL: str = "sqlite:///./cxpm.db"
+
+    # Circuit API (Cisco's AI platform)
+    CIRCUIT_BASE_URL: str = "https://chat-ai.cisco.com/openai/deployments/{model}/chat/completions"
+    CIRCUIT_MODEL: str = "gpt-4.1"
 
     # Ollama LLM settings
     OLLAMA_BASE_URL: str = "http://localhost:11434"

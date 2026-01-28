@@ -14,6 +14,7 @@ import PRDStreamingPage from './pages/PRDStreamingPage'
 import PRDEditorPage from './pages/PRDEditorPage'
 import StoriesLandingPage from './pages/StoriesLandingPage'
 import UserStoriesPage from './pages/UserStoriesPage'
+import JiraEpicPage from './pages/jira_epic/JiraEpicPage'
 import './App.css'
 
 function App() {
@@ -102,6 +103,7 @@ function App() {
           <Route path="/app/prds/:prdId" element={<PRDEditorPage />} />
           <Route path="/app/stories" element={<StoriesLandingPage />} />
           <Route path="/app/projects/:projectId/stories" element={<UserStoriesPage />} />
+          <Route path="/app/jira-epic" element={<JiraEpicPage />} />
           <Route path="/app/*" element={<ProjectsPage />} />
         </Routes>
       </ErrorBoundary>
