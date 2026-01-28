@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { EmptyState } from '../common/EmptyState';
+import { StageActions } from '../stage/StageActions';
 import GenerateStoriesModal from '../stories/GenerateStoriesModal';
+import { StoryCard } from '../stories/StoryCard';
+import { StoryEditModal } from '../stories/StoryEditModal';
+import { listStories, updateStory, deleteStory, patch } from '../../services/api';
 import './StageContent.css';
 import './UserStoriesStage.css';
 
@@ -9,15 +13,29 @@ import './UserStoriesStage.css';
  * Shows empty state when no user stories exist, with options to generate from PRD or add manually.
  * Shows warning if PRD is not yet ready.
  */
-function UserStoriesStage({ project }) {
+function UserStoriesStage({ project, onProjectUpdate }) {
   // Modal state
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+
+  // Stories state
+  const [stories, setStories] = useState([]);
+  const [loadingStories, setLoadingStories] = useState(false);
+
+  // Edit modal state
+  const [editingStory, setEditingStory] = useState(null);
+  const [isSavingStory, setIsSavingStory] = useState(false);
+
+  // Mark as refined state
+  const [markingAsRefined, setMarkingAsRefined] = useState(false);
 
   // Check if there are any user stories (stories_status !== 'empty')
   const hasStories = project?.stories_status && project.stories_status !== 'empty';
 
   // Check if PRD is complete (ready)
   const prdComplete = project?.prd_status === 'ready';
+
+  // Check if stories are already refined
+  const isRefined = project?.stories_status === 'refined';
 
   // User stories icon SVG
   const storiesIcon = (
@@ -43,16 +61,96 @@ function UserStoriesStage({ project }) {
     setShowGenerateModal(true);
   };
 
+  // Load stories from API
+  const loadStories = useCallback(async () => {
+    if (!project?.id) return;
+    try {
+      setLoadingStories(true);
+      const response = await listStories(project.id, { limit: 100 });
+      setStories(response.items || []);
+    } catch (err) {
+      console.error('Failed to load stories:', err);
+    } finally {
+      setLoadingStories(false);
+    }
+  }, [project?.id]);
+
+  // Load stories when component mounts or stories exist
+  useEffect(() => {
+    if (hasStories && project?.id) {
+      loadStories();
+    }
+  }, [hasStories, project?.id, loadStories]);
+
   // Handle story generation from modal
   const handleGenerate = (options) => {
     console.log('Generate stories with options:', options);
     // TODO: Call API to generate stories (future task)
+    // After generation, reload stories and refresh project
+    loadStories();
+    if (onProjectUpdate) {
+      onProjectUpdate();
+    }
   };
 
   // Handle Add Manually button click
   const handleAddManually = () => {
     console.log('Add story manually');
-    // TODO: Open StoryEditorModal (P3-020/P3-021)
+    // TODO: Open StoryEditorModal in create mode (P3-021)
+  };
+
+  // Handle edit story
+  const handleEditStory = (story) => {
+    setEditingStory(story);
+  };
+
+  // Handle save story changes
+  const handleSaveStory = async (storyId, updatedData) => {
+    try {
+      setIsSavingStory(true);
+      await updateStory(storyId, updatedData);
+      // Reload stories to get updated data
+      await loadStories();
+      setEditingStory(null);
+    } catch (err) {
+      console.error('Failed to save story:', err);
+    } finally {
+      setIsSavingStory(false);
+    }
+  };
+
+  // Handle delete story
+  const handleDeleteStory = async (storyId) => {
+    try {
+      await deleteStory(storyId);
+      // Reload stories to reflect deletion
+      await loadStories();
+      // Refresh project to update status if needed
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
+    } catch (err) {
+      console.error('Failed to delete story:', err);
+      throw err; // Re-throw to keep modal open on error
+    }
+  };
+
+  // Handle Mark as Refined - updates stories_status to 'refined'
+  const handleMarkAsRefined = async () => {
+    if (!project?.id) return;
+
+    try {
+      setMarkingAsRefined(true);
+      await patch(`/api/projects/${project.id}/stages/stories`, { status: 'refined' });
+      // Notify parent to refresh project data
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
+    } catch (err) {
+      console.error('Failed to mark as refined:', err);
+    } finally {
+      setMarkingAsRefined(false);
+    }
   };
 
   // Empty state - no stories yet
@@ -106,19 +204,60 @@ function UserStoriesStage({ project }) {
     );
   }
 
-  // Placeholder for stories list view (to be implemented in later tasks)
-  return (
-    <div className="stage-content stage-content--stories">
-      <div className="stage-content__placeholder">
-        <div className="stage-content__placeholder-icon">
-          {storiesIcon}
+  // Loading state
+  if (loadingStories) {
+    return (
+      <div className="stage-content stage-content--stories">
+        <div className="stories-stage__loading">
+          <div className="stories-stage__spinner" />
+          <span className="stories-stage__loading-text">Loading stories...</span>
         </div>
-        <h2 className="stage-content__placeholder-title">User Stories</h2>
-        <p className="stage-content__placeholder-text">
-          Stories list view coming soon.
-        </p>
       </div>
-    </div>
+    );
+  }
+
+  // Stories list view
+  return (
+    <>
+      <div className="stage-content stage-content--stories">
+        <div className="stories-stage__header">
+          <h2 className="stories-stage__title">
+            User Stories ({stories.length})
+          </h2>
+        </div>
+
+        <div className="stories-stage__list">
+          {stories.map((story) => (
+            <StoryCard
+              key={story.id}
+              story={story}
+              onEdit={handleEditStory}
+              onDelete={handleDeleteStory}
+              showDragHandle={false}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Stage Actions */}
+      <StageActions
+        primaryAction={
+          isRefined
+            ? { label: 'Refined', onClick: () => {}, disabled: true }
+            : { label: 'Mark as Refined', onClick: handleMarkAsRefined, loading: markingAsRefined }
+        }
+      />
+
+      {/* Story Edit Modal */}
+      {editingStory && (
+        <StoryEditModal
+          story={editingStory}
+          onSave={handleSaveStory}
+          onClose={() => setEditingStory(null)}
+          isSaving={isSavingStory}
+        />
+      )}
+    </>
   );
 }
 
