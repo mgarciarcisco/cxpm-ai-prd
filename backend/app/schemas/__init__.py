@@ -48,6 +48,7 @@ from app.schemas.project import (
     calculate_progress,
 )
 from app.schemas.requirement import (
+    RequirementCreate,
     RequirementHistoryResponse,
     RequirementReorderRequest,
     RequirementResponse,
@@ -103,6 +104,7 @@ __all__ = [
     "ResolveRequest",
     "ResolveResponse",
     # Requirement schemas
+    "RequirementCreate",
     "RequirementSourceResponse",
     "RequirementHistoryResponse",
     "RequirementResponse",

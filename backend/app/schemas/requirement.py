@@ -47,6 +47,13 @@ class RequirementResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class RequirementCreate(BaseModel):
+    """Schema for creating a new requirement manually."""
+
+    section: Section
+    content: str
+
+
 class RequirementUpdate(BaseModel):
     """Schema for updating a requirement."""
 

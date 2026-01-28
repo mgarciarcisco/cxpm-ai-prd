@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Action, Actor, Project, Requirement, RequirementHistory
 from app.schemas import (
+    RequirementCreate,
     RequirementHistoryResponse,
     RequirementReorderRequest,
     RequirementResponse,
@@ -85,6 +86,69 @@ def list_project_requirements(
         grouped[req.section.value].append(response)
 
     return RequirementsListResponse(**grouped)
+
+
+@router.post(
+    "/projects/{project_id}/requirements",
+    response_model=RequirementResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_requirement(
+    project_id: str,
+    create_data: RequirementCreate,
+    db: Session = Depends(get_db),
+) -> RequirementResponse:
+    """Create a new requirement manually.
+
+    Records the creation in RequirementHistory with actor=user, action=created.
+    Returns the created requirement.
+    """
+    # Verify project exists
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    # Get the max order for requirements in this section to append at end
+    max_order = (
+        db.query(Requirement.order)
+        .filter(
+            Requirement.project_id == project_id,
+            Requirement.section == create_data.section,
+            Requirement.is_active == True,
+        )
+        .order_by(Requirement.order.desc())
+        .first()
+    )
+    next_order = (max_order[0] + 1) if max_order else 1
+
+    # Create the requirement
+    requirement = Requirement(
+        project_id=project_id,
+        section=create_data.section,
+        content=create_data.content,
+        order=next_order,
+        is_active=True,
+    )
+    db.add(requirement)
+    db.flush()  # Get the ID before adding history
+
+    # Record creation in history
+    history_entry = RequirementHistory(
+        requirement_id=requirement.id,
+        actor=Actor.user,
+        action=Action.created,
+        old_content=None,
+        new_content=create_data.content,
+    )
+    db.add(history_entry)
+
+    db.commit()
+    db.refresh(requirement)
+
+    # Auto-update requirements stage status
+    update_requirements_status(project_id, db)
+
+    return _build_requirement_response(requirement)
 
 
 def _slugify_filename(name: str) -> str:

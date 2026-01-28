@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { EmptyState } from '../common/EmptyState';
 import AddMeetingModal from '../requirements/AddMeetingModal';
+import AddManuallyModal from '../requirements/AddManuallyModal';
 import './StageContent.css';
 
 /**
@@ -9,6 +10,7 @@ import './StageContent.css';
  */
 function RequirementsStage({ project }) {
   const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
+  const [showAddManuallyModal, setShowAddManuallyModal] = useState(false);
 
   // Check if there are any requirements (requirements_status !== 'empty')
   const hasRequirements = project?.requirements_status && project.requirements_status !== 'empty';
@@ -37,8 +39,13 @@ function RequirementsStage({ project }) {
 
   // Handle Add Manually button click
   const handleAddManually = () => {
-    // TODO: Open Add Manually modal (P3-003)
-    console.log('Add Manually clicked');
+    setShowAddManuallyModal(true);
+  };
+
+  // Handle requirement added manually
+  const handleRequirementAdded = (requirement) => {
+    console.log('Requirement added:', requirement);
+    // TODO: Refresh project data to show new requirements (P3-004)
   };
 
   // Empty state - no requirements yet
@@ -61,6 +68,13 @@ function RequirementsStage({ project }) {
             onSave={handleSaveRequirements}
           />
         )}
+        {showAddManuallyModal && (
+          <AddManuallyModal
+            projectId={project?.id}
+            onClose={() => setShowAddManuallyModal(false)}
+            onAdd={handleRequirementAdded}
+          />
+        )}
       </div>
     );
   }
@@ -76,6 +90,13 @@ function RequirementsStage({ project }) {
           projectId={project?.id}
           onClose={() => setShowAddMeetingModal(false)}
           onSave={handleSaveRequirements}
+        />
+      )}
+      {showAddManuallyModal && (
+        <AddManuallyModal
+          projectId={project?.id}
+          onClose={() => setShowAddManuallyModal(false)}
+          onAdd={handleRequirementAdded}
         />
       )}
     </div>
