@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Markdown from 'react-markdown';
 import { EmptyState } from '../common/EmptyState';
 import GeneratePRDModal from '../prd/GeneratePRDModal';
 import { usePRDStreamingV2, SectionStatus } from '../../hooks/usePRDStreamingV2';
+import { getPRD, updatePRD, listPRDs } from '../../services/api';
 import './StageContent.css';
 import './PRDStage.css';
+
+const DEBOUNCE_DELAY_MS = 1000;
 
 /**
  * PRD stage content component.
@@ -12,10 +15,40 @@ import './PRDStage.css';
  * Shows warning if requirements are not yet reviewed.
  * Supports section-by-section streaming during PRD generation.
  */
+/**
+ * Format a relative time string (e.g., "2 minutes ago", "just now")
+ */
+function formatTimeAgo(date) {
+  if (!date) return '';
+  const now = new Date();
+  const then = new Date(date);
+  const diffMs = now - then;
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSecs < 60) return 'just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+}
+
 function PRDStage({ project, onProjectUpdate }) {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationMode, setGenerationMode] = useState(null);
+
+  // View/Edit state
+  const [activeTab, setActiveTab] = useState('preview'); // 'preview' or 'edit'
+  const [prdData, setPrdData] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [loadingPRD, setLoadingPRD] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'unsaved', 'error'
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  // Refs for debounce
+  const saveTimeoutRef = useRef(null);
 
   // Use the PRD streaming hook
   const {
@@ -25,6 +58,7 @@ function PRDStage({ project, onProjectUpdate }) {
     status: streamStatus,
     error: streamError,
     retry,
+    prdId: streamPrdId,
   } = usePRDStreamingV2(project?.id, generationMode, isGenerating);
 
   // Check if PRD exists (prd_status !== 'empty')
@@ -32,6 +66,41 @@ function PRDStage({ project, onProjectUpdate }) {
 
   // Check if requirements are complete (reviewed)
   const requirementsComplete = project?.requirements_status === 'reviewed';
+
+  // Load PRD data from API
+  const loadPRDData = useCallback(async () => {
+    try {
+      setLoadingPRD(true);
+      // Get the latest PRD for this project
+      const prdsResponse = await listPRDs(project.id, { limit: 1 });
+      if (prdsResponse.items && prdsResponse.items.length > 0) {
+        const latestPrd = prdsResponse.items[0];
+        // Fetch full PRD with content
+        const fullPrd = await getPRD(latestPrd.id);
+        setPrdData(fullPrd);
+        setEditContent(fullPrd.raw_markdown || '');
+        setLastUpdated(fullPrd.updated_at);
+        setSaveStatus('saved');
+      }
+    } catch (err) {
+      console.error('Failed to load PRD:', err);
+    } finally {
+      setLoadingPRD(false);
+    }
+  }, [project?.id]);
+
+  // Load PRD data when component mounts or PRD exists
+  useEffect(() => {
+    if (hasPRD && project?.id && !isGenerating) {
+      loadPRDData();
+    }
+    // Cleanup timeout on unmount
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [hasPRD, project?.id, isGenerating, loadPRDData]);
 
   // Handle stream completion
   useEffect(() => {
@@ -41,8 +110,28 @@ function PRDStage({ project, onProjectUpdate }) {
       if (onProjectUpdate) {
         onProjectUpdate();
       }
+      // Load the newly generated PRD
+      if (streamPrdId) {
+        loadPRDFromId(streamPrdId);
+      }
     }
-  }, [streamStatus, onProjectUpdate]);
+  }, [streamStatus, onProjectUpdate, streamPrdId]);
+
+  // Load PRD from a specific ID (used after generation)
+  const loadPRDFromId = async (prdId) => {
+    try {
+      setLoadingPRD(true);
+      const fullPrd = await getPRD(prdId);
+      setPrdData(fullPrd);
+      setEditContent(fullPrd.raw_markdown || '');
+      setLastUpdated(fullPrd.updated_at);
+      setSaveStatus('saved');
+    } catch (err) {
+      console.error('Failed to load generated PRD:', err);
+    } finally {
+      setLoadingPRD(false);
+    }
+  };
 
   // Handle stream error
   useEffect(() => {
@@ -90,6 +179,103 @@ function PRDStage({ project, onProjectUpdate }) {
 
   const handleRetry = () => {
     retry();
+  };
+
+  // Parse markdown content into sections for API update
+  const parseMarkdownToSections = (markdown) => {
+    // Split by ## headers to extract sections
+    const lines = markdown.split('\n');
+    const sections = [];
+    let currentSection = null;
+    let contentLines = [];
+
+    for (const line of lines) {
+      const headerMatch = line.match(/^##\s+(.+)/);
+      if (headerMatch) {
+        // Save previous section if exists
+        if (currentSection) {
+          sections.push({
+            title: currentSection,
+            content: contentLines.join('\n').trim()
+          });
+        }
+        currentSection = headerMatch[1];
+        contentLines = [];
+      } else if (currentSection) {
+        contentLines.push(line);
+      }
+    }
+
+    // Save last section
+    if (currentSection) {
+      sections.push({
+        title: currentSection,
+        content: contentLines.join('\n').trim()
+      });
+    }
+
+    // If no sections were parsed, treat entire content as one section
+    if (sections.length === 0 && markdown.trim()) {
+      sections.push({
+        title: 'Content',
+        content: markdown.trim()
+      });
+    }
+
+    return sections;
+  };
+
+  // Auto-save PRD content with debounce
+  const saveContent = useCallback(async (content) => {
+    if (!prdData?.id) return;
+    try {
+      setSaveStatus('saving');
+      // Parse markdown content to sections for API
+      const sections = parseMarkdownToSections(content);
+      const updatedPrd = await updatePRD(prdData.id, {
+        title: prdData.title,
+        sections: sections
+      });
+      // Update local PRD data with new sections
+      setPrdData(prev => ({
+        ...prev,
+        sections: updatedPrd.sections,
+        raw_markdown: updatedPrd.raw_markdown
+      }));
+      setLastUpdated(updatedPrd.updated_at || new Date().toISOString());
+      setSaveStatus('saved');
+    } catch (err) {
+      console.error('Failed to save PRD:', err);
+      setSaveStatus('error');
+    }
+  }, [prdData?.id, prdData?.title]);
+
+  // Debounced save handler
+  const debouncedSave = useCallback((content) => {
+    setSaveStatus('unsaved');
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveContent(content);
+    }, DEBOUNCE_DELAY_MS);
+  }, [saveContent]);
+
+  // Handle edit content change
+  const handleEditChange = (e) => {
+    const newContent = e.target.value;
+    setEditContent(newContent);
+    debouncedSave(newContent);
+  };
+
+  // Handle blur - save immediately if there are unsaved changes
+  const handleEditBlur = () => {
+    if (saveStatus === 'unsaved' && prdData?.id) {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveContent(editContent);
+    }
   };
 
   // Get sorted sections for rendering
@@ -213,45 +399,89 @@ function PRDStage({ project, onProjectUpdate }) {
     );
   }
 
-  // Show completed PRD with sections
+  // Show completed PRD with Preview/Edit tabs
   if ((streamStatus === 'complete' || streamStatus === 'partial') && sortedSections.length > 0) {
+    // Build markdown content from sections for display
+    const combinedMarkdown = sortedSections
+      .filter(s => s.status === SectionStatus.COMPLETED && s.content)
+      .map(s => `## ${s.title || formatSectionId(s.id)}\n\n${s.content}`)
+      .join('\n\n');
+
     return (
       <div className="stage-content stage-content--prd">
-        <div className="prd-content">
-          {/* Completion notice */}
-          <div className="prd-content__header">
-            <span className="prd-content__title">
-              Product Requirements Document
-            </span>
-            {streamStatus === 'partial' && (
-              <span className="prd-content__warning">
-                Some sections failed to generate
-              </span>
-            )}
+        <div className="prd-viewer">
+          {/* Header with tabs */}
+          <div className="prd-viewer__header">
+            <div className="prd-viewer__tabs">
+              <button
+                className={`prd-viewer__tab ${activeTab === 'preview' ? 'prd-viewer__tab--active' : ''}`}
+                onClick={() => setActiveTab('preview')}
+              >
+                Preview
+              </button>
+              <button
+                className={`prd-viewer__tab ${activeTab === 'edit' ? 'prd-viewer__tab--active' : ''}`}
+                onClick={() => setActiveTab('edit')}
+              >
+                Edit
+              </button>
+            </div>
+            <div className="prd-viewer__meta">
+              {streamStatus === 'partial' && (
+                <span className="prd-viewer__warning">
+                  Some sections failed to generate
+                </span>
+              )}
+              {lastUpdated && (
+                <span className="prd-viewer__timestamp">
+                  Last edited {formatTimeAgo(lastUpdated)}
+                </span>
+              )}
+              {activeTab === 'edit' && (
+                <span className={`prd-viewer__save-status prd-viewer__save-status--${saveStatus}`}>
+                  {saveStatus === 'saving' && 'Saving...'}
+                  {saveStatus === 'saved' && 'Saved'}
+                  {saveStatus === 'unsaved' && 'Unsaved changes'}
+                  {saveStatus === 'error' && 'Error saving'}
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Sections */}
-          <div className="prd-content__sections">
-            {sortedSections.map((section) => (
-              <div
-                key={section.id}
-                className={`prd-section prd-section--${section.status}`}
-              >
-                <h2 className="prd-section__title">
-                  {section.title || formatSectionId(section.id)}
-                </h2>
-                {section.status === SectionStatus.COMPLETED && section.content && (
-                  <div className="prd-section__content">
-                    <Markdown>{section.content}</Markdown>
+          {/* Content area */}
+          <div className="prd-viewer__content">
+            {activeTab === 'preview' ? (
+              <div className="prd-viewer__preview">
+                {sortedSections.map((section) => (
+                  <div
+                    key={section.id}
+                    className={`prd-section prd-section--${section.status}`}
+                  >
+                    <h2 className="prd-section__title">
+                      {section.title || formatSectionId(section.id)}
+                    </h2>
+                    {section.status === SectionStatus.COMPLETED && section.content && (
+                      <div className="prd-section__content">
+                        <Markdown>{section.content}</Markdown>
+                      </div>
+                    )}
+                    {section.status === SectionStatus.FAILED && (
+                      <div className="prd-section__error">
+                        {section.error || 'Failed to generate this section'}
+                      </div>
+                    )}
                   </div>
-                )}
-                {section.status === SectionStatus.FAILED && (
-                  <div className="prd-section__error">
-                    {section.error || 'Failed to generate this section'}
-                  </div>
-                )}
+                ))}
               </div>
-            ))}
+            ) : (
+              <textarea
+                className="prd-viewer__editor"
+                value={editContent || combinedMarkdown}
+                onChange={handleEditChange}
+                onBlur={handleEditBlur}
+                placeholder="Write your PRD content in Markdown..."
+              />
+            )}
           </div>
         </div>
       </div>
@@ -307,17 +537,101 @@ function PRDStage({ project, onProjectUpdate }) {
     );
   }
 
-  // PRD exists - placeholder for P3-011 (view/edit PRD)
+  // PRD exists - show with Preview/Edit tabs
+  if (loadingPRD) {
+    return (
+      <div className="stage-content stage-content--prd">
+        <div className="prd-loading">
+          <div className="prd-loading__spinner" />
+          <span className="prd-loading__text">Loading PRD...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (prdData) {
+    return (
+      <div className="stage-content stage-content--prd">
+        <div className="prd-viewer">
+          {/* Header with tabs */}
+          <div className="prd-viewer__header">
+            <div className="prd-viewer__tabs">
+              <button
+                className={`prd-viewer__tab ${activeTab === 'preview' ? 'prd-viewer__tab--active' : ''}`}
+                onClick={() => setActiveTab('preview')}
+              >
+                Preview
+              </button>
+              <button
+                className={`prd-viewer__tab ${activeTab === 'edit' ? 'prd-viewer__tab--active' : ''}`}
+                onClick={() => setActiveTab('edit')}
+              >
+                Edit
+              </button>
+            </div>
+            <div className="prd-viewer__meta">
+              {lastUpdated && (
+                <span className="prd-viewer__timestamp">
+                  Last edited {formatTimeAgo(lastUpdated)}
+                </span>
+              )}
+              {activeTab === 'edit' && (
+                <span className={`prd-viewer__save-status prd-viewer__save-status--${saveStatus}`}>
+                  {saveStatus === 'saving' && 'Saving...'}
+                  {saveStatus === 'saved' && 'Saved'}
+                  {saveStatus === 'unsaved' && 'Unsaved changes'}
+                  {saveStatus === 'error' && 'Error saving'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Content area */}
+          <div className="prd-viewer__content">
+            {activeTab === 'preview' ? (
+              <div className="prd-viewer__preview">
+                {prdData.sections && prdData.sections.length > 0 ? (
+                  prdData.sections.map((section, index) => (
+                    <div key={index} className="prd-section prd-section--completed">
+                      <h2 className="prd-section__title">
+                        {section.title || `Section ${index + 1}`}
+                      </h2>
+                      <div className="prd-section__content">
+                        <Markdown>{section.content || ''}</Markdown>
+                      </div>
+                    </div>
+                  ))
+                ) : prdData.raw_markdown ? (
+                  <div className="prd-viewer__markdown">
+                    <Markdown>{prdData.raw_markdown}</Markdown>
+                  </div>
+                ) : (
+                  <div className="prd-viewer__empty">
+                    No content yet. Switch to Edit tab to add content.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <textarea
+                className="prd-viewer__editor"
+                value={editContent}
+                onChange={handleEditChange}
+                onBlur={handleEditBlur}
+                placeholder="Write your PRD content in Markdown..."
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback loading state
   return (
     <div className="stage-content stage-content--prd">
-      <div className="stage-content__placeholder">
-        <div className="stage-content__placeholder-icon">
-          {prdIcon}
-        </div>
-        <h2 className="stage-content__placeholder-title">Product Requirements Document</h2>
-        <p className="stage-content__placeholder-text">
-          PRD content view will be implemented in future tasks.
-        </p>
+      <div className="prd-loading">
+        <div className="prd-loading__spinner" />
+        <span className="prd-loading__text">Loading PRD...</span>
       </div>
     </div>
   );
