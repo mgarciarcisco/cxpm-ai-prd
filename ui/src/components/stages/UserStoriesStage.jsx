@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { EmptyState } from '../common/EmptyState';
 import { StageActions } from '../stage/StageActions';
 import GenerateStoriesModal from '../stories/GenerateStoriesModal';
 import { StoryCard } from '../stories/StoryCard';
 import { StoryEditModal } from '../stories/StoryEditModal';
+import { StoryFilters } from '../stories/StoryFilters';
 import { listStories, updateStory, deleteStory, patch, reorderStories } from '../../services/api';
 import './StageContent.css';
 import './UserStoriesStage.css';
@@ -32,6 +33,46 @@ function UserStoriesStage({ project, onProjectUpdate }) {
   const [draggedStoryId, setDraggedStoryId] = useState(null);
   const [dragOverStoryId, setDragOverStoryId] = useState(null);
   const dragNodeRef = useRef(null);
+
+  // Filters state
+  const [filters, setFilters] = useState({ size: 'all', priority: 'all', search: '' });
+
+  // Filtered stories based on current filters
+  const filteredStories = useMemo(() => {
+    return stories.filter((story) => {
+      // Size filter
+      if (filters.size !== 'all') {
+        const storySize = (story.size || 'M').toUpperCase();
+        if (storySize !== filters.size.toUpperCase()) {
+          return false;
+        }
+      }
+
+      // Priority filter
+      if (filters.priority !== 'all') {
+        const storyPriority = (story.priority || '').toLowerCase();
+        if (storyPriority !== filters.priority.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // Search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesId = story.story_id?.toLowerCase().includes(searchLower);
+        const matchesTitle = story.title?.toLowerCase().includes(searchLower);
+        const matchesDescription = story.description?.toLowerCase().includes(searchLower);
+        const matchesLabels = story.labels?.some((label) =>
+          label.toLowerCase().includes(searchLower)
+        );
+        if (!matchesId && !matchesTitle && !matchesDescription && !matchesLabels) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [stories, filters]);
 
   // Check if there are any user stories (stories_status !== 'empty')
   const hasStories = project?.stories_status && project.stories_status !== 'empty';
@@ -315,31 +356,65 @@ function UserStoriesStage({ project, onProjectUpdate }) {
           </h2>
         </div>
 
+        {/* Story Filters */}
+        <StoryFilters
+          filters={filters}
+          onChange={setFilters}
+          filteredCount={filteredStories.length}
+          totalCount={stories.length}
+        />
+
         <div className="stories-stage__list">
-          {stories.map((story) => (
-            <div
-              key={story.id}
-              className={`stories-stage__card-wrapper ${
-                dragOverStoryId === story.id ? 'stories-stage__card-wrapper--drag-over' : ''
-              } ${draggedStoryId === story.id ? 'stories-stage__card-wrapper--dragging' : ''}`}
-              draggable
-              onDragStart={(e) => handleDragStart(e, story.id)}
-              onDragEnd={handleDragEnd}
-              onDragOver={(e) => handleDragOver(e, story.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, story.id)}
-            >
-              <StoryCard
-                story={story}
-                onEdit={handleEditStory}
-                onDelete={handleDeleteStory}
-                showDragHandle={true}
-                dragHandleProps={{
-                  onMouseDown: (e) => e.stopPropagation(),
-                }}
-              />
+          {filteredStories.length === 0 ? (
+            <div className="stories-stage__no-results">
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <p>No stories match your filters</p>
+              <button
+                type="button"
+                className="stories-stage__clear-filters-btn"
+                onClick={() => setFilters({ size: 'all', priority: 'all', search: '' })}
+              >
+                Clear Filters
+              </button>
             </div>
-          ))}
+          ) : (
+            filteredStories.map((story) => (
+              <div
+                key={story.id}
+                className={`stories-stage__card-wrapper ${
+                  dragOverStoryId === story.id ? 'stories-stage__card-wrapper--drag-over' : ''
+                } ${draggedStoryId === story.id ? 'stories-stage__card-wrapper--dragging' : ''}`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, story.id)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => handleDragOver(e, story.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, story.id)}
+              >
+                <StoryCard
+                  story={story}
+                  onEdit={handleEditStory}
+                  onDelete={handleDeleteStory}
+                  showDragHandle={true}
+                  dragHandleProps={{
+                    onMouseDown: (e) => e.stopPropagation(),
+                  }}
+                />
+              </div>
+            ))
+          )}
         </div>
       </div>
 
