@@ -295,6 +295,51 @@ function QuickConvertPRDPage() {
     });
   };
 
+  // Parse markdown content into sections for saving
+  const parseMarkdownToSections = (markdown) => {
+    const lines = markdown.split('\n');
+    const sections = [];
+    let currentSection = null;
+    let contentLines = [];
+
+    for (const line of lines) {
+      const headerMatch = line.match(/^##\s+(.+)/);
+      if (headerMatch) {
+        // Save previous section if exists
+        if (currentSection) {
+          sections.push({
+            id: currentSection.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+            title: currentSection,
+            content: contentLines.join('\n').trim(),
+          });
+        }
+        currentSection = headerMatch[1];
+        contentLines = [];
+      } else if (currentSection) {
+        contentLines.push(line);
+      }
+    }
+
+    // Save last section
+    if (currentSection) {
+      sections.push({
+        id: currentSection.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+        title: currentSection,
+        content: contentLines.join('\n').trim(),
+      });
+    }
+
+    return sections;
+  };
+
+  // Get sections for saving - parse from editContent if in edit mode
+  const getSectionsForSave = () => {
+    if (activeTab === 'edit' && editContent) {
+      return parseMarkdownToSections(editContent);
+    }
+    return generatedPRD?.sections || [];
+  };
+
   // Handle Download - download PRD as Markdown file
   const handleDownload = () => {
     const markdownContent = activeTab === 'edit' ? editContent : generatedPRD?.markdown;
@@ -756,7 +801,7 @@ function QuickConvertPRDPage() {
           dataType="prd"
           data={{
             title: 'Generated PRD',
-            sections: generatedPRD?.sections || [],
+            sections: getSectionsForSave(),
             markdown: activeTab === 'edit' ? editContent : generatedPRD?.markdown,
           }}
         />
