@@ -16,7 +16,14 @@ class MockLLMProvider:
         self.generate_called = False
         self.prompt_received: str | None = None
 
-    def generate(self, prompt: str) -> str:
+    def generate(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        timeout: float | None = None,
+    ) -> str:
         self.generate_called = True
         self.prompt_received = prompt
         return self.response
@@ -28,7 +35,14 @@ class FailingLLMProvider:
     def __init__(self, error_message: str = "LLM unavailable"):
         self.error_message = error_message
 
-    def generate(self, prompt: str) -> str:
+    def generate(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        timeout: float | None = None,
+    ) -> str:
         raise LLMError(self.error_message)
 
 

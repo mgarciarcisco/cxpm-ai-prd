@@ -1,0 +1,518 @@
+/* Story Edit Modal Styles */
+
+.story-edit-modal {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Field Styles */
+.story-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.story-edit-field--half {
+  flex: 1;
+}
+
+.story-edit-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.story-edit-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.story-edit-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.story-edit-required {
+  color: #EF4444;
+}
+
+.story-edit-hint {
+  font-size: 0.75rem;
+  color: #6B7280;
+  margin-top: 0.25rem;
+}
+
+/* Input Styles */
+.story-edit-input,
+.story-edit-textarea,
+.story-edit-select {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  background-color: #FFFFFF;
+  color: #1F2937;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.story-edit-input:focus,
+.story-edit-textarea:focus,
+.story-edit-select:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.story-edit-input:disabled,
+.story-edit-textarea:disabled,
+.story-edit-select:disabled {
+  background-color: #F3F4F6;
+  cursor: not-allowed;
+}
+
+.story-edit-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.story-edit-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+/* Add Button */
+.story-edit-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #3B82F6;
+  background-color: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.story-edit-add-btn:hover:not(:disabled) {
+  background-color: #DBEAFE;
+  border-color: #93C5FD;
+}
+
+.story-edit-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Acceptance Criteria List */
+.story-edit-criteria-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.story-edit-criteria-empty {
+  font-size: 0.875rem;
+  color: #9CA3AF;
+  font-style: italic;
+  padding: 0.75rem;
+  background-color: #F9FAFB;
+  border-radius: 6px;
+  border: 1px dashed #D1D5DB;
+  text-align: center;
+}
+
+/* Single Criterion Row */
+.story-edit-criterion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.story-edit-criterion:hover {
+  background-color: #F3F4F6;
+}
+
+.story-edit-criterion--dragging {
+  opacity: 0.5;
+  background-color: #EFF6FF;
+  border-color: #3B82F6;
+}
+
+.story-edit-criterion-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  color: #9CA3AF;
+  background: none;
+  border: none;
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.story-edit-criterion-handle:active {
+  cursor: grabbing;
+}
+
+.story-edit-criterion-handle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.story-edit-criterion-input {
+  flex: 1;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.875rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  background-color: #FFFFFF;
+  color: #1F2937;
+  min-width: 0;
+}
+
+.story-edit-criterion-input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.story-edit-criterion-input:disabled {
+  background-color: #F3F4F6;
+  cursor: not-allowed;
+}
+
+.story-edit-criterion-move {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.story-edit-criterion-move-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 16px;
+  padding: 0;
+  color: #6B7280;
+  background-color: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.story-edit-criterion-move-btn:hover:not(:disabled) {
+  background-color: #EFF6FF;
+  color: #3B82F6;
+  border-color: #93C5FD;
+}
+
+.story-edit-criterion-move-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.story-edit-criterion-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: #9CA3AF;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.story-edit-criterion-remove:hover:not(:disabled) {
+  color: #EF4444;
+  background-color: #FEE2E2;
+}
+
+.story-edit-criterion-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Labels Container */
+.story-edit-labels-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.story-edit-labels-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.story-edit-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  color: #4B5563;
+  background-color: #F3F4F6;
+  border: 1px solid #E5E7EB;
+  border-radius: 999px;
+}
+
+.story-edit-label-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: #9CA3AF;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.story-edit-label-remove:hover:not(:disabled) {
+  color: #EF4444;
+  background-color: #FEE2E2;
+}
+
+.story-edit-label-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.story-edit-label-add {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.story-edit-label-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  background-color: #FFFFFF;
+  color: #1F2937;
+}
+
+.story-edit-label-input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.story-edit-label-input:disabled {
+  background-color: #F3F4F6;
+  cursor: not-allowed;
+}
+
+.story-edit-label-add-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #3B82F6;
+  background-color: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.story-edit-label-add-btn:hover:not(:disabled) {
+  background-color: #DBEAFE;
+  border-color: #93C5FD;
+}
+
+.story-edit-label-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Action Buttons */
+.story-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #E5E7EB;
+  margin-top: 0.5rem;
+}
+
+.story-edit-cancel-btn,
+.story-edit-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.story-edit-cancel-btn {
+  color: #4B5563;
+  background-color: #FFFFFF;
+  border: 1px solid #D1D5DB;
+}
+
+.story-edit-cancel-btn:hover:not(:disabled) {
+  background-color: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.story-edit-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.story-edit-save-btn {
+  color: #FFFFFF;
+  background-color: #3B82F6;
+  border: 1px solid #3B82F6;
+}
+
+.story-edit-save-btn:hover:not(:disabled) {
+  background-color: #2563EB;
+  border-color: #2563EB;
+}
+
+.story-edit-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Save Spinner */
+.story-edit-save-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: story-edit-spin 0.8s linear infinite;
+}
+
+@keyframes story-edit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Unsaved Changes Modal */
+.story-edit-unsaved-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 400px;
+}
+
+.story-edit-unsaved-message {
+  font-size: 0.9375rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.story-edit-unsaved-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.story-edit-unsaved-stay-btn,
+.story-edit-unsaved-discard-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.story-edit-unsaved-stay-btn {
+  color: #374151;
+  background-color: #FFFFFF;
+  border: 1px solid #D1D5DB;
+}
+
+.story-edit-unsaved-stay-btn:hover {
+  background-color: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.story-edit-unsaved-discard-btn {
+  color: #FFFFFF;
+  background-color: #EF4444;
+  border: 1px solid #EF4444;
+}
+
+.story-edit-unsaved-discard-btn:hover {
+  background-color: #DC2626;
+  border-color: #DC2626;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .story-edit-modal {
+    max-width: 100%;
+  }
+
+  .story-edit-row {
+    flex-direction: column;
+  }
+
+  .story-edit-actions {
+    flex-direction: column-reverse;
+  }
+
+  .story-edit-cancel-btn,
+  .story-edit-save-btn {
+    width: 100%;
+  }
+
+  .story-edit-unsaved-actions {
+    flex-direction: column-reverse;
+  }
+
+  .story-edit-unsaved-stay-btn,
+  .story-edit-unsaved-discard-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+}

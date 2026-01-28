@@ -197,16 +197,18 @@ export function RecapEditor({ meetingId, items = [], onEditItem, onDeleteItem, o
     <div className="recap-editor">
       {SECTIONS.map((section) => {
         const sectionItems = groupedItems[section.key];
+        // Filter out items with empty content for accurate count and display
+        const nonEmptyItems = sectionItems.filter(item => item.content && item.content.trim());
         return (
           <CollapsibleSection
             key={section.key}
             title={section.label}
-            itemCount={sectionItems.length}
+            itemCount={nonEmptyItems.length}
             defaultExpanded={true}
           >
-            {sectionItems.length > 0 ? (
+            {nonEmptyItems.length > 0 ? (
               <div className="recap-editor-items">
-                {sectionItems.map((item) => (
+                {nonEmptyItems.map((item) => (
                   <div key={item.id} className="recap-editor-item-wrapper">
                     <ItemRow
                       item={item}

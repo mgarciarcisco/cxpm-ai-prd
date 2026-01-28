@@ -13,10 +13,13 @@ from app.models import (  # noqa: F401
     MeetingItem,
     MeetingItemDecision,
     MeetingRecap,
+    PRD,
     Project,
     Requirement,
     RequirementHistory,
     RequirementSource,
+    StoryBatch,
+    UserStory,
 )
 
 # this is the Alembic Config object, which provides

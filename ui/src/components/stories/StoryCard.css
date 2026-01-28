@@ -1,0 +1,429 @@
+/* StoryCard Container */
+.story-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.story-card:hover {
+  border-color: #D1D5DB;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.story-card--expanded {
+  border-color: #3B82F6;
+}
+
+/* Header */
+.story-card-header {
+  padding: 0.875rem 1rem;
+  background-color: #FFFFFF;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.story-card-header:hover {
+  background-color: #F9FAFB;
+}
+
+.story-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.story-card-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Story ID Badge */
+.story-card-id {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background-color: #3B82F6;
+  color: #FFFFFF;
+  letter-spacing: 0.025em;
+  flex-shrink: 0;
+}
+
+/* Title */
+.story-card-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1F2937;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Labels in header (collapsed view) */
+.story-card-labels {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.story-card-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background-color: #F3F4F6;
+  color: #4B5563;
+  white-space: nowrap;
+}
+
+.story-card-label--more {
+  background-color: #E5E7EB;
+  color: #6B7280;
+}
+
+.story-card-label--expanded {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+}
+
+/* Size Indicator */
+.story-card-size {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  width: 28px;
+  height: 24px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.story-card-size--xs {
+  background-color: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.story-card-size--s {
+  background-color: #D1FAE5;
+  color: #059669;
+}
+
+.story-card-size--m {
+  background-color: #FEF3C7;
+  color: #D97706;
+}
+
+.story-card-size--l {
+  background-color: #FED7AA;
+  color: #EA580C;
+}
+
+.story-card-size--xl {
+  background-color: #FECACA;
+  color: #DC2626;
+}
+
+/* Expand Button */
+.story-card-expand-btn {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.story-card-expand-btn:hover {
+  color: #374151;
+  background-color: #F3F4F6;
+}
+
+.story-card-expand-icon {
+  transition: transform 0.2s ease;
+}
+
+.story-card-expand-icon--expanded {
+  transform: rotate(180deg);
+}
+
+/* Body */
+.story-card-body {
+  padding: 1rem;
+  border-top: 1px solid #E5E7EB;
+  background-color: #FAFAFA;
+}
+
+/* Meta (status and format) */
+.story-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.story-card-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.story-card-status--draft {
+  background-color: #F3F4F6;
+  color: #6B7280;
+}
+
+.story-card-status--ready {
+  background-color: #D1FAE5;
+  color: #059669;
+}
+
+.story-card-status--exported {
+  background-color: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.story-card-format {
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+/* Sections */
+.story-card-section {
+  margin-bottom: 1rem;
+}
+
+.story-card-section:last-of-type {
+  margin-bottom: 1rem;
+}
+
+.story-card-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem 0;
+}
+
+/* Description */
+.story-card-description {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #374151;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Acceptance Criteria */
+.story-card-criteria {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.story-card-criterion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.story-card-criterion svg {
+  flex-shrink: 0;
+  color: #10B981;
+  margin-top: 2px;
+}
+
+.story-card-criterion span {
+  flex: 1;
+}
+
+/* All Labels (expanded view) */
+.story-card-all-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Action Buttons */
+.story-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #E5E7EB;
+  margin-top: 0.5rem;
+}
+
+.story-card-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.5rem 0.875rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.story-card-action-btn--edit {
+  background-color: #FFFFFF;
+  border-color: #D1D5DB;
+  color: #374151;
+}
+
+.story-card-action-btn--edit:hover {
+  background-color: #F3F4F6;
+  border-color: #9CA3AF;
+}
+
+.story-card-action-btn--delete {
+  background-color: #FFFFFF;
+  border-color: #FECACA;
+  color: #DC2626;
+}
+
+.story-card-action-btn--delete:hover {
+  background-color: #FEF2F2;
+  border-color: #F87171;
+}
+
+/* Delete Modal */
+.story-card-delete-modal {
+  padding: 0.5rem 0;
+}
+
+.story-card-delete-message {
+  font-size: 0.9375rem;
+  color: #374151;
+  margin: 0 0 0.5rem 0;
+}
+
+.story-card-delete-warning {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+.story-card-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.story-card-delete-cancel-btn {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.625rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #D1D5DB;
+  background-color: #FFFFFF;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.story-card-delete-cancel-btn:hover:not(:disabled) {
+  background-color: #F3F4F6;
+}
+
+.story-card-delete-cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.story-card-delete-confirm-btn {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.625rem 1rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #DC2626;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.story-card-delete-confirm-btn:hover:not(:disabled) {
+  background-color: #B91C1C;
+}
+
+.story-card-delete-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .story-card-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .story-card-header-left {
+    width: 100%;
+    order: 1;
+  }
+
+  .story-card-header-right {
+    width: 100%;
+    order: 2;
+    justify-content: flex-start;
+  }
+
+  .story-card-title {
+    white-space: normal;
+  }
+
+  .story-card-labels {
+    flex-wrap: wrap;
+  }
+
+  .story-card-actions {
+    flex-wrap: wrap;
+  }
+
+  .story-card-delete-actions {
+    flex-direction: column;
+  }
+
+  .story-card-delete-cancel-btn,
+  .story-card-delete-confirm-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

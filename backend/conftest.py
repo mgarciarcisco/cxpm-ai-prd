@@ -16,10 +16,13 @@ from app.models import (  # noqa: F401
     MeetingItem,
     MeetingItemDecision,
     MeetingRecap,
+    PRD,
     Project,
     Requirement,
     RequirementHistory,
     RequirementSource,
+    StoryBatch,
+    UserStory,
 )
 
 # Create in-memory SQLite database for testing

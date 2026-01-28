@@ -1,0 +1,43 @@
+Generate the RISKS AND MITIGATIONS section of a PRD.
+
+## Project Requirements
+{requirements}
+
+{prior_context}
+
+## Section Guidelines
+
+Identify and plan for project risks:
+
+**Risk Categories:**
+- **Technical Risks**: Technology challenges, integration issues, performance concerns
+- **Business Risks**: Market changes, budget constraints, stakeholder alignment
+- **Resource Risks**: Team availability, skill gaps, dependencies on key people
+- **Timeline Risks**: Scope creep, external dependencies, estimation errors
+- **User Risks**: Adoption challenges, usability issues, change resistance
+
+**For each risk include:**
+- **Risk ID**: RISK-001, RISK-002, etc.
+- **Category**: Technical / Business / Resource / Timeline / User
+- **Description**: What could go wrong
+- **Likelihood**: High / Medium / Low
+- **Impact**: High / Medium / Low
+- **Mitigation Strategy**: How to prevent or reduce the risk
+- **Contingency Plan**: What to do if the risk occurs
+- **Owner**: Who is responsible for monitoring (if identifiable)
+
+**Format as risk matrix:**
+| ID | Risk | Likelihood | Impact | Mitigation | Contingency |
+|----|------|------------|--------|------------|-------------|
+| RISK-001 | ... | Medium | High | ... | ... |
+
+Length: 6-10 significant risks with mitigation strategies.
+
+## Output
+
+Return a JSON object:
+{
+  "id": "risks_and_mitigations",
+  "title": "Risks and Mitigations",
+  "content": "markdown content..."
+}

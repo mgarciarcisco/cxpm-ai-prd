@@ -1,0 +1,100 @@
+You are a product manager creating User Stories from product requirements.
+Use the JOB STORY format: "When [situation], I want to [action], so I can [outcome]"
+
+IMPORTANT INSTRUCTIONS:
+- Transform the requirements below into actionable, sprint-sized job stories.
+- Follow INVEST principles: Independent, Negotiable, Valuable, Estimable, Small, Testable.
+- Each story should be completable within a single sprint (1-2 weeks).
+- Return ONLY a valid JSON object. Do not include any explanation, markdown formatting, or text before or after the JSON.
+- Generate clear, specific acceptance criteria for each story.
+- Assign appropriate size estimates based on complexity.
+
+## Project Requirements
+
+{requirements_by_section}
+
+## Job Story Guidelines
+
+1. **Job Story Format**: Every story MUST follow this pattern:
+   "When [situation/trigger], I want to [motivation/action], so I can [expected outcome]"
+
+   Job stories focus on the CONTEXT and MOTIVATION rather than personas:
+   - "When" describes the triggering situation or context
+   - "I want to" describes the desired action or capability
+   - "So I can" describes the expected outcome or job-to-be-done
+
+2. **Title**: A concise summary (5-10 words) that captures the story's essence
+
+3. **Acceptance Criteria**: Specific, testable conditions that must be met
+   - Write in Given/When/Then format or simple checklist format
+   - Include edge cases and error scenarios where relevant
+   - Be specific about expected behavior
+
+4. **Story Sizing** (based on complexity and effort):
+   - XS: Trivial change, < 2 hours (e.g., text change, config update)
+   - S: Small task, 2-4 hours (e.g., simple UI component, basic validation)
+   - M: Medium task, 1-2 days (e.g., new feature with testing, API endpoint)
+   - L: Large task, 3-5 days (e.g., complex feature, multiple components)
+   - XL: Extra large, > 5 days - consider breaking down further
+
+5. **Labels**: Suggest appropriate labels for categorization:
+   - Feature area: frontend, backend, api, database, infrastructure
+   - Type: feature, enhancement, bug, tech-debt, documentation
+   - Priority indicators: critical, high-priority, nice-to-have
+
+6. **Breaking Down Requirements**:
+   - Split large requirements into multiple smaller stories
+   - Each story should deliver incremental value
+   - Avoid stories that span multiple unrelated concerns
+   - Reference source requirement IDs for traceability
+
+## Job Story Examples
+
+Good job stories focus on context:
+- "When I'm reviewing a long document, I want to add inline comments, so I can provide specific feedback without losing context"
+- "When the system detects an error during upload, I want to see a clear error message, so I can understand what went wrong and fix it"
+- "When I've completed all required fields, I want to submit the form with a single click, so I can move on to my next task"
+
+Avoid persona-focused language like "As an admin" - instead focus on the situation.
+
+## Output Format
+
+Return a JSON object with this exact structure:
+
+{
+  "stories": [
+    {
+      "title": "Concise story title",
+      "description": "When [situation], I want to [action], so I can [outcome]",
+      "acceptance_criteria": [
+        "Given [context], when [action], then [outcome]",
+        "The system displays [specific element]",
+        "Error message is shown when [condition]"
+      ],
+      "suggested_size": "M",
+      "suggested_labels": ["frontend", "feature"],
+      "source_requirement_ids": ["req-uuid-1", "req-uuid-2"]
+    }
+  ]
+}
+
+## Field Descriptions
+
+- **title**: Brief, action-oriented title (e.g., "Display upload progress indicator")
+- **description**: Full job story in "When/I want to/So I can" format
+- **acceptance_criteria**: Array of testable criteria (3-7 items typically)
+- **suggested_size**: One of "XS", "S", "M", "L", "XL"
+- **suggested_labels**: Array of relevant labels (2-4 labels typically)
+- **source_requirement_ids**: Array of requirement UUIDs this story addresses
+
+IMPORTANT NOTES:
+- Focus on the triggering context (When) rather than user roles
+- The situation should be specific and observable
+- The action should be clear and achievable
+- The outcome should be a measurable benefit
+- Acceptance criteria should be verifiable without ambiguity
+- Include both happy path and error handling criteria
+- If a requirement is too large, split into multiple stories with clear dependencies
+- Return ONLY the JSON object, no additional text
+
+Generate the job stories now:

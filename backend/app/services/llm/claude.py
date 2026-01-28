@@ -50,22 +50,48 @@ class ClaudeProvider(LLMProvider):
             timeout=float(self.timeout),
         )
 
-    def generate(self, prompt: str) -> str:
+    # Default LLM generation settings
+    DEFAULT_TEMPERATURE = 0.7
+    DEFAULT_MAX_TOKENS = 4096
+
+    def generate(
+        self,
+        prompt: str,
+        *,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        timeout: float | None = None,
+    ) -> str:
         """Generate a response using Claude's messages.create API.
 
         Args:
             prompt: The input prompt to send to the LLM.
+            temperature: Optional temperature for response randomness (0.0-1.0).
+            max_tokens: Optional maximum tokens in the response.
+            timeout: Optional timeout in seconds for this specific request.
 
         Returns:
             The generated text response.
 
         Raises:
-            LLMError: If the API call fails.
+            LLMError: If the API call fails or times out.
         """
+        # Use provided values or fall back to defaults
+        actual_temperature = temperature if temperature is not None else self.DEFAULT_TEMPERATURE
+        actual_max_tokens = max_tokens if max_tokens is not None else self.DEFAULT_MAX_TOKENS
+        actual_timeout = timeout if timeout is not None else self.timeout
+
         try:
-            message = self._client.messages.create(
+            # Create a client with the specific timeout for this request
+            client = anthropic.Anthropic(
+                api_key=self.api_key,
+                timeout=float(actual_timeout),
+            )
+
+            message = client.messages.create(
                 model=self.model,
-                max_tokens=4096,
+                max_tokens=actual_max_tokens,
+                temperature=actual_temperature,
                 messages=[
                     {"role": "user", "content": prompt}
                 ],

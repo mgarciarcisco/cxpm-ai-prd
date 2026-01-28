@@ -1,0 +1,25 @@
+Generate the PROBLEM STATEMENT section of a PRD.
+
+## Project Requirements
+{requirements}
+
+{prior_context}
+
+## Section Guidelines
+
+Create a comprehensive Problem Statement that includes:
+- **Problem Description**: Clearly articulate the problem with specific context
+- **Current State vs. Desired State**: What exists now vs. what should exist
+- **Impact Analysis**: Consequences of not solving this problem (user frustration, business costs, competitive disadvantage)
+- **Supporting Evidence**: Data, research, or user feedback that validates the problem (extract from requirements if available)
+
+Length: 3-5 paragraphs with supporting bullet points where helpful.
+
+## Output
+
+Return a JSON object:
+{
+  "id": "problem_statement",
+  "title": "Problem Statement",
+  "content": "markdown content..."
+}
