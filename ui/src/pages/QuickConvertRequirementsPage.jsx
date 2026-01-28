@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
 import './QuickConvertRequirementsPage.css';
 
 // Section metadata with display names
@@ -33,6 +34,7 @@ const SECTION_ORDER = [
  * Allows users to paste content or upload a file, then extract requirements.
  */
 function QuickConvertRequirementsPage() {
+  const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState(null);
@@ -45,6 +47,9 @@ function QuickConvertRequirementsPage() {
   const [extractedItems, setExtractedItems] = useState(null); // { section: [{ id, content, selected }] }
   const [editingItem, setEditingItem] = useState(null); // { section, id }
   const [editValue, setEditValue] = useState('');
+
+  // Modal state
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   const hasContent = content.trim().length > 0;
 
@@ -291,6 +296,77 @@ function QuickConvertRequirementsPage() {
       (total, items) => total + items.length,
       0
     );
+  };
+
+  // Get selected items for export
+  const getSelectedItems = useCallback(() => {
+    if (!extractedItems) return {};
+    const selected = {};
+    for (const [section, items] of Object.entries(extractedItems)) {
+      const selectedInSection = items.filter(item => item.selected);
+      if (selectedInSection.length > 0) {
+        selected[section] = selectedInSection;
+      }
+    }
+    return selected;
+  }, [extractedItems]);
+
+  // Navigate to Generate PRD with requirements data
+  const handleGeneratePRD = () => {
+    const selectedItems = getSelectedItems();
+    // Convert selected items to a text format for PRD generation
+    const requirementsText = Object.entries(selectedItems)
+      .map(([section, items]) => {
+        const sectionLabel = SECTION_CONFIG[section]?.label || section;
+        const itemsText = items.map(item => `- ${item.content}`).join('\n');
+        return `## ${sectionLabel}\n${itemsText}`;
+      })
+      .join('\n\n');
+
+    navigate('/quick-convert/prd', {
+      state: {
+        requirements: selectedItems,
+        requirementsText,
+        source: 'requirements-extraction',
+      },
+    });
+  };
+
+  // Download as JSON
+  const handleDownloadJSON = () => {
+    const selectedItems = getSelectedItems();
+    const dataStr = JSON.stringify(selectedItems, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'requirements.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Download as Markdown
+  const handleDownloadMarkdown = () => {
+    const selectedItems = getSelectedItems();
+    const markdown = Object.entries(selectedItems)
+      .map(([section, items]) => {
+        const sectionLabel = SECTION_CONFIG[section]?.label || section;
+        const itemsText = items.map(item => `- ${item.content}`).join('\n');
+        return `## ${sectionLabel}\n\n${itemsText}`;
+      })
+      .join('\n\n');
+
+    const blob = new Blob([`# Extracted Requirements\n\n${markdown}`], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'requirements.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Render the input form (when no results yet)
@@ -585,11 +661,64 @@ function QuickConvertRequirementsPage() {
           );
         })}
 
-        {/* Export Actions (placeholder for future) */}
-        <div className="qc-requirements__export-actions">
-          <p className="qc-requirements__export-hint">
-            Select the requirements you want to keep, then copy or export them.
-          </p>
+        {/* Action Buttons */}
+        <div className="qc-requirements__action-buttons">
+          <button
+            type="button"
+            className="qc-requirements__action-btn qc-requirements__action-btn--primary"
+            onClick={() => setShowSaveModal(true)}
+            disabled={getSelectedCount() === 0}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Save to Project
+          </button>
+          <button
+            type="button"
+            className="qc-requirements__action-btn qc-requirements__action-btn--secondary"
+            onClick={handleGeneratePRD}
+            disabled={getSelectedCount() === 0}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" />
+              <path d="M14 2V8H20" />
+              <path d="M16 13H8" />
+              <path d="M16 17H8" />
+              <path d="M10 9H8" />
+            </svg>
+            Generate PRD
+          </button>
+          <div className="qc-requirements__download-group">
+            <button
+              type="button"
+              className="qc-requirements__action-btn qc-requirements__action-btn--outline"
+              onClick={handleDownloadJSON}
+              disabled={getSelectedCount() === 0}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              JSON
+            </button>
+            <button
+              type="button"
+              className="qc-requirements__action-btn qc-requirements__action-btn--outline"
+              onClick={handleDownloadMarkdown}
+              disabled={getSelectedCount() === 0}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Markdown
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -634,6 +763,15 @@ function QuickConvertRequirementsPage() {
         {extractedItems && !isExtracting && renderResults()}
         {!extractedItems && !isExtracting && !extractionError && renderInputForm()}
       </section>
+
+      {/* Save to Project Modal */}
+      {showSaveModal && (
+        <SaveToProjectModal
+          onClose={() => setShowSaveModal(false)}
+          dataType="requirements"
+          data={getSelectedItems()}
+        />
+      )}
     </main>
   );
 }

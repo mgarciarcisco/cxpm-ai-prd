@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import Markdown from 'react-markdown';
 import './QuickConvertPRDPage.css';
 
@@ -68,10 +68,20 @@ const generateSectionContent = (sectionId, _inputText, _prdType) => {
 /**
  * Quick Convert PRD page - input UI for generating PRDs.
  * Allows users to paste content or upload a file, then generate a PRD.
+ * Can receive pre-filled requirements via navigation state.
  */
 function QuickConvertPRDPage() {
+  const location = useLocation();
   const [content, setContent] = useState('');
   const [inputSource, setInputSource] = useState('requirements');
+
+  // Pre-fill content if navigated from requirements extraction
+  useEffect(() => {
+    if (location.state?.requirementsText) {
+      setContent(location.state.requirementsText);
+      setInputSource('requirements');
+    }
+  }, [location.state]);
   const [prdType, setPrdType] = useState('detailed');
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState(null);
