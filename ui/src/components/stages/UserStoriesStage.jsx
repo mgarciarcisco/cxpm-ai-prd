@@ -5,7 +5,7 @@ import GenerateStoriesModal from '../stories/GenerateStoriesModal';
 import { StoryCard } from '../stories/StoryCard';
 import { StoryEditModal } from '../stories/StoryEditModal';
 import { StoryFilters } from '../stories/StoryFilters';
-import { listStories, updateStory, deleteStory, patch, reorderStories } from '../../services/api';
+import { listStories, updateStory, deleteStory, createStory, patch, reorderStories } from '../../services/api';
 import './StageContent.css';
 import './UserStoriesStage.css';
 
@@ -22,8 +22,9 @@ function UserStoriesStage({ project, onProjectUpdate }) {
   const [stories, setStories] = useState([]);
   const [loadingStories, setLoadingStories] = useState(false);
 
-  // Edit modal state
+  // Edit/Create modal state
   const [editingStory, setEditingStory] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [isSavingStory, setIsSavingStory] = useState(false);
 
   // Mark as refined state
@@ -139,10 +140,9 @@ function UserStoriesStage({ project, onProjectUpdate }) {
     }
   };
 
-  // Handle Add Manually button click
+  // Handle Add Manually button click - opens create modal
   const handleAddManually = () => {
-    console.log('Add story manually');
-    // TODO: Open StoryEditorModal in create mode (P3-021)
+    setShowCreateModal(true);
   };
 
   // Handle edit story
@@ -160,6 +160,26 @@ function UserStoriesStage({ project, onProjectUpdate }) {
       setEditingStory(null);
     } catch (err) {
       console.error('Failed to save story:', err);
+    } finally {
+      setIsSavingStory(false);
+    }
+  };
+
+  // Handle create new story
+  const handleCreateStory = async (storyData) => {
+    if (!project?.id) return;
+    try {
+      setIsSavingStory(true);
+      await createStory(project.id, storyData);
+      // Reload stories to get updated data
+      await loadStories();
+      setShowCreateModal(false);
+      // Refresh project to update status if needed
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
+    } catch (err) {
+      console.error('Failed to create story:', err);
     } finally {
       setIsSavingStory(false);
     }
@@ -330,6 +350,15 @@ function UserStoriesStage({ project, onProjectUpdate }) {
             onGenerate={handleGenerate}
           />
         )}
+
+        {/* Story Create Modal */}
+        {showCreateModal && (
+          <StoryEditModal
+            onCreate={handleCreateStory}
+            onClose={() => setShowCreateModal(false)}
+            isSaving={isSavingStory}
+          />
+        )}
       </>
     );
   }
@@ -433,6 +462,15 @@ function UserStoriesStage({ project, onProjectUpdate }) {
           story={editingStory}
           onSave={handleSaveStory}
           onClose={() => setEditingStory(null)}
+          isSaving={isSavingStory}
+        />
+      )}
+
+      {/* Story Create Modal */}
+      {showCreateModal && (
+        <StoryEditModal
+          onCreate={handleCreateStory}
+          onClose={() => setShowCreateModal(false)}
           isSaving={isSavingStory}
         />
       )}

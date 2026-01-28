@@ -64,6 +64,18 @@ class StoryUpdateRequest(BaseModel):
     labels: list[str] | None = None
     size: StorySize | None = None
     status: StoryStatus | None = None
+    priority: str | None = None
+
+
+class StoryCreateRequest(BaseModel):
+    """Schema for creating a new user story manually."""
+    title: str
+    description: str | None = None
+    acceptance_criteria: list[str] | None = None
+    labels: list[str] | None = None
+    size: StorySize | None = StorySize.M
+    priority: str | None = "medium"
+    status: StoryStatus | None = StoryStatus.DRAFT
 
 
 class ReorderRequest(BaseModel):

@@ -3,9 +3,12 @@ import Modal from '../common/Modal';
 import './StoryEditModal.css';
 
 /**
- * StoryEditModal component for editing user story details.
+ * StoryEditModal component for editing or creating user stories.
  *
- * @param {Object} story - The user story to edit
+ * When `story` is provided, the modal is in edit mode.
+ * When `story` is null/undefined, the modal is in create mode.
+ *
+ * @param {Object} [story] - The user story to edit (optional for create mode)
  * @param {string} story.id - UUID of the story
  * @param {string} story.story_id - Formatted story ID (e.g., "US-001")
  * @param {string} story.title - Story title
@@ -15,16 +18,20 @@ import './StoryEditModal.css';
  * @param {string} story.priority - Story priority (low, medium, high, critical)
  * @param {Array<string>} story.labels - List of labels
  * @param {string} story.status - Story status (draft, ready, exported)
- * @param {function} onSave - Callback when story is saved, receives (storyId, updatedData)
+ * @param {function} onSave - Callback when story is saved, receives (storyId, updatedData) for edit mode
+ * @param {function} [onCreate] - Callback when story is created, receives (storyData) for create mode
  * @param {function} onClose - Callback when modal is closed
  * @param {boolean} isSaving - Whether save is in progress
  */
 export function StoryEditModal({
   story,
   onSave,
+  onCreate,
   onClose,
   isSaving = false,
 }) {
+  // Determine if we're in create mode (no story provided)
+  const isCreateMode = !story;
   // Form state
   const [title, setTitle] = useState(story?.title || '');
   const [description, setDescription] = useState(story?.description || '');
@@ -68,7 +75,15 @@ export function StoryEditModal({
 
   // Check if form has changes
   const hasChanges = useCallback(() => {
-    if (!story) return false;
+    if (isCreateMode) {
+      // In create mode, has changes if anything was entered
+      return (
+        title.trim() !== '' ||
+        description.trim() !== '' ||
+        acceptanceCriteria.length > 0 ||
+        labels.length > 0
+      );
+    }
     return (
       title !== story.title ||
       description !== story.description ||
@@ -78,7 +93,7 @@ export function StoryEditModal({
       JSON.stringify(labels) !== JSON.stringify(story.labels || []) ||
       status !== story.status
     );
-  }, [story, title, description, acceptanceCriteria, size, priority, labels, status]);
+  }, [isCreateMode, story, title, description, acceptanceCriteria, size, priority, labels, status]);
 
   // Handle close with unsaved changes warning
   const handleClose = useCallback(() => {
@@ -89,11 +104,11 @@ export function StoryEditModal({
     }
   }, [hasChanges, isSaving, onClose]);
 
-  // Handle save
+  // Handle save/create
   const handleSave = useCallback(() => {
-    if (!story || isSaving) return;
+    if (isSaving) return;
 
-    const updatedData = {
+    const storyData = {
       title: title.trim(),
       description: description.trim(),
       acceptance_criteria: acceptanceCriteria.filter(c => c.trim()),
@@ -103,8 +118,16 @@ export function StoryEditModal({
       status,
     };
 
-    onSave(story.id, updatedData);
-  }, [story, title, description, acceptanceCriteria, size, priority, labels, status, isSaving, onSave]);
+    if (isCreateMode) {
+      // Create mode - call onCreate callback
+      if (onCreate) {
+        onCreate(storyData);
+      }
+    } else {
+      // Edit mode - call onSave callback with story id
+      onSave(story.id, storyData);
+    }
+  }, [isCreateMode, story, title, description, acceptanceCriteria, size, priority, labels, status, isSaving, onSave, onCreate]);
 
   // --- Acceptance Criteria Management ---
 
@@ -191,13 +214,11 @@ export function StoryEditModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleSave, isSaving, hasChanges]);
 
-  if (!story) return null;
-
   return (
     <>
       <Modal
         onClose={handleClose}
-        title={`Edit Story ${story.story_id}`}
+        title={isCreateMode ? 'Add New Story' : `Edit Story ${story.story_id}`}
       >
         <div className="story-edit-modal">
           {/* Title */}
@@ -472,10 +493,10 @@ export function StoryEditModal({
               {isSaving ? (
                 <>
                   <span className="story-edit-save-spinner"></span>
-                  Saving...
+                  {isCreateMode ? 'Creating...' : 'Saving...'}
                 </>
               ) : (
-                'Save Changes'
+                isCreateMode ? 'Add Story' : 'Save Changes'
               )}
             </button>
           </div>

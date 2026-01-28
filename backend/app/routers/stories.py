@@ -30,6 +30,7 @@ from app.schemas import (
     ReorderRequest,
     StoryBatchResponse,
     StoryBatchStatusResponse,
+    StoryCreateRequest,
     StoriesGenerateRequest,
     StoryExportFormat,
     StoryUpdateRequest,
@@ -498,6 +499,63 @@ def list_project_stories(
 def get_story(story_id: str, db: Session = Depends(get_db)) -> UserStoryResponse:
     """Get a single user story with all details."""
     story = _get_story_or_404(story_id, db)
+    return _story_to_response(story)
+
+
+@router.post("/projects/{project_id}/stories", response_model=UserStoryResponse, status_code=status.HTTP_201_CREATED)
+def create_story(
+    project_id: str,
+    request: StoryCreateRequest,
+    db: Session = Depends(get_db),
+) -> UserStoryResponse:
+    """Create a new user story manually.
+
+    Auto-generates the next story number (story_id like 'US-001').
+    The story is added to the end of the list (highest order value).
+    """
+    # Verify project exists
+    project = _get_project_or_404(project_id, db)
+
+    # Get the next story number for this project
+    max_story_number = db.query(UserStory.story_number).filter(
+        UserStory.project_id == project_id,
+    ).order_by(UserStory.story_number.desc()).first()
+
+    next_story_number = (max_story_number[0] + 1) if max_story_number else 1
+
+    # Get the next order value
+    max_order = db.query(UserStory.order).filter(
+        UserStory.project_id == project_id,
+        UserStory.deleted_at.is_(None),
+    ).order_by(UserStory.order.desc()).first()
+
+    next_order = (max_order[0] + 1) if max_order else 0
+
+    # Create the story
+    story = UserStory(
+        project_id=project_id,
+        batch_id=None,  # Manually created, no batch
+        story_number=next_story_number,
+        format=StoryFormat.CLASSIC,  # Default format for manual stories
+        title=request.title,
+        description=request.description,
+        acceptance_criteria=request.acceptance_criteria or [],
+        labels=request.labels or [],
+        size=request.size,
+        status=request.status or StoryStatus.DRAFT,
+        order=next_order,
+        created_by=None,  # Would be set from auth context
+    )
+
+    db.add(story)
+
+    # Update project stories_status if this is the first story
+    if project.stories_status == "empty":
+        project.stories_status = "generated"
+
+    db.commit()
+    db.refresh(story)
+
     return _story_to_response(story)
 
 

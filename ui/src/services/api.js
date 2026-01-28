@@ -278,6 +278,16 @@ export async function getStory(storyId) {
 }
 
 /**
+ * Create a new user story manually
+ * @param {string} projectId - Project UUID
+ * @param {object} data - Story data (title, description, acceptance_criteria, labels, size, priority, status)
+ * @returns {Promise<object>} - Created story object with auto-generated story_id
+ */
+export async function createStory(projectId, data) {
+  return post(`/api/projects/${projectId}/stories`, data);
+}
+
+/**
  * Update user story details
  * @param {string} storyId - Story UUID
  * @param {object} data - Update data (title, description, acceptance_criteria, labels, size, status)
