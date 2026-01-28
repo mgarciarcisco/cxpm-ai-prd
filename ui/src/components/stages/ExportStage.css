@@ -1,0 +1,187 @@
+/* Export Stage Layout */
+.stage-content--export {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Export Stage Sections */
+.export-stage__section {
+  margin-top: 0.5rem;
+}
+
+.export-stage__section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 1rem 0;
+}
+
+/* Export Cards Grid */
+.export-stage__cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+/* Export Card */
+.export-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  font-family: inherit;
+}
+
+.export-card:focus {
+  outline: 2px solid #10B981;
+  outline-offset: 2px;
+}
+
+.export-card:hover:not(.export-card--disabled) {
+  border-color: #D1D5DB;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+/* Export Card Colors */
+.export-card--green:hover:not(.export-card--disabled) {
+  border-color: #10B981;
+}
+
+.export-card--blue:hover:not(.export-card--disabled) {
+  border-color: #3B82F6;
+}
+
+.export-card--jira {
+  cursor: default;
+}
+
+/* Disabled Card Styles */
+.export-card--disabled {
+  background-color: #F9FAFB;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.export-card--disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Export Card Icon */
+.export-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.export-card--green .export-card__icon {
+  background-color: #D1FAE5;
+  color: #059669;
+}
+
+.export-card--blue .export-card__icon {
+  background-color: #DBEAFE;
+  color: #2563EB;
+}
+
+.export-card--jira .export-card__icon {
+  background-color: #E0E7FF;
+  color: #4F46E5;
+}
+
+/* Export Card Content */
+.export-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.export-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 0.25rem 0;
+}
+
+.export-card__description {
+  font-size: 0.8125rem;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Coming Soon Badge */
+.export-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #6B7280;
+  background-color: #F3F4F6;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Export Card Action (Download Icon) */
+.export-card__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9CA3AF;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.export-card:hover:not(.export-card--disabled) .export-card__action {
+  transform: translateY(2px);
+  color: #6B7280;
+}
+
+.export-card--green:hover:not(.export-card--disabled) .export-card__action {
+  color: #059669;
+}
+
+.export-card--blue:hover:not(.export-card--disabled) .export-card__action {
+  color: #2563EB;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .export-stage__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .export-card {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .export-card__icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .export-card__action {
+    display: none;
+  }
+}
