@@ -552,8 +552,9 @@ def create_story(
     db.add(story)
 
     # Update project stories_status if this is the first story
-    if project.stories_status == "empty":
-        project.stories_status = "generated"
+    from app.models import StoriesStatus
+    if project.stories_status == StoriesStatus.empty:
+        project.stories_status = StoriesStatus.generated
 
     db.commit()
     db.refresh(story)
