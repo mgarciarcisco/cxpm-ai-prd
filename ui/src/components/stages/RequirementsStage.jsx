@@ -4,7 +4,7 @@ import { StageHeader } from '../stage/StageHeader';
 import AddMeetingModal from '../requirements/AddMeetingModal';
 import AddManuallyModal from '../requirements/AddManuallyModal';
 import RequirementSection, { SECTION_ORDER } from '../requirements/RequirementSection';
-import { get } from '../../services/api';
+import { get, put } from '../../services/api';
 import './StageContent.css';
 import './RequirementsStage.css';
 
@@ -135,10 +135,45 @@ function RequirementsStage({ project }) {
     fetchRequirements();
   };
 
-  // Handle edit requirement (placeholder - will be implemented in P3-005)
-  const handleEditRequirement = (id) => {
-    console.log('Edit requirement:', id);
-    // TODO: Implement inline editing (P3-005)
+  // Handle save requirement (inline editing)
+  const handleSaveRequirement = async (id, newContent) => {
+    // Find the original requirement for rollback
+    let originalContent = null;
+    let sectionKey = null;
+    for (const section of SECTION_ORDER) {
+      const item = requirements?.[section]?.find(r => r.id === id);
+      if (item) {
+        originalContent = item.content;
+        sectionKey = section;
+        break;
+      }
+    }
+
+    // Optimistic update
+    if (sectionKey && requirements) {
+      setRequirements(prev => ({
+        ...prev,
+        [sectionKey]: prev[sectionKey].map(item =>
+          item.id === id ? { ...item, content: newContent } : item
+        ),
+      }));
+    }
+
+    try {
+      await put(`/api/requirements/${id}`, { content: newContent });
+    } catch (error) {
+      // Rollback on error
+      if (sectionKey && originalContent !== null) {
+        setRequirements(prev => ({
+          ...prev,
+          [sectionKey]: prev[sectionKey].map(item =>
+            item.id === id ? { ...item, content: originalContent } : item
+          ),
+        }));
+      }
+      console.error('Failed to save requirement:', error);
+      throw error; // Re-throw so RequirementSection knows to keep edit mode open
+    }
   };
 
   // Handle delete requirement (placeholder - will be implemented in P3-006)
@@ -247,7 +282,7 @@ function RequirementsStage({ project }) {
             section={section}
             items={requirements?.[section] || []}
             onAdd={handleAddToSection}
-            onEdit={handleEditRequirement}
+            onSave={handleSaveRequirement}
             onDelete={handleDeleteRequirement}
             defaultExpanded={requirements?.[section]?.length > 0}
           />
