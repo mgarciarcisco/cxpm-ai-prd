@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { EmptyState } from '../common/EmptyState';
+import { ConfirmationDialog } from '../common/ConfirmationDialog';
 import { StageHeader } from '../stage/StageHeader';
 import { StageActions } from '../stage/StageActions';
 import AddMeetingModal from '../requirements/AddMeetingModal';
 import AddManuallyModal from '../requirements/AddManuallyModal';
 import RequirementSection, { SECTION_ORDER } from '../requirements/RequirementSection';
-import { get, put, patch } from '../../services/api';
+import { get, put, patch, del } from '../../services/api';
 import './StageContent.css';
 import './RequirementsStage.css';
 
@@ -46,6 +47,8 @@ function RequirementsStage({ project, onProjectUpdate }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [markingAsReviewed, setMarkingAsReviewed] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, item: null });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Check if there are any requirements (requirements_status !== 'empty')
   const hasRequirements = project?.requirements_status && project.requirements_status !== 'empty';
@@ -178,10 +181,72 @@ function RequirementsStage({ project, onProjectUpdate }) {
     }
   };
 
-  // Handle delete requirement (placeholder - will be implemented in P3-006)
+  // Handle delete requirement - show confirmation dialog
   const handleDeleteRequirement = (id) => {
-    console.log('Delete requirement:', id);
-    // TODO: Implement delete confirmation (P3-006)
+    // Find the requirement to get its content for the confirmation message
+    let itemToDelete = null;
+    let sectionKey = null;
+    for (const section of SECTION_ORDER) {
+      const item = requirements?.[section]?.find(r => r.id === id);
+      if (item) {
+        itemToDelete = item;
+        sectionKey = section;
+        break;
+      }
+    }
+
+    if (itemToDelete) {
+      setDeleteConfirmation({
+        isOpen: true,
+        item: { ...itemToDelete, section: sectionKey },
+      });
+    }
+  };
+
+  // Close delete confirmation dialog
+  const handleCancelDelete = () => {
+    setDeleteConfirmation({ isOpen: false, item: null });
+  };
+
+  // Confirm and execute delete
+  const handleConfirmDelete = async () => {
+    const { item } = deleteConfirmation;
+    if (!item) return;
+
+    setIsDeleting(true);
+
+    // Compute remaining count BEFORE optimistic update to avoid stale closure issue
+    const remainingTotal = SECTION_ORDER.reduce((total, section) => {
+      const sectionItems = section === item.section
+        ? (requirements[section] || []).filter(r => r.id !== item.id)
+        : (requirements[section] || []);
+      return total + sectionItems.length;
+    }, 0);
+
+    // Optimistically remove from UI
+    const originalRequirements = { ...requirements };
+    setRequirements(prev => ({
+      ...prev,
+      [item.section]: prev[item.section].filter(r => r.id !== item.id),
+    }));
+
+    try {
+      await del(`/api/requirements/${item.id}`);
+      // Close dialog on success
+      setDeleteConfirmation({ isOpen: false, item: null });
+
+      // Notify parent to refresh project data if we deleted the last item
+      if (remainingTotal === 0 && onProjectUpdate) {
+        // Project status will change from has_items to empty
+        onProjectUpdate();
+      }
+    } catch (error) {
+      // Rollback on error
+      setRequirements(originalRequirements);
+      console.error('Failed to delete requirement:', error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Handle Mark as Reviewed - updates requirements_status to 'reviewed'
@@ -339,6 +404,23 @@ function RequirementsStage({ project, onProjectUpdate }) {
             ? { label: 'Generate PRD', onClick: () => console.log('Generate PRD'), disabled: true }
             : { label: 'Mark as Reviewed', onClick: handleMarkAsReviewed, loading: markingAsReviewed }
         }
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Requirement"
+        message={
+          deleteConfirmation.item
+            ? `Are you sure you want to delete this requirement? "${deleteConfirmation.item.content.length > 100 ? deleteConfirmation.item.content.substring(0, 100) + '...' : deleteConfirmation.item.content}"`
+            : 'Are you sure you want to delete this requirement?'
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={isDeleting}
       />
     </div>
   );
