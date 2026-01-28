@@ -77,19 +77,25 @@ function SaveToProjectModal({ onClose, dataType, data, onSaved }) {
   // Save data to a project
   const saveDataToProject = async (projectId) => {
     switch (dataType) {
-      case 'requirements':
+      case 'requirements': {
         // Save requirements - data is { section: [{ content, selected }] }
-        // Convert to API format and save each selected item
+        // Build array of all selected items to save in parallel
+        const requirementPromises = [];
         for (const [section, items] of Object.entries(data)) {
           const selectedItems = items.filter(item => item.selected);
           for (const item of selectedItems) {
-            await post(`/api/projects/${projectId}/requirements`, {
-              section,
-              content: item.content,
-            });
+            requirementPromises.push(
+              post(`/api/projects/${projectId}/requirements`, {
+                section,
+                content: item.content,
+              })
+            );
           }
         }
+        // Execute all requirements saves in parallel
+        await Promise.all(requirementPromises);
         break;
+      }
 
       case 'prd':
         // Save PRD - data is the PRD content object
@@ -105,16 +111,18 @@ function SaveToProjectModal({ onClose, dataType, data, onSaved }) {
         const selectedStories = Array.isArray(data)
           ? data.filter(s => s.selected !== false)
           : [];
-        for (const story of selectedStories) {
-          await post(`/api/projects/${projectId}/stories`, {
+        // Execute all story saves in parallel
+        const storyPromises = selectedStories.map(story =>
+          post(`/api/projects/${projectId}/stories`, {
             title: story.title,
             description: story.description,
             acceptance_criteria: story.acceptance_criteria || [],
             labels: story.labels || [],
-            size: story.size || 'M',
-            priority: story.priority || 'P2',
-          });
-        }
+            size: (story.size || 'm').toLowerCase(),
+            priority: (story.priority || 'p2').toLowerCase(),
+          })
+        );
+        await Promise.all(storyPromises);
         break;
       }
 
