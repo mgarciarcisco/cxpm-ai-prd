@@ -157,3 +157,27 @@ class ProjectStatsResponse(BaseModel):
     requirement_count: int
     requirement_counts_by_section: list[SectionCount]
     last_activity: datetime | None = None
+
+
+class StageStatusEnum(str, Enum):
+    """Valid stage names for status updates."""
+    requirements = "requirements"
+    prd = "prd"
+    stories = "stories"
+    mockups = "mockups"
+    export = "export"
+
+
+class StageUpdateRequest(BaseModel):
+    """Schema for updating an individual stage status."""
+    status: str
+
+
+class ProgressResponse(BaseModel):
+    """Schema for project progress response with all stage statuses."""
+    requirements_status: RequirementsStatusSchema
+    prd_status: PRDStageStatusSchema
+    stories_status: StoriesStatusSchema
+    mockups_status: MockupsStatusSchema
+    export_status: ExportStatusSchema
+    progress: int

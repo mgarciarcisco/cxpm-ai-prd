@@ -232,3 +232,216 @@ def test_project_progress_in_list(test_client: TestClient) -> None:
     for project in data:
         assert "progress" in project
         assert isinstance(project["progress"], int)
+
+
+# Tests for GET /api/projects/{id}/progress endpoint
+
+
+def test_get_project_progress(test_client: TestClient) -> None:
+    """Test GET /api/projects/{id}/progress returns all stage statuses."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Progress Endpoint Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Get progress
+    response = test_client.get(f"/api/projects/{project_id}/progress")
+    assert response.status_code == 200
+    data = response.json()
+
+    # Check all fields are present
+    assert data["requirements_status"] == "empty"
+    assert data["prd_status"] == "empty"
+    assert data["stories_status"] == "empty"
+    assert data["mockups_status"] == "empty"
+    assert data["export_status"] == "not_exported"
+    assert data["progress"] == 0
+
+
+def test_get_project_progress_returns_404_for_missing(test_client: TestClient) -> None:
+    """Test GET /api/projects/{id}/progress returns 404 for non-existent project."""
+    fake_uuid = "00000000-0000-0000-0000-000000000000"
+    response = test_client.get(f"/api/projects/{fake_uuid}/progress")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Project not found"
+
+
+# Tests for PATCH /api/projects/{id}/stages/{stage} endpoint
+
+
+def test_update_requirements_status(test_client: TestClient) -> None:
+    """Test PATCH /api/projects/{id}/stages/requirements updates the status."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Stage Update Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Update requirements status
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/requirements",
+        json={"status": "has_items"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["requirements_status"] == "has_items"
+    assert data["progress"] == 10  # has_items gives 10%
+
+
+def test_update_prd_status(test_client: TestClient) -> None:
+    """Test PATCH /api/projects/{id}/stages/prd updates the status."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "PRD Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Update PRD status
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/prd",
+        json={"status": "ready"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["prd_status"] == "ready"
+    assert data["progress"] == 20  # ready gives 20%
+
+
+def test_update_stories_status(test_client: TestClient) -> None:
+    """Test PATCH /api/projects/{id}/stages/stories updates the status."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Stories Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Update stories status
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/stories",
+        json={"status": "generated"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["stories_status"] == "generated"
+    assert data["progress"] == 10  # generated gives 10%
+
+
+def test_update_mockups_status(test_client: TestClient) -> None:
+    """Test PATCH /api/projects/{id}/stages/mockups updates the status."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Mockups Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Update mockups status
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/mockups",
+        json={"status": "generated"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["mockups_status"] == "generated"
+    assert data["progress"] == 20  # generated gives 20%
+
+
+def test_update_export_status(test_client: TestClient) -> None:
+    """Test PATCH /api/projects/{id}/stages/export updates the status."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Export Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Update export status
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/export",
+        json={"status": "exported"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["export_status"] == "exported"
+    assert data["progress"] == 20  # exported gives 20%
+
+
+def test_update_stage_recalculates_progress(test_client: TestClient) -> None:
+    """Test that updating stages correctly recalculates overall progress."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Progress Recalculation Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Update multiple stages
+    test_client.patch(
+        f"/api/projects/{project_id}/stages/requirements",
+        json={"status": "reviewed"},  # 20%
+    )
+    test_client.patch(
+        f"/api/projects/{project_id}/stages/prd",
+        json={"status": "ready"},  # 20%
+    )
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/stories",
+        json={"status": "refined"},  # 20%
+    )
+
+    data = response.json()
+    assert data["requirements_status"] == "reviewed"
+    assert data["prd_status"] == "ready"
+    assert data["stories_status"] == "refined"
+    assert data["progress"] == 60  # 20 + 20 + 20
+
+
+def test_update_stage_invalid_status_returns_400(test_client: TestClient) -> None:
+    """Test PATCH with invalid status returns 400."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Invalid Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Try to update with invalid status
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/requirements",
+        json={"status": "invalid_status"},
+    )
+    assert response.status_code == 400
+    assert "Invalid status" in response.json()["detail"]
+
+
+def test_update_stage_returns_404_for_missing_project(test_client: TestClient) -> None:
+    """Test PATCH returns 404 for non-existent project."""
+    fake_uuid = "00000000-0000-0000-0000-000000000000"
+    response = test_client.patch(
+        f"/api/projects/{fake_uuid}/stages/requirements",
+        json={"status": "has_items"},
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Project not found"
+
+
+def test_update_stage_invalid_stage_returns_422(test_client: TestClient) -> None:
+    """Test PATCH with invalid stage name returns 422."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Invalid Stage Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Try to update with invalid stage name
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/invalid_stage",
+        json={"status": "empty"},
+    )
+    assert response.status_code == 422  # Validation error from FastAPI

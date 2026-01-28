@@ -5,14 +5,27 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import MeetingRecap, Project, Requirement
+from app.models import (
+    ExportStatus,
+    MeetingRecap,
+    MockupsStatus,
+    PRDStageStatus,
+    Project,
+    Requirement,
+    RequirementsStatus,
+    StoriesStatus,
+)
 from app.schemas import (
     MeetingListItemResponse,
+    ProgressResponse,
     ProjectCreate,
     ProjectResponse,
     ProjectStatsResponse,
     ProjectUpdate,
     SectionCount,
+    StageStatusEnum,
+    StageUpdateRequest,
+    calculate_progress,
 )
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -142,4 +155,91 @@ def get_project_stats(project_id: str, db: Session = Depends(get_db)) -> Project
         requirement_count=total_requirement_count,
         requirement_counts_by_section=requirement_counts_by_section,
         last_activity=last_activity
+    )
+
+
+@router.get("/{project_id}/progress", response_model=ProgressResponse)
+def get_project_progress(project_id: str, db: Session = Depends(get_db)) -> ProgressResponse:
+    """Get project progress with all stage statuses."""
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    return ProgressResponse(
+        requirements_status=project.requirements_status.value,
+        prd_status=project.prd_status.value,
+        stories_status=project.stories_status.value,
+        mockups_status=project.mockups_status.value,
+        export_status=project.export_status.value,
+        progress=calculate_progress(
+            requirements_status=project.requirements_status.value,
+            prd_status=project.prd_status.value,
+            stories_status=project.stories_status.value,
+            mockups_status=project.mockups_status.value,
+            export_status=project.export_status.value,
+        ),
+    )
+
+
+# Mapping of stage names to their model fields and valid status enums
+STAGE_STATUS_MAPPING = {
+    StageStatusEnum.requirements: ("requirements_status", RequirementsStatus),
+    StageStatusEnum.prd: ("prd_status", PRDStageStatus),
+    StageStatusEnum.stories: ("stories_status", StoriesStatus),
+    StageStatusEnum.mockups: ("mockups_status", MockupsStatus),
+    StageStatusEnum.export: ("export_status", ExportStatus),
+}
+
+
+@router.patch("/{project_id}/stages/{stage}", response_model=ProgressResponse)
+def update_stage_status(
+    project_id: str,
+    stage: StageStatusEnum,
+    update_request: StageUpdateRequest,
+    db: Session = Depends(get_db),
+) -> ProgressResponse:
+    """Update an individual stage status.
+
+    Args:
+        project_id: The ID of the project
+        stage: The stage to update (requirements, prd, stories, mockups, export)
+        update_request: Contains the new status value
+
+    Returns:
+        Updated progress response with all stage statuses and recalculated progress
+    """
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    field_name, status_enum = STAGE_STATUS_MAPPING[stage]
+
+    # Validate the status value
+    try:
+        new_status = status_enum(update_request.status)
+    except ValueError:
+        valid_values = [e.value for e in status_enum]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status '{update_request.status}' for stage '{stage.value}'. Valid values are: {valid_values}",
+        )
+
+    # Update the stage status
+    setattr(project, field_name, new_status)
+    db.commit()
+    db.refresh(project)
+
+    return ProgressResponse(
+        requirements_status=project.requirements_status.value,
+        prd_status=project.prd_status.value,
+        stories_status=project.stories_status.value,
+        mockups_status=project.mockups_status.value,
+        export_status=project.export_status.value,
+        progress=calculate_progress(
+            requirements_status=project.requirements_status.value,
+            prd_status=project.prd_status.value,
+            stories_status=project.stories_status.value,
+            mockups_status=project.mockups_status.value,
+            export_status=project.export_status.value,
+        ),
     )
