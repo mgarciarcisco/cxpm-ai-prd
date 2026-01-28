@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { EmptyState } from '../common/EmptyState';
+import GenerateStoriesModal from '../stories/GenerateStoriesModal';
 import './StageContent.css';
 import './UserStoriesStage.css';
 
@@ -9,6 +10,9 @@ import './UserStoriesStage.css';
  * Shows warning if PRD is not yet ready.
  */
 function UserStoriesStage({ project }) {
+  // Modal state
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+
   // Check if there are any user stories (stories_status !== 'empty')
   const hasStories = project?.stories_status && project.stories_status !== 'empty';
 
@@ -36,8 +40,13 @@ function UserStoriesStage({ project }) {
 
   // Handle Generate from PRD button click
   const handleGenerateFromPRD = () => {
-    console.log('Generate stories from PRD');
-    // TODO: Open GenerateStoriesModal (P3-016)
+    setShowGenerateModal(true);
+  };
+
+  // Handle story generation from modal
+  const handleGenerate = (options) => {
+    console.log('Generate stories with options:', options);
+    // TODO: Call API to generate stories (future task)
   };
 
   // Handle Add Manually button click
@@ -49,40 +58,51 @@ function UserStoriesStage({ project }) {
   // Empty state - no stories yet
   if (!hasStories) {
     return (
-      <div className="stage-content stage-content--stories">
-        {/* Warning banner if PRD not complete */}
-        {!prdComplete && (
-          <div className="stories-stage__warning">
-            <span className="stories-stage__warning-icon">{warningIcon}</span>
-            <span className="stories-stage__warning-text">
-              PRD is not yet ready. Consider completing the PRD before generating user stories.
-            </span>
-          </div>
-        )}
+      <>
+        <div className="stage-content stage-content--stories">
+          {/* Warning banner if PRD not complete */}
+          {!prdComplete && (
+            <div className="stories-stage__warning">
+              <span className="stories-stage__warning-icon">{warningIcon}</span>
+              <span className="stories-stage__warning-text">
+                PRD is not yet ready. Consider completing the PRD before generating user stories.
+              </span>
+            </div>
+          )}
 
-        <EmptyState
-          icon={storiesIcon}
-          title="No user stories yet"
-          description="Generate user stories from your PRD or create them manually."
-          actions={[
-            <button
-              key="generate"
-              onClick={handleGenerateFromPRD}
-              disabled={!prdComplete}
-              title={!prdComplete ? 'Complete PRD first' : undefined}
-            >
-              Generate from PRD
-            </button>,
-            <button
-              key="manual"
-              className="secondary"
-              onClick={handleAddManually}
-            >
-              Add Manually
-            </button>
-          ]}
-        />
-      </div>
+          <EmptyState
+            icon={storiesIcon}
+            title="No user stories yet"
+            description="Generate user stories from your PRD or create them manually."
+            actions={[
+              <button
+                key="generate"
+                onClick={handleGenerateFromPRD}
+                disabled={!prdComplete}
+                title={!prdComplete ? 'Complete PRD first' : undefined}
+              >
+                Generate from PRD
+              </button>,
+              <button
+                key="manual"
+                className="secondary"
+                onClick={handleAddManually}
+              >
+                Add Manually
+              </button>
+            ]}
+          />
+        </div>
+
+        {/* Generate Stories Modal */}
+        {showGenerateModal && (
+          <GenerateStoriesModal
+            projectId={project?.id}
+            onClose={() => setShowGenerateModal(false)}
+            onGenerate={handleGenerate}
+          />
+        )}
+      </>
     );
   }
 
