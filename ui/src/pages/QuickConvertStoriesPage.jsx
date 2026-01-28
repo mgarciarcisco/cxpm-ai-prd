@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { StoryEditModal } from '../components/stories/StoryEditModal';
 import './QuickConvertStoriesPage.css';
 
 // Input source options
@@ -22,6 +23,115 @@ const INCLUDE_OPTIONS = {
   priority: { id: 'priority', label: 'Priority', description: 'P1, P2, P3 priority levels' },
 };
 
+// Simulated story templates based on format
+const generateSimulatedStories = (inputText, format, includeOptions) => {
+  const baseStories = [
+    {
+      title: 'User Authentication',
+      description_standard: 'As a user, I want to securely log in to the application so that I can access my personalized content and settings.',
+      description_gherkin: 'Given I am on the login page, When I enter valid credentials and click submit, Then I should be redirected to my dashboard.',
+      description_jtbd: 'When I need to access my account, I want to authenticate quickly, so I can get to my tasks without delay.',
+      acceptance_criteria: [
+        'User can log in with email and password',
+        'System validates credentials against stored data',
+        'Invalid credentials show appropriate error message',
+        'Session persists across browser refreshes',
+      ],
+      size: 'm',
+      priority: 'high',
+      labels: ['authentication', 'security'],
+    },
+    {
+      title: 'Dashboard Overview',
+      description_standard: 'As a user, I want to see a dashboard with key metrics so that I can quickly understand my current status.',
+      description_gherkin: 'Given I am logged in, When I navigate to the dashboard, Then I should see my key metrics displayed in cards.',
+      description_jtbd: 'When I first open the app, I want to see my most important information, so I can make informed decisions quickly.',
+      acceptance_criteria: [
+        'Dashboard loads within 2 seconds',
+        'Key metrics are displayed prominently',
+        'Data refreshes when user navigates to dashboard',
+        'Loading state shown while data is fetching',
+      ],
+      size: 'l',
+      priority: 'high',
+      labels: ['dashboard', 'ui'],
+    },
+    {
+      title: 'Search Functionality',
+      description_standard: 'As a user, I want to search for items using keywords so that I can quickly find what I need.',
+      description_gherkin: 'Given I am on any page with a search bar, When I type a search query and press enter, Then I should see relevant results.',
+      description_jtbd: 'When I am looking for specific content, I want to search by keywords, so I can find it without browsing manually.',
+      acceptance_criteria: [
+        'Search bar is accessible from all pages',
+        'Results appear as user types (debounced)',
+        'No results state is handled gracefully',
+        'Search history is saved for convenience',
+      ],
+      size: 'm',
+      priority: 'medium',
+      labels: ['search', 'ux'],
+    },
+    {
+      title: 'Export Data',
+      description_standard: 'As a user, I want to export my data in multiple formats so that I can use it in other applications.',
+      description_gherkin: 'Given I have data I want to export, When I select export and choose a format, Then a file should download.',
+      description_jtbd: 'When I need to share data with colleagues, I want to export in common formats, so I can collaborate effectively.',
+      acceptance_criteria: [
+        'Support CSV, JSON, and PDF export formats',
+        'Export includes all selected data',
+        'Large exports show progress indicator',
+        'File name includes date and type',
+      ],
+      size: 's',
+      priority: 'medium',
+      labels: ['export', 'data'],
+    },
+    {
+      title: 'Notification Preferences',
+      description_standard: 'As a user, I want to customize my notification settings so that I only receive alerts that matter to me.',
+      description_gherkin: 'Given I am in settings, When I toggle notification preferences, Then my choices should be saved and applied.',
+      description_jtbd: 'When notifications become overwhelming, I want to control which ones I receive, so I can focus on what matters.',
+      acceptance_criteria: [
+        'Users can toggle email notifications on/off',
+        'Users can choose notification frequency',
+        'Changes are saved immediately',
+        'Confirmation shown after saving preferences',
+      ],
+      size: 's',
+      priority: 'low',
+      labels: ['notifications', 'settings'],
+    },
+  ];
+
+  return baseStories.map((story, index) => {
+    let description;
+    switch (format) {
+      case 'gherkin':
+        description = story.description_gherkin;
+        break;
+      case 'jtbd':
+        description = story.description_jtbd;
+        break;
+      default:
+        description = story.description_standard;
+    }
+
+    return {
+      id: `temp-${Date.now()}-${index}`,
+      story_id: `US-${String(index + 1).padStart(3, '0')}`,
+      title: story.title,
+      description,
+      acceptance_criteria: includeOptions.acceptanceCriteria ? story.acceptance_criteria : [],
+      size: includeOptions.size ? story.size : null,
+      priority: includeOptions.priority ? story.priority : null,
+      labels: story.labels,
+      status: 'draft',
+      format: format === 'jtbd' ? 'job_story' : 'classic',
+      selected: true,
+    };
+  });
+};
+
 /**
  * Quick Convert Stories page - input UI for generating user stories.
  * Allows users to paste a PRD or feature description, then generate user stories.
@@ -39,6 +149,17 @@ function QuickConvertStoriesPage() {
   const [fileName, setFileName] = useState(null);
   const [fileError, setFileError] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState(null);
+  const [generatedStories, setGeneratedStories] = useState(null);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [totalStories, setTotalStories] = useState(0);
+
+  // Edit modal state
+  const [editingStory, setEditingStory] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const hasContent = content.trim().length > 0;
 
@@ -114,17 +235,510 @@ function QuickConvertStoriesPage() {
     }));
   };
 
-  const handleGenerate = () => {
+  // Simulate story generation with progress
+  const simulateGeneration = useCallback(async () => {
+    const stories = generateSimulatedStories(content, storyFormat, includeOptions);
+    const total = stories.length;
+    setTotalStories(total);
+    setGenerationProgress(0);
+
+    const result = [];
+
+    for (let i = 0; i < stories.length; i++) {
+      // Simulate delay per story (200-400ms)
+      await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 200));
+      result.push(stories[i]);
+      setGenerationProgress(i + 1);
+    }
+
+    return result;
+  }, [content, storyFormat, includeOptions]);
+
+  const handleGenerate = async () => {
     if (!hasContent) return;
 
-    // TODO: Will be implemented in P4-004b
-    console.log('Generating stories with:', {
-      content,
-      inputSource,
-      storyFormat,
-      includeOptions,
-    });
+    setIsGenerating(true);
+    setGenerationError(null);
+    setGeneratedStories(null);
+    setGenerationProgress(0);
+
+    try {
+      const stories = await simulateGeneration();
+      setGeneratedStories(stories);
+    } catch (error) {
+      setGenerationError(error.message || 'Generation failed. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  const handleRetry = () => {
+    handleGenerate();
+  };
+
+  const handleStartOver = () => {
+    setGeneratedStories(null);
+    setContent('');
+    setFileName(null);
+    setGenerationError(null);
+    setGenerationProgress(0);
+  };
+
+  // Toggle story selection
+  const handleToggleSelection = (storyId) => {
+    setGeneratedStories(prev =>
+      prev.map(story =>
+        story.id === storyId
+          ? { ...story, selected: !story.selected }
+          : story
+      )
+    );
+  };
+
+  // Select all / deselect all
+  const handleSelectAll = () => {
+    const allSelected = generatedStories?.every(s => s.selected);
+    setGeneratedStories(prev =>
+      prev.map(story => ({ ...story, selected: !allSelected }))
+    );
+  };
+
+  // Open edit modal
+  const handleEditStory = (story) => {
+    setEditingStory(story);
+  };
+
+  // Save edited story
+  const handleSaveStory = (storyId, updatedData) => {
+    setIsSaving(true);
+    // Simulate save delay
+    setTimeout(() => {
+      setGeneratedStories(prev =>
+        prev.map(story =>
+          story.id === storyId
+            ? { ...story, ...updatedData }
+            : story
+        )
+      );
+      setEditingStory(null);
+      setIsSaving(false);
+    }, 300);
+  };
+
+  // Delete story
+  const handleDeleteStory = (storyId) => {
+    setGeneratedStories(prev => prev.filter(story => story.id !== storyId));
+  };
+
+  // Get selected count
+  const selectedCount = generatedStories?.filter(s => s.selected).length || 0;
+
+  // Size color mapping
+  const getSizeClass = (size) => {
+    switch (size?.toLowerCase()) {
+      case 'xs': return 'qc-stories__size--xs';
+      case 's': return 'qc-stories__size--s';
+      case 'm': return 'qc-stories__size--m';
+      case 'l': return 'qc-stories__size--l';
+      case 'xl': return 'qc-stories__size--xl';
+      default: return '';
+    }
+  };
+
+  // Priority color mapping
+  const getPriorityClass = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'critical': return 'qc-stories__priority--critical';
+      case 'high': return 'qc-stories__priority--high';
+      case 'medium': return 'qc-stories__priority--medium';
+      case 'low': return 'qc-stories__priority--low';
+      default: return '';
+    }
+  };
+
+  // Render the input form
+  const renderInputForm = () => (
+    <>
+      {/* Input Section */}
+      <div className="qc-stories__input-section">
+        {/* Input Source Toggle */}
+        <div className="qc-stories__toggle-group">
+          <span className="qc-stories__toggle-label">Input Source</span>
+          <div className="qc-stories__toggle-buttons">
+            {Object.values(INPUT_SOURCES).map((source) => (
+              <button
+                key={source.id}
+                type="button"
+                className={`qc-stories__toggle-btn ${inputSource === source.id ? 'qc-stories__toggle-btn--active' : ''}`}
+                onClick={() => setInputSource(source.id)}
+              >
+                {source.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="qc-stories__content-area">
+          <label htmlFor="stories-content" className="qc-stories__label">
+            {INPUT_SOURCES[inputSource].label}
+          </label>
+          <textarea
+            id="stories-content"
+            className="qc-stories__textarea"
+            placeholder={INPUT_SOURCES[inputSource].placeholder}
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+              if (fileName) setFileName(null);
+            }}
+            rows={12}
+          />
+        </div>
+
+        <div className="qc-stories__divider">
+          <span>or</span>
+        </div>
+
+        {/* File Upload Zone */}
+        <div
+          className={`qc-stories__upload-zone ${dragActive ? 'qc-stories__upload-zone--active' : ''}`}
+          onDragEnter={handleDrag}
+          onDragOver={handleDrag}
+          onDragLeave={handleDrag}
+          onDrop={handleDrop}
+          onClick={handleUploadClick}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              handleUploadClick();
+            }
+          }}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".txt,.md,text/plain,text/markdown"
+            onChange={handleFileChange}
+            className="qc-stories__file-input"
+            aria-label="Upload file"
+          />
+          <svg
+            className="qc-stories__upload-icon"
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <span className="qc-stories__upload-text">
+            {dragActive ? 'Drop file here' : 'Click or drag file here'}
+          </span>
+          <span className="qc-stories__upload-hint">
+            Supports .txt and .md files
+          </span>
+        </div>
+
+        {fileError && (
+          <div className="qc-stories__error" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{fileError}</span>
+          </div>
+        )}
+
+        {fileName && (
+          <div className="qc-stories__file-info">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <span className="qc-stories__file-name">{fileName}</span>
+            <button
+              type="button"
+              className="qc-stories__file-clear"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClearFile();
+              }}
+              aria-label="Clear file"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Options Section */}
+      <div className="qc-stories__options-section">
+        {/* Story Format Selection */}
+        <div className="qc-stories__toggle-group">
+          <span className="qc-stories__toggle-label">Story Format</span>
+          <div className="qc-stories__format-options">
+            {Object.values(STORY_FORMATS).map((format) => (
+              <label key={format.id} className="qc-stories__format-option">
+                <input
+                  type="radio"
+                  name="story-format"
+                  value={format.id}
+                  checked={storyFormat === format.id}
+                  onChange={(e) => setStoryFormat(e.target.value)}
+                  className="qc-stories__format-radio"
+                />
+                <div className="qc-stories__format-content">
+                  <span className="qc-stories__format-label">{format.label}</span>
+                  <span className="qc-stories__format-description">{format.description}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Include Options */}
+        <div className="qc-stories__toggle-group qc-stories__toggle-group--include">
+          <span className="qc-stories__toggle-label">Include</span>
+          <div className="qc-stories__include-options">
+            {Object.values(INCLUDE_OPTIONS).map((option) => (
+              <label key={option.id} className="qc-stories__include-option">
+                <input
+                  type="checkbox"
+                  checked={includeOptions[option.id]}
+                  onChange={() => handleIncludeOptionChange(option.id)}
+                  className="qc-stories__include-checkbox"
+                />
+                <div className="qc-stories__include-content">
+                  <span className="qc-stories__include-label">{option.label}</span>
+                  <span className="qc-stories__include-description">{option.description}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Action Button */}
+      <div className="qc-stories__actions">
+        <button
+          type="button"
+          className="qc-stories__generate-btn"
+          onClick={handleGenerate}
+          disabled={!hasContent}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
+            <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
+            <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
+            <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
+          </svg>
+          Generate Stories
+        </button>
+      </div>
+    </>
+  );
+
+  // Render generation progress
+  const renderGenerating = () => (
+    <div className="qc-stories__generation">
+      <div className="qc-stories__generation-header">
+        <div className="qc-stories__generation-progress">
+          <div className="qc-stories__spinner" />
+          <span className="qc-stories__generation-status">
+            {totalStories > 0
+              ? `Generating... Story ${generationProgress} of ${totalStories}`
+              : 'Starting generation...'}
+          </span>
+        </div>
+        <div className="qc-stories__generation-mode">
+          {STORY_FORMATS[storyFormat]?.label} format
+        </div>
+      </div>
+
+      {totalStories > 0 && (
+        <div className="qc-stories__progress-bar">
+          <div
+            className="qc-stories__progress-fill"
+            style={{ width: `${(generationProgress / totalStories) * 100}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  // Render error state
+  const renderError = () => (
+    <div className="qc-stories__error-view">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      <h2 className="qc-stories__error-title">Generation Failed</h2>
+      <p className="qc-stories__error-text">{generationError}</p>
+      <div className="qc-stories__error-actions">
+        <button type="button" onClick={handleRetry}>Try Again</button>
+        <button type="button" className="secondary" onClick={handleStartOver}>Start Over</button>
+      </div>
+    </div>
+  );
+
+  // Render generated stories
+  const renderResults = () => (
+    <div className="qc-stories__result">
+      {/* Result header */}
+      <div className="qc-stories__result-header">
+        <button
+          type="button"
+          className="qc-stories__start-over-btn"
+          onClick={handleStartOver}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+          Start Over
+        </button>
+        <div className="qc-stories__result-stats">
+          <span className="qc-stories__result-count">
+            {generatedStories?.length} stories generated
+          </span>
+          <span className="qc-stories__selected-count">
+            {selectedCount} selected
+          </span>
+        </div>
+      </div>
+
+      {/* Selection controls */}
+      <div className="qc-stories__selection-controls">
+        <button
+          type="button"
+          className="qc-stories__select-all-btn"
+          onClick={handleSelectAll}
+        >
+          {generatedStories?.every(s => s.selected) ? 'Deselect All' : 'Select All'}
+        </button>
+      </div>
+
+      {/* Story cards */}
+      <div className="qc-stories__cards">
+        {generatedStories?.map((story) => (
+          <div
+            key={story.id}
+            className={`qc-stories__card ${story.selected ? 'qc-stories__card--selected' : ''}`}
+          >
+            {/* Checkbox */}
+            <div className="qc-stories__card-checkbox">
+              <input
+                type="checkbox"
+                checked={story.selected}
+                onChange={() => handleToggleSelection(story.id)}
+                id={`story-checkbox-${story.id}`}
+                className="qc-stories__checkbox"
+              />
+            </div>
+
+            {/* Card content */}
+            <div className="qc-stories__card-content">
+              {/* Header */}
+              <div className="qc-stories__card-header">
+                <span className="qc-stories__card-id">{story.story_id}</span>
+                <h3 className="qc-stories__card-title">{story.title}</h3>
+                {story.size && (
+                  <span className={`qc-stories__size ${getSizeClass(story.size)}`}>
+                    {story.size.toUpperCase()}
+                  </span>
+                )}
+                {story.priority && (
+                  <span className={`qc-stories__priority ${getPriorityClass(story.priority)}`}>
+                    {story.priority.charAt(0).toUpperCase() + story.priority.slice(1)}
+                  </span>
+                )}
+              </div>
+
+              {/* Description */}
+              <p className="qc-stories__card-description">{story.description}</p>
+
+              {/* Acceptance Criteria */}
+              {story.acceptance_criteria?.length > 0 && (
+                <div className="qc-stories__card-criteria">
+                  <h4 className="qc-stories__criteria-title">
+                    Acceptance Criteria ({story.acceptance_criteria.length})
+                  </h4>
+                  <ul className="qc-stories__criteria-list">
+                    {story.acceptance_criteria.map((criterion, idx) => (
+                      <li key={idx} className="qc-stories__criterion">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                          <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <span>{criterion}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Labels */}
+              {story.labels?.length > 0 && (
+                <div className="qc-stories__card-labels">
+                  {story.labels.map((label, idx) => (
+                    <span key={idx} className="qc-stories__label-chip">
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Card actions */}
+            <div className="qc-stories__card-actions">
+              <button
+                type="button"
+                className="qc-stories__card-action-btn"
+                onClick={() => handleEditStory(story)}
+                aria-label="Edit story"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M11.333 2.00004C11.5081 1.82494 11.7169 1.68605 11.9465 1.59129C12.1761 1.49653 12.4218 1.44775 12.67 1.44775C12.9182 1.44775 13.1639 1.49653 13.3935 1.59129C13.6231 1.68605 13.8319 1.82494 14.007 2.00004C14.1821 2.17513 14.321 2.38394 14.4157 2.61352C14.5105 2.84311 14.5593 3.08882 14.5593 3.33704C14.5593 3.58525 14.5105 3.83096 14.4157 4.06055C14.321 4.29013 14.1821 4.49894 14.007 4.67404L5.00033 13.6807L1.33366 14.6667L2.31966 11.0007L11.333 2.00004Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="qc-stories__card-action-btn qc-stories__card-action-btn--delete"
+                onClick={() => handleDeleteStory(story.id)}
+                aria-label="Delete story"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M2 4H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12.6667 4V13.3333C12.6667 14 12 14.6667 11.3333 14.6667H4.66667C4 14.6667 3.33333 14 3.33333 13.3333V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M5.33333 4V2.66667C5.33333 2 6 1.33334 6.66667 1.33334H9.33333C10 1.33334 10.6667 2 10.6667 2.66667V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <main className="main-content">
@@ -148,209 +762,33 @@ function QuickConvertStoriesPage() {
             </svg>
           </div>
           <div className="qc-stories__header-content">
-            <h1 className="qc-stories__title">Create User Stories</h1>
+            <h1 className="qc-stories__title">
+              {generatedStories ? 'Generated User Stories' : 'Create User Stories'}
+            </h1>
             <p className="qc-stories__subtitle">
-              Generate user stories from a PRD or feature description, complete with acceptance criteria.
+              {generatedStories
+                ? 'Review, edit, and select the stories you want to use.'
+                : 'Generate user stories from a PRD or feature description, complete with acceptance criteria.'}
             </p>
           </div>
         </div>
 
-        {/* Input Section */}
-        <div className="qc-stories__input-section">
-          {/* Input Source Toggle */}
-          <div className="qc-stories__toggle-group">
-            <span className="qc-stories__toggle-label">Input Source</span>
-            <div className="qc-stories__toggle-buttons">
-              {Object.values(INPUT_SOURCES).map((source) => (
-                <button
-                  key={source.id}
-                  type="button"
-                  className={`qc-stories__toggle-btn ${inputSource === source.id ? 'qc-stories__toggle-btn--active' : ''}`}
-                  onClick={() => setInputSource(source.id)}
-                >
-                  {source.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="qc-stories__content-area">
-            <label htmlFor="stories-content" className="qc-stories__label">
-              {INPUT_SOURCES[inputSource].label}
-            </label>
-            <textarea
-              id="stories-content"
-              className="qc-stories__textarea"
-              placeholder={INPUT_SOURCES[inputSource].placeholder}
-              value={content}
-              onChange={(e) => {
-                setContent(e.target.value);
-                if (fileName) setFileName(null);
-              }}
-              rows={12}
-            />
-          </div>
-
-          <div className="qc-stories__divider">
-            <span>or</span>
-          </div>
-
-          {/* File Upload Zone */}
-          <div
-            className={`qc-stories__upload-zone ${dragActive ? 'qc-stories__upload-zone--active' : ''}`}
-            onDragEnter={handleDrag}
-            onDragOver={handleDrag}
-            onDragLeave={handleDrag}
-            onDrop={handleDrop}
-            onClick={handleUploadClick}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                handleUploadClick();
-              }
-            }}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".txt,.md,text/plain,text/markdown"
-              onChange={handleFileChange}
-              className="qc-stories__file-input"
-              aria-label="Upload file"
-            />
-            <svg
-              className="qc-stories__upload-icon"
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-            <span className="qc-stories__upload-text">
-              {dragActive ? 'Drop file here' : 'Click or drag file here'}
-            </span>
-            <span className="qc-stories__upload-hint">
-              Supports .txt and .md files
-            </span>
-          </div>
-
-          {fileError && (
-            <div className="qc-stories__error" role="alert">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <span>{fileError}</span>
-            </div>
-          )}
-
-          {fileName && (
-            <div className="qc-stories__file-info">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-              <span className="qc-stories__file-name">{fileName}</span>
-              <button
-                type="button"
-                className="qc-stories__file-clear"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClearFile();
-                }}
-                aria-label="Clear file"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Options Section */}
-        <div className="qc-stories__options-section">
-          {/* Story Format Selection */}
-          <div className="qc-stories__toggle-group">
-            <span className="qc-stories__toggle-label">Story Format</span>
-            <div className="qc-stories__format-options">
-              {Object.values(STORY_FORMATS).map((format) => (
-                <label key={format.id} className="qc-stories__format-option">
-                  <input
-                    type="radio"
-                    name="story-format"
-                    value={format.id}
-                    checked={storyFormat === format.id}
-                    onChange={(e) => setStoryFormat(e.target.value)}
-                    className="qc-stories__format-radio"
-                  />
-                  <div className="qc-stories__format-content">
-                    <span className="qc-stories__format-label">{format.label}</span>
-                    <span className="qc-stories__format-description">{format.description}</span>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Include Options */}
-          <div className="qc-stories__toggle-group qc-stories__toggle-group--include">
-            <span className="qc-stories__toggle-label">Include</span>
-            <div className="qc-stories__include-options">
-              {Object.values(INCLUDE_OPTIONS).map((option) => (
-                <label key={option.id} className="qc-stories__include-option">
-                  <input
-                    type="checkbox"
-                    checked={includeOptions[option.id]}
-                    onChange={() => handleIncludeOptionChange(option.id)}
-                    className="qc-stories__include-checkbox"
-                  />
-                  <div className="qc-stories__include-content">
-                    <span className="qc-stories__include-label">{option.label}</span>
-                    <span className="qc-stories__include-description">{option.description}</span>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Action Button */}
-        <div className="qc-stories__actions">
-          <button
-            type="button"
-            className="qc-stories__generate-btn"
-            onClick={handleGenerate}
-            disabled={!hasContent}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-              <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-              <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-              <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-            Generate Stories
-          </button>
-        </div>
+        {/* Conditional Content */}
+        {isGenerating && renderGenerating()}
+        {generationError && !isGenerating && renderError()}
+        {generatedStories && !isGenerating && renderResults()}
+        {!generatedStories && !isGenerating && !generationError && renderInputForm()}
       </section>
+
+      {/* Edit Modal */}
+      {editingStory && (
+        <StoryEditModal
+          story={editingStory}
+          onSave={handleSaveStory}
+          onClose={() => setEditingStory(null)}
+          isSaving={isSaving}
+        />
+      )}
     </main>
   );
 }
