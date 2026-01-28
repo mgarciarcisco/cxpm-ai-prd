@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Markdown from 'react-markdown';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
+import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
 import './QuickConvertPRDPage.css';
 
 // Input source options
@@ -104,6 +105,35 @@ function QuickConvertPRDPage() {
   const [generatedPRD, setGeneratedPRD] = useState(null);
   const [activeTab, setActiveTab] = useState('preview'); // 'preview' or 'edit'
   const [editContent, setEditContent] = useState('');
+
+  // Session storage state
+  const [restoredFromSession, setRestoredFromSession] = useState(false);
+
+  // Restore data from session storage on mount (only if not from navigation state)
+  useEffect(() => {
+    if (location.state?.requirementsText) return; // Don't restore if coming from requirements page
+
+    const stored = loadFromSession(STORAGE_KEYS.PRD);
+    if (stored?.data?.generatedPRD) {
+      setGeneratedPRD(stored.data.generatedPRD);
+      setEditContent(stored.data.editContent || stored.data.generatedPRD.markdown || '');
+      setActiveTab(stored.data.activeTab || 'preview');
+      setPrdType(stored.data.prdType || 'detailed');
+      setRestoredFromSession(true);
+    }
+  }, [location.state]);
+
+  // Save to session storage when generated PRD changes
+  useEffect(() => {
+    if (generatedPRD) {
+      saveToSession(STORAGE_KEYS.PRD, {
+        generatedPRD,
+        editContent,
+        activeTab,
+        prdType,
+      });
+    }
+  }, [generatedPRD, editContent, activeTab, prdType]);
 
   const hasContent = content.trim().length > 0;
 
@@ -274,6 +304,8 @@ function QuickConvertPRDPage() {
     setFileName(null);
     setActiveTab('preview');
     setEditContent('');
+    setRestoredFromSession(false);
+    clearSession(STORAGE_KEYS.PRD);
   };
 
   // Get sorted sections for display
@@ -649,17 +681,28 @@ function QuickConvertPRDPage() {
     <div className="qc-prd__result">
       {/* Result header */}
       <div className="qc-prd__result-header">
-        <button
-          type="button"
-          className="qc-prd__start-over-btn"
-          onClick={handleStartOver}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-            <path d="M3 3v5h5" />
-          </svg>
-          Start Over
-        </button>
+        <div className="qc-prd__result-info">
+          <button
+            type="button"
+            className="qc-prd__start-over-btn"
+            onClick={handleStartOver}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            Start Over
+          </button>
+          {restoredFromSession && (
+            <span className="qc-prd__restored-indicator">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              Restored from previous session
+            </span>
+          )}
+        </div>
       </div>
 
       {/* PRD Viewer */}

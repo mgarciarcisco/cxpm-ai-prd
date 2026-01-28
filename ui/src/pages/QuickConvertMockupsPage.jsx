@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
+import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
 import './QuickConvertMockupsPage.css';
 
 // Placeholder mockup images for simulation
@@ -122,6 +123,9 @@ function QuickConvertMockupsPage() {
   // Save to Project modal state
   const [showSaveModal, setShowSaveModal] = useState(false);
 
+  // Session storage state
+  const [restoredFromSession, setRestoredFromSession] = useState(false);
+
   // Pre-fill content if navigated from stories page
   useEffect(() => {
     if (location.state?.storiesText) {
@@ -130,6 +134,30 @@ function QuickConvertMockupsPage() {
       setFromPreviousStep(true);
     }
   }, [location.state]);
+
+  // Restore data from session storage on mount (only if not from navigation state)
+  useEffect(() => {
+    if (location.state?.storiesText || location.state?.stories) return; // Don't restore if coming from stories page
+
+    const stored = loadFromSession(STORAGE_KEYS.MOCKUPS);
+    if (stored?.data?.generatedMockups) {
+      setGeneratedMockups(stored.data.generatedMockups);
+      setSelectedStyle(stored.data.selectedStyle || 'modern');
+      setSelectedDevices(stored.data.selectedDevices || ['desktop']);
+      setRestoredFromSession(true);
+    }
+  }, [location.state]);
+
+  // Save to session storage when generated mockups change
+  useEffect(() => {
+    if (generatedMockups) {
+      saveToSession(STORAGE_KEYS.MOCKUPS, {
+        generatedMockups,
+        selectedStyle,
+        selectedDevices,
+      });
+    }
+  }, [generatedMockups, selectedStyle, selectedDevices]);
 
   const hasContent = content.trim().length > 0;
 
@@ -326,6 +354,8 @@ function QuickConvertMockupsPage() {
     setGenerationProgress(0);
     setFromPreviousStep(false);
     setRefinePrompt('');
+    setRestoredFromSession(false);
+    clearSession(STORAGE_KEYS.MOCKUPS);
   };
 
   const handleSaveToProject = () => {
@@ -432,17 +462,28 @@ function QuickConvertMockupsPage() {
     <div className="qc-mockups__result">
       {/* Result header */}
       <div className="qc-mockups__result-header">
-        <button
-          type="button"
-          className="qc-mockups__start-over-btn"
-          onClick={handleStartOver}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-            <path d="M3 3v5h5" />
-          </svg>
-          Start Over
-        </button>
+        <div className="qc-mockups__result-left">
+          <button
+            type="button"
+            className="qc-mockups__start-over-btn"
+            onClick={handleStartOver}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            Start Over
+          </button>
+          {restoredFromSession && (
+            <span className="qc-mockups__restored-indicator">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              Restored from previous session
+            </span>
+          )}
+        </div>
         <div className="qc-mockups__result-stats">
           <span className="qc-mockups__result-count">
             {generatedMockups?.length} mockup{generatedMockups?.length !== 1 ? 's' : ''} generated

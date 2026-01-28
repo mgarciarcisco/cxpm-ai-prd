@@ -1,6 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
+import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
 import './QuickConvertRequirementsPage.css';
 
 // Section metadata with display names
@@ -50,6 +51,25 @@ function QuickConvertRequirementsPage() {
 
   // Modal state
   const [showSaveModal, setShowSaveModal] = useState(false);
+
+  // Session storage state
+  const [restoredFromSession, setRestoredFromSession] = useState(false);
+
+  // Restore data from session storage on mount
+  useEffect(() => {
+    const stored = loadFromSession(STORAGE_KEYS.REQUIREMENTS);
+    if (stored?.data?.extractedItems) {
+      setExtractedItems(stored.data.extractedItems);
+      setRestoredFromSession(true);
+    }
+  }, []);
+
+  // Save to session storage when extracted items change
+  useEffect(() => {
+    if (extractedItems) {
+      saveToSession(STORAGE_KEYS.REQUIREMENTS, { extractedItems });
+    }
+  }, [extractedItems]);
 
   const hasContent = content.trim().length > 0;
 
@@ -273,11 +293,13 @@ function QuickConvertRequirementsPage() {
     });
   };
 
-  // Start over - clear results
+  // Start over - clear results and session storage
   const handleStartOver = () => {
     setExtractedItems(null);
     setContent('');
     setFileName(null);
+    setRestoredFromSession(false);
+    clearSession(STORAGE_KEYS.REQUIREMENTS);
   };
 
   // Get count of selected items
@@ -543,9 +565,20 @@ function QuickConvertRequirementsPage() {
       <div className="qc-requirements__results">
         {/* Results Summary */}
         <div className="qc-requirements__results-summary">
-          <span className="qc-requirements__results-count">
-            {getSelectedCount()} of {getTotalCount()} items selected
-          </span>
+          <div className="qc-requirements__results-info">
+            <span className="qc-requirements__results-count">
+              {getSelectedCount()} of {getTotalCount()} items selected
+            </span>
+            {restoredFromSession && (
+              <span className="qc-requirements__restored-indicator">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                </svg>
+                Restored from previous session
+              </span>
+            )}
+          </div>
           <button
             type="button"
             className="qc-requirements__start-over-btn"

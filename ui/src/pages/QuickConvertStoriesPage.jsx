@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { StoryEditModal } from '../components/stories/StoryEditModal';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
+import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
 import './QuickConvertStoriesPage.css';
 
 // Input source options
@@ -181,6 +182,33 @@ function QuickConvertStoriesPage() {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
+  // Session storage state
+  const [restoredFromSession, setRestoredFromSession] = useState(false);
+
+  // Restore data from session storage on mount (only if not from navigation state)
+  useEffect(() => {
+    if (location.state?.prdText) return; // Don't restore if coming from PRD page
+
+    const stored = loadFromSession(STORAGE_KEYS.STORIES);
+    if (stored?.data?.generatedStories) {
+      setGeneratedStories(stored.data.generatedStories);
+      setStoryFormat(stored.data.storyFormat || 'standard');
+      setIncludeOptions(stored.data.includeOptions || { acceptanceCriteria: true, size: false, priority: false });
+      setRestoredFromSession(true);
+    }
+  }, [location.state]);
+
+  // Save to session storage when generated stories change
+  useEffect(() => {
+    if (generatedStories) {
+      saveToSession(STORAGE_KEYS.STORIES, {
+        generatedStories,
+        storyFormat,
+        includeOptions,
+      });
+    }
+  }, [generatedStories, storyFormat, includeOptions]);
+
   const hasContent = content.trim().length > 0;
 
   // Supported file types
@@ -302,6 +330,8 @@ function QuickConvertStoriesPage() {
     setFileName(null);
     setGenerationError(null);
     setGenerationProgress(0);
+    setRestoredFromSession(false);
+    clearSession(STORAGE_KEYS.STORIES);
   };
 
   // Toggle story selection
@@ -737,17 +767,28 @@ function QuickConvertStoriesPage() {
     <div className="qc-stories__result">
       {/* Result header */}
       <div className="qc-stories__result-header">
-        <button
-          type="button"
-          className="qc-stories__start-over-btn"
-          onClick={handleStartOver}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-            <path d="M3 3v5h5" />
-          </svg>
-          Start Over
-        </button>
+        <div className="qc-stories__result-left">
+          <button
+            type="button"
+            className="qc-stories__start-over-btn"
+            onClick={handleStartOver}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            Start Over
+          </button>
+          {restoredFromSession && (
+            <span className="qc-stories__restored-indicator">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              Restored from previous session
+            </span>
+          )}
+        </div>
         <div className="qc-stories__result-stats">
           <span className="qc-stories__result-count">
             {generatedStories?.length} stories generated

@@ -711,6 +711,24 @@
   margin-bottom: 1rem;
 }
 
+.qc-prd__result-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.qc-prd__restored-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #0D9488;
+}
+
+.qc-prd__restored-indicator svg {
+  flex-shrink: 0;
+}
+
 .qc-prd__start-over-btn {
   display: inline-flex;
   align-items: center;
