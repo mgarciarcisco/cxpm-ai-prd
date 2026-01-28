@@ -3,6 +3,7 @@ import Markdown from 'react-markdown';
 import { EmptyState } from '../common/EmptyState';
 import { StageActions } from '../stage/StageActions';
 import GeneratePRDModal from '../prd/GeneratePRDModal';
+import VersionHistory from '../prd/VersionHistory';
 import { usePRDStreamingV2, SectionStatus } from '../../hooks/usePRDStreamingV2';
 import { getPRD, updatePRD, listPRDs, patch } from '../../services/api';
 import './StageContent.css';
@@ -53,6 +54,9 @@ function PRDStage({ project, onProjectUpdate }) {
 
   // Mark as Ready state
   const [markingAsReady, setMarkingAsReady] = useState(false);
+
+  // Version preview state
+  const [previewVersion, setPreviewVersion] = useState(null);
 
   // Use the PRD streaming hook
   const {
@@ -300,6 +304,17 @@ function PRDStage({ project, onProjectUpdate }) {
     }
   };
 
+  // Handle version preview - when a historical version is loaded
+  const handleVersionLoad = useCallback((versionData) => {
+    setPreviewVersion(versionData);
+    setActiveTab('preview'); // Switch to preview mode when viewing old version
+  }, []);
+
+  // Handle returning to current version
+  const handleReturnToCurrent = useCallback(() => {
+    setPreviewVersion(null);
+  }, []);
+
   // Determine if PRD is already ready
   const isReady = project?.prd_status === 'ready';
 
@@ -432,37 +447,75 @@ function PRDStage({ project, onProjectUpdate }) {
       .map(s => `## ${s.title || formatSectionId(s.id)}\n\n${s.content}`)
       .join('\n\n');
 
+    // Determine which data to display (current or preview version)
+    const isViewingOldVersion = previewVersion !== null;
+
     return (
       <div className="stage-content stage-content--prd">
         <div className="prd-viewer">
-          {/* Header with tabs */}
-          <div className="prd-viewer__header">
-            <div className="prd-viewer__tabs">
+          {/* Version preview banner */}
+          {isViewingOldVersion && (
+            <div className="prd-viewer__version-banner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>Viewing Version {previewVersion.version} from {formatTimeAgo(previewVersion.created_at)}</span>
               <button
-                className={`prd-viewer__tab ${activeTab === 'preview' ? 'prd-viewer__tab--active' : ''}`}
-                onClick={() => setActiveTab('preview')}
+                className="prd-viewer__version-banner-close"
+                onClick={handleReturnToCurrent}
               >
-                Preview
-              </button>
-              <button
-                className={`prd-viewer__tab ${activeTab === 'edit' ? 'prd-viewer__tab--active' : ''}`}
-                onClick={() => setActiveTab('edit')}
-              >
-                Edit
+                Return to Current
               </button>
             </div>
+          )}
+
+          {/* Header with tabs and version history */}
+          <div className="prd-viewer__header">
+            <div className="prd-viewer__header-left">
+              <div className="prd-viewer__tabs">
+                <button
+                  className={`prd-viewer__tab ${activeTab === 'preview' ? 'prd-viewer__tab--active' : ''}`}
+                  onClick={() => setActiveTab('preview')}
+                >
+                  Preview
+                </button>
+                <button
+                  className={`prd-viewer__tab ${activeTab === 'edit' ? 'prd-viewer__tab--active' : ''}`}
+                  onClick={() => {
+                    if (isViewingOldVersion) {
+                      handleReturnToCurrent();
+                    }
+                    setActiveTab('edit');
+                  }}
+                  disabled={isViewingOldVersion}
+                  title={isViewingOldVersion ? 'Return to current version to edit' : undefined}
+                >
+                  Edit
+                </button>
+              </div>
+              {/* Version History selector */}
+              {prdData && (
+                <VersionHistory
+                  projectId={project?.id}
+                  currentPrdId={prdData.id}
+                  currentVersion={prdData.version}
+                  onVersionLoad={handleVersionLoad}
+                />
+              )}
+            </div>
             <div className="prd-viewer__meta">
-              {streamStatus === 'partial' && (
+              {streamStatus === 'partial' && !isViewingOldVersion && (
                 <span className="prd-viewer__warning">
                   Some sections failed to generate
                 </span>
               )}
-              {lastUpdated && (
+              {!isViewingOldVersion && lastUpdated && (
                 <span className="prd-viewer__timestamp">
                   Last edited {formatTimeAgo(lastUpdated)}
                 </span>
               )}
-              {activeTab === 'edit' && (
+              {activeTab === 'edit' && !isViewingOldVersion && (
                 <span className={`prd-viewer__save-status prd-viewer__save-status--${saveStatus}`}>
                   {saveStatus === 'saving' && 'Saving...'}
                   {saveStatus === 'saved' && 'Saved'}
@@ -477,26 +530,51 @@ function PRDStage({ project, onProjectUpdate }) {
           <div className="prd-viewer__content">
             {activeTab === 'preview' ? (
               <div className="prd-viewer__preview">
-                {sortedSections.map((section) => (
-                  <div
-                    key={section.id}
-                    className={`prd-section prd-section--${section.status}`}
-                  >
-                    <h2 className="prd-section__title">
-                      {section.title || formatSectionId(section.id)}
-                    </h2>
-                    {section.status === SectionStatus.COMPLETED && section.content && (
-                      <div className="prd-section__content">
-                        <Markdown>{section.content}</Markdown>
+                {isViewingOldVersion ? (
+                  // Show preview version content
+                  previewVersion.sections && previewVersion.sections.length > 0 ? (
+                    previewVersion.sections.map((section, index) => (
+                      <div key={index} className="prd-section prd-section--completed">
+                        <h2 className="prd-section__title">
+                          {section.title || `Section ${index + 1}`}
+                        </h2>
+                        <div className="prd-section__content">
+                          <Markdown>{section.content || ''}</Markdown>
+                        </div>
                       </div>
-                    )}
-                    {section.status === SectionStatus.FAILED && (
-                      <div className="prd-section__error">
-                        {section.error || 'Failed to generate this section'}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                    ))
+                  ) : previewVersion.raw_markdown ? (
+                    <div className="prd-viewer__markdown">
+                      <Markdown>{previewVersion.raw_markdown}</Markdown>
+                    </div>
+                  ) : (
+                    <div className="prd-viewer__empty">
+                      No content in this version.
+                    </div>
+                  )
+                ) : (
+                  // Show current streamed content
+                  sortedSections.map((section) => (
+                    <div
+                      key={section.id}
+                      className={`prd-section prd-section--${section.status}`}
+                    >
+                      <h2 className="prd-section__title">
+                        {section.title || formatSectionId(section.id)}
+                      </h2>
+                      {section.status === SectionStatus.COMPLETED && section.content && (
+                        <div className="prd-section__content">
+                          <Markdown>{section.content}</Markdown>
+                        </div>
+                      )}
+                      {section.status === SectionStatus.FAILED && (
+                        <div className="prd-section__error">
+                          {section.error || 'Failed to generate this section'}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             ) : (
               <textarea
@@ -515,7 +593,7 @@ function PRDStage({ project, onProjectUpdate }) {
           primaryAction={
             isReady
               ? { label: 'Ready', onClick: () => {}, disabled: true }
-              : { label: 'Mark as Ready', onClick: handleMarkAsReady, loading: markingAsReady }
+              : { label: 'Mark as Ready', onClick: handleMarkAsReady, loading: markingAsReady, disabled: isViewingOldVersion }
           }
         />
       </div>
@@ -584,32 +662,69 @@ function PRDStage({ project, onProjectUpdate }) {
   }
 
   if (prdData) {
+    // Determine which data to display (current or preview version)
+    const displayData = previewVersion || prdData;
+    const isViewingOldVersion = previewVersion !== null;
+
     return (
       <div className="stage-content stage-content--prd">
         <div className="prd-viewer">
-          {/* Header with tabs */}
-          <div className="prd-viewer__header">
-            <div className="prd-viewer__tabs">
+          {/* Version preview banner */}
+          {isViewingOldVersion && (
+            <div className="prd-viewer__version-banner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>Viewing Version {previewVersion.version} from {formatTimeAgo(previewVersion.created_at)}</span>
               <button
-                className={`prd-viewer__tab ${activeTab === 'preview' ? 'prd-viewer__tab--active' : ''}`}
-                onClick={() => setActiveTab('preview')}
+                className="prd-viewer__version-banner-close"
+                onClick={handleReturnToCurrent}
               >
-                Preview
-              </button>
-              <button
-                className={`prd-viewer__tab ${activeTab === 'edit' ? 'prd-viewer__tab--active' : ''}`}
-                onClick={() => setActiveTab('edit')}
-              >
-                Edit
+                Return to Current
               </button>
             </div>
+          )}
+
+          {/* Header with tabs and version history */}
+          <div className="prd-viewer__header">
+            <div className="prd-viewer__header-left">
+              <div className="prd-viewer__tabs">
+                <button
+                  className={`prd-viewer__tab ${activeTab === 'preview' ? 'prd-viewer__tab--active' : ''}`}
+                  onClick={() => setActiveTab('preview')}
+                >
+                  Preview
+                </button>
+                <button
+                  className={`prd-viewer__tab ${activeTab === 'edit' ? 'prd-viewer__tab--active' : ''}`}
+                  onClick={() => {
+                    if (isViewingOldVersion) {
+                      handleReturnToCurrent();
+                    }
+                    setActiveTab('edit');
+                  }}
+                  disabled={isViewingOldVersion}
+                  title={isViewingOldVersion ? 'Return to current version to edit' : undefined}
+                >
+                  Edit
+                </button>
+              </div>
+              {/* Version History selector */}
+              <VersionHistory
+                projectId={project?.id}
+                currentPrdId={prdData.id}
+                currentVersion={prdData.version}
+                onVersionLoad={handleVersionLoad}
+              />
+            </div>
             <div className="prd-viewer__meta">
-              {lastUpdated && (
+              {!isViewingOldVersion && lastUpdated && (
                 <span className="prd-viewer__timestamp">
                   Last edited {formatTimeAgo(lastUpdated)}
                 </span>
               )}
-              {activeTab === 'edit' && (
+              {activeTab === 'edit' && !isViewingOldVersion && (
                 <span className={`prd-viewer__save-status prd-viewer__save-status--${saveStatus}`}>
                   {saveStatus === 'saving' && 'Saving...'}
                   {saveStatus === 'saved' && 'Saved'}
@@ -624,8 +739,8 @@ function PRDStage({ project, onProjectUpdate }) {
           <div className="prd-viewer__content">
             {activeTab === 'preview' ? (
               <div className="prd-viewer__preview">
-                {prdData.sections && prdData.sections.length > 0 ? (
-                  prdData.sections.map((section, index) => (
+                {displayData.sections && displayData.sections.length > 0 ? (
+                  displayData.sections.map((section, index) => (
                     <div key={index} className="prd-section prd-section--completed">
                       <h2 className="prd-section__title">
                         {section.title || `Section ${index + 1}`}
@@ -635,9 +750,9 @@ function PRDStage({ project, onProjectUpdate }) {
                       </div>
                     </div>
                   ))
-                ) : prdData.raw_markdown ? (
+                ) : displayData.raw_markdown ? (
                   <div className="prd-viewer__markdown">
-                    <Markdown>{prdData.raw_markdown}</Markdown>
+                    <Markdown>{displayData.raw_markdown}</Markdown>
                   </div>
                 ) : (
                   <div className="prd-viewer__empty">
@@ -662,7 +777,7 @@ function PRDStage({ project, onProjectUpdate }) {
           primaryAction={
             isReady
               ? { label: 'Ready', onClick: () => {}, disabled: true }
-              : { label: 'Mark as Ready', onClick: handleMarkAsReady, loading: markingAsReady }
+              : { label: 'Mark as Ready', onClick: handleMarkAsReady, loading: markingAsReady, disabled: isViewingOldVersion }
           }
         />
       </div>
