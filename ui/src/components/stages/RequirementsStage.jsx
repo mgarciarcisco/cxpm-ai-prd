@@ -119,6 +119,10 @@ function RequirementsStage({ project, onProjectUpdate }) {
     setShowAddMeetingModal(false);
     // Refresh requirements list
     fetchRequirements();
+    // Notify parent to refresh project data (status may have changed from empty to has_items)
+    if (onProjectUpdate) {
+      onProjectUpdate();
+    }
   };
 
   // Handle Add Manually button click (from empty state or header)
@@ -138,6 +142,10 @@ function RequirementsStage({ project, onProjectUpdate }) {
     console.log('Requirement added:', requirement);
     // Refresh requirements list
     fetchRequirements();
+    // Notify parent to refresh project data (status may have changed from empty to has_items)
+    if (onProjectUpdate) {
+      onProjectUpdate();
+    }
   };
 
   // Handle save requirement (inline editing)
