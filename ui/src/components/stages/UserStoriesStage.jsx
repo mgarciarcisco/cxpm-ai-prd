@@ -6,6 +6,7 @@ import { StoryCard } from '../stories/StoryCard';
 import { StoryEditModal } from '../stories/StoryEditModal';
 import { StoryFilters } from '../stories/StoryFilters';
 import { listStories, updateStory, deleteStory, createStory, patch, reorderStories } from '../../services/api';
+import { useStoriesStreaming } from '../../hooks/useStoriesStreaming';
 import './StageContent.css';
 import './UserStoriesStage.css';
 
@@ -30,6 +31,10 @@ function UserStoriesStage({ project, onProjectUpdate }) {
   // Mark as refined state
   const [markingAsRefined, setMarkingAsRefined] = useState(false);
 
+  // Story generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationFormat, setGenerationFormat] = useState('classic');
+
   // Drag and drop state
   const [draggedStoryId, setDraggedStoryId] = useState(null);
   const [dragOverStoryId, setDragOverStoryId] = useState(null);
@@ -37,6 +42,15 @@ function UserStoriesStage({ project, onProjectUpdate }) {
 
   // Filters state
   const [filters, setFilters] = useState({ size: 'all', priority: 'all', search: '' });
+
+  // Use SSE streaming for story generation
+  const {
+    stories: streamedStories,
+    status: streamStatus,
+    error: streamError,
+    batchId: streamBatchId,
+    retry: retryGeneration,
+  } = useStoriesStreaming(project?.id, generationFormat, [], isGenerating);
 
   // Collect all unique labels from all stories (for autocomplete)
   const allLabels = useMemo(() => {
@@ -187,15 +201,42 @@ function UserStoriesStage({ project, onProjectUpdate }) {
     }
   }, [hasStories, project?.id, loadStories]);
 
+  // Handle stream completion
+  useEffect(() => {
+    if (streamStatus === 'complete') {
+      setIsGenerating(false);
+      // Reload stories to get the generated stories from the database
+      loadStories();
+      // Refresh project data to update stories_status
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
+    } else if (streamStatus === 'error') {
+      setIsGenerating(false);
+    }
+  }, [streamStatus, loadStories, onProjectUpdate]);
+
+  // Map UI format to backend format
+  const mapFormatToBackend = (uiFormat) => {
+    // The UI uses 'standard', 'gherkin', 'jtbd' but backend expects 'classic' or 'job_story'
+    switch (uiFormat) {
+      case 'jtbd':
+        return 'job_story';
+      case 'standard':
+      case 'gherkin':
+      default:
+        return 'classic';
+    }
+  };
+
   // Handle story generation from modal
   const handleGenerate = (options) => {
     console.log('Generate stories with options:', options);
-    // TODO: Call API to generate stories (future task)
-    // After generation, reload stories and refresh project
-    loadStories();
-    if (onProjectUpdate) {
-      onProjectUpdate();
-    }
+    // Map format to backend format and start SSE streaming
+    const backendFormat = mapFormatToBackend(options.format);
+    setGenerationFormat(backendFormat);
+    setIsGenerating(true);
+    setShowGenerateModal(false);
   };
 
   // Handle Add Manually button click - opens create modal
@@ -409,6 +450,43 @@ function UserStoriesStage({ project, onProjectUpdate }) {
       loadStories();
     }
   };
+
+  // Show generation progress when generating
+  if (isGenerating) {
+    return (
+      <div className="stage-content stage-content--stories">
+        <div className="stories-stage__generating">
+          <div className="stories-stage__generating-header">
+            <div className="stories-stage__spinner" />
+            <span className="stories-stage__generating-status">
+              {streamedStories.length > 0
+                ? `Generating... ${streamedStories.length} stories created`
+                : 'Starting generation...'}
+            </span>
+          </div>
+          
+          {/* Show streamed stories as they come in */}
+          {streamedStories.length > 0 && (
+            <div className="stories-stage__generating-preview">
+              {streamedStories.map((story, index) => (
+                <div key={index} className="stories-stage__generating-story">
+                  <span className="stories-stage__generating-story-check">✓</span>
+                  <span className="stories-stage__generating-story-title">{story.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {streamError && (
+            <div className="stories-stage__generating-error">
+              <p>{streamError}</p>
+              <button onClick={retryGeneration}>Try Again</button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // Empty state - no stories yet
   if (!hasStories) {
