@@ -366,3 +366,16 @@ export async function exportStories(projectId, format = 'markdown', batchId = nu
   }
   return response.blob();
 }
+
+// ============================================================
+// JIRA Epic API Functions
+// ============================================================
+
+/**
+ * Generate a JIRA Epic from requirements
+ * @param {string} requirements - Requirements document text (up to 1GB)
+ * @returns {Promise<object>} - Response with epic field containing generated epic
+ */
+export async function generateJiraEpic(requirements) {
+  return post('/api/jira-epic/generate', { requirements });
+}

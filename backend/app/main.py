@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import meeting_items_router, meetings_router, prds_router, projects_router, requirements_router, stories_router
+from app.routers import jira_epic_router, meeting_items_router, meetings_router, prds_router, projects_router, requirements_router, stories_router
 
 app = FastAPI(
     title="CXPM AI PRD",
@@ -37,3 +37,4 @@ app.include_router(meeting_items_router)
 app.include_router(requirements_router)
 app.include_router(prds_router)
 app.include_router(stories_router)
+app.include_router(jira_epic_router)

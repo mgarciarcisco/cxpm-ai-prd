@@ -23,6 +23,7 @@ import PRDStreamingPage from './pages/PRDStreamingPage'
 import PRDEditorPage from './pages/PRDEditorPage'
 import UserStoriesPage from './pages/UserStoriesPage'
 import NotFoundPage from './pages/NotFoundPage'
+import JiraEpicPage from './pages/jira_epic/JiraEpicPage'
 
 // Create data router with all routes
 const router = createBrowserRouter([
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
       { path: 'app/prds/:prdId', element: <PRDEditorPage /> },
       { path: 'app/stories', element: <DashboardPage /> },
       { path: 'app/projects/:projectId/stories', element: <UserStoriesPage /> },
+      { path: 'app/jira-epic', element: <JiraEpicPage /> },
       { path: 'app/*', element: <ProjectsPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
