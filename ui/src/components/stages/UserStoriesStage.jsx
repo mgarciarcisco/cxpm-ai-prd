@@ -49,6 +49,53 @@ function UserStoriesStage({ project, onProjectUpdate }) {
     return Array.from(labelSet).sort();
   }, [stories]);
 
+  // Calculate summary with story count, size breakdown, and priority breakdown
+  const summary = useMemo(() => {
+    if (stories.length === 0) return null;
+
+    const totalCount = stories.length;
+
+    // Count sizes (S, M, L) - default to M if not specified
+    const sizeCounts = { S: 0, M: 0, L: 0 };
+    stories.forEach((story) => {
+      const size = (story.size || 'M').toUpperCase();
+      if (sizeCounts[size] !== undefined) {
+        sizeCounts[size]++;
+      }
+    });
+
+    // Count priorities (P1, P2, P3)
+    const priorityCounts = { P1: 0, P2: 0, P3: 0 };
+    stories.forEach((story) => {
+      const priority = (story.priority || '').toUpperCase();
+      if (priorityCounts[priority] !== undefined) {
+        priorityCounts[priority]++;
+      }
+    });
+
+    // Build size string (only include non-zero counts)
+    const sizeParts = [];
+    if (sizeCounts.S > 0) sizeParts.push(`${sizeCounts.S}S`);
+    if (sizeCounts.M > 0) sizeParts.push(`${sizeCounts.M}M`);
+    if (sizeCounts.L > 0) sizeParts.push(`${sizeCounts.L}L`);
+    const sizeStr = sizeParts.join(' ');
+
+    // Build priority string (only include non-zero counts)
+    const priorityParts = [];
+    if (priorityCounts.P1 > 0) priorityParts.push(`${priorityCounts.P1}P1`);
+    if (priorityCounts.P2 > 0) priorityParts.push(`${priorityCounts.P2}P2`);
+    if (priorityCounts.P3 > 0) priorityParts.push(`${priorityCounts.P3}P3`);
+    const priorityStr = priorityParts.join(' ');
+
+    // Combine into summary
+    const storyWord = totalCount === 1 ? 'story' : 'stories';
+    let summaryParts = [`${totalCount} ${storyWord}`];
+    if (sizeStr) summaryParts.push(sizeStr);
+    if (priorityStr) summaryParts.push(priorityStr);
+
+    return summaryParts.join(' • ');
+  }, [stories]);
+
   // Filtered stories based on current filters
   const filteredStories = useMemo(() => {
     return stories.filter((story) => {
@@ -440,9 +487,10 @@ function UserStoriesStage({ project, onProjectUpdate }) {
     <>
       <div className="stage-content stage-content--stories">
         <div className="stories-stage__header">
-          <h2 className="stories-stage__title">
-            User Stories ({stories.length})
-          </h2>
+          <h2 className="stories-stage__title">User Stories</h2>
+          {summary && (
+            <span className="stories-stage__summary">{summary}</span>
+          )}
         </div>
 
         {/* Story Filters */}

@@ -51,6 +51,12 @@
   margin: 0;
 }
 
+.stories-stage__summary {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+}
+
 /* Stories List */
 .stories-stage__list {
   display: flex;
