@@ -158,7 +158,7 @@ function ProjectCard({ project, meetingCount, lastActivity, onEdit, onDelete }) 
   const progress = project.progress ?? 0;
 
   const handleCardClick = () => {
-    navigate(`/app/projects/${project.id}`)
+    navigate(`/projects/${project.id}`)
   }
 
   const handleEditClick = (e) => {
