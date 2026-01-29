@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
+import { ToastProvider } from './contexts/ToastContext'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDashboard from './pages/ProjectDashboard'
 import UploadMeetingPage from './pages/UploadMeetingPage'
@@ -19,6 +20,7 @@ import QuickConvertPage from './pages/QuickConvertPage'
 import QuickConvertRequirementsPage from './pages/QuickConvertRequirementsPage'
 import QuickConvertPRDPage from './pages/QuickConvertPRDPage'
 import QuickConvertStoriesPage from './pages/QuickConvertStoriesPage'
+import QuickConvertMockupsPage from './pages/QuickConvertMockupsPage'
 import './App.css'
 
 function App() {
@@ -35,6 +37,7 @@ function App() {
   }
 
   return (
+    <ToastProvider>
     <div className="app">
       <header className="header">
         <div className="header-left">
@@ -100,6 +103,7 @@ function App() {
           <Route path="/quick-convert/requirements" element={<QuickConvertRequirementsPage />} />
           <Route path="/quick-convert/prd" element={<QuickConvertPRDPage />} />
           <Route path="/quick-convert/stories" element={<QuickConvertStoriesPage />} />
+          <Route path="/quick-convert/mockups" element={<QuickConvertMockupsPage />} />
           <Route path="/projects/:id" element={<ProjectViewPage />} />
           <Route path="/projects/:id/:stage" element={<ProjectViewPage />} />
           <Route path="/app" element={<ProjectsPage />} />
@@ -118,6 +122,7 @@ function App() {
         </Routes>
       </ErrorBoundary>
     </div>
+    </ToastProvider>
   )
 }
 
