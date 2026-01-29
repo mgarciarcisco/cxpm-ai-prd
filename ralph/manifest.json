@@ -847,7 +847,7 @@
         "P4-001"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-005b",
@@ -859,7 +859,7 @@
         "P4-005a"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-005c",
@@ -872,7 +872,7 @@
         "P4-006"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-006",
@@ -908,7 +908,7 @@
         "P4-004b"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-009",
@@ -921,7 +921,7 @@
         "P1-014"
       ],
       "phase": 4,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P4-010",
@@ -948,7 +948,7 @@
         "P1-006"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-002",
@@ -960,7 +960,7 @@
         "P5-001"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-003",
@@ -972,7 +972,7 @@
         "P5-001"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-004",
@@ -985,7 +985,7 @@
         "P5-003"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-005",
@@ -997,7 +997,7 @@
         "P5-004"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-006",
@@ -1009,7 +1009,7 @@
         "P5-005"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-007",
@@ -1021,7 +1021,7 @@
         "P5-005"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-008",
@@ -1033,7 +1033,7 @@
         "P5-004"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-009",
@@ -1045,7 +1045,7 @@
         "P2-002"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-010",
@@ -1058,7 +1058,7 @@
         "P4-007"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-011",
@@ -1071,7 +1071,7 @@
         "P4-007"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P5-012",
@@ -1084,7 +1084,7 @@
         "P5-011"
       ],
       "phase": 5,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P6-001",
@@ -1120,7 +1120,7 @@
         "P1-008b"
       ],
       "phase": 6,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P6-003b",
@@ -1132,7 +1132,7 @@
         "P2-001d"
       ],
       "phase": 6,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P6-003c",
@@ -1144,7 +1144,7 @@
         "P3-024"
       ],
       "phase": 6,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P6-004a",
@@ -1156,7 +1156,7 @@
         "P1-008b"
       ],
       "phase": 6,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P6-004b",
@@ -1169,7 +1169,7 @@
         "P3-016"
       ],
       "phase": 6,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P6-004c",
@@ -1181,7 +1181,7 @@
         "P2-001a"
       ],
       "phase": 6,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P6-005a",
@@ -1193,32 +1193,7 @@
         "P1-008e"
       ],
       "phase": 6,
-      "status": "pending"
-    },
-    {
-      "id": "P6-005b",
-      "title": "Project View Mobile Layout",
-      "description": "Make project view responsive.\n\n**Acceptance criteria:**\n- Stepper scrollable\n- Mobile-friendly\n- npm run typecheck passes",
-      "size": "M",
-      "priority": "P2",
-      "dependsOn": [
-        "P2-002"
-      ],
-      "phase": 6,
-      "status": "pending"
-    },
-    {
-      "id": "P6-005c",
-      "title": "Modals Full-Screen Mobile",
-      "description": "Make modals full-screen on mobile.\n\n**Acceptance criteria:**\n- Full-screen on mobile\n- Touch-friendly inputs\n- npm run typecheck passes",
-      "size": "M",
-      "priority": "P2",
-      "dependsOn": [
-        "P1-009",
-        "P3-002a"
-      ],
-      "phase": 6,
-      "status": "pending"
+      "status": "completed"
     },
     {
       "id": "P6-006a",

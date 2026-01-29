@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { get } from '../services/api';
+import { get, del } from '../services/api';
 import ProjectCard from '../components/projects/ProjectCard';
 import ProjectCardSkeleton from '../components/projects/ProjectCardSkeleton';
 import StageFilter from '../components/dashboard/StageFilter';
 import ProjectSearch from '../components/dashboard/ProjectSearch';
 import NewProjectModal from '../components/dashboard/NewProjectModal';
 import EmptyState from '../components/common/EmptyState';
+import Modal from '../components/common/Modal';
 import './DashboardPage.css';
 
 /**
@@ -72,6 +73,8 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Get filter values from URL query params
   const stageFilter = searchParams.get('stage') || 'all';
@@ -178,15 +181,35 @@ function DashboardPage() {
     return result;
   }, [projects, stageFilter, searchQuery]);
 
-  // Placeholder handlers for edit and delete
+  // Placeholder handler for edit
   const handleEditProject = (project) => {
     // Will be implemented in P1-009 (New Project Modal) or P2-003 (Project Settings Modal)
     console.log('Edit project:', project.id);
   };
 
+  // Show delete confirmation modal
   const handleDeleteProject = (project) => {
-    // Will be implemented in P2-003 (Project Settings Modal)
-    console.log('Delete project:', project.id);
+    setProjectToDelete(project);
+  };
+
+  // Confirm and execute delete
+  const confirmDelete = async () => {
+    if (!projectToDelete) return;
+
+    try {
+      setDeleting(true);
+      await del(`/api/projects/${projectToDelete.id}`);
+      setProjectToDelete(null);
+      fetchProjects();
+    } catch (err) {
+      setError(err.message || 'Failed to delete project');
+      setDeleting(false);
+    }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setProjectToDelete(null);
   };
 
   return (
@@ -331,6 +354,41 @@ function DashboardPage() {
         {/* New Project Modal */}
         {showNewProjectModal && (
           <NewProjectModal onClose={() => setShowNewProjectModal(false)} />
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {projectToDelete && (
+          <Modal
+            title="Delete Project"
+            onClose={cancelDelete}
+          >
+            <div className="delete-confirmation">
+              <p className="delete-confirmation__message">
+                Are you sure you want to delete <strong>{projectToDelete.name}</strong>?
+              </p>
+              <p className="delete-confirmation__warning">
+                This will permanently delete the project and all its data including requirements, PRDs, and user stories.
+              </p>
+              <div className="delete-confirmation__actions">
+                <button
+                  type="button"
+                  className="btn btn--secondary"
+                  onClick={cancelDelete}
+                  disabled={deleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--danger"
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Deleting...' : 'Delete Project'}
+                </button>
+              </div>
+            </div>
+          </Modal>
         )}
       </section>
     </main>
