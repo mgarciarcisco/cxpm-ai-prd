@@ -230,3 +230,14 @@ ui/test-results/
 
 # Temporary backups
 ralph_orig.sh
+
+# Screenshots and snapshots (testing/debugging artifacts)
+screenshots/
+docs/snapshots/
+*.png
+
+# Ralph session state
+ralph/.resume_state
+
+# Claude skills cache
+.claude/skills/
