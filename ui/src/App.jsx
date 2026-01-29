@@ -9,11 +9,9 @@ import UploadMeetingPage from './pages/UploadMeetingPage'
 import RecapEditorPage from './pages/RecapEditorPage'
 import RequirementsPage from './pages/RequirementsPage'
 import ConflictResolverPage from './pages/ConflictResolverPage'
-import PRDLandingPage from './pages/PRDLandingPage'
 import PRDGeneratorPage from './pages/PRDGeneratorPage'
 import PRDStreamingPage from './pages/PRDStreamingPage'
 import PRDEditorPage from './pages/PRDEditorPage'
-import StoriesLandingPage from './pages/StoriesLandingPage'
 import UserStoriesPage from './pages/UserStoriesPage'
 import DashboardPage from './pages/DashboardPage'
 import ProjectViewPage from './pages/ProjectViewPage'
@@ -115,11 +113,11 @@ function App() {
           <Route path="/app/projects/:id/meetings/:mid" element={<RecapEditorPage />} />
           <Route path="/app/projects/:id/meetings/:mid/apply" element={<ConflictResolverPage />} />
           <Route path="/app/projects/:id/requirements" element={<RequirementsPage />} />
-          <Route path="/app/prd" element={<PRDLandingPage />} />
+          <Route path="/app/prd" element={<Navigate to="/dashboard" replace />} />
           <Route path="/app/projects/:projectId/prd/generate" element={<PRDGeneratorPage />} />
           <Route path="/app/projects/:projectId/prd/streaming" element={<PRDStreamingPage />} />
           <Route path="/app/prds/:prdId" element={<PRDEditorPage />} />
-          <Route path="/app/stories" element={<StoriesLandingPage />} />
+          <Route path="/app/stories" element={<Navigate to="/dashboard" replace />} />
           <Route path="/app/projects/:projectId/stories" element={<UserStoriesPage />} />
           <Route path="/app/*" element={<ProjectsPage />} />
           {/* Catch-all 404 route - must be last */}
