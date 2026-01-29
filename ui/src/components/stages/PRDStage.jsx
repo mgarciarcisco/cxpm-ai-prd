@@ -122,6 +122,23 @@ function PRDStage({ project, onProjectUpdate }) {
     }
   }, [project?.id]);
 
+  // Load PRD from a specific ID (used after generation)
+  // NOTE: This must be defined BEFORE the useEffect that references it
+  const loadPRDFromId = useCallback(async (prdId) => {
+    try {
+      setLoadingPRD(true);
+      const fullPrd = await getPRD(prdId);
+      setPrdData(fullPrd);
+      setEditContent(fullPrd.raw_markdown || '');
+      setLastUpdated(fullPrd.updated_at);
+      setSaveStatus('saved');
+    } catch (err) {
+      console.error('Failed to load generated PRD:', err);
+    } finally {
+      setLoadingPRD(false);
+    }
+  }, []);
+
   // Load PRD data when component mounts or PRD exists
   useEffect(() => {
     if (hasPRD && project?.id && !isGenerating) {
@@ -149,22 +166,6 @@ function PRDStage({ project, onProjectUpdate }) {
       }
     }
   }, [streamStatus, onProjectUpdate, streamPrdId, loadPRDFromId]);
-
-  // Load PRD from a specific ID (used after generation)
-  const loadPRDFromId = useCallback(async (prdId) => {
-    try {
-      setLoadingPRD(true);
-      const fullPrd = await getPRD(prdId);
-      setPrdData(fullPrd);
-      setEditContent(fullPrd.raw_markdown || '');
-      setLastUpdated(fullPrd.updated_at);
-      setSaveStatus('saved');
-    } catch (err) {
-      console.error('Failed to load generated PRD:', err);
-    } finally {
-      setLoadingPRD(false);
-    }
-  }, []);
 
   // Handle stream error
   useEffect(() => {
