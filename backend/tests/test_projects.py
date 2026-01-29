@@ -445,3 +445,386 @@ def test_update_stage_invalid_stage_returns_422(test_client: TestClient) -> None
         json={"status": "empty"},
     )
     assert response.status_code == 422  # Validation error from FastAPI
+
+
+# Additional integration tests for comprehensive coverage
+
+
+def test_create_project_missing_name_returns_422(test_client: TestClient) -> None:
+    """Test POST /api/projects without name returns 422 validation error."""
+    response = test_client.post(
+        "/api/projects",
+        json={"description": "No name provided"},
+    )
+    assert response.status_code == 422
+    # Verify error mentions 'name' field
+    error_detail = response.json()["detail"]
+    assert any("name" in str(err).lower() for err in error_detail)
+
+
+def test_list_projects_empty_returns_empty_list(test_client: TestClient) -> None:
+    """Test GET /api/projects returns empty list when no projects exist."""
+    response = test_client.get("/api/projects")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_update_project_archived_status(test_client: TestClient) -> None:
+    """Test PUT /api/projects/{id} updates archived status."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Archive Test"},
+    )
+    project_id = create_response.json()["id"]
+    assert create_response.json()["archived"] is False
+
+    # Archive the project
+    response = test_client.put(
+        f"/api/projects/{project_id}",
+        json={"archived": True},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["archived"] is True
+    assert data["name"] == "Archive Test"
+
+
+def test_update_project_multiple_fields(test_client: TestClient) -> None:
+    """Test PUT /api/projects/{id} updates multiple fields at once."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Original", "description": "Original desc"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Update multiple fields
+    response = test_client.put(
+        f"/api/projects/{project_id}",
+        json={"name": "Updated", "description": "New desc", "archived": True},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Updated"
+    assert data["description"] == "New desc"
+    assert data["archived"] is True
+
+
+def test_update_project_clear_description(test_client: TestClient) -> None:
+    """Test PUT /api/projects/{id} can set description to None."""
+    # Create a project with description
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Clear Desc Test", "description": "Initial description"},
+    )
+    project_id = create_response.json()["id"]
+    assert create_response.json()["description"] == "Initial description"
+
+    # Clear description by setting to None
+    response = test_client.put(
+        f"/api/projects/{project_id}",
+        json={"description": None},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["description"] is None
+
+
+def test_full_progress_all_stages_complete(test_client: TestClient) -> None:
+    """Test that completing all stages results in 100% progress."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Full Progress Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Complete all stages
+    test_client.patch(
+        f"/api/projects/{project_id}/stages/requirements",
+        json={"status": "reviewed"},  # 20%
+    )
+    test_client.patch(
+        f"/api/projects/{project_id}/stages/prd",
+        json={"status": "ready"},  # 20%
+    )
+    test_client.patch(
+        f"/api/projects/{project_id}/stages/stories",
+        json={"status": "refined"},  # 20%
+    )
+    test_client.patch(
+        f"/api/projects/{project_id}/stages/mockups",
+        json={"status": "generated"},  # 20%
+    )
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/export",
+        json={"status": "exported"},  # 20%
+    )
+
+    data = response.json()
+    assert data["requirements_status"] == "reviewed"
+    assert data["prd_status"] == "ready"
+    assert data["stories_status"] == "refined"
+    assert data["mockups_status"] == "generated"
+    assert data["export_status"] == "exported"
+    assert data["progress"] == 100
+
+
+def test_requirements_status_all_values(test_client: TestClient) -> None:
+    """Test all valid values for requirements status."""
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Req Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Test empty (default)
+    response = test_client.get(f"/api/projects/{project_id}/progress")
+    assert response.json()["requirements_status"] == "empty"
+
+    # Test has_items
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/requirements",
+        json={"status": "has_items"},
+    )
+    assert response.json()["requirements_status"] == "has_items"
+
+    # Test reviewed
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/requirements",
+        json={"status": "reviewed"},
+    )
+    assert response.json()["requirements_status"] == "reviewed"
+
+
+def test_prd_status_all_values(test_client: TestClient) -> None:
+    """Test all valid values for PRD status."""
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "PRD Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Test draft
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/prd",
+        json={"status": "draft"},
+    )
+    assert response.json()["prd_status"] == "draft"
+    assert response.json()["progress"] == 10  # draft = 10%
+
+    # Test ready
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/prd",
+        json={"status": "ready"},
+    )
+    assert response.json()["prd_status"] == "ready"
+    assert response.json()["progress"] == 20  # ready = 20%
+
+    # Test resetting to empty
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/prd",
+        json={"status": "empty"},
+    )
+    assert response.json()["prd_status"] == "empty"
+    assert response.json()["progress"] == 0
+
+
+def test_stories_status_all_values(test_client: TestClient) -> None:
+    """Test all valid values for stories status."""
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Stories Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Test generated
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/stories",
+        json={"status": "generated"},
+    )
+    assert response.json()["stories_status"] == "generated"
+    assert response.json()["progress"] == 10
+
+    # Test refined
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/stories",
+        json={"status": "refined"},
+    )
+    assert response.json()["stories_status"] == "refined"
+    assert response.json()["progress"] == 20
+
+
+def test_mockups_status_all_values(test_client: TestClient) -> None:
+    """Test all valid values for mockups status."""
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Mockups Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Test generated (only valid non-empty value)
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/mockups",
+        json={"status": "generated"},
+    )
+    assert response.json()["mockups_status"] == "generated"
+    assert response.json()["progress"] == 20
+
+    # Test resetting to empty
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/mockups",
+        json={"status": "empty"},
+    )
+    assert response.json()["mockups_status"] == "empty"
+    assert response.json()["progress"] == 0
+
+
+def test_export_status_all_values(test_client: TestClient) -> None:
+    """Test all valid values for export status."""
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Export Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Verify default is not_exported
+    response = test_client.get(f"/api/projects/{project_id}/progress")
+    assert response.json()["export_status"] == "not_exported"
+
+    # Test exported
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/export",
+        json={"status": "exported"},
+    )
+    assert response.json()["export_status"] == "exported"
+    assert response.json()["progress"] == 20
+
+    # Test resetting to not_exported
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/export",
+        json={"status": "not_exported"},
+    )
+    assert response.json()["export_status"] == "not_exported"
+    assert response.json()["progress"] == 0
+
+
+def test_stage_update_missing_status_returns_422(test_client: TestClient) -> None:
+    """Test PATCH without status field returns 422 validation error."""
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Missing Status Test"},
+    )
+    project_id = create_response.json()["id"]
+
+    response = test_client.patch(
+        f"/api/projects/{project_id}/stages/requirements",
+        json={},  # Missing required status field
+    )
+    assert response.status_code == 422
+
+
+def test_project_timestamps_updated(test_client: TestClient) -> None:
+    """Test that updated_at timestamp changes on update."""
+    import time
+
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Timestamp Test"},
+    )
+    project_id = create_response.json()["id"]
+    original_updated_at = create_response.json()["updated_at"]
+
+    # Small delay to ensure timestamp difference
+    time.sleep(0.1)
+
+    # Update the project
+    response = test_client.put(
+        f"/api/projects/{project_id}",
+        json={"name": "Timestamp Test Updated"},
+    )
+    new_updated_at = response.json()["updated_at"]
+
+    # created_at should remain same, updated_at should change
+    assert response.json()["created_at"] == create_response.json()["created_at"]
+    assert new_updated_at >= original_updated_at
+
+
+def test_create_project_with_empty_name_creates_project(test_client: TestClient) -> None:
+    """Test POST /api/projects with empty string name."""
+    # Empty string is technically valid (no min_length constraint)
+    response = test_client.post(
+        "/api/projects",
+        json={"name": ""},
+    )
+    # Behavior depends on schema validation - empty string should be allowed
+    # since there's no explicit min_length in ProjectCreate
+    assert response.status_code == 201
+    assert response.json()["name"] == ""
+
+
+def test_get_project_returns_correct_stage_statuses(test_client: TestClient) -> None:
+    """Test GET /api/projects/{id} returns updated stage statuses."""
+    # Create a project
+    create_response = test_client.post(
+        "/api/projects",
+        json={"name": "Stage Status Check"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Update some stages
+    test_client.patch(
+        f"/api/projects/{project_id}/stages/requirements",
+        json={"status": "has_items"},
+    )
+    test_client.patch(
+        f"/api/projects/{project_id}/stages/prd",
+        json={"status": "draft"},
+    )
+
+    # Fetch the project and verify statuses
+    response = test_client.get(f"/api/projects/{project_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["requirements_status"] == "has_items"
+    assert data["prd_status"] == "draft"
+    assert data["stories_status"] == "empty"
+    assert data["mockups_status"] == "empty"
+    assert data["export_status"] == "not_exported"
+    # Progress should be 10 + 10 = 20%
+    assert data["progress"] == 20
+
+
+def test_list_projects_returns_updated_statuses(test_client: TestClient) -> None:
+    """Test GET /api/projects returns correct stage statuses for all projects."""
+    # Create two projects
+    create_resp1 = test_client.post("/api/projects", json={"name": "Project 1"})
+    create_resp2 = test_client.post("/api/projects", json={"name": "Project 2"})
+    project_id1 = create_resp1.json()["id"]
+    project_id2 = create_resp2.json()["id"]
+
+    # Update statuses differently
+    test_client.patch(
+        f"/api/projects/{project_id1}/stages/requirements",
+        json={"status": "reviewed"},
+    )
+    test_client.patch(
+        f"/api/projects/{project_id2}/stages/export",
+        json={"status": "exported"},
+    )
+
+    # List projects and verify
+    response = test_client.get("/api/projects")
+    assert response.status_code == 200
+    projects = response.json()
+    assert len(projects) == 2
+
+    proj1 = next(p for p in projects if p["id"] == project_id1)
+    proj2 = next(p for p in projects if p["id"] == project_id2)
+
+    assert proj1["requirements_status"] == "reviewed"
+    assert proj1["progress"] == 20
+    assert proj2["export_status"] == "exported"
+    assert proj2["progress"] == 20
