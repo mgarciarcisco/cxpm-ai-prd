@@ -1127,3 +1127,656 @@ def _parse_sse_events(response_text: str) -> list[dict[str, Any]]:
         events.append(current_event)
 
     return events
+
+
+# =============================================================================
+# Mock generators for streaming tests
+# =============================================================================
+
+
+async def _mock_generate_stream_staged_success(
+    project_id: str,
+    mode: PRDMode,
+    created_by: str | None = None,
+) -> AsyncIterator[dict[str, Any]]:
+    """Mock generate_stream_staged that yields PRD sections."""
+    yield {
+        "type": "stage",
+        "stage": 1,
+        "sections": ["problem_statement", "goals_and_objectives"],
+    }
+    yield {
+        "type": "chunk",
+        "section_id": "problem_statement",
+        "content": "The main problem is...",
+    }
+    yield {
+        "type": "section_complete",
+        "section_id": "problem_statement",
+        "title": "Problem Statement",
+        "content": "The main problem is that users need better tools.",
+        "order": 2,
+    }
+    yield {
+        "type": "section_complete",
+        "section_id": "goals_and_objectives",
+        "title": "Goals and Objectives",
+        "content": "The goal is to improve productivity.",
+        "order": 3,
+    }
+    yield {
+        "type": "complete",
+        "prd_id": "test-prd-id",
+        "version": 1,
+        "section_count": 2,
+        "failed_count": 0,
+        "status": "ready",
+    }
+
+
+async def _mock_generate_stream_staged_with_failures(
+    project_id: str,
+    mode: PRDMode,
+    created_by: str | None = None,
+) -> AsyncIterator[dict[str, Any]]:
+    """Mock generate_stream_staged with section failures."""
+    yield {
+        "type": "stage",
+        "stage": 1,
+        "sections": ["problem_statement", "goals_and_objectives"],
+    }
+    yield {
+        "type": "section_complete",
+        "section_id": "problem_statement",
+        "title": "Problem Statement",
+        "content": "The main problem...",
+        "order": 2,
+    }
+    yield {
+        "type": "section_failed",
+        "section_id": "goals_and_objectives",
+        "error": "LLM timeout",
+    }
+    yield {
+        "type": "complete",
+        "prd_id": "test-prd-id",
+        "version": 1,
+        "section_count": 1,
+        "failed_count": 1,
+        "status": "ready",
+    }
+
+
+async def _mock_generate_stream_no_requirements(
+    project_id: str,
+    mode: PRDMode,
+    created_by: str | None = None,
+) -> AsyncIterator[dict[str, Any]]:
+    """Mock generate_stream_staged that raises NoRequirementsError."""
+    from app.exceptions import NoRequirementsError
+    raise NoRequirementsError(project_id)
+    yield {}  # Never reached, but makes this an async generator
+
+
+async def _mock_generate_stream_llm_error(
+    project_id: str,
+    mode: PRDMode,
+    created_by: str | None = None,
+) -> AsyncIterator[dict[str, Any]]:
+    """Mock generate_stream_staged that raises LLMError."""
+    from app.services.llm import LLMError
+    raise LLMError("LLM connection failed")
+    yield {}  # Never reached
+
+
+async def _mock_regenerate_section_success(
+    prd_id: str,
+    section_id: str,
+    custom_instructions: str | None = None,
+    updated_by: str | None = None,
+) -> AsyncIterator[dict[str, Any]]:
+    """Mock regenerate_section that yields chunk and complete events."""
+    yield {
+        "type": "chunk",
+        "section_id": section_id,
+        "content": "Regenerated content...",
+    }
+    yield {
+        "type": "section_complete",
+        "section_id": section_id,
+        "title": "Problem Statement",
+        "content": "This is the regenerated problem statement content.",
+        "order": 2,
+        "affected_sections": ["goals_and_objectives"],
+    }
+
+
+async def _mock_regenerate_section_llm_error(
+    prd_id: str,
+    section_id: str,
+    custom_instructions: str | None = None,
+    updated_by: str | None = None,
+) -> AsyncIterator[dict[str, Any]]:
+    """Mock regenerate_section that raises LLMError."""
+    from app.services.llm import LLMError
+    raise LLMError("LLM timeout")
+    yield {}  # Never reached
+
+
+# =============================================================================
+# Test: PRD Streaming Generation Endpoint
+# =============================================================================
+
+
+def test_stream_prd_generation_returns_status_event(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint returns initial status event."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
+
+        response = test_client.get(f"/api/projects/{project_id}/prds/stream?mode=draft")
+
+    assert response.status_code == 200
+    events = _parse_sse_events(response.text)
+
+    # First event should be status
+    assert len(events) > 0
+    assert events[0]["event"] == "status"
+    assert events[0]["data"]["status"] == "generating"
+    assert events[0]["data"]["mode"] == "draft"
+    assert events[0]["data"]["staged"] is True
+
+
+def test_stream_prd_generation_returns_stage_events(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint returns stage events."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
+
+        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have stage event
+    stage_events = [e for e in events if e.get("event") == "stage"]
+    assert len(stage_events) >= 1
+    assert stage_events[0]["data"]["stage"] == 1
+    assert "problem_statement" in stage_events[0]["data"]["sections"]
+
+
+def test_stream_prd_generation_returns_chunk_events(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint returns chunk events during section generation."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
+
+        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have chunk events
+    chunk_events = [e for e in events if e.get("event") == "chunk"]
+    assert len(chunk_events) >= 1
+    assert chunk_events[0]["data"]["section_id"] == "problem_statement"
+    assert "content" in chunk_events[0]["data"]
+
+
+def test_stream_prd_generation_returns_section_complete_events(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint returns section_complete events."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
+
+        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have section_complete events
+    complete_events = [e for e in events if e.get("event") == "section_complete"]
+    assert len(complete_events) == 2
+
+    # Verify section data
+    problem_event = next(e for e in complete_events if e["data"]["section_id"] == "problem_statement")
+    assert problem_event["data"]["title"] == "Problem Statement"
+    assert "content" in problem_event["data"]
+    assert "order" in problem_event["data"]
+
+
+def test_stream_prd_generation_returns_complete_event(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint returns complete event."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
+
+        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+
+    events = _parse_sse_events(response.text)
+
+    # Last event should be complete
+    complete_events = [e for e in events if e.get("event") == "complete"]
+    assert len(complete_events) == 1
+    assert complete_events[0]["data"]["prd_id"] == "test-prd-id"
+    assert complete_events[0]["data"]["version"] == 1
+    assert complete_events[0]["data"]["section_count"] == 2
+    assert complete_events[0]["data"]["failed_count"] == 0
+    assert complete_events[0]["data"]["status"] == "ready"
+
+
+def test_stream_prd_generation_handles_section_failures(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint handles section failures gracefully."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream_staged = _mock_generate_stream_staged_with_failures
+
+        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have section_failed event
+    failed_events = [e for e in events if e.get("event") == "section_failed"]
+    assert len(failed_events) == 1
+    assert failed_events[0]["data"]["section_id"] == "goals_and_objectives"
+    assert "error" in failed_events[0]["data"]
+
+    # Complete event should reflect failure count
+    complete_events = [e for e in events if e.get("event") == "complete"]
+    assert complete_events[0]["data"]["failed_count"] == 1
+
+
+def test_stream_prd_generation_returns_error_for_no_requirements(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint returns error when no requirements."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    # Don't create any requirements
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream_staged = _mock_generate_stream_no_requirements
+
+        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have error event
+    error_events = [e for e in events if e.get("event") == "error"]
+    assert len(error_events) == 1
+    assert "no requirements" in error_events[0]["data"]["message"].lower()
+
+
+def test_stream_prd_generation_returns_error_for_llm_failure(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint returns error on LLM failure."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream_staged = _mock_generate_stream_llm_error
+
+        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have error event
+    error_events = [e for e in events if e.get("event") == "error"]
+    assert len(error_events) == 1
+    assert "LLM" in error_events[0]["data"]["message"]
+
+
+def test_stream_prd_generation_returns_404_for_missing_project(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint returns 404 for non-existent project."""
+    fake_project_id = "00000000-0000-0000-0000-000000000000"
+
+    response = test_client.get(f"/api/projects/{fake_project_id}/prds/stream")
+
+    assert response.status_code == 404
+
+
+def test_stream_prd_generation_accepts_mode_parameter(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint accepts mode parameter."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
+
+        response = test_client.get(f"/api/projects/{project_id}/prds/stream?mode=detailed")
+
+    events = _parse_sse_events(response.text)
+
+    # Status event should include the mode
+    status_events = [e for e in events if e.get("event") == "status"]
+    assert len(status_events) == 1
+    assert status_events[0]["data"]["mode"] == "detailed"
+
+
+# =============================================================================
+# Test: PRD Section Regeneration Endpoint
+# =============================================================================
+
+
+def test_regenerate_section_returns_status_event(test_client: TestClient, test_db: Session) -> None:
+    """Test that section regeneration endpoint returns initial status event."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    prd = _create_test_prd(test_db, project_id)
+    prd_id = _get_prd_id(prd)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.regenerate_section = _mock_regenerate_section_success
+
+        response = test_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
+
+    assert response.status_code == 200
+    events = _parse_sse_events(response.text)
+
+    # First event should be status
+    assert len(events) > 0
+    assert events[0]["event"] == "status"
+    assert events[0]["data"]["status"] == "regenerating"
+    assert events[0]["data"]["section_id"] == "problem_statement"
+
+
+def test_regenerate_section_returns_chunk_events(test_client: TestClient, test_db: Session) -> None:
+    """Test that section regeneration returns chunk events."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    prd = _create_test_prd(test_db, project_id)
+    prd_id = _get_prd_id(prd)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.regenerate_section = _mock_regenerate_section_success
+
+        response = test_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have chunk events
+    chunk_events = [e for e in events if e.get("event") == "chunk"]
+    assert len(chunk_events) >= 1
+    assert chunk_events[0]["data"]["section_id"] == "problem_statement"
+
+
+def test_regenerate_section_returns_section_complete_event(test_client: TestClient, test_db: Session) -> None:
+    """Test that section regeneration returns section_complete event."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    prd = _create_test_prd(test_db, project_id)
+    prd_id = _get_prd_id(prd)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.regenerate_section = _mock_regenerate_section_success
+
+        response = test_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have section_complete event
+    complete_events = [e for e in events if e.get("event") == "section_complete"]
+    assert len(complete_events) == 1
+    assert complete_events[0]["data"]["section_id"] == "problem_statement"
+    assert complete_events[0]["data"]["title"] == "Problem Statement"
+    assert "content" in complete_events[0]["data"]
+    assert "affected_sections" in complete_events[0]["data"]
+
+
+def test_regenerate_section_returns_error_for_llm_failure(test_client: TestClient, test_db: Session) -> None:
+    """Test that section regeneration returns error on LLM failure."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    prd = _create_test_prd(test_db, project_id)
+    prd_id = _get_prd_id(prd)
+
+    with patch(
+        "app.routers.prds.PRDGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.regenerate_section = _mock_regenerate_section_llm_error
+
+        response = test_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have error event
+    error_events = [e for e in events if e.get("event") == "error"]
+    assert len(error_events) == 1
+    assert "LLM" in error_events[0]["data"]["message"]
+
+
+def test_regenerate_section_returns_404_for_missing_prd(test_client: TestClient, test_db: Session) -> None:
+    """Test that section regeneration returns 404 for non-existent PRD."""
+    fake_prd_id = "00000000-0000-0000-0000-000000000000"
+
+    response = test_client.post(f"/api/prds/{fake_prd_id}/sections/problem_statement/regenerate")
+
+    assert response.status_code == 404
+
+
+# =============================================================================
+# Test: PRD Restore Endpoint
+# =============================================================================
+
+
+def test_restore_prd_creates_new_version(test_client: TestClient, test_db: Session) -> None:
+    """Test that POST /prds/{prd_id}/restore creates a new PRD version."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    prd = _create_test_prd(
+        test_db, project_id,
+        version=1,
+        title="Original PRD",
+        sections=[{"title": "Section 1", "content": "Original content"}],
+    )
+    prd_id = _get_prd_id(prd)
+
+    response = test_client.post(f"/api/prds/{prd_id}/restore")
+
+    assert response.status_code == 200
+    data = response.json()
+
+    # Should be a new version
+    assert data["version"] == 2
+    assert data["id"] != prd_id  # New PRD ID
+
+    # Should copy content from source
+    assert data["title"] == "Original PRD"
+    assert len(data["sections"]) == 1
+    assert data["sections"][0]["title"] == "Section 1"
+    assert data["status"] == "ready"
+
+
+def test_restore_archived_prd(test_client: TestClient, test_db: Session) -> None:
+    """Test that archived PRDs can be restored."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    prd = _create_test_prd(
+        test_db, project_id,
+        version=1,
+        status=PRDStatus.ARCHIVED,
+        title="Archived PRD",
+    )
+    prd_id = _get_prd_id(prd)
+
+    response = test_client.post(f"/api/prds/{prd_id}/restore")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["version"] == 2
+    assert data["status"] == "ready"
+
+
+def test_restore_prd_fails_for_queued_status(test_client: TestClient, test_db: Session) -> None:
+    """Test that restoring a queued PRD returns 400."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    prd = _create_test_prd(test_db, project_id, status=PRDStatus.QUEUED)
+    prd_id = _get_prd_id(prd)
+
+    response = test_client.post(f"/api/prds/{prd_id}/restore")
+
+    assert response.status_code == 400
+    assert "Cannot restore" in response.json()["detail"]
+
+
+def test_restore_prd_fails_for_generating_status(test_client: TestClient, test_db: Session) -> None:
+    """Test that restoring a generating PRD returns 400."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    prd = _create_test_prd(test_db, project_id, status=PRDStatus.GENERATING)
+    prd_id = _get_prd_id(prd)
+
+    response = test_client.post(f"/api/prds/{prd_id}/restore")
+
+    assert response.status_code == 400
+
+
+def test_restore_prd_fails_for_failed_status(test_client: TestClient, test_db: Session) -> None:
+    """Test that restoring a failed PRD returns 400."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    prd = _create_test_prd(test_db, project_id, status=PRDStatus.FAILED)
+    prd_id = _get_prd_id(prd)
+
+    response = test_client.post(f"/api/prds/{prd_id}/restore")
+
+    assert response.status_code == 400
+
+
+def test_restore_prd_returns_404_for_missing_prd(test_client: TestClient, test_db: Session) -> None:
+    """Test that restoring a non-existent PRD returns 404."""
+    fake_prd_id = "00000000-0000-0000-0000-000000000000"
+
+    response = test_client.post(f"/api/prds/{fake_prd_id}/restore")
+
+    assert response.status_code == 404
+
+
+def test_restore_increments_version_correctly(test_client: TestClient, test_db: Session) -> None:
+    """Test that restore creates correct version number with existing PRDs."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    # Create multiple PRD versions
+    prd1 = _create_test_prd(test_db, project_id, version=1, title="PRD v1")
+    _create_test_prd(test_db, project_id, version=2, title="PRD v2")
+    _create_test_prd(test_db, project_id, version=3, title="PRD v3")
+
+    # Restore from version 1
+    prd1_id = _get_prd_id(prd1)
+    response = test_client.post(f"/api/prds/{prd1_id}/restore")
+
+    assert response.status_code == 200
+    data = response.json()
+
+    # Should be version 4 (next after 3)
+    assert data["version"] == 4
+    assert data["title"] == "PRD v1"  # Content from v1
+
+
+# =============================================================================
+# Test: PRD Create (Manual) Endpoint
+# =============================================================================
+
+
+def test_create_manual_prd(test_client: TestClient, test_db: Session) -> None:
+    """Test that POST /projects/{project_id}/prds creates a manual PRD."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    response = test_client.post(
+        f"/api/projects/{project_id}/prds",
+        json={
+            "title": "Manual PRD",
+            "sections": [
+                {"title": "Summary", "content": "This is the summary."}
+            ]
+        }
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["title"] == "Manual PRD"
+    assert data["status"] == "ready"
+    assert data["mode"] == "draft"  # Manual PRDs default to draft mode
+    assert len(data["sections"]) == 1
+
+
+def test_create_manual_prd_empty(test_client: TestClient, test_db: Session) -> None:
+    """Test that creating a blank PRD works."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    response = test_client.post(
+        f"/api/projects/{project_id}/prds",
+        json={}
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["status"] == "ready"
+    assert data["sections"] is None
+
+
+def test_create_manual_prd_returns_404_for_missing_project(test_client: TestClient, test_db: Session) -> None:
+    """Test that creating PRD for non-existent project returns 404."""
+    fake_project_id = "00000000-0000-0000-0000-000000000000"
+
+    response = test_client.post(
+        f"/api/projects/{fake_project_id}/prds",
+        json={"title": "Test PRD"}
+    )
+
+    assert response.status_code == 404

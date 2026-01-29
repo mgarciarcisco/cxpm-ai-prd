@@ -1828,3 +1828,368 @@ def test_stream_stories_generation_returns_error_for_llm_failure(test_client: Te
     error_events = [e for e in events if e.get("event") == "error"]
     assert len(error_events) == 1
     assert "LLM" in error_events[0]["data"]["message"]
+
+
+# =============================================================================
+# Test: Create Story Manually (US-036)
+# =============================================================================
+
+
+def test_create_story_manually(test_client: TestClient, test_db: Session) -> None:
+    """Test that POST /projects/{project_id}/stories creates a manual story."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    response = test_client.post(
+        f"/api/projects/{project_id}/stories",
+        json={
+            "title": "Manual Story",
+            "description": "As a user, I want to do something.",
+            "acceptance_criteria": ["AC 1", "AC 2"],
+            "labels": ["manual"],
+            "size": "m",
+            "priority": "p1",
+        }
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["title"] == "Manual Story"
+    assert data["description"] == "As a user, I want to do something."
+    assert data["story_id"] == "US-001"
+    assert data["story_number"] == 1
+    assert data["acceptance_criteria"] == ["AC 1", "AC 2"]
+    assert data["labels"] == ["manual"]
+    assert data["size"] == "m"
+    assert data["status"] == "draft"
+    assert data["batch_id"] is None  # Manual stories have no batch
+
+
+def test_create_story_assigns_incremental_story_number(test_client: TestClient, test_db: Session) -> None:
+    """Test that creating stories assigns incremental story numbers."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    # Create first story
+    response1 = test_client.post(
+        f"/api/projects/{project_id}/stories",
+        json={"title": "Story 1", "description": "First story"}
+    )
+    assert response1.status_code == 201
+    assert response1.json()["story_id"] == "US-001"
+
+    # Create second story
+    response2 = test_client.post(
+        f"/api/projects/{project_id}/stories",
+        json={"title": "Story 2", "description": "Second story"}
+    )
+    assert response2.status_code == 201
+    assert response2.json()["story_id"] == "US-002"
+
+    # Create third story
+    response3 = test_client.post(
+        f"/api/projects/{project_id}/stories",
+        json={"title": "Story 3", "description": "Third story"}
+    )
+    assert response3.status_code == 201
+    assert response3.json()["story_id"] == "US-003"
+
+
+def test_create_story_assigns_order_at_end(test_client: TestClient, test_db: Session) -> None:
+    """Test that new stories are added at the end of the list."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    # Create a few stories
+    _create_test_story(test_db, project_id, story_number=1, title="Existing 1", order=0)
+    _create_test_story(test_db, project_id, story_number=2, title="Existing 2", order=1)
+
+    # Create new story via API
+    response = test_client.post(
+        f"/api/projects/{project_id}/stories",
+        json={"title": "New Story", "description": "New"}
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["order"] == 2  # After existing stories
+
+
+def test_create_story_with_custom_status(test_client: TestClient, test_db: Session) -> None:
+    """Test that creating a story with custom status works."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    response = test_client.post(
+        f"/api/projects/{project_id}/stories",
+        json={
+            "title": "Ready Story",
+            "description": "Already ready",
+            "status": "ready"
+        }
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "ready"
+
+
+def test_create_story_returns_404_for_missing_project(test_client: TestClient, test_db: Session) -> None:
+    """Test that creating story for non-existent project returns 404."""
+    fake_project_id = "00000000-0000-0000-0000-000000000000"
+
+    response = test_client.post(
+        f"/api/projects/{fake_project_id}/stories",
+        json={"title": "Test", "description": "Test"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_create_story_validates_size_enum(test_client: TestClient, test_db: Session) -> None:
+    """Test that invalid size value is rejected."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    response = test_client.post(
+        f"/api/projects/{project_id}/stories",
+        json={"title": "Test", "description": "Test", "size": "invalid"}
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_story_validates_status_enum(test_client: TestClient, test_db: Session) -> None:
+    """Test that invalid status value is rejected."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    response = test_client.post(
+        f"/api/projects/{project_id}/stories",
+        json={"title": "Test", "description": "Test", "status": "invalid"}
+    )
+
+    assert response.status_code == 422
+
+
+# =============================================================================
+# Test: Get Single Story (US-036)
+# =============================================================================
+
+
+def test_get_story_returns_full_details(test_client: TestClient, test_db: Session) -> None:
+    """Test that GET /stories/{story_id} returns full story details."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    story = _create_test_story(
+        test_db, project_id,
+        story_number=1,
+        title="Full Details Story",
+        description="Detailed description",
+        acceptance_criteria=["AC 1", "AC 2", "AC 3"],
+        labels=["label1", "label2"],
+        size=StorySize.L,
+        status=StoryStatus.READY,
+    )
+    story_id = _get_story_id(story)
+
+    response = test_client.get(f"/api/stories/{story_id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == story_id
+    assert data["title"] == "Full Details Story"
+    assert data["description"] == "Detailed description"
+    assert data["story_id"] == "US-001"
+    assert data["acceptance_criteria"] == ["AC 1", "AC 2", "AC 3"]
+    assert data["labels"] == ["label1", "label2"]
+    assert data["size"] == "l"
+    assert data["status"] == "ready"
+    assert "created_at" in data
+    assert "updated_at" in data
+
+
+def test_get_story_returns_404_for_missing(test_client: TestClient, test_db: Session) -> None:
+    """Test that GET /stories/{story_id} returns 404 for non-existent story."""
+    response = test_client.get("/api/stories/00000000-0000-0000-0000-000000000000")
+    assert response.status_code == 404
+
+
+# =============================================================================
+# Test: Generate More Stories (Multiple Batches)
+# =============================================================================
+
+
+def test_multiple_generation_batches_work_independently(test_client: TestClient, test_db: Session) -> None:
+    """Test that generating stories multiple times creates independent batches."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    # Start first generation
+    response1 = test_client.post(
+        f"/api/projects/{project_id}/stories/generate",
+        json={"format": "classic"}
+    )
+    assert response1.status_code == 202
+    batch1_id = response1.json()["id"]
+
+    # Start second generation (generates more stories)
+    response2 = test_client.post(
+        f"/api/projects/{project_id}/stories/generate",
+        json={"format": "job_story"}
+    )
+    assert response2.status_code == 202
+    batch2_id = response2.json()["id"]
+
+    # Batches should be different
+    assert batch1_id != batch2_id
+
+    # List batches should show both
+    batches_response = test_client.get(f"/api/projects/{project_id}/stories/batches")
+    assert len(batches_response.json()) == 2
+
+
+def test_delete_single_batch_preserves_other_batches(test_client: TestClient, test_db: Session) -> None:
+    """Test that deleting one batch doesn't affect stories from other batches."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    batch1 = _create_test_batch(test_db, project_id)
+    batch2 = _create_test_batch(test_db, project_id)
+    batch1_id = _get_batch_id(batch1)
+    batch2_id = _get_batch_id(batch2)
+
+    # Create stories in both batches
+    _create_test_story(test_db, project_id, batch_id=batch1_id, story_number=1, title="Batch1 Story")
+    _create_test_story(test_db, project_id, batch_id=batch2_id, story_number=2, title="Batch2 Story")
+
+    # Delete batch1
+    test_client.delete(f"/api/projects/{project_id}/stories/batch/{batch1_id}")
+
+    # Batch2 stories should remain
+    list_response = test_client.get(f"/api/projects/{project_id}/stories")
+    assert list_response.json()["total"] == 1
+    assert list_response.json()["items"][0]["title"] == "Batch2 Story"
+
+
+# =============================================================================
+# Test: Story Priority (US-036)
+# =============================================================================
+
+
+def test_create_story_with_priority(test_client: TestClient, test_db: Session) -> None:
+    """Test that stories can be created with priority."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+
+    response = test_client.post(
+        f"/api/projects/{project_id}/stories",
+        json={"title": "Priority Story", "description": "High priority", "priority": "p1"}
+    )
+
+    assert response.status_code == 201
+    assert response.json()["priority"] == "p1"
+
+
+def test_update_story_priority(test_client: TestClient, test_db: Session) -> None:
+    """Test that story priority can be updated."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    story = _create_test_story(test_db, project_id, story_number=1)
+    story_id = _get_story_id(story)
+
+    response = test_client.put(f"/api/stories/{story_id}", json={"priority": "p3"})
+
+    assert response.status_code == 200
+    assert response.json()["priority"] == "p3"
+
+
+# =============================================================================
+# Test: Stream Generation with Section Filter (US-036)
+# =============================================================================
+
+
+async def _mock_generate_stream_with_filter(
+    project_id: str,
+    format: StoryFormat,
+    section_filter: list[str] | None = None,
+    created_by: str | None = None,
+) -> AsyncIterator[dict[str, Any]]:
+    """Mock generate_stream that uses section_filter."""
+    # Yield based on filter
+    sections_used = section_filter or ["all"]
+    yield {
+        "type": "story",
+        "title": f"Story from {', '.join(sections_used)}",
+        "description": "Filtered story",
+        "acceptance_criteria": ["AC"],
+        "suggested_size": "M",
+        "suggested_labels": sections_used,
+        "source_requirement_ids": [],
+    }
+    yield {
+        "type": "complete",
+        "batch_id": "filtered-batch-id",
+        "story_count": 1,
+    }
+
+
+def test_stream_stories_with_section_filter(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming endpoint accepts and uses section_filter."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.stories.StoriesGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream = _mock_generate_stream_with_filter
+
+        response = test_client.get(
+            f"/api/projects/{project_id}/stories/stream?section_filter=functional&section_filter=non_functional"
+        )
+
+    events = _parse_sse_events(response.text)
+
+    # Should have story event
+    story_events = [e for e in events if e.get("event") == "story"]
+    assert len(story_events) == 1
+
+
+# =============================================================================
+# Test: LLM Response Parsing Errors (US-037)
+# =============================================================================
+
+
+async def _mock_generate_stream_parsing_error(
+    project_id: str,
+    format: StoryFormat,
+    section_filter: list[str] | None = None,
+    created_by: str | None = None,
+) -> AsyncIterator[dict[str, Any]]:
+    """Mock generate_stream that raises LLMResponseError."""
+    from app.exceptions import LLMResponseError
+    raise LLMResponseError("Invalid JSON in LLM response")
+    yield {}  # Never reached
+
+
+def test_stream_stories_handles_parsing_error(test_client: TestClient, test_db: Session) -> None:
+    """Test that streaming handles LLM response parsing errors."""
+    project = _create_test_project(test_db)
+    project_id = _get_project_id(project)
+    _create_test_requirement(test_db, project_id)
+
+    with patch(
+        "app.routers.stories.StoriesGenerator"
+    ) as mock_generator_class:
+        mock_instance = mock_generator_class.return_value
+        mock_instance.generate_stream = _mock_generate_stream_parsing_error
+
+        response = test_client.get(f"/api/projects/{project_id}/stories/stream")
+
+    events = _parse_sse_events(response.text)
+
+    # Should have error event
+    error_events = [e for e in events if e.get("event") == "error"]
+    assert len(error_events) == 1
+    assert "parse" in error_events[0]["data"]["message"].lower()
