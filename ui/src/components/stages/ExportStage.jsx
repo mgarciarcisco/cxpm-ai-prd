@@ -1,9 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import JSZip from 'jszip';
 import { StageHeader } from '../stage/StageHeader';
 import { get, listPRDs, listStories } from '../../services/api';
 import './StageContent.css';
 import './ExportStage.css';
+
+/**
+ * localStorage key for export history
+ */
+const EXPORT_HISTORY_KEY = 'export-history';
+
+/**
+ * Get export history from localStorage for a specific project.
+ */
+function getExportHistory(projectId) {
+  try {
+    const stored = localStorage.getItem(EXPORT_HISTORY_KEY);
+    if (!stored) return [];
+    const history = JSON.parse(stored);
+    return history.filter(item => item.projectId === projectId);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Save export entry to localStorage.
+ */
+function saveExportEntry(entry) {
+  try {
+    const stored = localStorage.getItem(EXPORT_HISTORY_KEY);
+    const history = stored ? JSON.parse(stored) : [];
+    history.unshift(entry);
+    // Keep only the last 50 entries
+    const trimmed = history.slice(0, 50);
+    localStorage.setItem(EXPORT_HISTORY_KEY, JSON.stringify(trimmed));
+    return trimmed.filter(item => item.projectId === entry.projectId);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Clear export history for a specific project.
+ */
+function clearExportHistory(projectId) {
+  try {
+    const stored = localStorage.getItem(EXPORT_HISTORY_KEY);
+    if (!stored) return [];
+    const history = JSON.parse(stored);
+    const filtered = history.filter(item => item.projectId !== projectId);
+    localStorage.setItem(EXPORT_HISTORY_KEY, JSON.stringify(filtered));
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Format relative time (e.g., "2 hours ago", "Yesterday").
+ */
+function formatRelativeTime(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return 'Just now';
+  if (diffMin < 60) return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`;
+  if (diffHour < 24) return `${diffHour} hour${diffHour !== 1 ? 's' : ''} ago`;
+  if (diffDay === 1) return 'Yesterday';
+  if (diffDay < 7) return `${diffDay} days ago`;
+  return date.toLocaleDateString();
+}
 
 /**
  * Map export status to stage header status format.
@@ -169,6 +241,21 @@ function ExportStage({ project }) {
   const [isExportingJson, setIsExportingJson] = useState(false);
   const [exportError, setExportError] = useState(null);
   const [jsonExportError, setJsonExportError] = useState(null);
+  const [exportHistory, setExportHistory] = useState([]);
+
+  // Load export history on mount
+  useEffect(() => {
+    if (project?.id) {
+      setExportHistory(getExportHistory(project.id));
+    }
+  }, [project?.id]);
+
+  const handleClearHistory = useCallback(() => {
+    if (project?.id) {
+      clearExportHistory(project.id);
+      setExportHistory([]);
+    }
+  }, [project?.id]);
 
   const handleCheckboxChange = (itemId) => {
     setSelectedItems(prev => ({
@@ -245,7 +332,23 @@ function ExportStage({ project }) {
       // Generate and download ZIP
       const blob = await zip.generateAsync({ type: 'blob' });
       const date = new Date().toISOString().split('T')[0];
-      triggerDownload(blob, `${projectSlug}-export-${date}.zip`);
+      const filename = `${projectSlug}-export-${date}.zip`;
+      triggerDownload(blob, filename);
+
+      // Save to export history
+      const includedItems = Object.entries(selectedItems)
+        .filter(([, selected]) => selected)
+        .map(([key]) => key);
+      const historyEntry = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        projectId: project.id,
+        type: 'markdown',
+        filename,
+        items: includedItems,
+        date: new Date().toISOString(),
+      };
+      const updatedHistory = saveExportEntry(historyEntry);
+      setExportHistory(updatedHistory);
 
     } catch (err) {
       console.error('Export failed:', err);
@@ -314,7 +417,23 @@ function ExportStage({ project }) {
       const blob = new Blob([jsonString], { type: 'application/json' });
       const projectSlug = slugifyFilename(project.name);
       const date = new Date().toISOString().split('T')[0];
-      triggerDownload(blob, `${projectSlug}-export-${date}.json`);
+      const filename = `${projectSlug}-export-${date}.json`;
+      triggerDownload(blob, filename);
+
+      // Save to export history
+      const includedItems = Object.entries(selectedJsonItems)
+        .filter(([, selected]) => selected)
+        .map(([key]) => key);
+      const historyEntry = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        projectId: project.id,
+        type: 'json',
+        filename,
+        items: includedItems,
+        date: new Date().toISOString(),
+      };
+      const updatedHistory = saveExportEntry(historyEntry);
+      setExportHistory(updatedHistory);
 
     } catch (err) {
       console.error('JSON export failed:', err);
@@ -519,6 +638,60 @@ function ExportStage({ project }) {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Export History Section */}
+      <section className="export-stage__section">
+        <div className="export-history__header">
+          <h2 className="export-stage__section-title">Export History</h2>
+          {exportHistory.length > 0 && (
+            <button
+              type="button"
+              className="export-history__clear-btn"
+              onClick={handleClearHistory}
+            >
+              Clear History
+            </button>
+          )}
+        </div>
+        {exportHistory.length === 0 ? (
+          <div className="export-history__empty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+              <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <p>No exports yet. Your export history will appear here.</p>
+          </div>
+        ) : (
+          <ul className="export-history__list">
+            {exportHistory.map((entry) => (
+              <li key={entry.id} className="export-history__item">
+                <div className="export-history__icon">
+                  {entry.type === 'markdown' ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M16 18L22 12L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M8 6L2 12L8 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <div className="export-history__details">
+                  <span className="export-history__filename">{entry.filename}</span>
+                  <span className="export-history__meta">
+                    {entry.type === 'markdown' ? 'Markdown ZIP' : 'JSON'} • {entry.items.join(', ')} • {formatRelativeTime(entry.date)}
+                  </span>
+                </div>
+                <span className={`export-history__badge export-history__badge--${entry.type === 'markdown' ? 'green' : 'blue'}`}>
+                  {entry.type === 'markdown' ? 'MD' : 'JSON'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
