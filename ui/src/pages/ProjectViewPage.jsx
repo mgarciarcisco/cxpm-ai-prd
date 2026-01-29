@@ -4,6 +4,7 @@ import { get } from '../services/api';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { StageStepper } from '../components/common/StageStepper';
 import ProjectSettingsModal from '../components/project/ProjectSettingsModal';
+import ProjectViewSkeleton from '../components/project/ProjectViewSkeleton';
 import {
   RequirementsStage,
   PRDStage,
@@ -194,21 +195,11 @@ function ProjectViewPage() {
     return <StageComponent project={project} onProjectUpdate={fetchProject} />;
   };
 
-  // Loading state
+  // Loading state - show skeleton
   if (loading) {
     return (
       <main className="main-content">
-        <div className="project-view">
-          <div className="project-view__loading">
-            <div className="project-view__loading-spinner" aria-label="Loading project">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25"/>
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <p className="project-view__loading-text">Loading project...</p>
-          </div>
-        </div>
+        <ProjectViewSkeleton />
       </main>
     );
   }

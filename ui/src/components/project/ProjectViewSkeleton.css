@@ -1,0 +1,206 @@
+/* Project View Skeleton - loading state */
+.project-view-skeleton {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Shimmer animation - reuse from project card */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Base skeleton element style */
+.project-view-skeleton__breadcrumb,
+.project-view-skeleton__title,
+.project-view-skeleton__description,
+.project-view-skeleton__settings-btn,
+.project-view-skeleton__step-indicator,
+.project-view-skeleton__step-label,
+.project-view-skeleton__stage-title,
+.project-view-skeleton__stage-subtitle,
+.project-view-skeleton__content-block {
+  background: linear-gradient(
+    90deg,
+    #F3F4F6 0%,
+    #E5E7EB 50%,
+    #F3F4F6 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* Breadcrumbs skeleton */
+.project-view-skeleton__breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.project-view-skeleton__breadcrumb {
+  height: 1rem;
+  width: 5rem;
+  border-radius: 4px;
+}
+
+.project-view-skeleton__breadcrumb--wide {
+  width: 8rem;
+}
+
+.project-view-skeleton__breadcrumb-separator {
+  color: #D1D5DB;
+  font-size: 0.875rem;
+}
+
+/* Header skeleton */
+.project-view-skeleton__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #E5E7EB;
+  margin-bottom: 1.5rem;
+}
+
+.project-view-skeleton__header-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.project-view-skeleton__title {
+  height: 1.75rem;
+  width: 40%;
+  min-width: 200px;
+  border-radius: 6px;
+}
+
+.project-view-skeleton__description {
+  height: 1rem;
+  width: 60%;
+  min-width: 280px;
+}
+
+.project-view-skeleton__settings-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Stage stepper skeleton */
+.project-view-skeleton__stepper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  margin-bottom: 1.5rem;
+}
+
+.project-view-skeleton__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.project-view-skeleton__step-indicator {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.project-view-skeleton__step-label {
+  height: 0.875rem;
+  width: 5rem;
+}
+
+/* Content area skeleton */
+.project-view-skeleton__content {
+  min-height: 400px;
+  background-color: #FAFAFA;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.project-view-skeleton__stage-header {
+  margin-bottom: 1.5rem;
+}
+
+.project-view-skeleton__stage-title {
+  height: 1.5rem;
+  width: 10rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+}
+
+.project-view-skeleton__stage-subtitle {
+  height: 1rem;
+  width: 12rem;
+}
+
+.project-view-skeleton__stage-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.project-view-skeleton__content-block {
+  height: 4rem;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.project-view-skeleton__content-block--short {
+  width: 60%;
+}
+
+.project-view-skeleton__content-block--medium {
+  width: 80%;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .project-view-skeleton {
+    padding: 1rem;
+  }
+
+  .project-view-skeleton__header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .project-view-skeleton__settings-btn {
+    align-self: flex-end;
+  }
+
+  .project-view-skeleton__title {
+    width: 70%;
+    min-width: 150px;
+  }
+
+  .project-view-skeleton__description {
+    width: 90%;
+    min-width: 200px;
+  }
+
+  .project-view-skeleton__stepper {
+    gap: 0.5rem;
+  }
+
+  .project-view-skeleton__step-label {
+    width: 3.5rem;
+    font-size: 0.75rem;
+  }
+}
