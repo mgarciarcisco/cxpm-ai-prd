@@ -1,16 +1,17 @@
+/* Project Card - Full Width List Layout */
 .project-card {
   background-color: #FFFFFF;
   border: 1px solid #E5E7EB;
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1.25rem 1.5rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .project-card:hover {
   border-color: #D1D5DB;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
 }
 
 .project-card:focus-visible {
@@ -22,7 +23,7 @@
 /* Archived state */
 .project-card--archived {
   background-color: #F9FAFB;
-  opacity: 0.85;
+  opacity: 0.7;
 }
 
 .project-card--archived .project-card__name {
@@ -33,31 +34,37 @@
   color: #9CA3AF;
 }
 
-/* Header */
+.project-card--archived .project-card__progress-segment--complete {
+  background: #9CA3AF;
+}
+
+/* Header - Horizontal layout */
 .project-card__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.5rem;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.project-card__title-section {
+  flex: 1;
+  min-width: 0;
 }
 
 .project-card__name-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-  margin-right: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .project-card__name {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1F2937;
+  color: #111827;
   margin: 0;
   line-height: 1.4;
-  flex: 1;
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -69,27 +76,50 @@
   padding: 0.125rem 0.5rem;
   background-color: #F3F4F6;
   color: #6B7280;
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 500;
   border-radius: 9999px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
+.project-card__description {
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Meta section - right side */
+.project-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.project-card__time {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  white-space: nowrap;
+}
+
 /* Actions */
 .project-card__actions {
   display: flex;
   gap: 0.25rem;
-  flex-shrink: 0;
 }
 
 .project-card__action-btn {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.625rem;
-  min-width: 44px;
-  min-height: 44px;
+  padding: 0.5rem;
+  min-width: 36px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,178 +143,104 @@
   color: #DC2626;
 }
 
-/* Description */
-.project-card__description {
-  font-size: 0.875rem;
-  color: #6B7280;
-  margin: 0 0 1rem 0;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Progress section */
+/* Progress Section */
 .project-card__progress-section {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
 }
 
-/* Mini stepper */
-.project-card__mini-stepper {
+/* Progress Bar */
+.project-card__progress-bar {
+  height: 8px;
+  background: #E5E7EB;
+  border-radius: 4px;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  gap: 0.375rem;
 }
 
-.project-card__mini-stepper-dot {
-  font-size: 0.875rem;
-  line-height: 1;
-  transition: color 0.15s ease;
+.project-card__progress-segment {
+  height: 100%;
+  transition: width 0.3s ease;
 }
 
-.project-card__mini-stepper-dot--empty {
-  color: #D1D5DB;
+.project-card__progress-segment--complete {
+  background: linear-gradient(90deg, #10B981, #34D399);
 }
 
-.project-card__mini-stepper-dot--in_progress {
-  color: #F59E0B;
+.project-card__progress-segment--active {
+  background: linear-gradient(90deg, #3B82F6, #60A5FA);
+  animation: progress-pulse 2s infinite;
 }
 
-.project-card__mini-stepper-dot--complete {
-  color: #10B981;
+@keyframes progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-/* Progress info row */
-.project-card__progress-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* Stage badge */
-.project-card__stage-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.625rem;
-  background-color: rgba(78, 205, 196, 0.1);
-  color: #0D9488;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: 9999px;
-  white-space: nowrap;
-}
-
-/* Progress percentage */
-.project-card__progress-percent {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #4B5563;
-}
-
-/* Footer */
-.project-card__footer {
-  display: flex;
-  gap: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #F3F4F6;
-}
-
-.project-card__stat {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.75rem;
-  color: #9CA3AF;
-}
-
-.project-card__stat svg {
-  flex-shrink: 0;
-}
-
-/* Legacy class support (for backwards compatibility) */
-.project-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
-}
-
-.project-card-name {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1F2937;
-  margin: 0;
-  line-height: 1.4;
-  flex: 1;
-  margin-right: 0.5rem;
-}
-
-.project-card-actions {
+/* Stage Labels */
+.project-card__stages {
   display: flex;
   gap: 0.25rem;
-  flex-shrink: 0;
 }
 
-.project-card-action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.625rem;
-  min-width: 44px;
-  min-height: 44px;
+.project-card__stage {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  color: #9CA3AF;
+  gap: 0.375rem;
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
   transition: all 0.15s ease;
 }
 
-.project-card-action-btn:hover {
-  background-color: #F3F4F6;
-  color: #4B5563;
+.project-card__stage--complete {
+  color: #059669;
+  background: #ECFDF5;
 }
 
-.project-card-action-btn--delete:hover {
-  background-color: #FEF2F2;
-  color: #DC2626;
+.project-card__stage--active {
+  color: #2563EB;
+  background: #EFF6FF;
+  font-weight: 500;
 }
 
-.project-card-description {
-  font-size: 0.875rem;
-  color: #6B7280;
-  margin: 0 0 1rem 0;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.project-card-footer {
-  display: flex;
-  gap: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #F3F4F6;
-}
-
-.project-card-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.75rem;
+.project-card__stage--pending {
   color: #9CA3AF;
+  background: transparent;
 }
 
-.project-card-stat svg {
-  flex-shrink: 0;
+.project-card__stage-icon {
+  font-size: 0.625rem;
+  line-height: 1;
 }
 
-/* Responsive - Mobile Layout */
+.project-card__stage-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 1024px) {
+  .project-card__stage-label {
+    display: none;
+  }
+
+  .project-card__stage {
+    flex: 0 0 auto;
+    padding: 0.375rem;
+    min-width: 28px;
+  }
+
+  .project-card__stage-icon {
+    font-size: 0.75rem;
+  }
+}
+
+/* Responsive - Mobile */
 @media (max-width: 640px) {
   .project-card {
     padding: 1rem;
@@ -292,63 +248,55 @@
   }
 
   .project-card__header {
-    margin-bottom: 0.375rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .project-card__title-section {
+    width: 100%;
+  }
+
+  .project-card__meta {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .project-card__name {
     font-size: 1rem;
   }
 
-  .project-card__archived-badge {
-    font-size: 0.625rem;
-    padding: 0.125rem 0.375rem;
-  }
-
-  .project-card__action-btn {
-    padding: 0.5rem;
-    min-width: 40px;
-    min-height: 40px;
-  }
-
   .project-card__description {
     font-size: 0.8125rem;
-    margin-bottom: 0.75rem;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
   .project-card__progress-section {
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
   }
 
-  .project-card__mini-stepper {
-    gap: 0.25rem;
+  .project-card__progress-bar {
+    height: 6px;
   }
 
-  .project-card__mini-stepper-dot {
-    font-size: 0.75rem;
+  .project-card__stages {
+    gap: 0.125rem;
   }
 
-  .project-card__stage-badge {
-    font-size: 0.6875rem;
-    padding: 0.1875rem 0.5rem;
+  .project-card__stage {
+    padding: 0.25rem;
+    min-width: 24px;
   }
 
-  .project-card__progress-percent {
-    font-size: 0.8125rem;
+  .project-card__stage-icon {
+    font-size: 0.625rem;
   }
 
-  .project-card__footer {
-    gap: 0.75rem;
-    padding-top: 0.75rem;
-  }
-
-  .project-card__stat {
-    font-size: 0.6875rem;
-    gap: 0.25rem;
-  }
-
-  .project-card__stat svg {
-    width: 12px;
-    height: 12px;
+  .project-card__action-btn {
+    min-width: 40px;
+    min-height: 40px;
   }
 }
