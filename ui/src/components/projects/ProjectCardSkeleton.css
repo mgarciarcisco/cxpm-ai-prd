@@ -1,0 +1,132 @@
+/* Skeleton card container - matches ProjectCard structure */
+.project-card-skeleton {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+/* Shimmer animation */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Base skeleton element style */
+.project-card-skeleton__name,
+.project-card-skeleton__action-btn,
+.project-card-skeleton__text-line,
+.project-card-skeleton__dot,
+.project-card-skeleton__badge,
+.project-card-skeleton__percent,
+.project-card-skeleton__stat {
+  background: linear-gradient(
+    90deg,
+    #F3F4F6 0%,
+    #E5E7EB 50%,
+    #F3F4F6 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* Header */
+.project-card-skeleton__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.project-card-skeleton__name {
+  height: 1.5rem;
+  width: 60%;
+  border-radius: 6px;
+}
+
+.project-card-skeleton__actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.project-card-skeleton__action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+/* Description */
+.project-card-skeleton__description {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.project-card-skeleton__text-line {
+  height: 0.875rem;
+  border-radius: 4px;
+}
+
+.project-card-skeleton__text-line--full {
+  width: 100%;
+}
+
+.project-card-skeleton__text-line--partial {
+  width: 75%;
+}
+
+/* Progress section */
+.project-card-skeleton__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
+}
+
+.project-card-skeleton__dots {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.project-card-skeleton__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.project-card-skeleton__progress-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-card-skeleton__badge {
+  height: 1.5rem;
+  width: 5rem;
+  border-radius: 9999px;
+}
+
+.project-card-skeleton__percent {
+  height: 1rem;
+  width: 2rem;
+}
+
+/* Footer */
+.project-card-skeleton__footer {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #F3F4F6;
+}
+
+.project-card-skeleton__stat {
+  height: 0.875rem;
+  width: 5rem;
+}

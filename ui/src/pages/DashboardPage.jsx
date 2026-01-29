@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { get } from '../services/api';
 import ProjectCard from '../components/projects/ProjectCard';
+import ProjectCardSkeleton from '../components/projects/ProjectCardSkeleton';
 import StageFilter from '../components/dashboard/StageFilter';
 import ProjectSearch from '../components/dashboard/ProjectSearch';
 import NewProjectModal from '../components/dashboard/NewProjectModal';
@@ -239,16 +240,12 @@ function DashboardPage() {
             </div>
           </div>
 
-          {/* Loading State */}
+          {/* Loading State - Skeleton Cards */}
           {loading && (
-            <div className="dashboard__loading">
-              <div className="dashboard__loading-spinner" aria-label="Loading projects">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25"/>
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </div>
-              <p className="dashboard__loading-text">Loading projects...</p>
+            <div className="dashboard__projects-grid" aria-busy="true" aria-label="Loading projects">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <ProjectCardSkeleton key={i} />
+              ))}
             </div>
           )}
 
