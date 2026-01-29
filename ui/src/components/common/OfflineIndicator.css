@@ -1,0 +1,85 @@
+.offline-indicator {
+  position: fixed;
+  top: 60px; /* Below header */
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 0.75rem 1rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.offline-indicator--offline {
+  background-color: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+}
+
+.offline-indicator--online {
+  background-color: #f0fdf4;
+  border-bottom: 1px solid #bbf7d0;
+  animation: slideDown 0.3s ease-out, fadeOut 2s ease-out 1.5s forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.offline-indicator__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.offline-indicator__icon {
+  flex-shrink: 0;
+}
+
+.offline-indicator--offline .offline-indicator__icon {
+  color: #dc2626;
+}
+
+.offline-indicator--online .offline-indicator__icon {
+  color: #16a34a;
+}
+
+.offline-indicator__text {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.offline-indicator--offline .offline-indicator__text {
+  color: #991b1b;
+}
+
+.offline-indicator--online .offline-indicator__text {
+  color: #166534;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .offline-indicator {
+    padding: 0.625rem 1rem;
+  }
+
+  .offline-indicator__text {
+    font-size: 0.8125rem;
+  }
+}

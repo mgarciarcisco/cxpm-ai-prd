@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { ToastProvider } from './contexts/ToastContext'
+import OfflineIndicator from './components/common/OfflineIndicator'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDashboard from './pages/ProjectDashboard'
 import UploadMeetingPage from './pages/UploadMeetingPage'
@@ -21,6 +22,7 @@ import QuickConvertRequirementsPage from './pages/QuickConvertRequirementsPage'
 import QuickConvertPRDPage from './pages/QuickConvertPRDPage'
 import QuickConvertStoriesPage from './pages/QuickConvertStoriesPage'
 import QuickConvertMockupsPage from './pages/QuickConvertMockupsPage'
+import NotFoundPage from './pages/NotFoundPage'
 import './App.css'
 
 function App() {
@@ -39,6 +41,7 @@ function App() {
   return (
     <ToastProvider>
     <div className="app">
+      <OfflineIndicator />
       <header className="header">
         <div className="header-left">
           <Link to="/dashboard" className="logo" onClick={closeMobileMenu}>
@@ -119,6 +122,8 @@ function App() {
           <Route path="/app/stories" element={<StoriesLandingPage />} />
           <Route path="/app/projects/:projectId/stories" element={<UserStoriesPage />} />
           <Route path="/app/*" element={<ProjectsPage />} />
+          {/* Catch-all 404 route - must be last */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </ErrorBoundary>
     </div>
