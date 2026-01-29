@@ -15,9 +15,6 @@ const STAGES = [
 
 /**
  * Maps stage status to a normalized status for display
- * @param {string} stageId - The stage identifier
- * @param {Object} project - The project with status fields
- * @returns {'empty' | 'in_progress' | 'complete'}
  */
 function getStageStatus(stageId, project) {
   const statusMap = {
@@ -60,33 +57,41 @@ function getStageStatus(stageId, project) {
 }
 
 /**
- * Calculate progress percentage and find active stage
+ * Calculate progress info - completed count, active stage, etc.
  */
 function getProgressInfo(project) {
   let completedCount = 0;
   let activeStageIndex = -1;
+  let activeStageLabel = '';
 
   for (let i = 0; i < STAGES.length; i++) {
     const status = getStageStatus(STAGES[i].id, project);
     if (status === 'complete') {
       completedCount++;
-    } else if (activeStageIndex === -1 && (status === 'in_progress' || status === 'empty')) {
+    } else if (activeStageIndex === -1) {
       activeStageIndex = i;
+      activeStageLabel = STAGES[i].label;
     }
   }
 
-  // If all complete, no active stage
-  if (completedCount === STAGES.length) {
+  const isComplete = completedCount === STAGES.length;
+  if (isComplete) {
     activeStageIndex = -1;
+    activeStageLabel = '';
   }
 
   const progressPercent = (completedCount / STAGES.length) * 100;
+  // Add partial progress for active stage
+  const activePercent = activeStageIndex >= 0 ? (1 / STAGES.length) * 100 : 0;
 
   return {
     completedCount,
     activeStageIndex,
+    activeStageLabel,
     progressPercent,
-    isComplete: completedCount === STAGES.length,
+    activePercent,
+    isComplete,
+    totalStages: STAGES.length,
   };
 }
 
@@ -115,59 +120,21 @@ function formatTimeAgo(dateString) {
 }
 
 /**
- * Progress bar component showing stage completion
+ * Progress bar component
  */
-function ProgressBar({ completedCount, activeStageIndex, isComplete }) {
-  const totalStages = STAGES.length;
-  const completedPercent = (completedCount / totalStages) * 100;
-  const activePercent = activeStageIndex >= 0 ? (1 / totalStages) * 100 : 0;
-
+function ProgressBar({ progressPercent, activePercent }) {
   return (
     <div className="project-card__progress-bar">
       <div
         className="project-card__progress-segment project-card__progress-segment--complete"
-        style={{ width: `${completedPercent}%` }}
+        style={{ width: `${progressPercent}%` }}
       />
-      {activeStageIndex >= 0 && (
+      {activePercent > 0 && (
         <div
           className="project-card__progress-segment project-card__progress-segment--active"
           style={{ width: `${activePercent}%` }}
         />
       )}
-    </div>
-  );
-}
-
-/**
- * Stage labels component showing status of each stage
- */
-function StageLabels({ project, activeStageIndex }) {
-  return (
-    <div className="project-card__stages">
-      {STAGES.map((stage, index) => {
-        const status = getStageStatus(stage.id, project);
-        const isActive = index === activeStageIndex;
-
-        let stageClass = 'project-card__stage';
-        let icon = '○';
-
-        if (status === 'complete') {
-          stageClass += ' project-card__stage--complete';
-          icon = '✓';
-        } else if (isActive || status === 'in_progress') {
-          stageClass += ' project-card__stage--active';
-          icon = '●';
-        } else {
-          stageClass += ' project-card__stage--pending';
-        }
-
-        return (
-          <div key={stage.id} className={stageClass}>
-            <span className="project-card__stage-icon">{icon}</span>
-            <span className="project-card__stage-label">{stage.label}</span>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -196,6 +163,26 @@ function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
       e.preventDefault()
       handleCardClick()
     }
+  }
+
+  // Build the stage label
+  let stageLabel;
+  if (progressInfo.isComplete) {
+    stageLabel = (
+      <span className="project-card__stage-label project-card__stage-label--complete">
+        <span className="project-card__stage-icon">✓</span>
+        Complete
+      </span>
+    );
+  } else {
+    stageLabel = (
+      <span className="project-card__stage-label project-card__stage-label--active">
+        <span className="project-card__stage-step">
+          Step {progressInfo.activeStageIndex + 1}/{progressInfo.totalStages}:
+        </span>
+        {progressInfo.activeStageLabel}
+      </span>
+    );
   }
 
   return (
@@ -249,14 +236,12 @@ function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
 
       <div className="project-card__progress-section">
         <ProgressBar
-          completedCount={progressInfo.completedCount}
-          activeStageIndex={progressInfo.activeStageIndex}
-          isComplete={progressInfo.isComplete}
+          progressPercent={progressInfo.progressPercent}
+          activePercent={progressInfo.activePercent}
         />
-        <StageLabels
-          project={project}
-          activeStageIndex={progressInfo.activeStageIndex}
-        />
+        <div className="project-card__progress-info">
+          {stageLabel}
+        </div>
       </div>
     </div>
   )
