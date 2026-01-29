@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './MockupCard.css';
 
 /**
@@ -16,14 +16,95 @@ import './MockupCard.css';
  * @param {string} mockup.created_at - Creation timestamp
  * @param {function} onView - Callback when view button is clicked
  * @param {function} onDelete - Callback when mockup is deleted
+ * @param {function} onRename - Callback when mockup is renamed, receives (id, newTitle)
  */
 export function MockupCard({
   mockup,
   onView,
   onDelete,
+  onRename,
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(mockup.title);
+  const [isSaving, setIsSaving] = useState(false);
+  const inputRef = useRef(null);
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  // Update editTitle if mockup.title changes externally
+  useEffect(() => {
+    if (!isEditing) {
+      setEditTitle(mockup.title);
+    }
+  }, [mockup.title, isEditing]);
+
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setEditTitle(mockup.title);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditTitle(mockup.title);
+  };
+
+  const handleSaveEdit = async () => {
+    const trimmedTitle = editTitle.trim();
+
+    // Don't save if empty or unchanged
+    if (!trimmedTitle || trimmedTitle === mockup.title) {
+      handleCancelEdit();
+      return;
+    }
+
+    if (!onRename) {
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await onRename(mockup.id, trimmedTitle);
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Failed to rename mockup:', err);
+      // Keep edit mode open so user can retry
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelEdit();
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setEditTitle(e.target.value);
+  };
+
+  const handleInputBlur = () => {
+    // Small delay to allow click handlers to fire first
+    setTimeout(() => {
+      if (isEditing && !isSaving) {
+        handleSaveEdit();
+      }
+    }, 100);
+  };
 
   const handleDelete = async () => {
     if (!onDelete) return;
@@ -164,8 +245,60 @@ export function MockupCard({
             </span>
           </div>
 
-          {/* Title */}
-          <h3 className="mockup-card__title">{mockup.title}</h3>
+          {/* Title - inline edit or display */}
+          {isEditing ? (
+            <div className="mockup-card__title-edit" onClick={(e) => e.stopPropagation()}>
+              <input
+                ref={inputRef}
+                type="text"
+                className="mockup-card__title-input"
+                value={editTitle}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                onBlur={handleInputBlur}
+                disabled={isSaving}
+                maxLength={100}
+              />
+              <div className="mockup-card__title-edit-actions">
+                <button
+                  type="button"
+                  className="mockup-card__title-edit-btn mockup-card__title-edit-btn--save"
+                  onClick={handleSaveEdit}
+                  disabled={isSaving}
+                  title="Save"
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2.5 8.5L6 12L13.5 4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="mockup-card__title-edit-btn mockup-card__title-edit-btn--cancel"
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                  title="Cancel"
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mockup-card__title-row">
+              <h3 className="mockup-card__title">{mockup.title}</h3>
+              <button
+                type="button"
+                className="mockup-card__edit-btn"
+                onClick={handleEditClick}
+                title="Rename mockup"
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.333 2.00004C11.5081 1.82494 11.7169 1.68605 11.9467 1.59129C12.1765 1.49653 12.4227 1.44775 12.6714 1.44775C12.9201 1.44775 13.1662 1.49653 13.396 1.59129C13.6258 1.68605 13.8346 1.82494 14.0097 2.00004C14.1848 2.17513 14.3237 2.38394 14.4185 2.61374C14.5132 2.84354 14.562 3.08968 14.562 3.33837C14.562 3.58706 14.5132 3.8332 14.4185 4.063C14.3237 4.2928 14.1848 4.50161 14.0097 4.67671L5.00001 13.6864L1.33334 14.6667L2.31368 11.0001L11.333 2.00004Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          )}
 
           {/* Description preview */}
           {mockup.description && (

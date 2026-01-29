@@ -239,6 +239,29 @@ function MockupsStage({ project, onProjectUpdate }) {
     }
   };
 
+  // Handle rename mockup
+  const handleRenameMockup = async (mockupId, newTitle) => {
+    try {
+      // TODO: Implement actual API rename call
+      // await renameMockup(mockupId, newTitle);
+
+      // For now, just update local state
+      setMockups((prev) =>
+        prev.map((m) =>
+          m.id === mockupId ? { ...m, title: newTitle } : m
+        )
+      );
+
+      // Refresh project if needed
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
+    } catch (err) {
+      console.error('Failed to rename mockup:', err);
+      throw err;
+    }
+  };
+
   // Empty state - no mockups yet
   if (!hasMockups) {
     return (
@@ -353,6 +376,7 @@ function MockupsStage({ project, onProjectUpdate }) {
                 mockup={mockup}
                 onView={handleViewMockup}
                 onDelete={handleDeleteMockup}
+                onRename={handleRenameMockup}
               />
             ))
           )}
