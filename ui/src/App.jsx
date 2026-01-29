@@ -1,26 +1,8 @@
 import React, { useState } from 'react'
-import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
+import { Outlet, Link, useLocation } from 'react-router-dom'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { ToastProvider } from './contexts/ToastContext'
 import OfflineIndicator from './components/common/OfflineIndicator'
-import ProjectsPage from './pages/ProjectsPage'
-import ProjectDashboard from './pages/ProjectDashboard'
-import UploadMeetingPage from './pages/UploadMeetingPage'
-import RecapEditorPage from './pages/RecapEditorPage'
-import RequirementsPage from './pages/RequirementsPage'
-import ConflictResolverPage from './pages/ConflictResolverPage'
-import PRDGeneratorPage from './pages/PRDGeneratorPage'
-import PRDStreamingPage from './pages/PRDStreamingPage'
-import PRDEditorPage from './pages/PRDEditorPage'
-import UserStoriesPage from './pages/UserStoriesPage'
-import DashboardPage from './pages/DashboardPage'
-import ProjectViewPage from './pages/ProjectViewPage'
-import QuickConvertPage from './pages/QuickConvertPage'
-import QuickConvertRequirementsPage from './pages/QuickConvertRequirementsPage'
-import QuickConvertPRDPage from './pages/QuickConvertPRDPage'
-import QuickConvertStoriesPage from './pages/QuickConvertStoriesPage'
-import QuickConvertMockupsPage from './pages/QuickConvertMockupsPage'
-import NotFoundPage from './pages/NotFoundPage'
 import './App.css'
 
 function App() {
@@ -99,32 +81,7 @@ function App() {
 
       <main id="main-content">
       <ErrorBoundary>
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/quick-convert" element={<QuickConvertPage />} />
-          <Route path="/quick-convert/requirements" element={<QuickConvertRequirementsPage />} />
-          <Route path="/quick-convert/prd" element={<QuickConvertPRDPage />} />
-          <Route path="/quick-convert/stories" element={<QuickConvertStoriesPage />} />
-          <Route path="/quick-convert/mockups" element={<QuickConvertMockupsPage />} />
-          <Route path="/projects/:id" element={<ProjectViewPage />} />
-          <Route path="/projects/:id/:stage" element={<ProjectViewPage />} />
-          <Route path="/app" element={<ProjectsPage />} />
-          <Route path="/app/projects/:id" element={<ProjectDashboard />} />
-          <Route path="/app/projects/:id/meetings/new" element={<UploadMeetingPage />} />
-          <Route path="/app/projects/:id/meetings/:mid" element={<RecapEditorPage />} />
-          <Route path="/app/projects/:id/meetings/:mid/apply" element={<ConflictResolverPage />} />
-          <Route path="/app/projects/:id/requirements" element={<RequirementsPage />} />
-          <Route path="/app/prd" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/app/projects/:projectId/prd/generate" element={<PRDGeneratorPage />} />
-          <Route path="/app/projects/:projectId/prd/streaming" element={<PRDStreamingPage />} />
-          <Route path="/app/prds/:prdId" element={<PRDEditorPage />} />
-          <Route path="/app/stories" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/app/projects/:projectId/stories" element={<UserStoriesPage />} />
-          <Route path="/app/*" element={<ProjectsPage />} />
-          {/* Catch-all 404 route - must be last */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        <Outlet />
       </ErrorBoundary>
       </main>
     </div>
