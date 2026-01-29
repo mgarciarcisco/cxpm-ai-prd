@@ -91,10 +91,11 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.confirmation-dialog__input:focus {
+.confirmation-dialog__input:focus,
+.confirmation-dialog__input:focus-visible {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #4ECDC4;
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
 }
 
 .confirmation-dialog__input::placeholder {
@@ -130,8 +131,8 @@
   border-color: #9ca3af;
 }
 
-.confirmation-dialog__cancel-btn:focus {
-  outline: 2px solid #3b82f6;
+.confirmation-dialog__cancel-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
@@ -174,8 +175,8 @@
   background: #b91c1c;
 }
 
-.confirmation-dialog__confirm-btn:focus {
-  outline: 2px solid #3b82f6;
+.confirmation-dialog__confirm-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 

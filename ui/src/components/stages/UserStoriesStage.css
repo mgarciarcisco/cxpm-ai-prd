@@ -180,6 +180,11 @@
   color: white;
 }
 
+.stories-stage__clear-filters-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 /* ============================================================
    Generation Progress State
    ============================================================ */
@@ -266,6 +271,11 @@
   background-color: #b91c1c;
 }
 
+.stories-stage__generating-error button:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 /* ============================================================
    Stories Error State
    ============================================================ */
@@ -333,4 +343,9 @@
 
 .stories-error__actions button.secondary:hover {
   background-color: #f9fafb;
+}
+
+.stories-error__actions button:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
 }

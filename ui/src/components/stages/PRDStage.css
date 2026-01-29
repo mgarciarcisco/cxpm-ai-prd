@@ -326,6 +326,11 @@
   background-color: #b91c1c;
 }
 
+.prd-error__actions button:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 .prd-error__actions button.secondary {
   background-color: white;
   color: #374151;
@@ -478,6 +483,11 @@
 
 .prd-viewer__tab:hover {
   color: var(--color-text-primary, #1f2937);
+}
+
+.prd-viewer__tab:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
 }
 
 .prd-viewer__tab--active {
@@ -635,8 +645,11 @@
   color: var(--color-text-tertiary, #9ca3af);
 }
 
-.prd-viewer__editor:focus {
+.prd-viewer__editor:focus,
+.prd-viewer__editor:focus-visible {
   background-color: #fafafa;
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(78, 205, 196, 0.3);
 }
 
 /* ============================================================
@@ -679,6 +692,11 @@
   background-color: #2563eb;
 }
 
+.prd-viewer__version-banner-close:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 /* Header left section for tabs and version history */
 .prd-viewer__header-left {
   display: flex;
@@ -718,6 +736,11 @@
   color: #6b7280;
   background-color: #fff;
   border-color: #d1d5db;
+}
+
+.prd-viewer__regenerate-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
 }
 
 .prd-viewer__regenerate-btn svg {

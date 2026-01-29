@@ -47,10 +47,12 @@
 }
 
 .project-form-input:focus,
-.project-form-textarea:focus {
+.project-form-input:focus-visible,
+.project-form-textarea:focus,
+.project-form-textarea:focus-visible {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #4ECDC4;
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
 }
 
 .project-form-input::placeholder,
@@ -95,8 +97,8 @@
   border-color: #2563eb;
 }
 
-.project-form-btn--primary:focus {
-  outline: 2px solid #3b82f6;
+.project-form-btn--primary:focus-visible {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
@@ -111,8 +113,8 @@
   border-color: #9ca3af;
 }
 
-.project-form-btn--secondary:focus {
-  outline: 2px solid #9ca3af;
+.project-form-btn--secondary:focus-visible {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 

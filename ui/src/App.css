@@ -80,6 +80,11 @@
   color: #1F2937;
 }
 
+.header-nav-link:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 .header-nav-link--active {
   background-color: #E0F7F6;
   color: #0D9488;
@@ -105,7 +110,7 @@
   background-color: #F3F4F6;
 }
 
-.mobile-menu-btn:focus {
+.mobile-menu-btn:focus-visible {
   outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
@@ -163,6 +168,11 @@
 
 .info-button:hover {
   background-color: #F3F4F6;
+}
+
+.info-button:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
 }
 
 /* Features Grid */
@@ -268,6 +278,11 @@
   transform: translateY(-2px);
 }
 
+.feature-card:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 .feature-icon {
   width: 48px;
   height: 48px;
@@ -328,6 +343,16 @@
 .feature-card-link {
   text-decoration: none;
   display: block;
+  border-radius: 12px;
+}
+
+.feature-card-link:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
+.feature-card-link:focus-visible .feature-card {
+  border-color: #4ECDC4;
 }
 
 /* Back Link */
@@ -341,6 +366,11 @@
 
 .back-link:hover {
   text-decoration: underline;
+}
+
+.back-link:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
 }
 
 /* Projects Placeholder */

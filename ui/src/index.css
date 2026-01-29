@@ -47,6 +47,59 @@ body {
   background: #9CA3AF;
 }
 
+/* ============================================================
+   Global Focus Styles for Accessibility
+   Using :focus-visible to only show focus rings on keyboard navigation
+   ============================================================ */
+
+/* Remove default focus outline and add custom focus-visible styles */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
+/* Interactive elements base focus-visible styles */
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
+/* Form inputs get a different focus style (box-shadow) */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: #4ECDC4;
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
+}
+
+/* Skip link for keyboard users */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #4ECDC4;
+  color: white;
+  padding: 8px 16px;
+  z-index: 10000;
+  font-weight: 500;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
 /* Ensure minimum touch target sizes on mobile */
 @media (max-width: 768px) {
   button,

@@ -173,8 +173,22 @@ function ProjectCard({ project, meetingCount, lastActivity, onEdit, onDelete }) 
 
   const isArchived = project.archived === true;
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleCardClick()
+    }
+  }
+
   return (
-    <div className={`project-card${isArchived ? ' project-card--archived' : ''}`} onClick={handleCardClick}>
+    <div
+      className={`project-card${isArchived ? ' project-card--archived' : ''}`}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`Open project: ${project.name}`}
+    >
       <div className="project-card__header">
         <div className="project-card__name-row">
           <h3 className="project-card__name">{project.name}</h3>

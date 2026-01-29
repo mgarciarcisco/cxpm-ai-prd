@@ -25,8 +25,8 @@
   background-color: #f9fafb;
 }
 
-.collapsible-section-header:focus {
-  outline: 2px solid #3b82f6;
+.collapsible-section-header:focus-visible {
+  outline: 2px solid #4ECDC4;
   outline-offset: -2px;
 }
 

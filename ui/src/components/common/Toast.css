@@ -121,8 +121,8 @@
   background-color: var(--color-bg-secondary, #f1f5f9);
 }
 
-.toast__dismiss:focus {
-  outline: 2px solid var(--color-primary, #4ECDC4);
+.toast__dismiss:focus-visible {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 

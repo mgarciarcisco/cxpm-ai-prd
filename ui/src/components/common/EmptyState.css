@@ -65,7 +65,7 @@
   background-color: #3DBDB5;
 }
 
-.empty-state__action button:focus {
+.empty-state__action button:focus-visible {
   outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
@@ -83,8 +83,8 @@
   background-color: rgba(78, 205, 196, 0.1);
 }
 
-.empty-state__action button.secondary:focus,
-.empty-state__action--secondary button:focus {
+.empty-state__action button.secondary:focus-visible,
+.empty-state__action--secondary button:focus-visible {
   outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }

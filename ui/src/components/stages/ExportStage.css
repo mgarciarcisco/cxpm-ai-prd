@@ -40,8 +40,8 @@
   font-family: inherit;
 }
 
-.export-card:focus {
-  outline: 2px solid #10B981;
+.export-card:focus-visible {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
@@ -232,8 +232,8 @@
   border-color: #3B82F6;
 }
 
-.export-checkbox--blue input[type="checkbox"]:focus + .export-checkbox__checkmark--blue {
-  outline: 2px solid #3B82F6;
+.export-checkbox--blue input[type="checkbox"]:focus-visible + .export-checkbox__checkmark--blue {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
@@ -247,8 +247,8 @@
   margin-bottom: 2px;
 }
 
-.export-checkbox input[type="checkbox"]:focus + .export-checkbox__checkmark {
-  outline: 2px solid #10B981;
+.export-checkbox input[type="checkbox"]:focus-visible + .export-checkbox__checkmark {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
@@ -297,8 +297,8 @@
   background-color: #059669;
 }
 
-.export-card__button:focus {
-  outline: 2px solid #10B981;
+.export-card__button:focus-visible {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
@@ -316,8 +316,8 @@
   background-color: #2563EB;
 }
 
-.export-card__button--blue:focus {
-  outline: 2px solid #3B82F6;
+.export-card__button--blue:focus-visible {
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
@@ -376,6 +376,11 @@
   color: #DC2626;
   border-color: #FCA5A5;
   background-color: #FEF2F2;
+}
+
+.export-history__clear-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
 }
 
 .export-history__empty {
