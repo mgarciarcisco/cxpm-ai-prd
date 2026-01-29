@@ -235,7 +235,16 @@ export function usePRDStreamingV2(projectId, mode, shouldConnect = false) {
         setVersion(data.version);
         setSectionCount(data.section_count);
         setFailedCount(data.failed_count || 0);
-        setStatus(data.failed_count > 0 ? 'partial' : 'complete');
+
+        // Handle status based on backend response
+        // Backend sends status: 'failed' when ALL sections fail (e.g., LLM not available)
+        if (data.status === 'failed') {
+          setError('All sections failed to generate. Please check if Ollama is running or Claude API key is configured.');
+          setStatus('error');
+        } else {
+          setStatus(data.failed_count > 0 ? 'partial' : 'complete');
+        }
+
         setCurrentStage(null);
         setStreamingSection(null);
         console.log('PRD generation complete:', data);
