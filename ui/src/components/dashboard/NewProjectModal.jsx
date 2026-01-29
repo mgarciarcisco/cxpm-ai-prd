@@ -52,7 +52,12 @@ function NewProjectModal({ onClose, onCreated }) {
   };
 
   return (
-    <Modal title="Create New Project" onClose={onClose}>
+    <Modal
+      title="Create New Project"
+      subtitle="Organize your requirements, PRDs, and user stories"
+      icon="📁"
+      onClose={onClose}
+    >
       <form className="new-project-modal" onSubmit={handleSubmit}>
         <div className="new-project-modal__field">
           <label htmlFor="project-name" className="new-project-modal__label">
@@ -62,7 +67,7 @@ function NewProjectModal({ onClose, onCreated }) {
             id="project-name"
             type="text"
             className="new-project-modal__input"
-            placeholder="Enter project name"
+            placeholder="e.g., Mobile App Redesign"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={creating}
@@ -77,7 +82,7 @@ function NewProjectModal({ onClose, onCreated }) {
           <textarea
             id="project-description"
             className="new-project-modal__textarea"
-            placeholder="Brief description of your project"
+            placeholder="What is this project about?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={creating}

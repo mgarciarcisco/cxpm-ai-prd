@@ -1,3 +1,4 @@
+/* Project Form - Modern Styling */
 .project-form {
   display: flex;
   flex-direction: column;
@@ -8,7 +9,7 @@
   padding: 0.75rem 1rem;
   background-color: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 0.375rem;
+  border-radius: 10px;
   color: #dc2626;
   font-size: 0.875rem;
 }
@@ -20,30 +21,31 @@
 }
 
 .project-form-label {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: #374151;
 }
 
 .project-form-required {
-  color: #dc2626;
+  color: #ef4444;
+  margin-left: 0.125rem;
 }
 
 .project-form-input,
 .project-form-textarea {
-  padding: 0.625rem 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
   font-size: 0.9375rem;
   font-family: inherit;
-  color: #1f2937;
+  color: #111827;
   background-color: white;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.15s ease;
 }
 
 .project-form-input:hover,
 .project-form-textarea:hover {
-  border-color: #9ca3af;
+  border-color: #d1d5db;
 }
 
 .project-form-input:focus,
@@ -52,17 +54,17 @@
 .project-form-textarea:focus-visible {
   outline: none;
   border-color: #4ECDC4;
-  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.15);
 }
 
 .project-form-input::placeholder,
 .project-form-textarea::placeholder {
-  color: #9ca3af;
+  color: #d1d5db;
 }
 
 .project-form-textarea {
   resize: vertical;
-  min-height: 5rem;
+  min-height: 100px;
 }
 
 .project-form-actions {
@@ -73,12 +75,12 @@
 }
 
 .project-form-btn {
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.9375rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s, opacity 0.2s;
+  transition: all 0.15s ease;
 }
 
 .project-form-btn:disabled {
@@ -87,14 +89,15 @@
 }
 
 .project-form-btn--primary {
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
   color: white;
-  border: 1px solid #3b82f6;
+  border: none;
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
 }
 
 .project-form-btn--primary:hover:not(:disabled) {
-  background-color: #2563eb;
-  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(78, 205, 196, 0.4);
 }
 
 .project-form-btn--primary:focus-visible {
@@ -103,14 +106,13 @@
 }
 
 .project-form-btn--secondary {
-  background-color: white;
+  background-color: #f3f4f6;
   color: #374151;
-  border: 1px solid #d1d5db;
+  border: none;
 }
 
 .project-form-btn--secondary:hover:not(:disabled) {
-  background-color: #f9fafb;
-  border-color: #9ca3af;
+  background-color: #e5e7eb;
 }
 
 .project-form-btn--secondary:focus-visible {
@@ -126,5 +128,6 @@
 
   .project-form-btn {
     width: 100%;
+    justify-content: center;
   }
 }

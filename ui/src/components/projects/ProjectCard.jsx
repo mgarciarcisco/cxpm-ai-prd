@@ -6,11 +6,11 @@ import './ProjectCard.css'
  * Stage definitions with action-oriented labels
  */
 const STAGES = [
-  { id: 'requirements', label: 'Gather Requirements' },
-  { id: 'prd', label: 'Write Specification' },
-  { id: 'stories', label: 'Break into Tasks' },
-  { id: 'mockups', label: 'Design Screens' },
-  { id: 'export', label: 'Export & Share' },
+  { id: 'requirements', label: 'Gathering Requirements' },
+  { id: 'prd', label: 'Writing Specification' },
+  { id: 'stories', label: 'Breaking into Tasks' },
+  { id: 'mockups', label: 'Designing Screens' },
+  { id: 'export', label: 'Exporting & Sharing' },
 ];
 
 /**

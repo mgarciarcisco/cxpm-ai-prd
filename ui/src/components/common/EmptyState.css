@@ -1,46 +1,72 @@
+/* Empty State - Modern Illustrated Style */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
+  padding: 3rem 1.5rem;
   text-align: center;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
 }
 
+/* Illustration container with gradient background */
+.empty-state__illustration {
+  width: 180px;
+  height: 140px;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #e0f7f6 0%, #dbeafe 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Emoji display */
+.empty-state__emoji {
+  font-size: 4rem;
+  line-height: 1;
+}
+
+/* Icon container (for SVG icons) */
 .empty-state__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
-  margin-bottom: 16px;
-  color: #9CA3AF;
+  color: #4ECDC4;
 }
 
 .empty-state__icon svg {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
 }
 
+/* Title */
 .empty-state__title {
-  font-size: 18px;
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #1F2937;
-  margin: 0 0 8px 0;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
 }
 
+/* Description */
 .empty-state__description {
-  font-size: 14px;
+  font-size: 0.9375rem;
   color: #6B7280;
-  margin: 0 0 24px 0;
+  margin: 0 0 1.5rem 0;
   max-width: 320px;
   line-height: 1.5;
+  margin-left: auto;
+  margin-right: auto;
 }
 
+/* Actions container */
 .empty-state__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 0.75rem;
   justify-content: center;
   align-items: center;
 }
@@ -49,38 +75,46 @@
   display: inline-flex;
 }
 
-.empty-state__action button {
-  padding: 10px 20px;
-  font-size: 14px;
+/* Primary button (first action) */
+.empty-state__action button,
+.empty-state-link-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   color: white;
-  background-color: #4ECDC4;
+  background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
 }
 
-.empty-state__action button:hover {
-  background-color: #3DBDB5;
+.empty-state__action button:hover,
+.empty-state-link-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(78, 205, 196, 0.4);
 }
 
-.empty-state__action button:focus-visible {
+.empty-state__action button:focus-visible,
+.empty-state-link-btn:focus-visible {
   outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
-/* Secondary button variant for use with multiple actions */
+/* Secondary button variant */
 .empty-state__action button.secondary,
 .empty-state__action--secondary button {
-  color: #4ECDC4;
-  background-color: transparent;
-  border: 1px solid #4ECDC4;
+  color: #374151;
+  background: #f3f4f6;
+  box-shadow: none;
 }
 
 .empty-state__action button.secondary:hover,
 .empty-state__action--secondary button:hover {
-  background-color: rgba(78, 205, 196, 0.1);
+  background: #e5e7eb;
+  transform: none;
+  box-shadow: none;
 }
 
 .empty-state__action button.secondary:focus-visible,
@@ -89,40 +123,70 @@
   outline-offset: 2px;
 }
 
-/* Responsive - Mobile Layout */
-@media (max-width: 640px) {
+/* Responsive - Tablet */
+@media (max-width: 768px) {
   .empty-state {
-    padding: 32px 16px;
+    padding: 2.5rem 1.25rem;
   }
 
-  .empty-state__icon {
-    width: 56px;
-    height: 56px;
-    margin-bottom: 12px;
+  .empty-state__illustration {
+    width: 160px;
+    height: 120px;
+    margin-bottom: 1.25rem;
+  }
+
+  .empty-state__emoji {
+    font-size: 3.5rem;
+  }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 640px) {
+  .empty-state {
+    padding: 2rem 1rem;
+    border-radius: 12px;
+  }
+
+  .empty-state__illustration {
+    width: 140px;
+    height: 100px;
+    margin-bottom: 1rem;
+    border-radius: 12px;
+  }
+
+  .empty-state__emoji {
+    font-size: 3rem;
   }
 
   .empty-state__icon svg {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
   }
 
   .empty-state__title {
-    font-size: 16px;
+    font-size: 1.125rem;
   }
 
   .empty-state__description {
-    font-size: 13px;
-    margin-bottom: 20px;
+    font-size: 0.875rem;
+    margin-bottom: 1.25rem;
     max-width: 280px;
   }
 
   .empty-state__actions {
-    gap: 10px;
+    gap: 0.625rem;
+    flex-direction: column;
+    width: 100%;
   }
 
-  .empty-state__action button {
-    padding: 12px 20px;
-    font-size: 14px;
+  .empty-state__action {
+    width: 100%;
+  }
+
+  .empty-state__action button,
+  .empty-state-link-btn {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
     min-height: 44px;
   }
 }

@@ -1,7 +1,26 @@
 import { useEffect, useRef, useCallback } from 'react';
 import './Modal.css';
 
-export function Modal({ children, onClose, title }) {
+/**
+ * Modern Modal Component
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - Modal content
+ * @param {() => void} props.onClose - Close handler
+ * @param {string} [props.title] - Modal title
+ * @param {string} [props.subtitle] - Optional subtitle below title
+ * @param {string} [props.icon] - Optional icon (emoji) for the header
+ * @param {string} [props.size] - Modal size: 'default' | 'large'
+ * @param {string} [props.variant] - Modal variant: 'default' | 'form'
+ */
+export function Modal({
+  children,
+  onClose,
+  title,
+  subtitle,
+  icon,
+  size = 'default',
+  variant = 'default'
+}) {
   const modalRef = useRef(null);
   const previousActiveElement = useRef(null);
 
@@ -78,10 +97,16 @@ export function Modal({ children, onClose, title }) {
     }
   };
 
+  const containerClasses = [
+    'modal-container',
+    size === 'large' && 'modal-container--large',
+    variant === 'form' && 'modal-container--form'
+  ].filter(Boolean).join(' ');
+
   return (
     <div className="modal-backdrop" onClick={handleBackdropClick}>
       <div
-        className="modal-container"
+        className={containerClasses}
         ref={modalRef}
         role="dialog"
         aria-modal="true"
@@ -98,7 +123,23 @@ export function Modal({ children, onClose, title }) {
             <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        {title && <h2 id="modal-title" className="modal-title">{title}</h2>}
+
+        {(title || icon) && (
+          <div className="modal-header">
+            {icon && (
+              <div className="modal-icon" aria-hidden="true">
+                {icon}
+              </div>
+            )}
+            {title && (
+              <h2 id="modal-title" className="modal-title">{title}</h2>
+            )}
+            {subtitle && (
+              <p className="modal-subtitle">{subtitle}</p>
+            )}
+          </div>
+        )}
+
         <div className="modal-content">
           {children}
         </div>

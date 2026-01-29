@@ -1,24 +1,31 @@
+/* Collapsible Section - Modern Styling */
 .collapsible-section {
   border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
+  border-radius: 12px;
   background: white;
   margin-bottom: 0.75rem;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.collapsible-section:hover {
+  border-color: #d1d5db;
 }
 
 .collapsible-section-header {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
   background: none;
   border: none;
   cursor: pointer;
   text-align: left;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: #374151;
-  transition: background-color 0.2s;
+  transition: background-color 0.15s ease;
 }
 
 .collapsible-section-header:hover {
@@ -34,11 +41,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #e0f7f6 0%, #dbeafe 100%);
+  border-radius: 8px;
+  color: #4ECDC4;
+  flex-shrink: 0;
 }
 
 .collapsible-section-chevron {
-  transition: transform 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #9ca3af;
+  transition: transform 0.2s ease;
 }
 
 .collapsible-section-chevron--expanded {
@@ -54,17 +72,43 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  padding: 0 0.5rem;
-  background-color: #f3f4f6;
-  color: #6b7280;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 0.625rem;
+  background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+  color: white;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: 9999px;
 }
 
+.collapsible-section-count--empty {
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
 .collapsible-section-content {
-  padding: 0 1rem 1rem 1rem;
-  border-top: 1px solid #e5e7eb;
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .collapsible-section {
+    border-radius: 10px;
+  }
+
+  .collapsible-section-header {
+    padding: 0.875rem 1rem;
+    gap: 0.625rem;
+  }
+
+  .collapsible-section-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .collapsible-section-content {
+    padding: 0 1rem 1rem 1rem;
+  }
 }

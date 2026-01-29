@@ -10,36 +10,37 @@ import './StageStepper.css';
  * @typedef {Object} Stage
  * @property {string} id - Unique stage identifier
  * @property {string} label - Display label for the stage
+ * @property {string} icon - Emoji icon for the stage
  * @property {StageStatus} status - Current status of the stage
  */
 
 const DEFAULT_STAGES = [
-  { id: 'requirements', label: 'Requirements' },
-  { id: 'prd', label: 'PRD' },
-  { id: 'stories', label: 'User Stories' },
-  { id: 'mockups', label: 'Mockups' },
-  { id: 'export', label: 'Export' },
+  { id: 'requirements', label: 'Requirements', icon: '📝' },
+  { id: 'prd', label: 'PRD', icon: '📄' },
+  { id: 'stories', label: 'Stories', icon: '📋' },
+  { id: 'mockups', label: 'Mockups', icon: '🎨' },
+  { id: 'export', label: 'Export', icon: '📦' },
 ];
 
 /**
- * Returns the status indicator character based on stage status
+ * Returns the status text based on stage status
  * @param {StageStatus} status
  * @returns {string}
  */
-function getStatusIndicator(status) {
+function getStatusText(status) {
   switch (status) {
     case 'complete':
-      return '●';
+      return 'Complete';
     case 'in_progress':
-      return '◐';
+      return 'In Progress';
     case 'empty':
     default:
-      return '○';
+      return 'Pending';
   }
 }
 
 /**
- * Horizontal stepper showing project stages
+ * Modern pill-style stepper showing project stages
  * @param {Object} props
  * @param {Object<string, StageStatus>} props.statuses - Map of stage id to status
  * @param {string} [props.currentStage] - ID of the currently active stage
@@ -55,30 +56,28 @@ export function StageStepper({
   return (
     <nav className="stage-stepper" aria-label="Project stages">
       <ol className="stage-stepper__list">
-        {stages.map((stage, index) => {
+        {stages.map((stage) => {
           const status = statuses[stage.id] || 'empty';
           const isCurrent = currentStage === stage.id;
-          const isLast = index === stages.length - 1;
+          const statusClass = status === 'empty' ? 'pending' : status.replace('_', '-');
 
           return (
             <li key={stage.id} className="stage-stepper__item">
               <button
                 type="button"
-                className={`stage-stepper__stage ${isCurrent ? 'stage-stepper__stage--current' : ''} stage-stepper__stage--${status}`}
+                className={`stage-stepper__step stage-stepper__step--${statusClass} ${isCurrent ? 'stage-stepper__step--current' : ''}`}
                 onClick={() => onStageClick?.(stage.id)}
                 aria-current={isCurrent ? 'step' : undefined}
-                aria-label={`${stage.label}: ${status.replace('_', ' ')}`}
+                aria-label={`${stage.label}: ${getStatusText(status)}`}
               >
-                <span className="stage-stepper__indicator" aria-hidden="true">
-                  {getStatusIndicator(status)}
+                <span className="stage-stepper__icon" aria-hidden="true">
+                  {status === 'complete' ? '✓' : stage.icon}
                 </span>
-                <span className="stage-stepper__label">
-                  {stage.label}
+                <span className="stage-stepper__content">
+                  <span className="stage-stepper__label">{stage.label}</span>
+                  <span className="stage-stepper__status">{getStatusText(status)}</span>
                 </span>
               </button>
-              {!isLast && (
-                <div className="stage-stepper__connector" aria-hidden="true" />
-              )}
             </li>
           );
         })}
