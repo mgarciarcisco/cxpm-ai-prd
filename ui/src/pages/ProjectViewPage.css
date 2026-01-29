@@ -85,6 +85,11 @@
   background-color: var(--color-primary-hover, #3dbdb5);
 }
 
+.project-view__retry-btn:focus-visible {
+  outline: 2px solid var(--color-primary, #4ECDC4);
+  outline-offset: 2px;
+}
+
 .project-view__back-link {
   padding: 0.5rem 1rem;
   color: var(--color-text-secondary, #6b7280);
@@ -96,6 +101,11 @@
 
 .project-view__back-link:hover {
   color: var(--color-text-primary, #1f2937);
+}
+
+.project-view__back-link:focus-visible {
+  outline: 2px solid var(--color-primary, #4ECDC4);
+  outline-offset: 2px;
 }
 
 /* Project Header */

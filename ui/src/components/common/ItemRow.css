@@ -78,7 +78,7 @@
 }
 
 .item-row-action-btn:focus-visible {
-  outline: 2px solid #3B82F6;
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
@@ -115,10 +115,11 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.item-row-edit-textarea:focus {
+.item-row-edit-textarea:focus,
+.item-row-edit-textarea:focus-visible {
   outline: none;
-  border-color: #3B82F6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #4ECDC4;
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
 }
 
 .item-row-edit-textarea:disabled {
@@ -177,7 +178,7 @@
 
 .item-row-edit-btn--save:focus-visible,
 .item-row-edit-btn--cancel:focus-visible {
-  outline: 2px solid #3B82F6;
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 
@@ -260,7 +261,7 @@
 
 .item-row-delete-btn--confirm:focus-visible,
 .item-row-delete-btn--cancel:focus-visible {
-  outline: 2px solid #3B82F6;
+  outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
 

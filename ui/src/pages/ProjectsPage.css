@@ -24,6 +24,11 @@
   background-color: #3BB5AD;
 }
 
+.new-project-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 /* Projects Grid */
 .projects-grid {
   display: grid;
@@ -110,6 +115,11 @@
 
 .retry-btn:hover {
   background-color: #B91C1C;
+}
+
+.retry-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
 }
 
 /* Empty State */
@@ -218,4 +228,9 @@
 
 .delete-confirmation-btn--confirm:hover:not(:disabled) {
   background-color: #B91C1C;
+}
+
+.delete-confirmation-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
 }

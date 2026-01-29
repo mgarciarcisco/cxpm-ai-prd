@@ -39,6 +39,7 @@ function App() {
   return (
     <ToastProvider>
     <div className="app">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <OfflineIndicator />
       <header className="header">
         <div className="header-left">
@@ -96,6 +97,7 @@ function App() {
 
       {mobileMenuOpen && <div className="mobile-menu-overlay" onClick={closeMobileMenu} />}
 
+      <main id="main-content">
       <ErrorBoundary>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -124,6 +126,7 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </ErrorBoundary>
+      </main>
     </div>
     </ToastProvider>
   )

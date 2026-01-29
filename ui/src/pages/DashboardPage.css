@@ -44,7 +44,7 @@
   transition: all 0.2s ease;
 }
 
-.action-card:focus {
+.action-card:focus-visible {
   outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
@@ -205,6 +205,11 @@
   color: #FFFFFF;
 }
 
+.dashboard__retry-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 /* Empty State Container - provides background for EmptyState component */
 .dashboard__projects-section .empty-state {
   background-color: #FFFFFF;
@@ -233,7 +238,7 @@
   background-color: #3DBDB5;
 }
 
-.empty-state-link-btn:focus {
+.empty-state-link-btn:focus-visible {
   outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
