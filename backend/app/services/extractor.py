@@ -380,9 +380,10 @@ async def extract_stream(
 
     This async generator function:
     1. Loads the meeting from the database
-    2. Updates status to processing
-    3. Streams LLM response and yields individual items as they are parsed
-    4. Updates meeting status to processed when complete
+    2. Checks if already processed (returns existing items) or processing (skips)
+    3. Updates status to processing
+    4. Streams LLM response and yields individual items as they are parsed
+    5. Updates meeting status to processed when complete
 
     Args:
         meeting_id: The UUID of the meeting to process.
@@ -399,6 +400,26 @@ async def extract_stream(
     meeting = db.query(MeetingRecap).filter(MeetingRecap.id == str(meeting_id)).first()
     if not meeting:
         raise ExtractionError(f"Meeting not found: {meeting_id}")
+
+    # If already processed, yield existing items instead of re-extracting
+    if meeting.status == MeetingStatus.processed:
+        existing_items = (
+            db.query(MeetingItem)
+            .filter(MeetingItem.meeting_id == str(meeting_id), MeetingItem.is_deleted == False)
+            .order_by(MeetingItem.section, MeetingItem.order)
+            .all()
+        )
+        for item in existing_items:
+            yield {
+                "section": item.section.value if hasattr(item.section, 'value') else str(item.section),
+                "content": item.content,
+                "source_quote": item.source_quote,
+            }
+        return
+
+    # If already processing, skip to avoid duplicate extraction
+    if meeting.status == MeetingStatus.processing:
+        return
 
     # Update status to processing
     meeting.status = MeetingStatus.processing

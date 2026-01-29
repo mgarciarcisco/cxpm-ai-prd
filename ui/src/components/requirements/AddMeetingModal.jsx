@@ -117,6 +117,9 @@ function AddMeetingModal({ projectId, onClose, onSave }) {
   useEffect(() => {
     if (!jobId) return;
 
+    // Track if extraction completed to avoid false error on close
+    let completed = false;
+
     const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
     const eventSource = new EventSource(`${BASE_URL}/api/meetings/${jobId}/stream`);
 
@@ -138,6 +141,7 @@ function AddMeetingModal({ projectId, onClose, onSave }) {
     });
 
     eventSource.addEventListener('complete', () => {
+      completed = true;
       setExtractionStatus('complete');
       setIsProcessing(false);
       eventSource.close();
@@ -160,7 +164,8 @@ function AddMeetingModal({ projectId, onClose, onSave }) {
     });
 
     eventSource.onerror = () => {
-      if (extractionStatus !== 'complete') {
+      // Only show error if we haven't completed successfully
+      if (!completed) {
         setExtractError('Connection lost. Please try again.');
         setExtractionStatus('error');
         setIsProcessing(false);
@@ -171,7 +176,7 @@ function AddMeetingModal({ projectId, onClose, onSave }) {
     return () => {
       eventSource.close();
     };
-  }, [jobId, extractionStatus]);
+  }, [jobId]); // Only depend on jobId - don't reconnect when status changes
 
   const handleExtract = async () => {
     if (!hasContent || !projectId) return;
