@@ -88,3 +88,41 @@
   outline: 2px solid #4ECDC4;
   outline-offset: 2px;
 }
+
+/* Responsive - Mobile Layout */
+@media (max-width: 640px) {
+  .empty-state {
+    padding: 32px 16px;
+  }
+
+  .empty-state__icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 12px;
+  }
+
+  .empty-state__icon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .empty-state__title {
+    font-size: 16px;
+  }
+
+  .empty-state__description {
+    font-size: 13px;
+    margin-bottom: 20px;
+    max-width: 280px;
+  }
+
+  .empty-state__actions {
+    gap: 10px;
+  }
+
+  .empty-state__action button {
+    padding: 12px 20px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+}

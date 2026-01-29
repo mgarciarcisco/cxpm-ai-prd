@@ -246,12 +246,26 @@
 }
 
 @media (max-width: 768px) {
+  .dashboard {
+    padding-top: 0.5rem;
+  }
+
+  .dashboard__header {
+    margin-bottom: 1.5rem;
+  }
+
   .dashboard__actions {
     grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
   }
 
   .dashboard__welcome {
     font-size: 1.5rem;
+  }
+
+  .dashboard__projects-section {
+    margin-top: 1.5rem;
   }
 
   .dashboard__section-header {
@@ -268,18 +282,108 @@
 
   .dashboard__projects-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Touch-friendly loading state */
+  .dashboard__loading {
+    padding: 2rem 1.5rem;
+  }
+
+  /* Touch-friendly error state */
+  .dashboard__error {
+    padding: 2rem 1.5rem;
+  }
+
+  .dashboard__retry-btn {
+    padding: 0.75rem 1.25rem;
+    min-height: 44px;
   }
 }
 
 @media (max-width: 640px) {
+  .dashboard__header {
+    margin-bottom: 1.25rem;
+  }
+
+  .dashboard__welcome {
+    font-size: 1.25rem;
+  }
+
+  .dashboard__subtitle {
+    font-size: 0.9375rem;
+  }
+
+  .dashboard__actions {
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
   .action-card {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem;
+    min-height: 44px;
   }
 
   .action-card__icon {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+  }
+
+  .action-card__title {
+    font-size: 0.9375rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .action-card__description {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .dashboard__projects-section {
+    margin-top: 1rem;
+  }
+
+  .dashboard__section-header {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .dashboard__section-title {
+    font-size: 0.75rem;
+  }
+
+  .dashboard__projects-grid {
+    gap: 0.75rem;
+  }
+
+  /* Touch-friendly loading state */
+  .dashboard__loading {
+    padding: 1.5rem 1rem;
+    border-radius: 8px;
+  }
+
+  .dashboard__loading-text {
+    font-size: 0.8125rem;
+  }
+
+  /* Touch-friendly error state */
+  .dashboard__error {
+    padding: 1.5rem 1rem;
+    border-radius: 8px;
+  }
+
+  .dashboard__error-text {
+    font-size: 0.8125rem;
+    text-align: center;
+  }
+
+  /* Touch-friendly empty state */
+  .dashboard__projects-section .empty-state {
+    padding: 1.5rem 1rem;
+    border-radius: 8px;
   }
 }

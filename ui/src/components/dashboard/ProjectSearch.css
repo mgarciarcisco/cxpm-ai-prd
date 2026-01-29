@@ -77,9 +77,37 @@
 }
 
 /* Responsive */
+@media (max-width: 768px) {
+  .project-search {
+    width: 100%;
+  }
+
+  .project-search__input-wrapper {
+    width: 100%;
+  }
+
+  .project-search__input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 @media (max-width: 640px) {
   .project-search__input {
     width: 100%;
-    min-width: 180px;
+    min-width: 0;
+    padding: 0.625rem 2rem 0.625rem 2.5rem;
+    font-size: 1rem;
+    min-height: 44px;
+  }
+
+  .project-search__icon {
+    left: 0.875rem;
+  }
+
+  .project-search__clear {
+    right: 0.625rem;
+    width: 24px;
+    height: 24px;
   }
 }
