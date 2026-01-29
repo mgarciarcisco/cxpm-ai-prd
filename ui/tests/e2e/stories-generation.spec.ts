@@ -4,12 +4,15 @@ import { test, expect } from '@playwright/test';
  * E2E tests for User Stories Generation Flow
  *
  * Test coverage:
- * 1. Navigate to stories landing page, select project, choose format, generate
+ * 1. Navigate directly to project stories page, choose format, generate
  * 2. Wait for generation to complete
  * 3. Verify stories list displays
  * 4. Test story card expand and edit modal
  * 5. Test batch filter and delete
  * 6. Test export functionality
+ *
+ * Note: The legacy StoriesLandingPage at /app/stories has been removed.
+ * Users now access stories through the project dashboard at /projects/{id}/stories.
  */
 
 // Mock data
@@ -367,28 +370,18 @@ test.describe('User Stories Generation E2E Tests', () => {
     });
   });
 
-  test('navigates to stories landing page and displays project selector', async ({ page }) => {
+  test('legacy /app/stories route redirects to dashboard', async ({ page }) => {
     await page.goto('/app/stories');
 
-    // Verify landing page elements
-    await expect(page.locator('h2')).toContainText(/User Stor|Stories/i);
-    await expect(page.locator('select, .project-selector')).toBeVisible();
+    // Should redirect to dashboard
+    await page.waitForURL('**/dashboard');
 
-    // Verify project appears in selector
-    await expect(page.locator('option, .project-option')).toContainText('Stories Test Project');
+    // Verify we're on the dashboard
+    await expect(page.locator('h2')).toBeVisible();
   });
 
-  test('selects project and navigates to stories page', async ({ page }) => {
-    await page.goto('/app/stories');
-
-    // Wait for projects to load
-    await expect(page.locator('select, .project-selector')).toBeVisible();
-
-    // Select the project
-    await page.selectOption('select', mockProject.id);
-
-    // Should navigate to stories page
-    await page.waitForURL(`**/projects/${mockProject.id}/stories`);
+  test('navigates directly to project stories page', async ({ page }) => {
+    await page.goto(`/app/projects/${mockProject.id}/stories`);
 
     // Verify stories page elements
     await expect(page.locator('text=Stories Test Project')).toBeVisible();
@@ -707,59 +700,54 @@ test.describe('User Stories Generation E2E Tests', () => {
     await expect(page.locator('text=1 section')).toBeVisible();
   });
 
-  test('complete stories generation flow: landing -> generator -> view stories', async ({ page }) => {
-    // Step 1: Navigate to stories landing page
-    await page.goto('/app/stories');
-    await expect(page.locator('select, .project-selector')).toBeVisible();
+  test('complete stories generation flow: view stories', async ({ page }) => {
+    // Step 1: Navigate directly to project stories page
+    await page.goto(`/app/projects/${mockProject.id}/stories`);
 
-    // Step 2: Select project
-    await page.selectOption('select', mockProject.id);
-    await page.waitForURL(`**/projects/${mockProject.id}/stories`);
-
-    // Step 3: Verify page loads with existing stories
+    // Step 2: Verify page loads with existing stories
     await expect(page.locator('text=Stories Test Project')).toBeVisible();
     await expect(page.locator('.story-card')).toHaveCount(5);
 
-    // Step 4: Select Job Story format
+    // Step 3: Select Job Story format
     await page.click('.stories-format-option:has-text("Job Story Format")');
 
-    // Step 5: Select specific sections
+    // Step 4: Select specific sections
     await page.click('.stories-section-filter-trigger');
     await page.click('label:has-text("Problems")');
     await page.click('label:has-text("User Goals")');
     await page.keyboard.press('Escape'); // Close dropdown
 
-    // Step 6: Generate stories
+    // Step 5: Generate stories
     await page.click('button:has-text("Generate Stories")');
 
-    // Step 7: Confirm in info dialog
+    // Step 6: Confirm in info dialog
     await page.click('button:has-text("Continue")');
 
-    // Step 8: Wait for progress overlay
+    // Step 7: Wait for progress overlay
     await expect(page.locator('.stories-progress-overlay')).toBeVisible();
 
-    // Step 9: Wait for generation to complete
+    // Step 8: Wait for generation to complete
     await expect(page.locator('.stories-progress-overlay')).not.toBeVisible({ timeout: 15000 });
 
-    // Step 10: Verify stories list is visible
+    // Step 9: Verify stories list is visible
     await expect(page.locator('.story-card')).toHaveCount(5);
 
-    // Step 11: Expand a story card
+    // Step 10: Expand a story card
     const firstCard = page.locator('.story-card').first();
     await firstCard.locator('.story-card-header').first().click();
 
-    // Step 12: Verify expanded content
+    // Step 11: Verify expanded content
     await expect(firstCard.locator('.story-card-body')).toBeVisible();
 
-    // Step 13: Open edit modal
+    // Step 12: Open edit modal
     await firstCard.locator('button:has-text("Edit")').click();
     await expect(page.locator('.story-edit-modal')).toBeVisible();
 
-    // Step 14: Close edit modal
+    // Step 13: Close edit modal
     await page.click('button:has-text("Cancel")');
     await expect(page.locator('.story-edit-modal')).not.toBeVisible({ timeout: 3000 });
 
-    // Step 15: Test export
+    // Step 14: Test export
     await page.click('button:has-text("Export")');
     await expect(page.locator('.stories-export-modal')).toBeVisible();
   });
