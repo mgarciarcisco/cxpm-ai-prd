@@ -315,7 +315,7 @@ function UserStoriesPage() {
         <section className="stories-generator-section">
           <div className="section-header">
             <h2>User Stories</h2>
-            <Link to="/app/stories" className="back-link">Back to Stories</Link>
+            <Link to="/dashboard" className="back-link">Back to Dashboard</Link>
           </div>
           <div className="stories-generator-error">
             <p>Error loading project: {projectError}</p>
@@ -331,7 +331,7 @@ function UserStoriesPage() {
       <section className="stories-generator-section">
         <div className="section-header">
           <h2>User Stories</h2>
-          <Link to="/app/stories" className="back-link">Back to Stories</Link>
+          <Link to="/dashboard" className="back-link">Back to Dashboard</Link>
         </div>
 
         <div className="stories-generator-container">

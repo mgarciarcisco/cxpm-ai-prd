@@ -228,7 +228,7 @@ function PRDEditorPage() {
         <section className="prd-editor-section">
           <div className="prd-editor-header">
             <h2>PRD Editor</h2>
-            <Link to="/app/prd" className="back-link">Back to PRD</Link>
+            <Link to="/dashboard" className="back-link">Back to PRD</Link>
           </div>
           <div className="prd-editor-error">
             <p>Error loading PRD: {error}</p>
@@ -246,11 +246,11 @@ function PRDEditorPage() {
         <section className="prd-editor-section">
           <div className="prd-editor-header">
             <h2>PRD Editor</h2>
-            <Link to="/app/prd" className="back-link">Back to PRD</Link>
+            <Link to="/dashboard" className="back-link">Back to PRD</Link>
           </div>
           <div className="prd-editor-error">
             <p>PRD not found</p>
-            <Link to="/app/prd" className="retry-btn">Go to PRD</Link>
+            <Link to="/dashboard" className="retry-btn">Go to PRD</Link>
           </div>
         </section>
       </main>

@@ -91,7 +91,7 @@ function PRDGeneratorPage() {
         <section className="prd-generator-section">
           <div className="section-header">
             <h2>Generate PRD</h2>
-            <Link to="/app/prd" className="back-link">Back to PRD</Link>
+            <Link to="/dashboard" className="back-link">Back to PRD</Link>
           </div>
           <div className="prd-generator-error">
             <p>Error loading project: {projectError}</p>
@@ -107,7 +107,7 @@ function PRDGeneratorPage() {
       <section className="prd-generator-section">
         <div className="section-header">
           <h2>Generate PRD</h2>
-          <Link to="/app/prd" className="back-link">Back to PRD</Link>
+          <Link to="/dashboard" className="back-link">Back to PRD</Link>
         </div>
 
         <div className="prd-generator-container">
