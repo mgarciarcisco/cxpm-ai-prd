@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import JSZip from 'jszip';
 import { EmptyState } from '../common/EmptyState';
 import { StageActions } from '../stage/StageActions';
 import GenerateFromStoriesModal from '../mockups/GenerateFromStoriesModal';
@@ -24,6 +25,9 @@ function MockupsStage({ project, onProjectUpdate }) {
 
   // Filters state
   const [filters, setFilters] = useState({ device: 'all', style: 'all', status: 'all', search: '' });
+
+  // Download state
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Check if there are any mockups (mockups_status !== 'empty')
   const hasMockups = project?.mockups_status && project.mockups_status !== 'empty';
@@ -262,6 +266,94 @@ function MockupsStage({ project, onProjectUpdate }) {
     }
   };
 
+  // Generate a safe filename from mockup title
+  const slugifyFilename = (name) => {
+    return name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\-_]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'mockup';
+  };
+
+  // Handle download all mockups as zip
+  const handleDownloadAll = async () => {
+    if (mockups.length === 0) return;
+
+    setIsDownloading(true);
+    try {
+      const zip = new JSZip();
+      const projectSlug = project?.name ? slugifyFilename(project.name) : 'mockups';
+
+      // Add each mockup to the zip
+      for (let i = 0; i < mockups.length; i++) {
+        const mockup = mockups[i];
+        const filename = `${mockup.mockup_id || `mockup-${i + 1}`}-${slugifyFilename(mockup.title || 'untitled')}.png`;
+
+        // If mockup has a thumbnail_url, fetch and add to zip
+        if (mockup.thumbnail_url) {
+          try {
+            let blob;
+            if (mockup.thumbnail_url.startsWith('data:')) {
+              // Convert data URL to blob
+              const response = await fetch(mockup.thumbnail_url);
+              blob = await response.blob();
+            } else {
+              // Fetch image from URL
+              const response = await fetch(mockup.thumbnail_url);
+              if (response.ok) {
+                blob = await response.blob();
+              }
+            }
+            if (blob) {
+              zip.file(filename, blob);
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch mockup ${mockup.mockup_id}:`, err);
+          }
+        } else {
+          // If no image URL, create a placeholder text file with mockup info
+          const infoContent = [
+            `Mockup ID: ${mockup.mockup_id || 'N/A'}`,
+            `Title: ${mockup.title || 'Untitled'}`,
+            `Description: ${mockup.description || 'No description'}`,
+            `Device: ${mockup.device || 'N/A'}`,
+            `Style: ${mockup.style || 'N/A'}`,
+            `Status: ${mockup.status || 'N/A'}`,
+            `Created: ${mockup.created_at || 'N/A'}`,
+          ].join('\n');
+          zip.file(filename.replace('.png', '.txt'), infoContent);
+        }
+      }
+
+      // Check if any files were added
+      const files = Object.keys(zip.files);
+      if (files.length === 0) {
+        console.warn('No mockups available to download');
+        return;
+      }
+
+      // Generate and download ZIP
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const date = new Date().toISOString().split('T')[0];
+      const zipFilename = `${projectSlug}-mockups-${date}.zip`;
+
+      // Trigger download
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = zipFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download mockups:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   // Empty state - no mockups yet
   if (!hasMockups) {
     return (
@@ -393,6 +485,11 @@ function MockupsStage({ project, onProjectUpdate }) {
         secondaryAction={{
           label: 'Describe Manually',
           onClick: handleDescribeManually,
+        }}
+        tertiaryAction={{
+          label: isDownloading ? 'Downloading...' : 'Download All',
+          onClick: handleDownloadAll,
+          disabled: isDownloading || mockups.length === 0,
         }}
       />
 
