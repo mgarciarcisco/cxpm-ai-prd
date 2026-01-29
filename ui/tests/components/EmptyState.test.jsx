@@ -156,8 +156,8 @@ describe('EmptyState', () => {
       const emptyState = container.querySelector('.empty-state')
       const children = emptyState.children
 
-      // Order should be: icon, title, description, actions
-      expect(children[0]).toHaveClass('empty-state__icon')
+      // Order should be: illustration (contains icon), title, description, actions
+      expect(children[0]).toHaveClass('empty-state__illustration')
       expect(children[1]).toHaveClass('empty-state__title')
       expect(children[2]).toHaveClass('empty-state__description')
       expect(children[3]).toHaveClass('empty-state__actions')

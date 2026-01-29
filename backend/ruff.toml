@@ -11,6 +11,7 @@ line-length = 120
 exclude = [
     ".git",
     ".venv",
+    ".venv_seed",
     "venv",
     "__pycache__",
     "alembic/versions",

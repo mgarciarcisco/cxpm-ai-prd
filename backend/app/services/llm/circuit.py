@@ -195,10 +195,6 @@ class CircuitProvider:
         }
         
 
-        print(f"Sending request to Circuit AI API: {url}")
-        print(f"Headers: {headers}")
-        print(f"Payload: {payload}")    
-        
         try:
             # Send POST request to Circuit AI API
             response = requests.post(url, headers=headers, json=payload, timeout=60)
