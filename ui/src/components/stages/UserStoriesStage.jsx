@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { EmptyState } from '../common/EmptyState';
 import { StageActions } from '../stage/StageActions';
+import { StageLoader } from './StageLoader';
 import GenerateStoriesModal from '../stories/GenerateStoriesModal';
 import { StoryCard } from '../stories/StoryCard';
 import { StoryEditModal } from '../stories/StoryEditModal';
@@ -552,10 +553,7 @@ function UserStoriesStage({ project, onProjectUpdate }) {
   if (loadingStories) {
     return (
       <div className="stage-content stage-content--stories">
-        <div className="stories-stage__loading">
-          <div className="stories-stage__spinner" />
-          <span className="stories-stage__loading-text">Loading stories...</span>
-        </div>
+        <StageLoader message="Loading stories..." stage="stories" />
       </div>
     );
   }

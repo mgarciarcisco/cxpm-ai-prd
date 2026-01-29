@@ -3,6 +3,7 @@ import { EmptyState } from '../common/EmptyState';
 import { ConfirmationDialog } from '../common/ConfirmationDialog';
 import { StageHeader } from '../stage/StageHeader';
 import { StageActions } from '../stage/StageActions';
+import { StageLoader } from './StageLoader';
 import AddMeetingModal from '../requirements/AddMeetingModal';
 import AddManuallyModal from '../requirements/AddManuallyModal';
 import RequirementSection, { SECTION_ORDER } from '../requirements/RequirementSection';
@@ -313,15 +314,7 @@ function RequirementsStage({ project, onProjectUpdate }) {
   if (loading && !requirements) {
     return (
       <div className="stage-content stage-content--requirements">
-        <div className="requirements-stage__loading">
-          <div className="requirements-stage__loading-spinner" aria-label="Loading requirements">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25"/>
-              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <p className="requirements-stage__loading-text">Loading requirements...</p>
-        </div>
+        <StageLoader message="Loading requirements..." stage="requirements" />
       </div>
     );
   }

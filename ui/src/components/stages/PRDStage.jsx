@@ -3,6 +3,7 @@ import Markdown from 'react-markdown';
 import { EmptyState } from '../common/EmptyState';
 import { StageActions } from '../stage/StageActions';
 import { ConfirmationDialog } from '../common/ConfirmationDialog';
+import { StageLoader } from './StageLoader';
 import GeneratePRDModal from '../prd/GeneratePRDModal';
 import VersionHistory from '../prd/VersionHistory';
 import { usePRDStreamingV2, SectionStatus } from '../../hooks/usePRDStreamingV2';
@@ -748,10 +749,7 @@ function PRDStage({ project, onProjectUpdate }) {
   if (loadingPRD) {
     return (
       <div className="stage-content stage-content--prd">
-        <div className="prd-loading">
-          <div className="prd-loading__spinner" />
-          <span className="prd-loading__text">Loading PRD...</span>
-        </div>
+        <StageLoader message="Loading PRD..." stage="prd" />
       </div>
     );
   }
@@ -931,10 +929,7 @@ function PRDStage({ project, onProjectUpdate }) {
   // Fallback loading state
   return (
     <div className="stage-content stage-content--prd">
-      <div className="prd-loading">
-        <div className="prd-loading__spinner" />
-        <span className="prd-loading__text">Loading PRD...</span>
-      </div>
+      <StageLoader message="Loading PRD..." stage="prd" />
     </div>
   );
 }

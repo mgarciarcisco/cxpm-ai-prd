@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import JSZip from 'jszip';
 import { EmptyState } from '../common/EmptyState';
 import { StageActions } from '../stage/StageActions';
+import { StageLoader } from './StageLoader';
 import GenerateFromStoriesModal from '../mockups/GenerateFromStoriesModal';
 import DescribeUIModal from '../mockups/DescribeUIModal';
 import { MockupCard } from '../mockups/MockupCard';
@@ -408,10 +409,7 @@ function MockupsStage({ project, onProjectUpdate }) {
   if (loadingMockups) {
     return (
       <div className="stage-content stage-content--mockups">
-        <div className="mockups-stage__loading">
-          <div className="mockups-stage__spinner" />
-          <span className="mockups-stage__loading-text">Loading mockups...</span>
-        </div>
+        <StageLoader message="Loading mockups..." stage="mockups" />
       </div>
     );
   }

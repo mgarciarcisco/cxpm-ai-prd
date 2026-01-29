@@ -1,0 +1,41 @@
+/* Stage Loading State
+ * Consistent loading component used across all stages.
+ * Uses stage-specific colors for the spinner.
+ */
+
+.stage-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 200px;
+  padding: 48px 24px;
+}
+
+.stage-loader__message {
+  font-size: 14px;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+}
+
+/* Stage-specific spinner colors */
+.stage-loader--requirements .loading-spinner {
+  border-top-color: var(--color-stage-requirements, #6366f1);
+}
+
+.stage-loader--prd .loading-spinner {
+  border-top-color: var(--color-stage-prd, #8b5cf6);
+}
+
+.stage-loader--stories .loading-spinner {
+  border-top-color: var(--color-stage-stories, #4ecdc4);
+}
+
+.stage-loader--mockups .loading-spinner {
+  border-top-color: var(--color-stage-mockups, #f59e0b);
+}
+
+.stage-loader--export .loading-spinner {
+  border-top-color: var(--color-stage-export, #10b981);
+}
