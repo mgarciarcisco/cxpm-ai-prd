@@ -3,7 +3,7 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models import MeetingRecap, Requirement, RequirementHistory, RequirementSource
+from app.models import MeetingRecap, Project, Requirement, RequirementHistory, RequirementSource, RequirementsStatus
 from app.models.meeting_item import Section
 from app.models.meeting_recap import MeetingStatus
 from app.models.requirement_history import Action, Actor
@@ -162,6 +162,259 @@ class TestListRequirements:
         for section in ["problems", "user_goals", "functional_requirements", "data_needs",
                         "constraints", "non_goals", "risks_assumptions", "open_questions", "action_items"]:
             assert data[section] == []
+
+
+# =============================================================================
+# CREATE REQUIREMENT TESTS
+# =============================================================================
+
+class TestCreateRequirement:
+    """Tests for POST /api/projects/{id}/requirements."""
+
+    def test_create_requirement_success(self, test_client: TestClient, test_db: Session) -> None:
+        """Test creating a new requirement manually."""
+        project_id = _create_project(test_client)
+
+        response = test_client.post(
+            f"/api/projects/{project_id}/requirements",
+            json={"section": "problems", "content": "New problem requirement"},
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["section"] == "problems"
+        assert data["content"] == "New problem requirement"
+        assert data["order"] == 1
+        assert data["sources"] == []
+        assert data["history_count"] == 1  # Creation is recorded in history
+
+    def test_create_requirement_records_history(self, test_client: TestClient, test_db: Session) -> None:
+        """Test that creating a requirement records the creation in history."""
+        project_id = _create_project(test_client)
+
+        response = test_client.post(
+            f"/api/projects/{project_id}/requirements",
+            json={"section": "user_goals", "content": "User goal content"},
+        )
+
+        req_id = response.json()["id"]
+
+        # Check history was recorded
+        history = test_db.query(RequirementHistory).filter(
+            RequirementHistory.requirement_id == req_id
+        ).all()
+        assert len(history) == 1
+        assert history[0].actor == Actor.user
+        assert history[0].action == Action.created
+        assert history[0].old_content is None
+        assert history[0].new_content == "User goal content"
+
+    def test_create_requirement_appends_to_section(self, test_client: TestClient, test_db: Session) -> None:
+        """Test that new requirements are appended at the end of their section."""
+        project_id = _create_project(test_client)
+
+        # Create first requirement in section
+        _create_requirement(test_db, project_id, Section.functional_requirements, "First", order=1)
+
+        # Create second via API
+        response = test_client.post(
+            f"/api/projects/{project_id}/requirements",
+            json={"section": "functional_requirements", "content": "Second"},
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["order"] == 2  # Should be appended
+
+    def test_create_requirement_different_section_starts_at_1(self, test_client: TestClient, test_db: Session) -> None:
+        """Test that new requirements in different section start at order 1."""
+        project_id = _create_project(test_client)
+
+        # Create requirement in problems section
+        _create_requirement(test_db, project_id, Section.problems, "Problem", order=5)
+
+        # Create requirement in different section (user_goals)
+        response = test_client.post(
+            f"/api/projects/{project_id}/requirements",
+            json={"section": "user_goals", "content": "Goal"},
+        )
+
+        assert response.status_code == 201
+        assert response.json()["order"] == 1
+
+    def test_create_requirement_all_sections(self, test_client: TestClient, test_db: Session) -> None:
+        """Test creating requirements in all 9 sections."""
+        project_id = _create_project(test_client)
+
+        sections = [
+            "problems",
+            "user_goals",
+            "functional_requirements",
+            "data_needs",
+            "constraints",
+            "non_goals",
+            "risks_assumptions",
+            "open_questions",
+            "action_items",
+        ]
+
+        for section in sections:
+            response = test_client.post(
+                f"/api/projects/{project_id}/requirements",
+                json={"section": section, "content": f"Content for {section}"},
+            )
+            assert response.status_code == 201, f"Failed to create requirement in {section}"
+            assert response.json()["section"] == section
+
+    def test_create_requirement_404_project_not_found(self, test_client: TestClient) -> None:
+        """Test creating requirement for non-existent project returns 404."""
+        fake_project_id = "00000000-0000-0000-0000-000000000000"
+
+        response = test_client.post(
+            f"/api/projects/{fake_project_id}/requirements",
+            json={"section": "problems", "content": "Test content"},
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Project not found"
+
+    def test_create_requirement_invalid_section(self, test_client: TestClient, test_db: Session) -> None:
+        """Test creating requirement with invalid section returns 422."""
+        project_id = _create_project(test_client)
+
+        response = test_client.post(
+            f"/api/projects/{project_id}/requirements",
+            json={"section": "invalid_section", "content": "Test content"},
+        )
+
+        assert response.status_code == 422
+
+    def test_create_requirement_missing_content(self, test_client: TestClient, test_db: Session) -> None:
+        """Test creating requirement without content returns 422."""
+        project_id = _create_project(test_client)
+
+        response = test_client.post(
+            f"/api/projects/{project_id}/requirements",
+            json={"section": "problems"},
+        )
+
+        assert response.status_code == 422
+
+    def test_create_requirement_missing_section(self, test_client: TestClient, test_db: Session) -> None:
+        """Test creating requirement without section returns 422."""
+        project_id = _create_project(test_client)
+
+        response = test_client.post(
+            f"/api/projects/{project_id}/requirements",
+            json={"content": "Test content"},
+        )
+
+        assert response.status_code == 422
+
+
+# =============================================================================
+# REQUIREMENTS STATUS TRANSITION TESTS
+# =============================================================================
+
+class TestRequirementsStatusTransitions:
+    """Tests for automatic requirements_status updates via API."""
+
+    def test_create_requirement_updates_status_to_has_items(self, test_client: TestClient, test_db: Session) -> None:
+        """Test that creating a requirement updates project status from empty to has_items."""
+        project_id = _create_project(test_client)
+
+        # Verify initial status is empty
+        project = test_db.query(Project).filter(Project.id == project_id).first()
+        assert project.requirements_status == RequirementsStatus.empty
+
+        # Create a requirement
+        test_client.post(
+            f"/api/projects/{project_id}/requirements",
+            json={"section": "problems", "content": "A problem"},
+        )
+
+        # Refresh and check status updated
+        test_db.refresh(project)
+        assert project.requirements_status == RequirementsStatus.has_items
+
+    def test_delete_last_requirement_updates_status_to_empty(self, test_client: TestClient, test_db: Session) -> None:
+        """Test that deleting the last requirement updates project status to empty."""
+        project_id = _create_project(test_client)
+
+        # Create a requirement directly
+        req_id = _create_requirement(test_db, project_id, Section.problems, "Only item")
+
+        # Set status to has_items to simulate normal flow
+        project = test_db.query(Project).filter(Project.id == project_id).first()
+        project.requirements_status = RequirementsStatus.has_items
+        test_db.commit()
+
+        # Delete the requirement
+        test_client.delete(f"/api/requirements/{req_id}")
+
+        # Refresh and check status is empty
+        test_db.refresh(project)
+        assert project.requirements_status == RequirementsStatus.empty
+
+    def test_delete_does_not_change_status_if_items_remain(self, test_client: TestClient, test_db: Session) -> None:
+        """Test that deleting a requirement keeps has_items status if other items exist."""
+        project_id = _create_project(test_client)
+
+        # Create two requirements
+        req1_id = _create_requirement(test_db, project_id, Section.problems, "First")
+        _create_requirement(test_db, project_id, Section.problems, "Second", order=2)
+
+        # Set status to has_items
+        project = test_db.query(Project).filter(Project.id == project_id).first()
+        project.requirements_status = RequirementsStatus.has_items
+        test_db.commit()
+
+        # Delete one requirement
+        test_client.delete(f"/api/requirements/{req1_id}")
+
+        # Status should remain has_items
+        test_db.refresh(project)
+        assert project.requirements_status == RequirementsStatus.has_items
+
+    def test_create_does_not_downgrade_reviewed_status(self, test_client: TestClient, test_db: Session) -> None:
+        """Test that creating a requirement does not downgrade reviewed status."""
+        project_id = _create_project(test_client)
+
+        # Create initial requirement and set to reviewed
+        _create_requirement(test_db, project_id, Section.problems, "Initial")
+        project = test_db.query(Project).filter(Project.id == project_id).first()
+        project.requirements_status = RequirementsStatus.reviewed
+        test_db.commit()
+
+        # Create another requirement via API
+        test_client.post(
+            f"/api/projects/{project_id}/requirements",
+            json={"section": "user_goals", "content": "New goal"},
+        )
+
+        # Status should remain reviewed
+        test_db.refresh(project)
+        assert project.requirements_status == RequirementsStatus.reviewed
+
+    def test_delete_reviewed_with_remaining_items_keeps_reviewed(self, test_client: TestClient, test_db: Session) -> None:
+        """Test that deleting a requirement from reviewed project keeps reviewed status if items remain."""
+        project_id = _create_project(test_client)
+
+        # Create two requirements
+        req1_id = _create_requirement(test_db, project_id, Section.problems, "First")
+        _create_requirement(test_db, project_id, Section.problems, "Second", order=2)
+
+        # Set status to reviewed
+        project = test_db.query(Project).filter(Project.id == project_id).first()
+        project.requirements_status = RequirementsStatus.reviewed
+        test_db.commit()
+
+        # Delete one requirement
+        test_client.delete(f"/api/requirements/{req1_id}")
+
+        # Status should remain reviewed
+        test_db.refresh(project)
+        assert project.requirements_status == RequirementsStatus.reviewed
 
 
 # =============================================================================
