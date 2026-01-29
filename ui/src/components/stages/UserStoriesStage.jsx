@@ -452,6 +452,42 @@ function UserStoriesStage({ project, onProjectUpdate }) {
     }
   };
 
+  // Handle retry from error state
+  const handleRetry = () => {
+    retryGeneration();
+    setIsGenerating(true);
+  };
+
+  // Handle cancel from error state
+  const handleCancelError = () => {
+    // Reset state to allow user to try a different approach
+    setIsGenerating(false);
+  };
+
+  // Show error state if generation failed (after isGenerating is false)
+  if (streamStatus === 'error' && !isGenerating) {
+    return (
+      <div className="stage-content stage-content--stories">
+        <div className="stories-error">
+          <div className="stories-error__icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="2"/>
+              <path d="M24 14v12M24 30v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h3 className="stories-error__title">Generation Failed</h3>
+          <p className="stories-error__message">{streamError || 'An error occurred while generating user stories.'}</p>
+          <div className="stories-error__actions">
+            <button onClick={handleRetry}>Try Again</button>
+            <button className="secondary" onClick={handleCancelError}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show generation progress when generating
   if (isGenerating) {
     return (
@@ -465,7 +501,7 @@ function UserStoriesStage({ project, onProjectUpdate }) {
                 : 'Starting generation...'}
             </span>
           </div>
-          
+
           {/* Show streamed stories as they come in */}
           {streamedStories.length > 0 && (
             <div className="stories-stage__generating-preview">
@@ -481,7 +517,7 @@ function UserStoriesStage({ project, onProjectUpdate }) {
           {streamError && (
             <div className="stories-stage__generating-error">
               <p>{streamError}</p>
-              <button onClick={retryGeneration}>Try Again</button>
+              <button onClick={handleRetry}>Try Again</button>
             </div>
           )}
         </div>
