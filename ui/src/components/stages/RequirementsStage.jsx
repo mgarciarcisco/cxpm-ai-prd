@@ -6,6 +6,8 @@ import { StageActions } from '../stage/StageActions';
 import { StageLoader } from './StageLoader';
 import AddMeetingModal from '../requirements/AddMeetingModal';
 import AddManuallyModal from '../requirements/AddManuallyModal';
+import MeetingsPanel from '../requirements/MeetingsPanel';
+import ViewMeetingModal from '../requirements/ViewMeetingModal';
 import RequirementSection, { SECTION_ORDER } from '../requirements/RequirementSection';
 import { get, put, patch, del } from '../../services/api';
 import './StageContent.css';
@@ -43,6 +45,8 @@ function getStatusLabel(status) {
 function RequirementsStage({ project, onProjectUpdate }) {
   const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
   const [showAddManuallyModal, setShowAddManuallyModal] = useState(false);
+  const [showViewMeetingModal, setShowViewMeetingModal] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [addToSection, setAddToSection] = useState(null);
   const [requirements, setRequirements] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -50,6 +54,7 @@ function RequirementsStage({ project, onProjectUpdate }) {
   const [markingAsReviewed, setMarkingAsReviewed] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, item: null });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [meetingsPanelKey, setMeetingsPanelKey] = useState(0); // For refreshing meetings panel
 
   // Check if there are any requirements (requirements_status !== 'empty')
   const hasRequirements = project?.requirements_status && project.requirements_status !== 'empty';
@@ -118,12 +123,22 @@ function RequirementsStage({ project, onProjectUpdate }) {
   const handleSaveRequirements = (savedCount) => {
     console.log('Requirements saved:', savedCount);
     setShowAddMeetingModal(false);
+    setShowViewMeetingModal(false);
+    setSelectedMeeting(null);
     // Refresh requirements list
     fetchRequirements();
+    // Refresh meetings panel
+    setMeetingsPanelKey(prev => prev + 1);
     // Notify parent to refresh project data (status may have changed from empty to has_items)
     if (onProjectUpdate) {
       onProjectUpdate();
     }
+  };
+
+  // Handle View Meeting - opens modal to view/apply extracted items
+  const handleViewMeeting = (meeting) => {
+    setSelectedMeeting(meeting);
+    setShowViewMeetingModal(true);
   };
 
   // Handle Add Manually button click (from empty state or header)
@@ -283,6 +298,13 @@ function RequirementsStage({ project, onProjectUpdate }) {
   if (!hasRequirements) {
     return (
       <div className="stage-content stage-content--requirements">
+        {/* Show meetings panel even when no requirements */}
+        <MeetingsPanel
+          key={meetingsPanelKey}
+          projectId={project?.id}
+          onViewMeeting={handleViewMeeting}
+        />
+
         <EmptyState
           icon={requirementsIcon}
           title="No requirements yet"
@@ -304,6 +326,17 @@ function RequirementsStage({ project, onProjectUpdate }) {
             projectId={project?.id}
             onClose={() => setShowAddManuallyModal(false)}
             onAdd={handleRequirementAdded}
+          />
+        )}
+        {showViewMeetingModal && selectedMeeting && (
+          <ViewMeetingModal
+            meeting={selectedMeeting}
+            projectId={project?.id}
+            onClose={() => {
+              setShowViewMeetingModal(false);
+              setSelectedMeeting(null);
+            }}
+            onSave={handleSaveRequirements}
           />
         )}
       </div>
@@ -363,6 +396,13 @@ function RequirementsStage({ project, onProjectUpdate }) {
         }
       />
 
+      {/* Meetings Panel */}
+      <MeetingsPanel
+        key={meetingsPanelKey}
+        projectId={project?.id}
+        onViewMeeting={handleViewMeeting}
+      />
+
       {/* Requirements Sections */}
       <div className="requirements-stage__sections">
         {SECTION_ORDER.map((section) => (
@@ -395,6 +435,17 @@ function RequirementsStage({ project, onProjectUpdate }) {
             setAddToSection(null);
           }}
           onAdd={handleRequirementAdded}
+        />
+      )}
+      {showViewMeetingModal && selectedMeeting && (
+        <ViewMeetingModal
+          meeting={selectedMeeting}
+          projectId={project?.id}
+          onClose={() => {
+            setShowViewMeetingModal(false);
+            setSelectedMeeting(null);
+          }}
+          onSave={handleSaveRequirements}
         />
       )}
 
