@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     CIRCUIT_BASE_URL: str = "https://chat-ai.cisco.com/openai/deployments/{model}/chat/completions"
     CIRCUIT_MODEL: str = "gpt-4.1"
 
+
+    # JIRA Configuration
+    JIRA_BASE_URL: str = "https://cisco-cxe.atlassian.net/"
+    JIRA_API_KEY: str  # Required - set in .env file
+    JIRA_USER: str  # Required - set in .env file
+    
+
     # Ollama LLM settings
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.2"
