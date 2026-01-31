@@ -106,12 +106,12 @@ def _create_test_story(
     )
     db.add(story)
     db.commit()
-    
+
     # Set deleted_at after commit if needed
     if deleted_at:
         story.deleted_at = deleted_at
         db.commit()
-    
+
     db.refresh(story)
     return story
 
@@ -260,7 +260,7 @@ def test_generate_stories_classic_format(test_db: Session) -> None:
 
     # Verify stories were created correctly
     assert len(stories) == 3
-    
+
     # Verify first story
     assert stories[0].title == "User Authentication"
     assert stories[0].format == StoryFormat.CLASSIC
@@ -270,11 +270,11 @@ def test_generate_stories_classic_format(test_db: Session) -> None:
     assert stories[0].size == StorySize.M
     assert "auth" in stories[0].labels
     assert len(stories[0].acceptance_criteria) == 3
-    
+
     # Verify story numbers increment
     assert stories[1].story_number == 2
     assert stories[2].story_number == 3
-    
+
     # Verify order field is set
     assert stories[0].order == 0
     assert stories[1].order == 1
@@ -335,17 +335,17 @@ def test_generate_stories_job_format(test_db: Session) -> None:
 
     # Verify stories were created correctly
     assert len(stories) == 2
-    
+
     # Verify first story
     assert stories[0].title == "Quick Data Export"
     assert stories[0].format == StoryFormat.JOB_STORY
     assert stories[0].status == StoryStatus.DRAFT
     assert stories[0].created_by == "product_owner"
     assert stories[0].size == StorySize.S
-    
+
     # Verify job story description format (When... I want... so I can...)
     assert "When" in stories[0].description or "when" in stories[0].description
-    
+
     # Verify second story
     assert stories[1].title == "Real-time Dashboard Updates"
     assert stories[1].size == StorySize.L
@@ -389,7 +389,7 @@ def test_story_number_never_reused(test_db: Session) -> None:
     batch1 = _create_test_batch(test_db, project_id, StoryFormat.CLASSIC, StoryBatchStatus.READY)
     _create_test_story(test_db, project_id, _get_batch_id(batch1), story_number=1)
     _create_test_story(test_db, project_id, _get_batch_id(batch1), story_number=2)
-    _create_test_story(test_db, project_id, _get_batch_id(batch1), story_number=3, 
+    _create_test_story(test_db, project_id, _get_batch_id(batch1), story_number=3,
                        deleted_at=datetime.utcnow())  # This story is deleted
 
     # Create a new batch for generation
@@ -426,9 +426,9 @@ def test_story_number_continues_after_deletion(test_db: Session) -> None:
 
     # Create existing stories that are ALL deleted
     batch1 = _create_test_batch(test_db, project_id, StoryFormat.CLASSIC, StoryBatchStatus.READY)
-    _create_test_story(test_db, project_id, _get_batch_id(batch1), story_number=1, 
+    _create_test_story(test_db, project_id, _get_batch_id(batch1), story_number=1,
                        deleted_at=datetime.utcnow())
-    _create_test_story(test_db, project_id, _get_batch_id(batch1), story_number=2, 
+    _create_test_story(test_db, project_id, _get_batch_id(batch1), story_number=2,
                        deleted_at=datetime.utcnow())
 
     # Create a new batch for generation
@@ -501,7 +501,7 @@ def test_story_number_with_concurrency(test_db: Session) -> None:
 
     # Verify no duplicate numbers exist
     all_story_numbers = [
-        s.story_number 
+        s.story_number
         for s in test_db.query(UserStory).filter(UserStory.project_id == project_id).all()
     ]
     assert len(all_story_numbers) == len(set(all_story_numbers))  # All unique
@@ -570,7 +570,7 @@ def test_reserve_story_numbers_includes_deleted_stories(test_db: Session) -> Non
     # Create some stories, with the highest one deleted
     batch = _create_test_batch(test_db, project_id, StoryFormat.CLASSIC, StoryBatchStatus.READY)
     _create_test_story(test_db, project_id, _get_batch_id(batch), story_number=1)
-    _create_test_story(test_db, project_id, _get_batch_id(batch), story_number=2, 
+    _create_test_story(test_db, project_id, _get_batch_id(batch), story_number=2,
                        deleted_at=datetime.utcnow())
 
     generator = StoriesGenerator(test_db)
@@ -740,8 +740,8 @@ def test_section_filter(test_db: Session) -> None:
 
     # Create batch with section filter for only 'problems'
     batch = _create_test_batch(
-        test_db, 
-        project_id, 
+        test_db,
+        project_id,
         StoryFormat.CLASSIC,
         section_filter=["problems"]
     )
@@ -777,8 +777,8 @@ def test_section_filter_multiple_sections(test_db: Session) -> None:
 
     # Create batch with section filter for problems and user_goals
     batch = _create_test_batch(
-        test_db, 
-        project_id, 
+        test_db,
+        project_id,
         StoryFormat.CLASSIC,
         section_filter=["problems", "user_goals"]
     )
@@ -812,8 +812,8 @@ def test_section_filter_empty_result_raises_error(test_db: Session) -> None:
 
     # Create batch with section filter that matches nothing
     batch = _create_test_batch(
-        test_db, 
-        project_id, 
+        test_db,
+        project_id,
         StoryFormat.CLASSIC,
         section_filter=["constraints"]  # No requirements in this section
     )
@@ -836,8 +836,8 @@ def test_section_filter_none_uses_all_sections(test_db: Session) -> None:
 
     # Create batch with no section filter
     batch = _create_test_batch(
-        test_db, 
-        project_id, 
+        test_db,
+        project_id,
         StoryFormat.CLASSIC,
         section_filter=None
     )
@@ -1322,14 +1322,14 @@ def test_stories_isolated_between_projects(test_db: Session) -> None:
 
     # Generate stories for project 1
     batch1 = _create_test_batch(test_db, _get_project_id(project1), StoryFormat.CLASSIC)
-    
+
     with patch("app.services.stories_generator.get_provider", return_value=mock_provider):
         generator = StoriesGenerator(test_db)
         stories1 = generator.generate(batch1)
 
     # Generate stories for project 2
     batch2 = _create_test_batch(test_db, _get_project_id(project2), StoryFormat.CLASSIC)
-    
+
     with patch("app.services.stories_generator.get_provider", return_value=mock_provider):
         generator = StoriesGenerator(test_db)
         stories2 = generator.generate(batch2)

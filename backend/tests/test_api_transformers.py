@@ -18,8 +18,8 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.models import (
-    MeetingRecap,
     PRD,
+    MeetingRecap,
     Project,
     Requirement,
     RequirementHistory,
@@ -57,7 +57,6 @@ from app.schemas import (
     StoryBatchStatusResponse,
     UserStoryResponse,
 )
-
 
 # =============================================================================
 # Helper Functions

@@ -2,7 +2,6 @@
 
 import json
 from collections.abc import AsyncIterator
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 

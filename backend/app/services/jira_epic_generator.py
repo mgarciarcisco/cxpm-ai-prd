@@ -4,7 +4,6 @@ from pathlib import Path
 
 from app.services.llm.circuit import CircuitProvider
 
-
 # Path to the JIRA Epic prompt template
 PROMPTS_PATH = Path(__file__).parent.parent.parent / "prompts"
 JIRA_EPIC_PROMPT_PATH = PROMPTS_PATH / "jira_epic.txt"

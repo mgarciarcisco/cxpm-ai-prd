@@ -23,11 +23,10 @@ from app.models.prd import PRDMode, PRDStatus
 from app.models.story_batch import StoryBatchStatus
 from app.models.user_story import StoryFormat, StorySize, StoryStatus
 from app.schemas import (
-    PRDExportJSON,
     STORIES_CSV_COLUMNS,
+    PRDExportJSON,
     StoriesExportJSON,
 )
-
 
 # =============================================================================
 # Helper Functions
@@ -182,7 +181,7 @@ def test_prd_export_json_matches_schema(test_client: TestClient, test_db: Sessio
     """
     project = _create_test_project(test_db, name="Schema Test Project")
     project_id = _get_project_id(project)
-    
+
     prd = _create_test_prd(
         test_db, project_id,
         title="Schema Conformance Test",
@@ -193,32 +192,32 @@ def test_prd_export_json_matches_schema(test_client: TestClient, test_db: Sessio
         ],
     )
     prd_id = cast(str, prd.id)
-    
+
     response = test_client.get(f"/api/prds/{prd_id}/export?format=json")
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Validate against the schema - raises ValidationError if non-conformant
     export_model = PRDExportJSON.model_validate(data)
-    
+
     # Verify field types and values
     assert isinstance(export_model.title, str)
     assert export_model.title == "Schema Conformance Test"
-    
+
     assert isinstance(export_model.version, int)
     assert export_model.version == 1
-    
+
     assert isinstance(export_model.mode, str)
     assert export_model.mode in ("draft", "detailed")
     assert export_model.mode == "detailed"
-    
+
     assert isinstance(export_model.sections, list)
     assert len(export_model.sections) == 2
     for section in export_model.sections:
         assert isinstance(section.title, str)
         assert isinstance(section.content, str)
-    
+
     # Timestamps should be ISO 8601 format strings
     assert export_model.created_at is None or isinstance(export_model.created_at, str)
     assert export_model.updated_at is None or isinstance(export_model.updated_at, str)
@@ -228,13 +227,13 @@ def test_prd_export_json_has_required_fields(test_client: TestClient, test_db: S
     """Test that PRD JSON export contains all required fields."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
-    
+
     prd = _create_test_prd(test_db, project_id, mode=PRDMode.DRAFT)
     prd_id = cast(str, prd.id)
-    
+
     response = test_client.get(f"/api/prds/{prd_id}/export?format=json")
     data = response.json()
-    
+
     # Required fields per PRDExportJSON schema
     required_fields = {"title", "version", "mode", "sections", "created_at", "updated_at"}
     assert required_fields <= set(data.keys()), f"Missing fields: {required_fields - set(data.keys())}"
@@ -244,7 +243,7 @@ def test_prd_export_json_sections_structure(test_client: TestClient, test_db: Se
     """Test that PRD sections have correct structure per PRDExportSection schema."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
-    
+
     prd = _create_test_prd(
         test_db, project_id,
         sections=[
@@ -253,10 +252,10 @@ def test_prd_export_json_sections_structure(test_client: TestClient, test_db: Se
         ],
     )
     prd_id = cast(str, prd.id)
-    
+
     response = test_client.get(f"/api/prds/{prd_id}/export?format=json")
     data = response.json()
-    
+
     sections = data["sections"]
     for section in sections:
         # Each section must have exactly title and content
@@ -290,10 +289,10 @@ def test_stories_export_json_matches_schema(test_client: TestClient, test_db: Se
     """
     project = _create_test_project(test_db, name="Stories Schema Test")
     project_id = _get_project_id(project)
-    
+
     batch = _create_test_batch(test_db, project_id)
     batch_id = cast(str, batch.id)
-    
+
     # Create multiple stories to test array structure
     _create_test_story(
         test_db, project_id, batch_id,
@@ -313,22 +312,22 @@ def test_stories_export_json_matches_schema(test_client: TestClient, test_db: Se
         size=StorySize.L,
         labels=["admin"],
     )
-    
+
     # Update batch story_count
     batch.story_count = 2
     test_db.commit()
-    
+
     response = test_client.get(f"/api/projects/{project_id}/stories/export?format=json")
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Validate against the schema
     export_model = StoriesExportJSON.model_validate(data)
-    
+
     assert isinstance(export_model.stories, list)
     assert len(export_model.stories) == 2
-    
+
     # Verify first story structure
     story1 = export_model.stories[0]
     assert story1.story_id == "US-001"
@@ -346,20 +345,20 @@ def test_stories_export_json_has_required_fields(test_client: TestClient, test_d
     """Test that Stories JSON export contains all required fields per story."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
-    
+
     batch = _create_test_batch(test_db, project_id)
     batch_id = cast(str, batch.id)
-    
+
     _create_test_story(test_db, project_id, batch_id)
     batch.story_count = 1
     test_db.commit()
-    
+
     response = test_client.get(f"/api/projects/{project_id}/stories/export?format=json")
     data = response.json()
-    
+
     assert "stories" in data
     story = data["stories"][0]
-    
+
     # Required fields per StoryExportItem schema
     required_fields = {
         "story_id", "story_number", "title", "description",
@@ -389,23 +388,23 @@ def test_stories_export_csv_has_correct_columns(test_client: TestClient, test_db
     """
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
-    
+
     batch = _create_test_batch(test_db, project_id)
     batch_id = cast(str, batch.id)
-    
+
     _create_test_story(test_db, project_id, batch_id)
     batch.story_count = 1
     test_db.commit()
-    
+
     response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
-    
+
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
-    
+
     content = response.content.decode()
     reader = csv.reader(io.StringIO(content))
     headers = next(reader)
-    
+
     # Verify headers match documented schema
     assert headers == STORIES_CSV_COLUMNS
 
@@ -414,27 +413,27 @@ def test_stories_export_csv_acceptance_criteria_format(test_client: TestClient, 
     """Test that acceptance criteria in CSV are pipe-separated as documented."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
-    
+
     batch = _create_test_batch(test_db, project_id)
     batch_id = cast(str, batch.id)
-    
+
     _create_test_story(
         test_db, project_id, batch_id,
         acceptance_criteria=["First criterion", "Second criterion", "Third criterion"],
     )
     batch.story_count = 1
     test_db.commit()
-    
+
     response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
-    
+
     content = response.content.decode()
     reader = csv.reader(io.StringIO(content))
     next(reader)  # Skip header
     row = next(reader)
-    
+
     # Acceptance Criteria is column index 3 (0-indexed)
     ac_column = row[3]
-    
+
     # Should be pipe-separated
     assert " | " in ac_column
     assert ac_column == "First criterion | Second criterion | Third criterion"
@@ -444,27 +443,27 @@ def test_stories_export_csv_labels_format(test_client: TestClient, test_db: Sess
     """Test that labels in CSV are comma-separated as documented."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
-    
+
     batch = _create_test_batch(test_db, project_id)
     batch_id = cast(str, batch.id)
-    
+
     _create_test_story(
         test_db, project_id, batch_id,
         labels=["feature", "backend", "api"],
     )
     batch.story_count = 1
     test_db.commit()
-    
+
     response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
-    
+
     content = response.content.decode()
     reader = csv.reader(io.StringIO(content))
     next(reader)  # Skip header
     row = next(reader)
-    
+
     # Labels is column index 5 (0-indexed)
     labels_column = row[5]
-    
+
     # Should be comma-separated
     assert labels_column == "feature, backend, api"
 
@@ -473,21 +472,21 @@ def test_stories_export_csv_size_uppercase(test_client: TestClient, test_db: Ses
     """Test that size in CSV is uppercase as documented."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
-    
+
     batch = _create_test_batch(test_db, project_id)
     batch_id = cast(str, batch.id)
-    
+
     _create_test_story(test_db, project_id, batch_id, size=StorySize.XL)
     batch.story_count = 1
     test_db.commit()
-    
+
     response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
-    
+
     content = response.content.decode()
     reader = csv.reader(io.StringIO(content))
     next(reader)  # Skip header
     row = next(reader)
-    
+
     # Size is column index 4 (0-indexed)
     size_column = row[4]
     assert size_column == "XL"
@@ -497,10 +496,10 @@ def test_stories_export_csv_column_order(test_client: TestClient, test_db: Sessi
     """Test that CSV columns are in the documented order."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
-    
+
     batch = _create_test_batch(test_db, project_id)
     batch_id = cast(str, batch.id)
-    
+
     _create_test_story(
         test_db, project_id, batch_id,
         story_number=42,
@@ -514,14 +513,14 @@ def test_stories_export_csv_column_order(test_client: TestClient, test_db: Sessi
     )
     batch.story_count = 1
     test_db.commit()
-    
+
     response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
-    
+
     content = response.content.decode()
     reader = csv.reader(io.StringIO(content))
     next(reader)  # Skip header
     row = next(reader)
-    
+
     # Verify column values are in correct positions
     assert row[0] == "US-042"  # Story ID
     assert row[1] == "Test Story Title"  # Title
