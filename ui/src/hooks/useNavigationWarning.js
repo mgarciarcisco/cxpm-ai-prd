@@ -8,7 +8,7 @@ import { useBlocker } from 'react-router-dom';
  * @param {object} options
  * @param {boolean} options.hasUnsavedChanges - Whether there are unsaved changes
  * @param {string} [options.message] - Custom warning message for in-app dialog
- * @returns {object} - { showDialog, confirmNavigation, cancelNavigation, pendingLocation }
+ * @returns {object} - { showDialog, confirmNavigation, cancelNavigation, pendingLocation, markSaved }
  */
 export function useNavigationWarning({
   hasUnsavedChanges,
@@ -17,11 +17,21 @@ export function useNavigationWarning({
   const [showDialog, setShowDialog] = useState(false);
   const [pendingLocation, setPendingLocation] = useState(null);
   const blockerRef = useRef(null);
+  
+  // Ref to allow synchronous bypass of navigation blocking
+  // This is needed because React state updates are async, but navigation happens immediately
+  const savedRef = useRef(false);
+
+  // Function to mark data as saved synchronously (bypasses blocker)
+  const markSaved = useCallback(() => {
+    savedRef.current = true;
+  }, []);
 
   // Use react-router's useBlocker for in-app navigation
+  // Check both the prop AND the ref to allow synchronous bypass
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
+      hasUnsavedChanges && !savedRef.current && currentLocation.pathname !== nextLocation.pathname
   );
 
   // Store blocker ref for access in callbacks
@@ -77,6 +87,7 @@ export function useNavigationWarning({
     cancelNavigation,
     pendingLocation,
     message,
+    markSaved,
   };
 }
 

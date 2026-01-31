@@ -1,9 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
 import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
 import { useNavigationWarning } from '../hooks/useNavigationWarning';
 import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
+
+// Time threshold for auto-restore without prompt (5 minutes)
+const AUTO_RESTORE_THRESHOLD_MS = 5 * 60 * 1000;
 import MeetingCard from '../components/requirements/MeetingCard';
 import QuickConvertAddMeetingModal from '../components/requirements/QuickConvertAddMeetingModal';
 import ResultsSidebar from '../components/requirements/ResultsSidebar';
@@ -44,6 +47,11 @@ const SECTION_ORDER = [
  */
 function QuickConvertRequirementsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Session restore modal state
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [pendingRestoreData, setPendingRestoreData] = useState(null);
 
   // Meeting management state
   const [meetings, setMeetings] = useState([]);
@@ -79,14 +87,49 @@ function QuickConvertRequirementsPage() {
     showDialog: showNavWarning,
     confirmNavigation,
     cancelNavigation,
+    markSaved,
   } = useNavigationWarning({
     hasUnsavedChanges: hasUnsavedWork,
     message: 'You have unsaved requirements. Are you sure you want to leave?',
   });
 
-  // Restore data from session storage on mount
+  // Handle session restoration on mount
   useEffect(() => {
+    const isNewSession = searchParams.get('new') === '1';
+    
+    // If ?new=1, clear session and remove the param from URL
+    if (isNewSession) {
+      clearSession(STORAGE_KEYS.REQUIREMENTS);
+      // Remove the ?new=1 param from URL without triggering navigation
+      searchParams.delete('new');
+      setSearchParams(searchParams, { replace: true });
+      return;
+    }
+    
+    // Check for existing session data
     const stored = loadFromSession(STORAGE_KEYS.REQUIREMENTS);
+    if (!stored?.data?.extractedItems && !stored?.data?.meetings?.length) {
+      // No stored data, nothing to restore
+      return;
+    }
+    
+    // Check if the data is recent (within threshold) - auto-restore without prompt
+    const savedAt = stored.savedAt ? new Date(stored.savedAt).getTime() : 0;
+    const now = Date.now();
+    const isRecent = (now - savedAt) < AUTO_RESTORE_THRESHOLD_MS;
+    
+    if (isRecent) {
+      // Auto-restore recent work (likely a refresh)
+      restoreSessionData(stored);
+    } else {
+      // Show restore modal for older data
+      setPendingRestoreData(stored);
+      setShowRestoreModal(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Helper function to restore session data
+  const restoreSessionData = (stored) => {
     if (stored?.data?.extractedItems) {
       setExtractedItems(stored.data.extractedItems);
       setRestoredFromSession(true);
@@ -104,7 +147,23 @@ function QuickConvertRequirementsPage() {
     if (stored?.data?.meetings) {
       setMeetings(stored.data.meetings);
     }
-  }, []);
+  };
+  
+  // Handle restore modal actions
+  const handleRestoreConfirm = () => {
+    if (pendingRestoreData) {
+      restoreSessionData(pendingRestoreData);
+    }
+    setShowRestoreModal(false);
+    setPendingRestoreData(null);
+  };
+  
+  const handleRestoreCancel = () => {
+    // Clear the old session data and start fresh
+    clearSession(STORAGE_KEYS.REQUIREMENTS);
+    setShowRestoreModal(false);
+    setPendingRestoreData(null);
+  };
 
   // Save to session storage when state changes
   useEffect(() => {
@@ -150,11 +209,10 @@ function QuickConvertRequirementsPage() {
     ));
   };
 
-  // Simulated extraction - in production this would call the backend API
-  const simulateExtraction = useCallback(async (meetingsList) => {
-    // Simulate API latency
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
+  // Extract requirements using the backend LLM API
+  const extractWithBackend = useCallback(async (meetingsList) => {
+    const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
+    
     const items = {};
     SECTION_ORDER.forEach(section => {
       items[section] = [];
@@ -162,67 +220,55 @@ function QuickConvertRequirementsPage() {
 
     let idCounter = 1;
 
-    // Process each meeting
-    meetingsList.forEach(meeting => {
-      const text = `${meeting.transcript || ''}\n${meeting.notes || ''}`;
-      const lines = text.split('\n').filter(line => line.trim());
+    // Process each meeting through the backend API
+    for (const meeting of meetingsList) {
+      const text = `${meeting.transcript || ''}\n${meeting.notes || ''}`.trim();
+      if (!text) continue;
 
-      lines.forEach(line => {
-        const trimmedLine = line.trim();
-        if (trimmedLine.length < 10) return;
-
-        // Remove common list markers
-        const cleanedLine = trimmedLine
-          .replace(/^[-*•]\s*/, '')
-          .replace(/^\d+[.)]\s*/, '')
-          .trim();
-
-        if (!cleanedLine) return;
-
-        const lowerLine = cleanedLine.toLowerCase();
-        let section = 'functional_requirements';
-
-        // Categorize based on keywords
-        if (lowerLine.includes('problem') || lowerLine.includes('issue') || lowerLine.includes('pain point') || lowerLine.includes('challenge')) {
-          section = 'problems';
-        } else if (lowerLine.includes('goal') || lowerLine.includes('want') || lowerLine.includes('need to') || lowerLine.includes('user should')) {
-          section = 'user_goals';
-        } else if (lowerLine.includes('performance') || lowerLine.includes('scalab') || lowerLine.includes('security') || lowerLine.includes('reliab')) {
-          section = 'non_functional_requirements';
-        } else if (lowerLine.includes('api') || lowerLine.includes('database') || lowerLine.includes('architect') || lowerLine.includes('technical')) {
-          section = 'technical';
-        } else if (lowerLine.includes('business') || lowerLine.includes('revenue') || lowerLine.includes('cost') || lowerLine.includes('roi')) {
-          section = 'business';
-        } else if (lowerLine.includes('data') || lowerLine.includes('store') || lowerLine.includes('field')) {
-          section = 'data_needs';
-        } else if (lowerLine.includes('constraint') || lowerLine.includes('must not') || lowerLine.includes('limitation')) {
-          section = 'constraints';
-        } else if (lowerLine.includes('risk') || lowerLine.includes('assume') || lowerLine.includes('assumption')) {
-          section = 'risks_assumptions';
-        } else if (lowerLine.includes('question') || lowerLine.includes('unclear') || lowerLine.includes('?') || lowerLine.includes('tbd')) {
-          section = 'open_questions';
-        }
-
-        items[section].push({
-          id: `item-${idCounter++}`,
-          content: cleanedLine,
-          selected: true,
-          sourceId: meeting.id,
-          sourceName: meeting.name,
-          sourceQuote: `"...${trimmedLine.substring(0, 100)}${trimmedLine.length > 100 ? '...' : ''}"`,
-        });
+      // Call the quick extract endpoint
+      const response = await fetch(`${BASE_URL}/api/meetings/quick-extract`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
       });
-    });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Extraction failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Process extracted items from API response
+      if (data.items && Array.isArray(data.items)) {
+        data.items.forEach(item => {
+          const section = item.section || 'functional_requirements';
+          if (!items[section]) {
+            items[section] = [];
+          }
+          items[section].push({
+            id: `item-${idCounter++}`,
+            content: item.content,
+            selected: true,
+            sourceId: meeting.id,
+            sourceName: meeting.name,
+            sourceQuote: item.source_quote ? `"...${item.source_quote.substring(0, 100)}..."` : null,
+          });
+        });
+      }
+    }
 
     // Filter out empty sections
     const filteredItems = {};
     SECTION_ORDER.forEach(section => {
-      if (items[section].length > 0) {
+      if (items[section] && items[section].length > 0) {
         filteredItems[section] = items[section];
       }
     });
 
-    // If nothing was extracted, create a sample item
+    // If nothing was extracted, show a message
     if (Object.keys(filteredItems).length === 0) {
       filteredItems.functional_requirements = [{
         id: 'item-1',
@@ -245,7 +291,7 @@ function QuickConvertRequirementsPage() {
     setExtractedItems(null);
 
     try {
-      const items = await simulateExtraction(meetings);
+      const items = await extractWithBackend(meetings);
       setExtractedItems(items);
       setActiveCategory('all');
     } catch (error) {
@@ -441,6 +487,8 @@ function QuickConvertRequirementsPage() {
       })
       .join('\n\n');
 
+    // Mark saved synchronously to bypass navigation blocker
+    markSaved();
     setDataSaved(true);
 
     navigate('/quick-convert/stories', {
@@ -713,12 +761,29 @@ function QuickConvertRequirementsPage() {
         <SaveToProjectModal
           onClose={() => {
             setShowSaveModal(false);
+          }}
+          onSaved={() => {
+            // Mark data as saved SYNCHRONOUSLY before navigation happens
+            // This bypasses the navigation blocker immediately
+            markSaved();
             setDataSaved(true);
+            setShowSaveModal(false);
           }}
           dataType="requirements"
           data={getSelectedItems()}
         />
       )}
+
+      {/* Restore Previous Session Dialog */}
+      <ConfirmationDialog
+        isOpen={showRestoreModal}
+        onClose={handleRestoreCancel}
+        onConfirm={handleRestoreConfirm}
+        title="Continue previous work?"
+        message="You have requirements from a previous session. Would you like to continue where you left off, or start fresh?"
+        confirmLabel="Continue"
+        cancelLabel="Start Fresh"
+      />
 
       {/* Navigation Warning Dialog */}
       <ConfirmationDialog
