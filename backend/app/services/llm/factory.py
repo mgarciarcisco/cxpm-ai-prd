@@ -4,8 +4,21 @@ import httpx
 
 from app.config import settings
 from app.services.llm.base import LLMError, LLMProvider
-from app.services.llm.claude import ClaudeProvider
+from app.services.llm.circuit import CircuitProvider
 from app.services.llm.ollama import OllamaProvider
+
+
+def _is_circuit_available() -> bool:
+    """Check if Circuit credentials are configured in settings.
+
+    Returns:
+        True if Circuit credentials are configured, False otherwise.
+    """
+    return bool(
+        settings.CIRCUIT_CLIENT_ID
+        and settings.CIRCUIT_CLIENT_SECRET
+        and settings.CIRCUIT_APP_KEY
+    )
 
 
 def _is_ollama_available() -> bool:
@@ -27,27 +40,26 @@ def _is_ollama_available() -> bool:
 def get_provider() -> LLMProvider:
     """Get an LLM provider with automatic fallback.
 
-    Tries Ollama first, then falls back to Claude if Ollama is unavailable.
+    Tries Circuit first, then falls back to Ollama if Circuit is unavailable.
 
     Returns:
-        An LLMProvider instance (either OllamaProvider or ClaudeProvider).
+        An LLMProvider instance (either CircuitProvider or OllamaProvider).
 
     Raises:
-        LLMError: If neither Ollama nor Claude is available.
+        LLMError: If neither Circuit nor Ollama is available.
     """
-    # Try Ollama first
+    # Try Circuit first (Cisco's AI platform)
+    if _is_circuit_available():
+        try:
+            return CircuitProvider()
+        except Exception:
+            pass
+
+    # Fall back to Ollama if Circuit is unavailable
     if _is_ollama_available():
         return OllamaProvider()
 
-    # Fall back to Claude if Ollama is unavailable
-    if settings.ANTHROPIC_API_KEY:
-        try:
-            return ClaudeProvider()
-        except LLMError:
-            # ClaudeProvider raises LLMError if API key is invalid
-            pass
-
     # Neither provider is available
     raise LLMError(
-        "No LLM available. Please start Ollama or configure Claude API key."
+        "No LLM available. Please configure Circuit credentials or start Ollama."
     )

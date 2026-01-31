@@ -235,7 +235,7 @@ cxpm-ai-prd/
 │   │       └── llm/                # LLM providers
 │   │           ├── base.py         # Abstract LLMProvider
 │   │           ├── ollama.py       # Ollama provider
-│   │           ├── claude.py       # Claude provider
+│   │           ├── circuit.py      # Circuit (Cisco AI) provider
 │   │           └── factory.py      # Provider factory with fallback
 │   ├── prompts/                    # LLM prompt templates
 │   │   └── extract_meeting_v1.txt  # Extraction prompt
@@ -318,7 +318,7 @@ docker exec -it cxpm-ai-prd-app /bin/bash
 
 - **Backend:** FastAPI (Python 3)
 - **Database:** SQLite (SQLAlchemy ORM, Alembic migrations)
-- **LLM:** Ollama (local) / Claude (cloud fallback)
+- **LLM:** Circuit (Cisco AI) / Ollama (local fallback)
 - **Frontend:** React 18.3.1
 - **Build Tool:** Vite 6.0.5
 - **Testing:** pytest (backend), Vitest (frontend)
@@ -499,14 +499,15 @@ npm test
 
 The extraction feature supports two LLM providers with automatic fallback:
 
-1. **Ollama (Local)** - Default, runs locally
+1. **Circuit (Cisco AI)** - Primary provider
+   - Set `CIRCUIT_CLIENT_ID`, `CIRCUIT_CLIENT_SECRET`, `CIRCUIT_APP_KEY` in `.env`
+   - Optionally set `CIRCUIT_BASE_URL` and `CIRCUIT_MODEL`
+
+2. **Ollama (Local)** - Fallback, runs locally
    - Set `OLLAMA_BASE_URL` (default: `http://localhost:11434`)
-   - Set `OLLAMA_MODEL` (default: `llama3`)
+   - Set `OLLAMA_MODEL` (default: `llama3.2`)
 
-2. **Claude (Anthropic)** - Cloud fallback
-   - Set `ANTHROPIC_API_KEY` in environment or `.env` file
-
-The system automatically tries Ollama first and falls back to Claude if unavailable.
+The system automatically tries Circuit first and falls back to Ollama if unavailable.
 
 ### Environment Variables
 
@@ -516,12 +517,15 @@ Create a `.env` file in the `backend/` directory:
 # Database (default: SQLite)
 DATABASE_URL=sqlite:///./cxpm.db
 
-# Ollama (local LLM)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3
+# Circuit (Cisco AI - primary)
+CIRCUIT_CLIENT_ID=your-client-id
+CIRCUIT_CLIENT_SECRET=your-client-secret
+CIRCUIT_APP_KEY=your-app-key
+CIRCUIT_MODEL=gpt-4.1
 
-# Claude (cloud LLM - fallback)
-ANTHROPIC_API_KEY=your-api-key-here
+# Ollama (local LLM - fallback)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
 
 # File upload limit
 MAX_FILE_SIZE_KB=50

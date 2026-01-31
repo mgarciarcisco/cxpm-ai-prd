@@ -226,7 +226,7 @@ function DashboardPage() {
           {/* Row 1: 3 cards */}
           <div className="task-cards">
             {/* Card 1: Meeting Notes to Requirements */}
-            <Link to="/quick-convert/requirements" className="task-card task-card--teal">
+            <Link to="/quick-convert/requirements?new=1" className="task-card task-card--teal">
               <div className="task-card__icon task-card__icon--teal">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
@@ -266,7 +266,7 @@ function DashboardPage() {
             </div>
 
             {/* Card 3: User Stories */}
-            <Link to="/quick-convert/stories" className="task-card task-card--blue">
+            <Link to="/quick-convert/stories?new=1" className="task-card task-card--blue">
               <div className="task-card__icon task-card__icon--blue">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="7" height="7" rx="1"/>

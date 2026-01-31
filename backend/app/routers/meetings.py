@@ -802,3 +802,83 @@ def resolve_meeting(
     update_requirements_status(project_id, db)
 
     return counts
+
+
+@router.post("/quick-extract")
+async def quick_extract(
+    request: Request,
+) -> dict[str, Any]:
+    """
+    Quick extraction endpoint for the Quick Convert feature.
+    
+    Extracts requirements from text without needing a project.
+    Uses the LLM to analyze the text and return structured requirements.
+    """
+    from pathlib import Path
+    from app.services.llm import LLMError, get_provider
+    
+    body = await request.json()
+    text = body.get("text", "").strip()
+    
+    if not text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Text is required",
+        )
+    
+    # Load the extraction prompt template
+    prompt_path = Path(__file__).parent.parent.parent / "prompts" / "extract_meeting_v1.txt"
+    try:
+        prompt_template = prompt_path.read_text(encoding="utf-8")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to load extraction prompt: {e}",
+        )
+    
+    # Build the prompt
+    prompt = prompt_template.replace("{meeting_notes}", text)
+    
+    # Get LLM provider and extract
+    try:
+        provider = get_provider()
+        response = provider.generate(prompt, timeout=120)
+    except LLMError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"LLM service unavailable: {e}",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Extraction failed: {e}",
+        )
+    
+    # Parse the LLM response
+    import json as json_module
+    
+    cleaned = response.strip()
+    # Remove markdown code blocks if present
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
+    
+    # Find JSON array
+    start = cleaned.find("[")
+    end = cleaned.rfind("]") + 1
+    if start >= 0 and end > start:
+        cleaned = cleaned[start:end]
+    
+    try:
+        items = json_module.loads(cleaned)
+        if not isinstance(items, list):
+            items = []
+    except json_module.JSONDecodeError:
+        # If parsing fails, return empty items
+        items = []
+    
+    return {"items": items}
