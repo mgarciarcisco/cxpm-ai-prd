@@ -104,11 +104,11 @@ function RecapEditorPage() {
   // Transition from streaming to processed state when streaming completes
   useEffect(() => {
     if (streamStatus === 'complete' && meeting?.status !== 'processed') {
-      // Update meeting status and set items from streaming
-      setMeeting(prev => prev ? { ...prev, status: 'processed' } : prev);
-      setMeetingItems(streamingItems);
+      // Re-fetch meeting to get items with their database IDs
+      // (streaming items don't have IDs, which breaks edit/delete)
+      fetchMeeting();
     }
-  }, [streamStatus, meeting?.status, streamingItems]);
+  }, [streamStatus, meeting?.status]);
 
   useEffect(() => {
     fetchMeeting();
