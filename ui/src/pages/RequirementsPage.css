@@ -1,13 +1,45 @@
-/* Requirements Page Section */
+/* Requirements Page */
+.requirements-page {
+  padding: 24px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Requirements Section */
 .requirements-section {
   padding: 0;
+  margin-top: 16px;
 }
 
 /* Section Header */
+.requirements-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
 .section-header-title {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
+}
+
+.section-header-title h2 {
+  margin: 0;
+}
+
+/* Requirements Count Badge */
+.requirements-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 20px;
 }
 
 /* Export Button */
@@ -42,11 +74,14 @@
 
 /* Requirements Content */
 .requirements-content {
-  background-color: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 12px;
-  padding: 1.5rem;
-  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Section Wrapper */
+.requirements-section-wrapper {
+  scroll-margin-top: 100px;
 }
 
 /* Requirements Items */
@@ -72,26 +107,36 @@
   margin-bottom: 0.25rem;
 }
 
-/* Source Links */
+/* Source Links - Chip Style */
 .requirement-sources {
-  font-size: 0.75rem;
-  color: #6B7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
-.requirement-sources-label {
-  font-style: italic;
-  margin-right: 0.25rem;
-}
-
-.requirement-source-link {
-  color: #4ECDC4;
+.requirement-source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #e0f7f6 0%, #dbeafe 100%);
+  color: #0d9488;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 16px;
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.requirement-source-link:hover {
-  color: #3BB5AD;
-  text-decoration: underline;
+.requirement-source-chip:hover {
+  background: #4ECDC4;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.requirement-source-chip svg {
+  opacity: 0.7;
 }
 
 /* Empty State Container (when no requirements at all) */

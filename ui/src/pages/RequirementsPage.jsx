@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { get, put } from '../services/api';
 import { CollapsibleSection } from '../components/common/CollapsibleSection';
@@ -6,6 +6,7 @@ import { ItemRow } from '../components/common/ItemRow';
 import { HistoryPopover } from '../components/requirements/HistoryPopover';
 import { EmptyState } from '../components/common/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import './RequirementsPage.css';
 
 /**
@@ -210,12 +211,30 @@ function RequirementsPage() {
     }
   }, [draggedItem, requirements, id]);
 
+  // Breadcrumb items
+  const breadcrumbItems = useMemo(() => [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: project?.name || 'Project', href: `/app/projects/${id}` },
+    { label: 'Requirements' }
+  ], [project?.name, id]);
+
+  // Calculate total requirement count
+  const totalRequirementCount = useMemo(() => {
+    if (!requirements) return 0;
+    return SECTIONS.reduce((total, section) => {
+      const items = requirements[section.key] || [];
+      return total + items.filter(item => item.content && item.content.trim()).length;
+    }, 0);
+  }, [requirements]);
+
   if (loading) {
     return (
       <main className="main-content">
-        <div className="requirements-loading">
-          <LoadingSpinner size="large" />
-          <p>Loading requirements...</p>
+        <div className="requirements-page">
+          <div className="requirements-loading">
+            <LoadingSpinner size="large" />
+            <p>Loading requirements...</p>
+          </div>
         </div>
       </main>
     );
@@ -224,9 +243,11 @@ function RequirementsPage() {
   if (error) {
     return (
       <main className="main-content">
-        <div className="requirements-error">
-          <p>Error loading requirements: {error}</p>
-          <button onClick={fetchData} className="retry-btn">Retry</button>
+        <div className="requirements-page">
+          <div className="requirements-error">
+            <p>Error loading requirements: {error}</p>
+            <button onClick={fetchData} className="retry-btn">Retry</button>
+          </div>
         </div>
       </main>
     );
@@ -239,107 +260,116 @@ function RequirementsPage() {
 
   return (
     <main className="main-content">
-      <section className="requirements-section">
-        <div className="section-header">
-          <div className="section-header-title">
-            <h2>{project?.name || 'Project'} - Requirements</h2>
-            <Link to={`/app/projects/${id}`} className="back-link">Back to Project</Link>
-          </div>
-          <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="export-btn"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 10V12.6667C14 13.0203 13.8595 13.3594 13.6095 13.6095C13.3594 13.8595 13.0203 14 12.6667 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M4.66666 6.66667L8 10L11.3333 6.66667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M8 10V2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            {isExporting ? 'Exporting...' : 'Export as Markdown'}
-          </button>
-        </div>
+      <div className="requirements-page">
+        <Breadcrumbs items={breadcrumbItems} />
 
-        {hasNoRequirements ? (
-          <div className="requirements-empty-state-container">
-            <EmptyState
-              icon={
-                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M38 8H10C7.79086 8 6 9.79086 6 12V38C6 40.2091 7.79086 42 10 42H38C40.2091 42 42 40.2091 42 38V12C42 9.79086 40.2091 8 38 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M16 16H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M16 24H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M16 32H26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              }
-              title="Apply meeting recaps to build requirements"
-              description="Upload meeting notes, extract items, then apply them to build your working requirements document."
-            />
+        <section className="requirements-section">
+          <div className="section-header">
+            <div className="section-header-title">
+              <h2>Requirements</h2>
+              <span className="requirements-count">
+                {totalRequirementCount} {totalRequirementCount === 1 ? 'item' : 'items'}
+              </span>
+            </div>
+            <button
+              onClick={handleExport}
+              disabled={isExporting || hasNoRequirements}
+              className="export-btn"
+              title={hasNoRequirements ? 'No requirements to export' : 'Download as Markdown file'}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 10V12.6667C14 13.0203 13.8595 13.3594 13.6095 13.6095C13.3594 13.8595 13.0203 14 12.6667 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M4.66666 6.66667L8 10L11.3333 6.66667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 10V2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {isExporting ? 'Exporting...' : 'Export'}
+            </button>
           </div>
-        ) : (
-          <div className="requirements-content">
-            {SECTIONS.map((section) => {
-              const sectionItems = requirements?.[section.key] || [];
-              // Filter out items with empty content for accurate count
-              const nonEmptyItems = sectionItems.filter(item => item.content && item.content.trim());
-              return (
-                <CollapsibleSection
-                  key={section.key}
-                  title={section.label}
-                  itemCount={nonEmptyItems.length}
-                  defaultExpanded={true}
-                >
-                  {nonEmptyItems.length > 0 ? (
-                    <div className="requirements-items">
-                      {nonEmptyItems.map((item) => (
-                        <div key={item.id} className="requirements-item-wrapper">
-                          <ItemRow
-                            item={item}
-                            onEdit={handleEditItem}
-                            onDelete={handleDeleteItem}
-                            apiEndpoint="requirements"
-                            draggable={!isReordering}
-                            onDragStart={handleDragStart}
-                            onDragEnd={handleDragEnd}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            isDragging={draggedItem?.id === item.id}
-                            isDragOver={dragOverItem?.id === item.id}
-                          />
-                          <div className="requirement-meta">
-                            {item.sources && item.sources.length > 0 && (
-                              <div className="requirement-sources">
-                                <span className="requirement-sources-label">Source:</span>
-                                {item.sources
-                                  .filter(source => source.meeting_id)
-                                  .map((source, index, filteredSources) => (
-                                    <span key={source.id}>
-                                      <Link
-                                        to={`/app/projects/${id}/meetings/${source.meeting_id}`}
-                                        className="requirement-source-link"
-                                      >
-                                        {source.meeting_title || 'Meeting'}
-                                      </Link>
-                                      {index < filteredSources.length - 1 && ', '}
-                                    </span>
-                                  ))}
+
+          {hasNoRequirements ? (
+            <div className="requirements-empty-state-container">
+              <EmptyState
+                icon={
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M38 8H10C7.79086 8 6 9.79086 6 12V38C6 40.2091 7.79086 42 10 42H38C40.2091 42 42 40.2091 42 38V12C42 9.79086 40.2091 8 38 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M16 16H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M16 24H32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M16 32H26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                }
+                title="No requirements yet"
+                description="Upload meeting notes, extract items, then apply them to build your requirements document."
+              />
+            </div>
+          ) : (
+            <div className="requirements-content">
+              {SECTIONS.map((section) => {
+                const sectionItems = requirements?.[section.key] || [];
+                // Filter out items with empty content for accurate count
+                const nonEmptyItems = sectionItems.filter(item => item.content && item.content.trim());
+                return (
+                  <div key={section.key} id={section.key} className="requirements-section-wrapper">
+                    <CollapsibleSection
+                      title={section.label}
+                      itemCount={nonEmptyItems.length}
+                      defaultExpanded={true}
+                      variant={section.key}
+                    >
+                      {nonEmptyItems.length > 0 ? (
+                        <div className="requirements-items">
+                          {nonEmptyItems.map((item) => (
+                            <div key={item.id} className="requirements-item-wrapper">
+                              <ItemRow
+                                item={item}
+                                onEdit={handleEditItem}
+                                onDelete={handleDeleteItem}
+                                apiEndpoint="requirements"
+                                draggable={!isReordering}
+                                onDragStart={handleDragStart}
+                                onDragEnd={handleDragEnd}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                isDragging={draggedItem?.id === item.id}
+                                isDragOver={dragOverItem?.id === item.id}
+                              />
+                              <div className="requirement-meta">
+                                {item.sources && item.sources.length > 0 && (
+                                  <div className="requirement-sources">
+                                    {item.sources
+                                      .filter(source => source.meeting_id)
+                                      .map((source) => (
+                                        <Link
+                                          key={source.id}
+                                          to={`/app/projects/${id}/meetings/${source.meeting_id}`}
+                                          className="requirement-source-chip"
+                                        >
+                                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M14 8H2M14 8L9 3M14 8L9 13"/>
+                                          </svg>
+                                          {source.meeting_title || 'Meeting'}
+                                        </Link>
+                                      ))}
+                                  </div>
+                                )}
+                                {item.history_count > 0 && (
+                                  <HistoryPopover requirementId={item.id} />
+                                )}
                               </div>
-                            )}
-                            {item.history_count > 0 && (
-                              <HistoryPopover requirementId={item.id} />
-                            )}
-                          </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="requirements-empty">No requirements in this section</p>
-                  )}
-                </CollapsibleSection>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                      ) : (
+                        <p className="requirements-empty">No requirements in this section</p>
+                      )}
+                    </CollapsibleSection>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
     </main>
   );
 }
