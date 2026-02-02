@@ -735,13 +735,32 @@ HTML mockup files created in `mockups/` folder for review:
 - `recap-editor-option-a.html` - Selected for Extraction Results (pending implementation)
 - `recap-editor-option-b.html` - Alternative Extraction Results (not used)
 
+### Extraction Results Page (RecapEditorPage) - COMPLETED
+
+**Files Modified:**
+- `ui/src/pages/RecapEditorPage.jsx`
+- `ui/src/pages/RecapEditorPage.css`
+- `ui/src/components/meetings/RecapEditor.jsx`
+- `ui/src/components/common/CollapsibleSection.jsx`
+- `ui/src/components/common/CollapsibleSection.css`
+- `ui/src/components/common/ItemRow.jsx`
+- `ui/src/components/common/ItemRow.css`
+
+**Changes Implemented:**
+1. **Sticky header** - Meeting title, date, breadcrumbs, and total item count always visible
+2. **Two-column layout** - Sticky side navigation (200px) + main content area
+3. **Side navigation** - Quick links to all 9 sections with color-coded item counts
+4. **Active section tracking** - Highlights current section based on scroll position
+5. **Sticky footer** - Save & Apply button always visible at bottom
+6. **Color-coded badges** - Each section has unique color (red=Problems, green=Goals, blue=Requirements, etc.)
+7. **Empty section styling** - Sections with 0 items have reduced opacity (0.6)
+8. **Always visible actions** - Edit/Delete buttons always shown (opacity 0.4 → 1 on hover)
+9. **Inline source quotes** - Source quotes displayed within ItemRow component with left border accent
+10. **Removed duplicate source rendering** - RecapEditor no longer duplicates source_quote (now handled by ItemRow)
+
 ### Pending Implementation
 
-**Extraction Results Page (RecapEditorPage)** - Option A selected:
-- Sticky header with meeting title + summary count
-- Sticky side navigation with section jump links
-- Sticky footer with Save & Apply button
-- Color-coded section badges by category
-- Empty sections collapsed by default
-- Always visible action icons
-- Better source quote styling with left border accent
+Next pages in user flow to redesign:
+- **SelectProjectPage** - Fix redundant back navigation, improve radio button styling
+- **ProjectDashboard/ProjectViewPage** - Status explanations, meeting card hover states
+- **RequirementsPage** - Edit/delete visibility, source link styling
