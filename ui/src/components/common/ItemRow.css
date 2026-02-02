@@ -15,41 +15,50 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
-.item-row-drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  padding: 0.25rem;
-  color: #9CA3AF;
-  flex-shrink: 0;
-  border-radius: 4px;
-  transition: color 0.15s ease, background-color 0.15s ease;
-}
-
-.item-row-drag-handle:hover {
-  color: #6B7280;
-  background-color: #F3F4F6;
-}
-
-.item-row-drag-handle:active {
-  cursor: grabbing;
-  color: #4B5563;
-}
-
 .item-row-content {
   flex: 1;
+  min-width: 0;
+}
+
+.item-row-text {
   font-size: 0.875rem;
   color: #374151;
   line-height: 1.5;
   word-break: break-word;
 }
 
+/* Source quote styling */
+.item-row-source {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #F9FAFB;
+  border-left: 3px solid #D1D5DB;
+  border-radius: 0 6px 6px 0;
+}
+
+.item-row-source-icon {
+  color: #9CA3AF;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.item-row-source-text {
+  font-size: 0.75rem;
+  color: #6B7280;
+  font-style: italic;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* Always visible action buttons with reduced opacity */
 .item-row-actions {
   display: flex;
   gap: 0.25rem;
   flex-shrink: 0;
-  opacity: 0;
+  opacity: 0.4;
   transition: opacity 0.15s ease;
 }
 
@@ -265,40 +274,6 @@
   outline-offset: 2px;
 }
 
-/* Drag and drop styles */
-.item-row[draggable="true"] {
-  cursor: grab;
-}
-
-.item-row[draggable="true"]:active {
-  cursor: grabbing;
-}
-
-.item-row--dragging {
-  opacity: 0.5;
-  background-color: #EFF6FF;
-  border-color: #3B82F6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: scale(1.02);
-}
-
-.item-row--drag-over {
-  border-color: #3B82F6;
-  background-color: #EFF6FF;
-  box-shadow: 0 0 0 2px #3B82F6, 0 4px 8px rgba(59, 130, 246, 0.2);
-}
-
-.item-row--drag-over::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -4px;
-  height: 2px;
-  background-color: #3B82F6;
-  border-radius: 2px;
-}
-
 /* Mobile Responsive */
 @media (max-width: 640px) {
   .item-row {
@@ -307,12 +282,6 @@
 
   .item-row-actions {
     opacity: 1;
-  }
-
-  .item-row-drag-handle {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0.5rem;
   }
 
   .item-row-edit-actions,

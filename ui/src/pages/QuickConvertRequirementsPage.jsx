@@ -1,9 +1,16 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
 import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
 import { useNavigationWarning } from '../hooks/useNavigationWarning';
 import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
+
+// Time threshold for auto-restore without prompt (5 minutes)
+const AUTO_RESTORE_THRESHOLD_MS = 5 * 60 * 1000;
+import MeetingCard from '../components/requirements/MeetingCard';
+import QuickConvertAddMeetingModal from '../components/requirements/QuickConvertAddMeetingModal';
+import ResultsSidebar from '../components/requirements/ResultsSidebar';
+import RequirementItem from '../components/requirements/RequirementItem';
 import './QuickConvertRequirementsPage.css';
 
 // Section metadata with display names
@@ -11,12 +18,13 @@ const SECTION_CONFIG = {
   problems: { label: 'Problems', icon: '⚠️' },
   user_goals: { label: 'User Goals', icon: '🎯' },
   functional_requirements: { label: 'Functional Requirements', icon: '⚙️' },
+  non_functional_requirements: { label: 'Non-Functional', icon: '⚡' },
+  technical: { label: 'Technical', icon: '💻' },
+  business: { label: 'Business', icon: '💰' },
   data_needs: { label: 'Data Needs', icon: '📊' },
   constraints: { label: 'Constraints', icon: '🔒' },
-  non_goals: { label: 'Non-Goals', icon: '🚫' },
   risks_assumptions: { label: 'Risks & Assumptions', icon: '⚡' },
   open_questions: { label: 'Open Questions', icon: '❓' },
-  action_items: { label: 'Action Items', icon: '✅' },
 };
 
 // Section order for display
@@ -24,32 +32,45 @@ const SECTION_ORDER = [
   'problems',
   'user_goals',
   'functional_requirements',
+  'non_functional_requirements',
+  'technical',
+  'business',
   'data_needs',
   'constraints',
-  'non_goals',
   'risks_assumptions',
   'open_questions',
-  'action_items',
 ];
 
 /**
- * Quick Convert Requirements page - input UI for extracting requirements.
- * Allows users to paste content or upload a file, then extract requirements.
+ * Quick Convert Requirements page - redesigned with meeting-centric workflow.
+ * Allows users to add multiple meetings, then extract structured requirements.
  */
 function QuickConvertRequirementsPage() {
   const navigate = useNavigate();
-  const [content, setContent] = useState('');
-  const [dragActive, setDragActive] = useState(false);
-  const [fileName, setFileName] = useState(null);
-  const [fileError, setFileError] = useState(null);
-  const fileInputRef = useRef(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Session restore modal state
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [pendingRestoreData, setPendingRestoreData] = useState(null);
+
+  // Meeting management state
+  const [meetings, setMeetings] = useState([]);
+  const [expandedMeetingId, setExpandedMeetingId] = useState(null);
+  const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
 
   // Extraction state
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionError, setExtractionError] = useState(null);
-  const [extractedItems, setExtractedItems] = useState(null); // { section: [{ id, content, selected }] }
+  const [extractedItems, setExtractedItems] = useState(null); // { section: [{ id, content, selected, sourceId, sourceName, sourceQuote }] }
   const [editingItem, setEditingItem] = useState(null); // { section, id }
   const [editValue, setEditValue] = useState('');
+
+  // Filter state
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [sourceFilters, setSourceFilters] = useState({}); // { meetingId: checked }
+
+  // Next action state
+  const [nextAction, setNextAction] = useState('save');
 
   // Modal state
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -61,171 +82,201 @@ function QuickConvertRequirementsPage() {
   const [dataSaved, setDataSaved] = useState(false);
 
   // Navigation warning - warn when there's extracted data that hasn't been saved/downloaded
-  const hasUnsavedWork = extractedItems !== null && !dataSaved;
+  const hasUnsavedWork = (extractedItems !== null || meetings.length > 0) && !dataSaved;
   const {
     showDialog: showNavWarning,
     confirmNavigation,
     cancelNavigation,
+    markSaved,
   } = useNavigationWarning({
     hasUnsavedChanges: hasUnsavedWork,
     message: 'You have unsaved requirements. Are you sure you want to leave?',
   });
 
-  // Restore data from session storage on mount
+  // Handle session restoration on mount
   useEffect(() => {
+    const isNewSession = searchParams.get('new') === '1';
+    
+    // If ?new=1, clear session and remove the param from URL
+    if (isNewSession) {
+      clearSession(STORAGE_KEYS.REQUIREMENTS);
+      // Remove the ?new=1 param from URL without triggering navigation
+      searchParams.delete('new');
+      setSearchParams(searchParams, { replace: true });
+      return;
+    }
+    
+    // Check for existing session data
     const stored = loadFromSession(STORAGE_KEYS.REQUIREMENTS);
+    if (!stored?.data?.extractedItems && !stored?.data?.meetings?.length) {
+      // No stored data, nothing to restore
+      return;
+    }
+    
+    // Check if the data is recent (within threshold) - auto-restore without prompt
+    const savedAt = stored.savedAt ? new Date(stored.savedAt).getTime() : 0;
+    const now = Date.now();
+    const isRecent = (now - savedAt) < AUTO_RESTORE_THRESHOLD_MS;
+    
+    if (isRecent) {
+      // Auto-restore recent work (likely a refresh)
+      restoreSessionData(stored);
+    } else {
+      // Show restore modal for older data
+      setPendingRestoreData(stored);
+      setShowRestoreModal(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Helper function to restore session data
+  const restoreSessionData = (stored) => {
     if (stored?.data?.extractedItems) {
       setExtractedItems(stored.data.extractedItems);
       setRestoredFromSession(true);
+      // Initialize source filters from extracted items
+      const sources = new Set();
+      Object.values(stored.data.extractedItems).forEach(items => {
+        items.forEach(item => {
+          if (item.sourceId) sources.add(item.sourceId);
+        });
+      });
+      const filters = {};
+      sources.forEach(id => { filters[id] = true; });
+      setSourceFilters(filters);
     }
-  }, []);
+    if (stored?.data?.meetings) {
+      setMeetings(stored.data.meetings);
+    }
+  };
+  
+  // Handle restore modal actions
+  const handleRestoreConfirm = () => {
+    if (pendingRestoreData) {
+      restoreSessionData(pendingRestoreData);
+    }
+    setShowRestoreModal(false);
+    setPendingRestoreData(null);
+  };
+  
+  const handleRestoreCancel = () => {
+    // Clear the old session data and start fresh
+    clearSession(STORAGE_KEYS.REQUIREMENTS);
+    setShowRestoreModal(false);
+    setPendingRestoreData(null);
+  };
 
-  // Save to session storage when extracted items change
+  // Save to session storage when state changes
   useEffect(() => {
-    if (extractedItems) {
-      saveToSession(STORAGE_KEYS.REQUIREMENTS, { extractedItems });
+    if (extractedItems || meetings.length > 0) {
+      saveToSession(STORAGE_KEYS.REQUIREMENTS, { extractedItems, meetings });
     }
-  }, [extractedItems]);
+  }, [extractedItems, meetings]);
 
-  const hasContent = content.trim().length > 0;
-
-  // Supported file types
-  const ACCEPTED_FILE_TYPES = ['.txt', '.md'];
-  const ACCEPTED_MIME_TYPES = ['text/plain', 'text/markdown'];
-
-  const isValidFileType = (file) => {
-    const extension = '.' + file.name.split('.').pop().toLowerCase();
-    return ACCEPTED_FILE_TYPES.includes(extension) || ACCEPTED_MIME_TYPES.includes(file.type);
-  };
-
-  const handleFileRead = (file) => {
-    if (!isValidFileType(file)) {
-      setFileError('Invalid file type. Please upload a .txt or .md file.');
-      return;
+  // Initialize source filters when meetings change
+  useEffect(() => {
+    if (meetings.length > 0 && Object.keys(sourceFilters).length === 0) {
+      const filters = {};
+      meetings.forEach(m => { filters[m.id] = true; });
+      setSourceFilters(filters);
     }
+  }, [meetings, sourceFilters]);
 
-    setFileError(null);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setContent(e.target.result);
-      setFileName(file.name);
-    };
-    reader.readAsText(file);
+  // Meeting management handlers
+  const handleAddMeeting = (meeting) => {
+    setMeetings(prev => [...prev, meeting]);
+    setSourceFilters(prev => ({ ...prev, [meeting.id]: true }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileRead(file);
+  const handleRemoveMeeting = (meetingId) => {
+    setMeetings(prev => prev.filter(m => m.id !== meetingId));
+    if (expandedMeetingId === meetingId) {
+      setExpandedMeetingId(null);
     }
+    setSourceFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[meetingId];
+      return newFilters;
+    });
   };
 
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
+  const handleToggleExpand = (meetingId) => {
+    setExpandedMeetingId(prev => prev === meetingId ? null : meetingId);
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleFileRead(file);
-    }
+  const handleUpdateMeeting = (meetingId, updates) => {
+    setMeetings(prev => prev.map(m =>
+      m.id === meetingId ? { ...m, ...updates } : m
+    ));
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleClearFile = () => {
-    setFileName(null);
-    setContent('');
-    setFileError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  // Simulated extraction - in production this would call the backend API
-  const simulateExtraction = useCallback(async (text) => {
-    // Simulate API latency
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Simple keyword-based extraction simulation
-    const lines = text.split('\n').filter(line => line.trim());
+  // Extract requirements using the backend LLM API
+  const extractWithBackend = useCallback(async (meetingsList) => {
+    const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
+    
     const items = {};
-
-    // Initialize sections
     SECTION_ORDER.forEach(section => {
       items[section] = [];
     });
 
     let idCounter = 1;
 
-    // Simple pattern matching to categorize content
-    lines.forEach(line => {
-      const trimmedLine = line.trim();
-      if (trimmedLine.length < 10) return; // Skip very short lines
+    // Process each meeting through the backend API
+    for (const meeting of meetingsList) {
+      const text = `${meeting.transcript || ''}\n${meeting.notes || ''}`.trim();
+      if (!text) continue;
 
-      // Remove common list markers
-      const cleanedLine = trimmedLine
-        .replace(/^[-*•]\s*/, '')
-        .replace(/^\d+[.)]\s*/, '')
-        .trim();
+      // Call the quick extract endpoint
+      const response = await fetch(`${BASE_URL}/api/meetings/quick-extract`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
 
-      if (!cleanedLine) return;
-
-      const lowerLine = cleanedLine.toLowerCase();
-      let section = 'functional_requirements'; // Default
-
-      // Categorize based on keywords
-      if (lowerLine.includes('problem') || lowerLine.includes('issue') || lowerLine.includes('pain point') || lowerLine.includes('challenge')) {
-        section = 'problems';
-      } else if (lowerLine.includes('goal') || lowerLine.includes('want') || lowerLine.includes('need to') || lowerLine.includes('user should')) {
-        section = 'user_goals';
-      } else if (lowerLine.includes('data') || lowerLine.includes('store') || lowerLine.includes('database') || lowerLine.includes('field')) {
-        section = 'data_needs';
-      } else if (lowerLine.includes('constraint') || lowerLine.includes('must not') || lowerLine.includes('limitation') || lowerLine.includes('restrict')) {
-        section = 'constraints';
-      } else if (lowerLine.includes('not') && (lowerLine.includes('scope') || lowerLine.includes('goal') || lowerLine.includes('include'))) {
-        section = 'non_goals';
-      } else if (lowerLine.includes('risk') || lowerLine.includes('assume') || lowerLine.includes('assumption')) {
-        section = 'risks_assumptions';
-      } else if (lowerLine.includes('question') || lowerLine.includes('unclear') || lowerLine.includes('?') || lowerLine.includes('tbd')) {
-        section = 'open_questions';
-      } else if (lowerLine.includes('action') || lowerLine.includes('todo') || lowerLine.includes('follow up') || lowerLine.includes('next step')) {
-        section = 'action_items';
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `Extraction failed with status ${response.status}`);
       }
 
-      items[section].push({
-        id: `item-${idCounter++}`,
-        content: cleanedLine,
-        selected: true,
-      });
-    });
+      const data = await response.json();
+      
+      // Process extracted items from API response
+      if (data.items && Array.isArray(data.items)) {
+        data.items.forEach(item => {
+          const section = item.section || 'functional_requirements';
+          if (!items[section]) {
+            items[section] = [];
+          }
+          items[section].push({
+            id: `item-${idCounter++}`,
+            content: item.content,
+            selected: true,
+            sourceId: meeting.id,
+            sourceName: meeting.name,
+            sourceQuote: item.source_quote ? `"...${item.source_quote.substring(0, 100)}..."` : null,
+          });
+        });
+      }
+    }
 
     // Filter out empty sections
     const filteredItems = {};
     SECTION_ORDER.forEach(section => {
-      if (items[section].length > 0) {
+      if (items[section] && items[section].length > 0) {
         filteredItems[section] = items[section];
       }
     });
 
-    // If nothing was extracted, create a sample item
+    // If nothing was extracted, show a message
     if (Object.keys(filteredItems).length === 0) {
       filteredItems.functional_requirements = [{
         id: 'item-1',
-        content: 'No specific requirements could be extracted. Please review your input text.',
+        content: 'No specific requirements could be extracted. Please review your meeting content.',
         selected: true,
+        sourceId: meetingsList[0]?.id,
+        sourceName: meetingsList[0]?.name || 'Unknown',
+        sourceQuote: null,
       }];
     }
 
@@ -233,15 +284,16 @@ function QuickConvertRequirementsPage() {
   }, []);
 
   const handleExtract = async () => {
-    if (!hasContent) return;
+    if (meetings.length === 0) return;
 
     setIsExtracting(true);
     setExtractionError(null);
     setExtractedItems(null);
 
     try {
-      const items = await simulateExtraction(content);
+      const items = await extractWithBackend(meetings);
       setExtractedItems(items);
+      setActiveCategory('all');
     } catch (error) {
       setExtractionError(error.message || 'Extraction failed. Please try again.');
     } finally {
@@ -312,30 +364,54 @@ function QuickConvertRequirementsPage() {
   // Start over - clear results and session storage
   const handleStartOver = () => {
     setExtractedItems(null);
-    setContent('');
-    setFileName(null);
+    setMeetings([]);
+    setExpandedMeetingId(null);
     setRestoredFromSession(false);
     setDataSaved(false);
+    setActiveCategory('all');
+    setSourceFilters({});
     clearSession(STORAGE_KEYS.REQUIREMENTS);
   };
 
+  // Filter items by category and source
+  const getFilteredItems = useCallback(() => {
+    if (!extractedItems) return {};
+
+    const filtered = {};
+    const sectionsToShow = activeCategory === 'all' ? SECTION_ORDER : [activeCategory];
+
+    sectionsToShow.forEach(section => {
+      if (!extractedItems[section]) return;
+
+      const sectionItems = extractedItems[section].filter(item =>
+        !item.sourceId || sourceFilters[item.sourceId] !== false
+      );
+
+      if (sectionItems.length > 0) {
+        filtered[section] = sectionItems;
+      }
+    });
+
+    return filtered;
+  }, [extractedItems, activeCategory, sourceFilters]);
+
   // Get count of selected items
-  const getSelectedCount = () => {
+  const getSelectedCount = useCallback(() => {
     if (!extractedItems) return 0;
     return Object.values(extractedItems).reduce(
       (total, items) => total + items.filter(item => item.selected).length,
       0
     );
-  };
+  }, [extractedItems]);
 
   // Get total item count
-  const getTotalCount = () => {
+  const getTotalCount = useCallback(() => {
     if (!extractedItems) return 0;
     return Object.values(extractedItems).reduce(
       (total, items) => total + items.length,
       0
     );
-  };
+  }, [extractedItems]);
 
   // Get selected items for export
   const getSelectedItems = useCallback(() => {
@@ -350,10 +426,59 @@ function QuickConvertRequirementsPage() {
     return selected;
   }, [extractedItems]);
 
-  // Navigate to Generate PRD with requirements data
-  const handleGeneratePRD = () => {
+  // Build categories for sidebar
+  const getCategories = useCallback(() => {
+    if (!extractedItems) return [];
+
+    const totalCount = getTotalCount();
+    const categories = [
+      { key: 'all', label: 'All', icon: '📋', count: totalCount },
+    ];
+
+    SECTION_ORDER.forEach(section => {
+      if (extractedItems[section]?.length > 0) {
+        const config = SECTION_CONFIG[section];
+        categories.push({
+          key: section,
+          label: config?.label || section,
+          icon: config?.icon || '📄',
+          count: extractedItems[section].length,
+        });
+      }
+    });
+
+    return categories;
+  }, [extractedItems, getTotalCount]);
+
+  // Build sources for sidebar
+  const getSources = useCallback(() => {
+    return meetings.map(m => ({
+      id: m.id,
+      name: m.name,
+      checked: sourceFilters[m.id] !== false,
+    }));
+  }, [meetings, sourceFilters]);
+
+  // Handle source filter toggle
+  const handleSourceToggle = (sourceId) => {
+    setSourceFilters(prev => ({
+      ...prev,
+      [sourceId]: !prev[sourceId],
+    }));
+  };
+
+  // Handle continue action
+  const handleContinue = () => {
+    if (nextAction === 'save') {
+      setShowSaveModal(true);
+    } else if (nextAction === 'stories') {
+      handleGenerateStories();
+    }
+  };
+
+  // Navigate to Generate Stories with requirements data
+  const handleGenerateStories = () => {
     const selectedItems = getSelectedItems();
-    // Convert selected items to a text format for PRD generation
     const requirementsText = Object.entries(selectedItems)
       .map(([section, items]) => {
         const sectionLabel = SECTION_CONFIG[section]?.label || section;
@@ -362,10 +487,11 @@ function QuickConvertRequirementsPage() {
       })
       .join('\n\n');
 
-    // Mark as saved since we're passing data to next step (data is being used)
+    // Mark saved synchronously to bypass navigation blocker
+    markSaved();
     setDataSaved(true);
 
-    navigate('/quick-convert/prd', {
+    navigate('/quick-convert/stories', {
       state: {
         requirements: selectedItems,
         requirementsText,
@@ -374,158 +500,55 @@ function QuickConvertRequirementsPage() {
     });
   };
 
-  // Download as JSON
-  const handleDownloadJSON = () => {
-    const selectedItems = getSelectedItems();
-    const dataStr = JSON.stringify(selectedItems, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'requirements.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    // Mark as saved after download
-    setDataSaved(true);
-  };
-
-  // Download as Markdown
-  const handleDownloadMarkdown = () => {
-    const selectedItems = getSelectedItems();
-    const markdown = Object.entries(selectedItems)
-      .map(([section, items]) => {
-        const sectionLabel = SECTION_CONFIG[section]?.label || section;
-        const itemsText = items.map(item => `- ${item.content}`).join('\n');
-        return `## ${sectionLabel}\n\n${itemsText}`;
-      })
-      .join('\n\n');
-
-    const blob = new Blob([`# Extracted Requirements\n\n${markdown}`], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'requirements.md';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    // Mark as saved after download
-    setDataSaved(true);
-  };
-
   // Render the input form (when no results yet)
   const renderInputForm = () => (
     <>
-      {/* Input Area */}
-      <div className="qc-requirements__input-section">
-        <div className="qc-requirements__content-area">
-          <label htmlFor="requirements-content" className="qc-requirements__label">
-            Meeting Notes or Document
-          </label>
-          <textarea
-            id="requirements-content"
-            className="qc-requirements__textarea"
-            placeholder="Paste your meeting notes, transcript, or any text containing project requirements..."
-            value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-              if (fileName) setFileName(null);
-            }}
-            rows={12}
-          />
-        </div>
-
-        <div className="qc-requirements__divider">
-          <span>or</span>
-        </div>
-
-        <div
-          className={`qc-requirements__upload-zone ${dragActive ? 'qc-requirements__upload-zone--active' : ''}`}
-          onDragEnter={handleDrag}
-          onDragOver={handleDrag}
-          onDragLeave={handleDrag}
-          onDrop={handleDrop}
-          onClick={handleUploadClick}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              handleUploadClick();
-            }
-          }}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".txt,.md,text/plain,text/markdown"
-            onChange={handleFileChange}
-            className="qc-requirements__file-input"
-            aria-label="Upload file"
-          />
-          <svg
-            className="qc-requirements__upload-icon"
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
-          <span className="qc-requirements__upload-text">
-            {dragActive ? 'Drop file here' : 'Click or drag file here'}
-          </span>
-          <span className="qc-requirements__upload-hint">
-            Supports .txt and .md files
-          </span>
-        </div>
-
-        {fileError && (
-          <div className="qc-requirements__error" role="alert">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>{fileError}</span>
+      {/* Meetings Section */}
+      <div className="qc-requirements__meetings-section">
+        <div className="qc-requirements__meetings-header">
+          <div className="qc-requirements__meetings-title">
+            Meetings
+            <span className="qc-requirements__meetings-count">{meetings.length}</span>
           </div>
-        )}
-
-        {fileName && (
-          <div className="qc-requirements__file-info">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
+          <button
+            type="button"
+            className="qc-requirements__add-meeting-btn"
+            onClick={() => setShowAddMeetingModal(true)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12h14" />
             </svg>
-            <span className="qc-requirements__file-name">{fileName}</span>
+            Add Meeting
+          </button>
+        </div>
+
+        {meetings.length === 0 ? (
+          <div className="qc-requirements__meetings-empty">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+            <p>No meetings added yet</p>
             <button
               type="button"
-              className="qc-requirements__file-clear"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClearFile();
-              }}
-              aria-label="Clear file"
+              className="qc-requirements__add-first-btn"
+              onClick={() => setShowAddMeetingModal(true)}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              Add your first meeting
             </button>
+          </div>
+        ) : (
+          <div className="qc-requirements__meetings-list">
+            {meetings.map(meeting => (
+              <MeetingCard
+                key={meeting.id}
+                meeting={meeting}
+                isExpanded={expandedMeetingId === meeting.id}
+                onToggleExpand={() => handleToggleExpand(meeting.id)}
+                onRemove={() => handleRemoveMeeting(meeting.id)}
+                onUpdate={(updates) => handleUpdateMeeting(meeting.id, updates)}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -536,7 +559,7 @@ function QuickConvertRequirementsPage() {
           type="button"
           className="qc-requirements__extract-btn"
           onClick={handleExtract}
-          disabled={!hasContent}
+          disabled={meetings.length === 0}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -556,7 +579,7 @@ function QuickConvertRequirementsPage() {
       <div className="qc-requirements__spinner" />
       <h2 className="qc-requirements__processing-title">Extracting Requirements</h2>
       <p className="qc-requirements__processing-text">
-        Analyzing your document and categorizing requirements...
+        Analyzing your meetings and categorizing requirements...
       </p>
     </div>
   );
@@ -581,201 +604,106 @@ function QuickConvertRequirementsPage() {
     </div>
   );
 
-  // Render results
+  // Render results with sidebar
   const renderResults = () => {
-    const sections = Object.keys(extractedItems);
+    const filteredItems = getFilteredItems();
+    const sections = Object.keys(filteredItems);
 
     return (
-      <div className="qc-requirements__results">
-        {/* Results Summary */}
-        <div className="qc-requirements__results-summary">
-          <div className="qc-requirements__results-info">
-            <span className="qc-requirements__results-count">
-              {getSelectedCount()} of {getTotalCount()} items selected
-            </span>
-            {restoredFromSession && (
-              <span className="qc-requirements__restored-indicator">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                  <path d="M3 3v5h5" />
-                </svg>
-                Restored from previous session
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            className="qc-requirements__start-over-btn"
-            onClick={handleStartOver}
-          >
-            Start Over
-          </button>
-        </div>
+      <div className="qc-requirements__results-layout">
+        {/* Sidebar */}
+        <ResultsSidebar
+          categories={getCategories()}
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
+          sources={getSources()}
+          onSourceToggle={handleSourceToggle}
+          selectedCount={getSelectedCount()}
+          totalCount={getTotalCount()}
+          nextAction={nextAction}
+          onNextActionChange={setNextAction}
+          onContinue={handleContinue}
+          onStartOver={handleStartOver}
+        />
 
-        {/* Sections */}
-        {SECTION_ORDER.filter(section => sections.includes(section)).map(section => {
-          const config = SECTION_CONFIG[section];
-          const items = extractedItems[section];
-          const allSelected = items.every(item => item.selected);
-          const someSelected = items.some(item => item.selected);
-
-          return (
-            <div key={section} className="qc-requirements__section">
-              <div className="qc-requirements__section-header">
-                <label className="qc-requirements__section-checkbox-wrapper">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    ref={el => {
-                      if (el) el.indeterminate = someSelected && !allSelected;
-                    }}
-                    onChange={() => handleToggleSection(section)}
-                    className="qc-requirements__section-checkbox"
-                  />
-                  <span className="qc-requirements__section-icon">{config.icon}</span>
-                  <span className="qc-requirements__section-label">{config.label}</span>
-                  <span className="qc-requirements__section-count">({items.length})</span>
-                </label>
-              </div>
-
-              <div className="qc-requirements__items">
-                {items.map(item => {
-                  const isEditing = editingItem?.section === section && editingItem?.id === item.id;
-
-                  return (
-                    <div
-                      key={item.id}
-                      className={`qc-requirements__item ${item.selected ? '' : 'qc-requirements__item--deselected'} ${isEditing ? 'qc-requirements__item--editing' : ''}`}
-                    >
-                      {isEditing ? (
-                        <div className="qc-requirements__item-edit">
-                          <textarea
-                            className="qc-requirements__item-edit-input"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            rows={3}
-                            autoFocus
-                          />
-                          <div className="qc-requirements__item-edit-actions">
-                            <button
-                              type="button"
-                              className="qc-requirements__item-save-btn"
-                              onClick={handleSaveEdit}
-                            >
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              className="qc-requirements__item-cancel-btn"
-                              onClick={handleCancelEdit}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <label className="qc-requirements__item-checkbox-wrapper">
-                            <input
-                              type="checkbox"
-                              checked={item.selected}
-                              onChange={() => handleToggleItem(section, item.id)}
-                              className="qc-requirements__item-checkbox"
-                            />
-                            <span className="qc-requirements__item-content">{item.content}</span>
-                          </label>
-                          <div className="qc-requirements__item-actions">
-                            <button
-                              type="button"
-                              className="qc-requirements__item-edit-btn"
-                              onClick={() => handleStartEdit(section, item.id, item.content)}
-                              aria-label="Edit item"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              className="qc-requirements__item-delete-btn"
-                              onClick={() => handleDeleteItem(section, item.id)}
-                              aria-label="Delete item"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              </svg>
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+        {/* Main Content */}
+        <div className="qc-requirements__results-main">
+          {restoredFromSession && (
+            <div className="qc-requirements__restored-banner">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              Restored from previous session
             </div>
-          );
-        })}
+          )}
 
-        {/* Action Buttons */}
-        <div className="qc-requirements__action-buttons">
-          <button
-            type="button"
-            className="qc-requirements__action-btn qc-requirements__action-btn--primary"
-            onClick={() => setShowSaveModal(true)}
-            disabled={getSelectedCount() === 0}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
-            Save to Project
-          </button>
-          <button
-            type="button"
-            className="qc-requirements__action-btn qc-requirements__action-btn--secondary"
-            onClick={handleGeneratePRD}
-            disabled={getSelectedCount() === 0}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" />
-              <path d="M14 2V8H20" />
-              <path d="M16 13H8" />
-              <path d="M16 17H8" />
-              <path d="M10 9H8" />
-            </svg>
-            Generate PRD
-          </button>
-          <div className="qc-requirements__download-group">
-            <button
-              type="button"
-              className="qc-requirements__action-btn qc-requirements__action-btn--outline"
-              onClick={handleDownloadJSON}
-              disabled={getSelectedCount() === 0}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              JSON
-            </button>
-            <button
-              type="button"
-              className="qc-requirements__action-btn qc-requirements__action-btn--outline"
-              onClick={handleDownloadMarkdown}
-              disabled={getSelectedCount() === 0}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Markdown
-            </button>
-          </div>
+          {SECTION_ORDER.filter(section => sections.includes(section)).map(section => {
+            const config = SECTION_CONFIG[section];
+            const items = filteredItems[section];
+            const allSelected = items.every(item => item.selected);
+            const someSelected = items.some(item => item.selected);
+
+            return (
+              <div key={section} className="qc-requirements__category-section">
+                <div className="qc-requirements__category-header">
+                  <label className="qc-requirements__category-checkbox-wrapper">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={el => {
+                        if (el) el.indeterminate = someSelected && !allSelected;
+                      }}
+                      onChange={() => handleToggleSection(section)}
+                      className="qc-requirements__category-checkbox"
+                    />
+                    <span className="qc-requirements__category-icon">{config.icon}</span>
+                    <span className="qc-requirements__category-name">{config.label}</span>
+                    <span className="qc-requirements__category-count">({items.length})</span>
+                  </label>
+                </div>
+
+                <div className="qc-requirements__items-list">
+                  {items.map(item => {
+                    const isEditing = editingItem?.section === section && editingItem?.id === item.id;
+
+                    return (
+                      <RequirementItem
+                        key={item.id}
+                        item={item}
+                        onToggle={() => handleToggleItem(section, item.id)}
+                        onEdit={() => handleStartEdit(section, item.id, item.content)}
+                        onDelete={() => handleDeleteItem(section, item.id)}
+                        isEditing={isEditing}
+                        editValue={editValue}
+                        onEditChange={setEditValue}
+                        onSaveEdit={handleSaveEdit}
+                        onCancelEdit={handleCancelEdit}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {sections.length === 0 && (
+            <div className="qc-requirements__no-results">
+              <p>No requirements match the current filters.</p>
+              <button
+                type="button"
+                className="qc-requirements__reset-filters-btn"
+                onClick={() => {
+                  setActiveCategory('all');
+                  const allChecked = {};
+                  meetings.forEach(m => { allChecked[m.id] = true; });
+                  setSourceFilters(allChecked);
+                }}
+              >
+                Reset Filters
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -785,11 +713,11 @@ function QuickConvertRequirementsPage() {
     <main className="main-content">
       <section className="qc-requirements">
         {/* Back Link */}
-        <Link to="/quick-convert" className="qc-requirements__back-link">
+        <Link to="/dashboard" className="qc-requirements__back-link">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          Back to Quick Convert
+          Back to Dashboard
         </Link>
 
         {/* Header */}
@@ -804,12 +732,12 @@ function QuickConvertRequirementsPage() {
           </div>
           <div className="qc-requirements__header-content">
             <h1 className="qc-requirements__title">
-              {extractedItems ? 'Extracted Requirements' : 'Extract Requirements'}
+              {extractedItems ? 'Extracted Requirements' : 'Convert Meeting Notes to Requirements'}
             </h1>
             <p className="qc-requirements__subtitle">
               {extractedItems
                 ? 'Review and select the requirements you want to keep.'
-                : 'Paste meeting notes, transcript, or any document to extract structured requirements.'}
+                : 'Add meetings and extract structured requirements.'}
             </p>
           </div>
         </div>
@@ -821,18 +749,41 @@ function QuickConvertRequirementsPage() {
         {!extractedItems && !isExtracting && !extractionError && renderInputForm()}
       </section>
 
+      {/* Add Meeting Modal */}
+      <QuickConvertAddMeetingModal
+        isOpen={showAddMeetingModal}
+        onClose={() => setShowAddMeetingModal(false)}
+        onAdd={handleAddMeeting}
+      />
+
       {/* Save to Project Modal */}
       {showSaveModal && (
         <SaveToProjectModal
           onClose={() => {
             setShowSaveModal(false);
-            // Mark as saved when modal closes (save was triggered)
+          }}
+          onSaved={() => {
+            // Mark data as saved SYNCHRONOUSLY before navigation happens
+            // This bypasses the navigation blocker immediately
+            markSaved();
             setDataSaved(true);
+            setShowSaveModal(false);
           }}
           dataType="requirements"
           data={getSelectedItems()}
         />
       )}
+
+      {/* Restore Previous Session Dialog */}
+      <ConfirmationDialog
+        isOpen={showRestoreModal}
+        onClose={handleRestoreCancel}
+        onConfirm={handleRestoreConfirm}
+        title="Continue previous work?"
+        message="You have requirements from a previous session. Would you like to continue where you left off, or start fresh?"
+        confirmLabel="Continue"
+        cancelLabel="Start Fresh"
+      />
 
       {/* Navigation Warning Dialog */}
       <ConfirmationDialog

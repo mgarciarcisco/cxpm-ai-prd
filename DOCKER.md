@@ -138,9 +138,10 @@ docker exec cxpm-ollama ollama rm llama3.2
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DATABASE_URL` | `sqlite:///./data/cxpm.db` | Database connection |
-| `OLLAMA_BASE_URL` | `http://ollama:11434` | Ollama API URL |
-| `OLLAMA_MODEL` | `llama3.2` | Model to use |
-| `ANTHROPIC_API_KEY` | (none) | Claude API key (fallback) |
+| `CIRCUIT_BASE_URL` | `https://chat-ai.cisco.com/...` | Circuit API URL |
+| `CIRCUIT_MODEL` | `gpt-4.1` | Circuit model to use |
+| `OLLAMA_BASE_URL` | `http://ollama:11434` | Ollama API URL (fallback) |
+| `OLLAMA_MODEL` | `llama3.2` | Ollama model to use |
 | `LLM_TIMEOUT` | `120` | LLM request timeout (seconds) |
 | `MAX_FILE_SIZE_KB` | `50` | Max upload file size |
 

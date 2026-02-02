@@ -3,7 +3,7 @@
 import json
 from collections.abc import AsyncIterator
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
@@ -55,11 +55,11 @@ router = APIRouter(prefix="/api/meetings", tags=["meetings"])
 
 @router.post("/upload", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_meeting(
-    project_id: str = Form(...),
     title: str = Form(...),
     meeting_date: date = Form(...),
-    file: UploadFile | None = File(None),
-    text: str | None = Form(None),
+    file: Optional[UploadFile] = File(default=None),
+    text: Optional[str] = Form(default=None),
+    project_id: Optional[str] = Form(default=None),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     """
@@ -67,14 +67,18 @@ async def upload_meeting(
 
     Either file or text must be provided. If file is provided, it will be parsed.
     If text is provided, it will be used directly.
+
+    project_id is optional - if not provided, the meeting can be associated with a
+    project later using the PATCH /{meeting_id}/project endpoint.
     """
-    # Validate project exists
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+    # Validate project exists if provided
+    if project_id:
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
 
     # Validate that either file or text is provided
     if file is None and text is None:
@@ -110,6 +114,49 @@ async def upload_meeting(
     db.refresh(meeting)
 
     return {"job_id": meeting.id, "meeting_id": meeting.id}
+
+
+@router.patch("/{meeting_id}/project")
+def associate_meeting_with_project(
+    meeting_id: str,
+    project_id: str = Form(...),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """
+    Associate a meeting with a project.
+
+    Used in the unified flow where meetings are created without a project context
+    and the project is selected later (e.g., dashboard -> add meeting -> extract -> pick project).
+    """
+    # Validate meeting exists
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting not found",
+        )
+
+    # Validate project exists
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    # Check if meeting already has a project
+    if meeting.project_id and meeting.project_id != project_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Meeting is already associated with a different project",
+        )
+
+    # Associate meeting with project
+    meeting.project_id = project_id
+    db.commit()
+    db.refresh(meeting)
+
+    return {"meeting_id": meeting.id, "project_id": project_id}
 
 
 @router.post("/{meeting_id}/retry", response_model=MeetingResponse)
@@ -449,9 +496,14 @@ def apply_meeting(
             detail="Cannot apply meeting unless status is processed",
         )
 
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[DEBUG Apply] Meeting {meeting_id}: project_id={meeting.project_id}")
+
     try:
         # Call conflict detection service
         result = detect_conflicts(UUID(meeting_id), db)
+        logger.info(f"[DEBUG Apply] Results: added={len(result.added)}, skipped={len(result.skipped)}, conflicts={len(result.conflicts)}")
 
         # Convert dataclass results to Pydantic response models
         def convert_result(conflict_result: Any) -> ConflictResultResponse:
@@ -802,3 +854,83 @@ def resolve_meeting(
     update_requirements_status(project_id, db)
 
     return counts
+
+
+@router.post("/quick-extract")
+async def quick_extract(
+    request: Request,
+) -> dict[str, Any]:
+    """
+    Quick extraction endpoint for the Quick Convert feature.
+    
+    Extracts requirements from text without needing a project.
+    Uses the LLM to analyze the text and return structured requirements.
+    """
+    from pathlib import Path
+    from app.services.llm import LLMError, get_provider
+    
+    body = await request.json()
+    text = body.get("text", "").strip()
+    
+    if not text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Text is required",
+        )
+    
+    # Load the extraction prompt template
+    prompt_path = Path(__file__).parent.parent.parent / "prompts" / "extract_meeting_v1.txt"
+    try:
+        prompt_template = prompt_path.read_text(encoding="utf-8")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to load extraction prompt: {e}",
+        )
+    
+    # Build the prompt
+    prompt = prompt_template.replace("{meeting_notes}", text)
+    
+    # Get LLM provider and extract
+    try:
+        provider = get_provider()
+        response = provider.generate(prompt, timeout=120)
+    except LLMError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"LLM service unavailable: {e}",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Extraction failed: {e}",
+        )
+    
+    # Parse the LLM response
+    import json as json_module
+    
+    cleaned = response.strip()
+    # Remove markdown code blocks if present
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
+    
+    # Find JSON array
+    start = cleaned.find("[")
+    end = cleaned.rfind("]") + 1
+    if start >= 0 and end > start:
+        cleaned = cleaned[start:end]
+    
+    try:
+        items = json_module.loads(cleaned)
+        if not isinstance(items, list):
+            items = []
+    except json_module.JSONDecodeError:
+        # If parsing fails, return empty items
+        items = []
+    
+    return {"items": items}

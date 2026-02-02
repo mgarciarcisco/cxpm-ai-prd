@@ -1,31 +1,76 @@
-version: '3.8'
-
-# Development override - use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# Development Docker Compose - Hot-reloading enabled
+# Usage: docker-compose -f docker-compose.dev.yml up --build
 
 services:
-  # Backend with hot reload
+  # Backend - FastAPI application with hot-reload
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: cxpm-backend-dev
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Database (override if needed)
+      - DATABASE_URL=sqlite:///./data/cxpm.db
+      
+      # Ollama LLM (fallback) - use Docker network hostname
+      - OLLAMA_BASE_URL=http://ollama:11434
+      
+      # App settings
+      - LLM_TIMEOUT=120
+      - LLM_MAX_RETRIES=1
+      - CHUNK_SIZE_CHARS=4000
+      - MAX_FILE_SIZE_KB=50
     volumes:
-      - ./backend:/app
+      # Mount source code for hot-reloading
+      - ./backend/app:/app/app:ro
+      - ./backend/prompts:/app/prompts:ro
+      - ./backend/alembic:/app/alembic:ro
+      # Persist database
       - backend_data:/app/data
-    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"]
+    command: >
+      sh -c "alembic upgrade head && 
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    restart: unless-stopped
+    # Uncomment to use Ollama as fallback
+    # depends_on:
+    #   - ollama
 
-  # Frontend with hot reload (Vite dev server instead of Nginx)
+  # Frontend - React application with hot-reload
   frontend:
     build:
-      context: ./ui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ui/Dockerfile
     container_name: cxpm-frontend-dev
     ports:
       - "3000:3000"
-    volumes:
-      - ./ui/src:/app/ui/src
-      - ./ui/public:/app/ui/public
     environment:
-      - NODE_ENV=development
       - VITE_API_URL=http://localhost:8000
+    volumes:
+      # Mount source code for hot-reloading
+      - ./ui/src:/app/ui/src:ro
+      - ./ui/public:/app/ui/public:ro
+      - ./ui/index.html:/app/ui/index.html:ro
+      - ./ui/vite.config.js:/app/ui/vite.config.js:ro
     depends_on:
       - backend
+    restart: unless-stopped
+
+  # Ollama - Local LLM server (optional, uncomment if needed)
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: cxpm-ollama-dev
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+
+volumes:
+  backend_data:
+    driver: local
+  # ollama_data:
+  #   driver: local

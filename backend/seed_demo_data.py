@@ -9,26 +9,26 @@ Run with: python seed_demo_data.py
 import uuid
 from datetime import datetime, timedelta
 
-from app.database import SessionLocal, engine
+from app.database import SessionLocal
 from app.models import (
-    Project,
-    RequirementsStatus,
-    PRDStageStatus,
-    StoriesStatus,
-    MockupsStatus,
-    ExportStatus,
-    Requirement,
-    Section,
     PRD,
+    ExportStatus,
+    MockupsStatus,
     PRDMode,
+    PRDStageStatus,
     PRDStatus,
-    UserStory,
-    StoryFormat,
-    StoryStatus,
-    StorySize,
-    StoryPriority,
+    Project,
+    Requirement,
+    RequirementsStatus,
+    Section,
+    StoriesStatus,
     StoryBatch,
     StoryBatchStatus,
+    StoryFormat,
+    StoryPriority,
+    StorySize,
+    StoryStatus,
+    UserStory,
 )
 
 

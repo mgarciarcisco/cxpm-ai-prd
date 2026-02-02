@@ -1,11 +1,14 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { StoryEditModal } from '../components/stories/StoryEditModal';
 import SaveToProjectModal from '../components/quick-convert/SaveToProjectModal';
 import { ConfirmationDialog } from '../components/common/ConfirmationDialog';
 import { useNavigationWarning } from '../hooks/useNavigationWarning';
 import { STORAGE_KEYS, saveToSession, loadFromSession, clearSession } from '../utils/sessionStorage';
 import './QuickConvertStoriesPage.css';
+
+// Time threshold for auto-restore without prompt (5 minutes)
+const AUTO_RESTORE_THRESHOLD_MS = 5 * 60 * 1000;
 
 // Input source options
 const INPUT_SOURCES = {
@@ -143,6 +146,12 @@ const generateSimulatedStories = (inputText, format, includeOptions) => {
 function QuickConvertStoriesPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Session restore modal state
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [pendingRestoreData, setPendingRestoreData] = useState(null);
+  
   const [content, setContent] = useState('');
   const [inputSource, setInputSource] = useState('prd');
   const [fromPreviousStep, setFromPreviousStep] = useState(false);
@@ -201,18 +210,69 @@ function QuickConvertStoriesPage() {
     message: 'You have unsaved user stories. Are you sure you want to leave?',
   });
 
-  // Restore data from session storage on mount (only if not from navigation state)
-  useEffect(() => {
-    if (location.state?.prdText) return; // Don't restore if coming from PRD page
-
-    const stored = loadFromSession(STORAGE_KEYS.STORIES);
+  // Helper function to restore session data
+  const restoreSessionData = (stored) => {
     if (stored?.data?.generatedStories) {
       setGeneratedStories(stored.data.generatedStories);
       setStoryFormat(stored.data.storyFormat || 'standard');
       setIncludeOptions(stored.data.includeOptions || { acceptanceCriteria: true, size: false, priority: false });
       setRestoredFromSession(true);
     }
-  }, [location.state]);
+  };
+  
+  // Handle restore modal actions
+  const handleRestoreConfirm = () => {
+    if (pendingRestoreData) {
+      restoreSessionData(pendingRestoreData);
+    }
+    setShowRestoreModal(false);
+    setPendingRestoreData(null);
+  };
+  
+  const handleRestoreCancel = () => {
+    // Clear the old session data and start fresh
+    clearSession(STORAGE_KEYS.STORIES);
+    setShowRestoreModal(false);
+    setPendingRestoreData(null);
+  };
+
+  // Handle session restoration on mount
+  useEffect(() => {
+    // Don't restore if coming from PRD page with new content
+    if (location.state?.prdText) return;
+    
+    const isNewSession = searchParams.get('new') === '1';
+    
+    // If ?new=1, clear session and remove the param from URL
+    if (isNewSession) {
+      clearSession(STORAGE_KEYS.STORIES);
+      // Remove the ?new=1 param from URL without triggering navigation
+      searchParams.delete('new');
+      setSearchParams(searchParams, { replace: true });
+      return;
+    }
+    
+    // Check for existing session data
+    const stored = loadFromSession(STORAGE_KEYS.STORIES);
+    if (!stored?.data?.generatedStories) {
+      // No stored data, nothing to restore
+      return;
+    }
+    
+    // Check if the data is recent (within threshold) - auto-restore without prompt
+    const savedAt = stored.savedAt ? new Date(stored.savedAt).getTime() : 0;
+    const now = Date.now();
+    const isRecent = (now - savedAt) < AUTO_RESTORE_THRESHOLD_MS;
+    
+    if (isRecent) {
+      // Auto-restore recent work (likely a refresh)
+      restoreSessionData(stored);
+    } else {
+      // Show restore modal for older data
+      setPendingRestoreData(stored);
+      setShowRestoreModal(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Save to session storage when generated stories change
   useEffect(() => {
@@ -1062,6 +1122,17 @@ function QuickConvertStoriesPage() {
           data={generatedStories?.filter(s => s.selected) || []}
         />
       )}
+
+      {/* Restore Previous Session Dialog */}
+      <ConfirmationDialog
+        isOpen={showRestoreModal}
+        onClose={handleRestoreCancel}
+        onConfirm={handleRestoreConfirm}
+        title="Continue previous work?"
+        message="You have user stories from a previous session. Would you like to continue where you left off, or start fresh?"
+        confirmLabel="Continue"
+        cancelLabel="Start Fresh"
+      />
 
       {/* Navigation Warning Dialog */}
       <ConfirmationDialog

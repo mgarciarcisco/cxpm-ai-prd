@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project View - Option C: Large Tiles with Status Strip</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
+      color: #1f2937;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+    }
+
+    .breadcrumbs a {
+      color: #4ECDC4;
+      text-decoration: none;
+    }
+
+    .breadcrumbs a:hover {
+      text-decoration: underline;
+    }
+
+    .breadcrumbs span {
+      color: #9ca3af;
+    }
+
+    /* Project Header - Minimal */
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .project-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .project-meta {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    .settings-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: white;
+      color: #6b7280;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .settings-btn:hover {
+      background: #f3f4f6;
+      color: #1f2937;
+    }
+
+    /* Status Strip */
+    .status-strip {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 2rem;
+      padding: 0.75rem;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .status-segment {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+
+    .status-segment--complete {
+      background: linear-gradient(90deg, #10b981, #34d399);
+    }
+
+    .status-segment--in-progress {
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    }
+
+    .status-segment--empty {
+      background: #e5e7eb;
+    }
+
+    .status-strip-labels {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .status-label {
+      font-size: 0.6875rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    /* Stage Tiles - Large format */
+    .stages-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 1100px) {
+      .stages-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .stages-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stages-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Stage Tile */
+    .stage-tile {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-tile:hover {
+      border-color: #4ECDC4;
+      box-shadow: 0 8px 24px rgba(78, 205, 196, 0.2);
+      transform: translateY(-4px);
+    }
+
+    .stage-tile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    .stage-tile--complete::before {
+      background: linear-gradient(90deg, #10b981, #34d399);
+    }
+
+    .stage-tile--in-progress::before {
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    }
+
+    .stage-tile--empty::before {
+      background: #e5e7eb;
+    }
+
+    .stage-tile--empty {
+      opacity: 0.75;
+    }
+
+    .stage-tile--empty:hover {
+      opacity: 1;
+    }
+
+    /* Tile Icon - Large and centered */
+    .tile-icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 1rem;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+
+    .tile-icon--requirements { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+    .tile-icon--prd { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+    .tile-icon--stories { background: linear-gradient(135deg, #f3e8ff, #e9d5ff); }
+    .tile-icon--mockups { background: linear-gradient(135deg, #fce7f3, #fbcfe8); }
+    .tile-icon--export { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+
+    /* Tile Content */
+    .tile-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.375rem;
+    }
+
+    .tile-status {
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.75rem;
+    }
+
+    .tile-status--complete { color: #10b981; }
+    .tile-status--in-progress { color: #3b82f6; }
+    .tile-status--empty { color: #9ca3af; }
+
+    .tile-meta {
+      font-size: 0.8125rem;
+      color: #6b7280;
+      margin-bottom: 1rem;
+      min-height: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .tile-meta-item {
+      display: block;
+    }
+
+    /* Tile Action Button */
+    .tile-btn {
+      width: 100%;
+      padding: 0.625rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .tile-btn--primary {
+      background: #4ECDC4;
+      color: white;
+    }
+
+    .tile-btn--primary:hover {
+      background: #3dbdb5;
+    }
+
+    .tile-btn--secondary {
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+
+    .tile-btn--secondary:hover {
+      background: #e5e7eb;
+    }
+
+    /* Quick Actions Row */
+    .quick-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .quick-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      color: #4b5563;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-action-btn:hover {
+      background: #f9fafb;
+      border-color: #4ECDC4;
+      color: #4ECDC4;
+    }
+
+    .quick-action-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Design Notes */
+    .design-notes {
+      margin-top: 3rem;
+      padding: 1.5rem;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+    }
+
+    .design-notes h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #92400e;
+      margin-bottom: 0.75rem;
+    }
+
+    .design-notes ul {
+      font-size: 0.8125rem;
+      color: #78350f;
+      margin-left: 1.25rem;
+    }
+
+    .design-notes li {
+      margin-bottom: 0.375rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+      <a href="#">Dashboard</a>
+      <span>/</span>
+      <span>E-commerce Platform Redesign</span>
+    </nav>
+
+    <!-- Project Header - Minimal -->
+    <header class="project-header">
+      <h1 class="project-title">E-commerce Platform Redesign</h1>
+      <div class="header-actions">
+        <span class="project-meta">Last updated 2 hours ago</span>
+        <button class="settings-btn" title="Project settings">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M16.1667 12.5C16.0557 12.7513 16.0226 13.0302 16.0716 13.3005C16.1206 13.5708 16.2495 13.8203 16.4417 14.0167L16.4917 14.0667C16.6466 14.2215 16.7695 14.4053 16.8534 14.6076C16.9373 14.8099 16.9805 15.0268 16.9805 15.2458C16.9805 15.4649 16.9373 15.6817 16.8534 15.884C16.7695 16.0863 16.6466 16.2702 16.4917 16.425C16.3369 16.5799 16.153 16.7028 15.9507 16.7867C15.7484 16.8706 15.5316 16.9138 15.3125 16.9138C15.0935 16.9138 14.8766 16.8706 14.6743 16.7867C14.472 16.7028 14.2882 16.5799 14.1333 16.425L14.0833 16.375C13.887 16.1828 13.6375 16.0539 13.3672 16.0049C13.0969 15.9559 12.818 15.989 12.5667 16.1C12.3202 16.2056 12.1124 16.3831 11.9699 16.6097C11.8273 16.8363 11.7564 17.1015 11.7667 17.3667V17.5C11.7667 17.942 11.5911 18.366 11.2785 18.6785C10.966 18.9911 10.542 19.1667 10.1 19.1667C9.65798 19.1667 9.23406 18.9911 8.92149 18.6785C8.60893 18.366 8.43335 17.942 8.43335 17.5V17.425C8.41831 17.1512 8.33587 16.8859 8.19456 16.6545C8.05325 16.4232 7.85758 16.2332 7.62502 16.1C7.37375 15.989 7.09485 15.9559 6.82452 16.0049C6.5542 16.0539 6.30479 16.1828 6.10835 16.375L6.05835 16.425C5.90354 16.5799 5.71965 16.7028 5.51736 16.7867C5.31507 16.8706 5.09822 16.9138 4.87919 16.9138C4.66015 16.9138 4.44331 16.8706 4.24101 16.7867C4.03872 16.7028 3.85484 16.5799 3.70002 16.425C3.54513 16.2702 3.42218 16.0863 3.33829 15.884C3.2544 15.6817 3.21123 15.4649 3.21123 15.2458C3.21123 15.0268 3.2544 14.8099 3.33829 14.6076C3.42218 14.4053 3.54513 14.2215 3.70002 14.0667L3.75002 14.0167C3.94216 13.8203 4.07106 13.5708 4.12009 13.3005C4.16912 13.0302 4.13599 12.7513 4.02502 12.5C3.91944 12.2535 3.74185 12.0457 3.51525 11.9031C3.28865 11.7606 3.02352 11.6896 2.75835 11.7H2.62502C2.18299 11.7 1.75907 11.5244 1.4465 11.2118C1.13394 10.8993 0.958354 10.4754 0.958354 10.0333C0.958354 9.59131 1.13394 9.16739 1.4465 8.85482C1.75907 8.54226 2.18299 8.36667 2.62502 8.36667H2.70002C2.97383 8.35164 3.23911 8.2692 3.47045 8.12789C3.70178 7.98658 3.89173 7.7909 4.02502 7.55834C4.13599 7.30707 4.16912 7.02817 4.12009 6.75784C4.07106 6.48752 3.94216 6.23811 3.75002 6.04167L3.70002 5.99167C3.54513 5.83686 3.42218 5.65297 3.33829 5.45068C3.2544 5.24839 3.21123 5.03154 3.21123 4.81251C3.21123 4.59347 3.2544 4.37663 3.33829 4.17433C3.42218 3.97204 3.54513 3.78816 3.70002 3.63334C3.85484 3.47845 4.03872 3.35551 4.24101 3.27162C4.44331 3.18772 4.66015 3.14456 4.87919 3.14456C5.09822 3.14456 5.31507 3.18772 5.51736 3.27162C5.71965 3.35551 5.90354 3.47845 6.05835 3.63334L6.10835 3.68334C6.30479 3.87548 6.5542 4.00438 6.82452 4.05341C7.09485 4.10244 7.37375 4.06931 7.62502 3.95834H7.70835C7.9549 3.85277 8.16265 3.67517 8.30522 3.44857C8.44778 3.22198 8.5187 2.95684 8.50835 2.69167V2.5C8.50835 2.05798 8.68394 1.63405 8.9965 1.32149C9.30907 1.00893 9.73299 0.833344 10.175 0.833344C10.617 0.833344 11.041 1.00893 11.3535 1.32149C11.6661 1.63405 11.8417 2.05798 11.8417 2.5V2.575C11.8313 2.84017 11.9023 3.10531 12.0448 3.3319C12.1874 3.5585 12.3951 3.7361 12.6417 3.84167C12.8929 3.95264 13.1718 3.98577 13.4422 3.93674C13.7125 3.88771 13.9619 3.75881 14.1583 3.56667L14.2083 3.51667C14.3632 3.36179 14.547 3.23884 14.7493 3.15495C14.9516 3.07105 15.1685 3.02789 15.3875 3.02789C15.6065 3.02789 15.8234 3.07105 16.0257 3.15495C16.228 3.23884 16.4119 3.36179 16.5667 3.51667C16.7216 3.67149 16.8445 3.85537 16.9284 4.05766C17.0123 4.25996 17.0555 4.4768 17.0555 4.69584C17.0555 4.91488 17.0123 5.13172 16.9284 5.33401C16.8445 5.53631 16.7216 5.72019 16.5667 5.87501L16.5167 5.92501C16.3246 6.12145 16.1957 6.37086 16.1466 6.64118C16.0976 6.91151 16.1307 7.19041 16.2417 7.44167V7.52501C16.3473 7.77156 16.5249 7.97931 16.7515 8.12188C16.9781 8.26444 17.2432 8.33536 17.5084 8.32501H17.6417C18.0837 8.32501 18.5076 8.5006 18.8202 8.81316C19.1328 9.12573 19.3084 9.54965 19.3084 9.99167C19.3084 10.4337 19.1328 10.8576 18.8202 11.1702C18.5076 11.4828 18.0837 11.6583 17.6417 11.6583H17.5667C17.3015 11.648 17.0364 11.7189 16.8098 11.8615C16.5832 12.0041 16.4056 12.2118 16.3 12.4583L16.1667 12.5Z" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Status Strip - Visual Progress -->
+    <div class="status-strip">
+      <div class="status-segment status-segment--complete" title="Requirements: Complete"></div>
+      <div class="status-segment status-segment--in-progress" title="PRD: In Progress"></div>
+      <div class="status-segment status-segment--empty" title="Stories: Not Started"></div>
+      <div class="status-segment status-segment--empty" title="Mockups: Not Started"></div>
+      <div class="status-segment status-segment--empty" title="Export: Not Started"></div>
+    </div>
+
+    <!-- Stage Tiles -->
+    <div class="stages-grid">
+      <!-- Requirements Tile - Complete -->
+      <div class="stage-tile stage-tile--complete">
+        <div class="tile-icon tile-icon--requirements">📝</div>
+        <h3 class="tile-title">Requirements</h3>
+        <span class="tile-status tile-status--complete">Complete</span>
+        <div class="tile-meta">
+          <span class="tile-meta-item">24 items</span>
+          <span class="tile-meta-item">3 meetings</span>
+        </div>
+        <button class="tile-btn tile-btn--secondary">View</button>
+      </div>
+
+      <!-- PRD Tile - In Progress -->
+      <div class="stage-tile stage-tile--in-progress">
+        <div class="tile-icon tile-icon--prd">📄</div>
+        <h3 class="tile-title">PRD</h3>
+        <span class="tile-status tile-status--in-progress">Draft v2</span>
+        <div class="tile-meta">
+          <span class="tile-meta-item">15 sections</span>
+          <span class="tile-meta-item">Yesterday</span>
+        </div>
+        <button class="tile-btn tile-btn--primary">Continue</button>
+      </div>
+
+      <!-- Stories Tile - Empty -->
+      <div class="stage-tile stage-tile--empty">
+        <div class="tile-icon tile-icon--stories">📋</div>
+        <h3 class="tile-title">User Stories</h3>
+        <span class="tile-status tile-status--empty">Not Started</span>
+        <div class="tile-meta">
+          <span class="tile-meta-item">0 stories</span>
+          <span class="tile-meta-item">—</span>
+        </div>
+        <button class="tile-btn tile-btn--primary">Generate</button>
+      </div>
+
+      <!-- Mockups Tile - Empty -->
+      <div class="stage-tile stage-tile--empty">
+        <div class="tile-icon tile-icon--mockups">🎨</div>
+        <h3 class="tile-title">Mockups</h3>
+        <span class="tile-status tile-status--empty">Not Started</span>
+        <div class="tile-meta">
+          <span class="tile-meta-item">0 mockups</span>
+          <span class="tile-meta-item">—</span>
+        </div>
+        <button class="tile-btn tile-btn--primary">Create</button>
+      </div>
+
+      <!-- Export Tile - Empty -->
+      <div class="stage-tile stage-tile--empty">
+        <div class="tile-icon tile-icon--export">📦</div>
+        <h3 class="tile-title">Export</h3>
+        <span class="tile-status tile-status--empty">Not Started</span>
+        <div class="tile-meta">
+          <span class="tile-meta-item">Not exported</span>
+          <span class="tile-meta-item">—</span>
+        </div>
+        <button class="tile-btn tile-btn--primary">Export</button>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="quick-action-btn">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Add Meeting
+      </button>
+      <button class="quick-action-btn">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 12l3-3 2 2 4-4 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+        View All Stats
+      </button>
+      <button class="quick-action-btn">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 12V8M8 12V4M12 12V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Export All
+      </button>
+    </div>
+
+    <!-- Design Notes -->
+    <div class="design-notes">
+      <h3>Option C: Large Tiles with Status Strip</h3>
+      <ul>
+        <li><strong>Layout:</strong> 5-column single row on large screens (wraps on smaller)</li>
+        <li><strong>Status strip:</strong> Simple visual bar at top showing all 5 stages at a glance</li>
+        <li><strong>Tile style:</strong> Taller, centered content with large icons and gradient backgrounds</li>
+        <li><strong>Minimal header:</strong> Just project name and last updated - no description on main view</li>
+        <li><strong>Status indicator:</strong> Colored top border + text status below title</li>
+        <li><strong>Quick actions:</strong> Common actions accessible from bottom of page</li>
+        <li><strong>More visual:</strong> Emphasis on icons and whitespace, clean and modern feel</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

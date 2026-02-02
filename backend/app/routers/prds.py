@@ -3,10 +3,9 @@
 import json
 import logging
 import re
-import sys
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +61,7 @@ def _get_prd_or_404(prd_id: str, db: Session, verify_project_access: bool = True
     prd = db.query(PRD).filter(PRD.id == prd_id, PRD.deleted_at.is_(None)).first()
     if not prd:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PRD not found")
-    
+
     # Verify project access - ensures the PRD's project exists and is accessible
     # When authentication is implemented, this would also verify user permissions
     if verify_project_access:
@@ -73,7 +72,7 @@ def _get_prd_or_404(prd_id: str, db: Session, verify_project_access: bool = True
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="PRD not found"
             )
-    
+
     return prd
 
 
@@ -85,7 +84,7 @@ def _prd_to_response(prd: PRD) -> PRDResponse:
             PRDSection(title=s.get("title", ""), content=s.get("content", ""))
             for s in prd.sections
         ]
-    
+
     return PRDResponse(
         id=str(prd.id),
         project_id=str(prd.project_id),
@@ -122,7 +121,7 @@ def _run_generate_prd_task(
     prd_id: str,
     project_id: str,
     mode: PRDMode,
-    created_by: Optional[str] = None,
+    created_by: str | None = None,
 ) -> None:
     """Wrapper to run generate_prd_task with a fresh database session.
     
@@ -164,14 +163,14 @@ def generate_prd(
     """
     # Verify project exists
     _get_project_or_404(project_id, db)
-    
+
     # Calculate next version number for this project
     max_version = db.query(func.max(PRD.version)).filter(
         PRD.project_id == project_id,
         PRD.deleted_at.is_(None),
     ).scalar()
     next_version = (max_version or 0) + 1
-    
+
     # Create PRD record with queued status
     prd = PRD(
         project_id=project_id,
@@ -184,7 +183,7 @@ def generate_prd(
     db.add(prd)
     db.commit()
     db.refresh(prd)
-    
+
     # Schedule background generation task
     background_tasks.add_task(
         _run_generate_prd_task,
@@ -193,7 +192,7 @@ def generate_prd(
         mode=request.mode,
         created_by=None,  # Would be set from auth context
     )
-    
+
     return PRDStatusResponse(
         id=str(prd.id),
         status=prd.status,
@@ -412,7 +411,7 @@ async def regenerate_section(
     prd_id: str,
     section_id: str,
     request: Request,
-    custom_instructions: Optional[str] = None,
+    custom_instructions: str | None = None,
     db: Session = Depends(get_db),
 ) -> EventSourceResponse:
     """Regenerate a single section of an existing PRD.
@@ -506,7 +505,7 @@ def get_prd_status(prd_id: str, db: Session = Depends(get_db)) -> PRDStatusRespo
     Returns status=ready when generation is complete.
     """
     prd = _get_prd_or_404(prd_id, db)
-    
+
     return PRDStatusResponse(
         id=str(prd.id),
         status=prd.status,
@@ -523,18 +522,18 @@ def cancel_prd_generation(prd_id: str, db: Session = Depends(get_db)) -> PRDStat
     Returns the updated status.
     """
     prd = _get_prd_or_404(prd_id, db)
-    
+
     if prd.status not in (PRDStatus.QUEUED, PRDStatus.GENERATING):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot cancel PRD with status '{prd.status.value}'. Only queued or generating PRDs can be cancelled.",
         )
-    
+
     prd.status = PRDStatus.CANCELLED
     prd.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(prd)
-    
+
     return PRDStatusResponse(
         id=str(prd.id),
         status=prd.status,
@@ -561,22 +560,22 @@ def list_project_prds(
     """
     # Verify project exists
     _get_project_or_404(project_id, db)
-    
+
     # Build query
     query = db.query(PRD).filter(
         PRD.project_id == project_id,
         PRD.deleted_at.is_(None),
     )
-    
+
     if not include_archived:
         query = query.filter(PRD.status != PRDStatus.ARCHIVED)
-    
+
     # Get total count
     total = query.count()
-    
+
     # Get paginated results
     prds = query.order_by(PRD.version.desc()).offset(skip).limit(limit).all()
-    
+
     return PaginatedResponse(
         items=[_prd_to_summary(prd) for prd in prds],
         total=total,
@@ -604,46 +603,46 @@ def update_prd(
     Returns the updated PRD.
     """
     prd = _get_prd_or_404(prd_id, db)
-    
+
     # Cannot update non-ready PRDs
     if prd.status not in (PRDStatus.READY, PRDStatus.ARCHIVED):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot update PRD with status '{prd.status.value}'. Only ready or archived PRDs can be updated.",
         )
-    
+
     # Update title if provided
     if update_data.title is not None:
         prd.title = update_data.title
-    
+
     # Update sections if provided
     if update_data.sections is not None:
         # Convert Pydantic models to dict for JSON storage
         prd.sections = [s.model_dump() for s in update_data.sections]
         # Regenerate raw_markdown from sections
         prd.raw_markdown = _generate_markdown(prd.title or "", prd.sections)
-    
+
     prd.updated_at = datetime.utcnow()
     prd.updated_by = None  # Would be set from auth context
     db.commit()
     db.refresh(prd)
-    
+
     return _prd_to_response(prd)
 
 
 def _generate_markdown(title: str, sections: list[dict]) -> str:
     """Generate markdown from PRD title and sections."""
     lines = [f"# {title}", ""]
-    
+
     # Sort sections by order if present
     sorted_sections = sorted(sections, key=lambda s: s.get("order", 0))
-    
+
     for section in sorted_sections:
         lines.append(f"## {section.get('title', '')}")
         lines.append("")
         lines.append(section.get("content", ""))
         lines.append("")
-    
+
     return "\n".join(lines)
 
 
@@ -654,10 +653,10 @@ def delete_prd(prd_id: str, db: Session = Depends(get_db)) -> None:
     The PRD will no longer appear in list results.
     """
     prd = _get_prd_or_404(prd_id, db)
-    
+
     prd.deleted_at = datetime.utcnow()
     db.commit()
-    
+
     return None
 
 
@@ -669,18 +668,18 @@ def archive_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDStatusResponse
     with include_archived=true.
     """
     prd = _get_prd_or_404(prd_id, db)
-    
+
     if prd.status != PRDStatus.READY:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot archive PRD with status '{prd.status.value}'. Only ready PRDs can be archived.",
         )
-    
+
     prd.status = PRDStatus.ARCHIVED
     prd.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(prd)
-    
+
     return PRDStatusResponse(
         id=str(prd.id),
         status=prd.status,
@@ -767,19 +766,19 @@ def export_prd(
     Returns a downloadable file with appropriate content-type.
     """
     prd = _get_prd_or_404(prd_id, db)
-    
+
     # Cannot export incomplete PRDs
     if prd.status not in (PRDStatus.READY, PRDStatus.ARCHIVED):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot export PRD with status '{prd.status.value}'. Only ready or archived PRDs can be exported.",
         )
-    
+
     # Get project for filename
     project = db.query(Project).filter(Project.id == prd.project_id).first()
     project_name = project.name if project else "project"
     filename_base = _slugify_filename(project_name)
-    
+
     if format == ExportFormat.MARKDOWN:
         content = prd.raw_markdown or ""
         filename = f"{filename_base}-prd-v{prd.version}.md"

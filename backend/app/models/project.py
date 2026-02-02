@@ -96,5 +96,10 @@ class Project(Base):
     user_stories = relationship("UserStory", back_populates="project", cascade="all, delete-orphan")
     story_batches = relationship("StoryBatch", back_populates="project", cascade="all, delete-orphan")
 
+    @property
+    def requirements_count(self) -> int:
+        """Count of active requirements for this project."""
+        return sum(1 for r in self.requirements if r.is_active)
+
     def __repr__(self) -> str:
         return f"<Project(id={self.id}, name={self.name})>"

@@ -17,7 +17,6 @@ from sqlalchemy.orm import Session
 from app.models import PRD, Project
 from app.models.prd import PRDMode, PRDStatus
 
-
 # =============================================================================
 # Helper Functions
 # =============================================================================

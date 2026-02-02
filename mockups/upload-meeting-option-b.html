@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Meeting Notes - Option B: Centered with Inline Tips</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #F9FAFB;
+      color: #1F2937;
+      line-height: 1.5;
+    }
+
+    .main-content {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem;
+    }
+
+    /* ===== OPTION B: Centered Form with Inline Tips ===== */
+    /* Changes:
+       - Centered, wider form (720px max)
+       - Title matches Dashboard
+       - Breadcrumb navigation
+       - Collapsible "Tips" section inline
+       - Inline validation messages
+       - Stronger OR divider
+       - Clear cancel destination
+    */
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #6B7280;
+      margin-bottom: 1.5rem;
+    }
+
+    .breadcrumbs a {
+      color: #4ECDC4;
+      text-decoration: none;
+    }
+
+    .breadcrumbs a:hover {
+      text-decoration: underline;
+    }
+
+    .breadcrumbs__separator {
+      color: #D1D5DB;
+    }
+
+    .breadcrumbs__current {
+      color: #374151;
+      font-weight: 500;
+    }
+
+    /* Page Header */
+    .page-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 0.25rem;
+    }
+
+    .page-header__subtitle {
+      font-size: 0.9375rem;
+      color: #6B7280;
+    }
+
+    /* Form */
+    .upload-form {
+      background-color: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 200px;
+      gap: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-label .required {
+      color: #DC2626;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid #D1D5DB;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #1F2937;
+      background-color: #FFFFFF;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #4ECDC4;
+      box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: #9CA3AF;
+    }
+
+    /* Validation hint */
+    .form-validation {
+      font-size: 0.75rem;
+      margin-top: 0.375rem;
+    }
+
+    .form-validation--error {
+      color: #DC2626;
+    }
+
+    .form-validation--hint {
+      color: #6B7280;
+    }
+
+    /* File Dropzone */
+    .file-dropzone {
+      border: 2px dashed #D1D5DB;
+      border-radius: 8px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      background-color: #FAFAFA;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .file-dropzone:hover {
+      border-color: #4ECDC4;
+      background-color: #F0FDFC;
+    }
+
+    .file-dropzone__icon {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 0.75rem;
+      color: #9CA3AF;
+    }
+
+    .file-dropzone__text {
+      font-size: 0.875rem;
+      color: #6B7280;
+    }
+
+    .file-dropzone__text strong {
+      color: #4ECDC4;
+    }
+
+    .form-hint {
+      font-size: 0.75rem;
+      color: #6B7280;
+      margin-top: 0.5rem;
+    }
+
+    /* Stronger Divider */
+    .form-divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 1.5rem 0;
+      color: #6B7280;
+      font-size: 0.8125rem;
+      font-weight: 500;
+    }
+
+    .form-divider::before,
+    .form-divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 2px solid #E5E7EB;
+    }
+
+    .form-divider span {
+      padding: 0 1rem;
+      background: white;
+    }
+
+    /* Textarea */
+    .form-textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #D1D5DB;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #1F2937;
+      background-color: #FFFFFF;
+      resize: vertical;
+      min-height: 200px;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-textarea:focus {
+      outline: none;
+      border-color: #4ECDC4;
+      box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+    }
+
+    .form-textarea::placeholder {
+      color: #9CA3AF;
+    }
+
+    /* Collapsible Tips Section */
+    .tips-collapsible {
+      margin-top: 1rem;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tips-collapsible__toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: #F9FAFB;
+      border: none;
+      cursor: pointer;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #4B5563;
+    }
+
+    .tips-collapsible__toggle:hover {
+      background: #F3F4F6;
+    }
+
+    .tips-collapsible__toggle svg {
+      transition: transform 0.2s ease;
+    }
+
+    .tips-collapsible__toggle.is-open svg {
+      transform: rotate(180deg);
+    }
+
+    .tips-collapsible__content {
+      padding: 1rem;
+      background: white;
+      display: none;
+    }
+
+    .tips-collapsible__content.is-open {
+      display: block;
+    }
+
+    .tips-list {
+      list-style: none;
+      font-size: 0.8125rem;
+      color: #4B5563;
+      margin-bottom: 1rem;
+    }
+
+    .tips-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .tips-list li:last-child {
+      margin-bottom: 0;
+    }
+
+    .tips-list svg {
+      flex-shrink: 0;
+      color: #10B981;
+      margin-top: 0.125rem;
+    }
+
+    .tips-example {
+      background: #F9FAFB;
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      color: #4B5563;
+      font-family: 'SF Mono', Consolas, monospace;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .tips-example-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: #6B7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Actions */
+    .form-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #E5E7EB;
+      margin-top: 0.5rem;
+    }
+
+    .form-actions__left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .form-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease, opacity 0.2s ease;
+      text-decoration: none;
+    }
+
+    .form-btn--primary {
+      background-color: #4ECDC4;
+      color: #FFFFFF;
+    }
+
+    .form-btn--primary:hover:not(:disabled) {
+      background-color: #3BB5AD;
+    }
+
+    .form-btn--primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .form-btn--ghost {
+      background: transparent;
+      color: #6B7280;
+      padding: 0.625rem 0.75rem;
+    }
+
+    .form-btn--ghost:hover {
+      color: #374151;
+      background: #F3F4F6;
+    }
+
+    /* Disabled button explanation */
+    .btn-disabled-hint {
+      font-size: 0.75rem;
+      color: #9CA3AF;
+      margin-right: 0.5rem;
+    }
+
+    .form-actions__right {
+      display: flex;
+      align-items: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions {
+        flex-direction: column-reverse;
+        gap: 1rem;
+      }
+
+      .form-actions__left,
+      .form-actions__right {
+        width: 100%;
+      }
+
+      .form-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="main-content">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+      <a href="#">Dashboard</a>
+      <span class="breadcrumbs__separator">›</span>
+      <span class="breadcrumbs__current">Convert Meeting Notes</span>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Convert Meeting Notes to Requirements</h1>
+      <p class="page-header__subtitle">Extract structured requirements from your meeting notes</p>
+    </div>
+
+    <!-- Form -->
+    <form class="upload-form">
+      <!-- Title and Date on same row -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">
+            Meeting Title <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            class="form-input"
+            placeholder="e.g., Sprint Planning, User Research Session"
+          >
+          <p class="form-validation form-validation--hint">Required to continue</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-input" value="2026-02-02">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Upload File</label>
+        <div class="file-dropzone">
+          <svg class="file-dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <p class="file-dropzone__text">
+            <strong>Click to upload</strong> or drag and drop<br>
+            .txt or .md files (max 50KB)
+          </p>
+        </div>
+      </div>
+
+      <!-- Stronger divider -->
+      <div class="form-divider">
+        <span>or paste directly</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Paste Meeting Notes</label>
+        <textarea
+          class="form-textarea"
+          placeholder="Paste your meeting notes, transcript, or summary here..."
+          rows="10"
+        ></textarea>
+        <p class="form-validation form-validation--hint">Enter content above or upload a file</p>
+
+        <!-- Collapsible Tips -->
+        <div class="tips-collapsible">
+          <button type="button" class="tips-collapsible__toggle" onclick="this.classList.toggle('is-open'); this.nextElementSibling.classList.toggle('is-open')">
+            <span>Tips for best results</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6l4 4 4-4"/>
+            </svg>
+          </button>
+          <div class="tips-collapsible__content">
+            <ul class="tips-list">
+              <li>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Include action items and decisions made during the meeting</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Note any risks, concerns, or blockers discussed</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Capture open questions that need follow-up</span>
+              </li>
+              <li>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13.5 4.5L6 12L2.5 8.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Works with Webex transcripts, AI summaries, or manual notes</span>
+              </li>
+            </ul>
+            <div class="tips-example-label">Example Input</div>
+            <div class="tips-example">Meeting: Sprint 12 Planning
+Date: Feb 2, 2026
+
+Decisions:
+- Use React for the new dashboard
+- API deadline is March 15
+
+Risks:
+- Team capacity is limited next month
+
+Action Items:
+- @John to create API spec by Friday</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <div class="form-actions__left">
+          <a href="#" class="form-btn form-btn--ghost">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 12L6 8l4-4"/>
+            </svg>
+            Back to Dashboard
+          </a>
+        </div>
+        <div class="form-actions__right">
+          <span class="btn-disabled-hint">Enter title and content</span>
+          <button type="submit" class="form-btn form-btn--primary" disabled>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M14 10V12.667C14 13.02 13.86 13.36 13.61 13.61C13.36 13.86 13.02 14 12.667 14H3.333C2.98 14 2.64 13.86 2.39 13.61C2.14 13.36 2 13.02 2 12.667V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M11.333 5.333L8 2L4.667 5.333" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 2V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Process Meeting Notes
+          </button>
+        </div>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

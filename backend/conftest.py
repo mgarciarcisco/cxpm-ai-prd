@@ -13,10 +13,10 @@ from app.main import app
 
 # Import models so that Base.metadata knows about them
 from app.models import (  # noqa: F401
+    PRD,
     MeetingItem,
     MeetingItemDecision,
     MeetingRecap,
-    PRD,
     Project,
     Requirement,
     RequirementHistory,

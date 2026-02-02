@@ -1,15 +1,52 @@
 import { useState } from 'react';
 import './CollapsibleSection.css';
 
-export function CollapsibleSection({ title, itemCount, children, defaultExpanded = true }) {
+/**
+ * Get the CSS class modifier for the badge variant
+ * @param {string} variant - The section variant (e.g., 'problems', 'user_goals')
+ * @param {number} itemCount - The number of items in the section
+ * @returns {string} The CSS modifier class
+ */
+function getBadgeVariantClass(variant, itemCount) {
+  if (itemCount === 0) {
+    return 'collapsible-section-count--empty';
+  }
+
+  const variantMap = {
+    problems: 'collapsible-section-count--problems',
+    user_goals: 'collapsible-section-count--user-goals',
+    functional_requirements: 'collapsible-section-count--functional-requirements',
+    data_needs: 'collapsible-section-count--data-needs',
+    constraints: 'collapsible-section-count--constraints',
+    non_goals: 'collapsible-section-count--non-goals',
+    risks_assumptions: 'collapsible-section-count--risks-assumptions',
+    open_questions: 'collapsible-section-count--open-questions',
+    action_items: 'collapsible-section-count--action-items',
+  };
+
+  return variantMap[variant] || '';
+}
+
+export function CollapsibleSection({
+  title,
+  itemCount,
+  children,
+  defaultExpanded = true,
+  variant = '',
+  id = ''
+}) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   const handleToggle = () => {
     setIsExpanded((prev) => !prev);
   };
 
+  const isEmpty = typeof itemCount === 'number' && itemCount === 0;
+  const sectionClassName = `collapsible-section${isEmpty ? ' collapsible-section--empty' : ''}`;
+  const badgeClassName = `collapsible-section-count ${getBadgeVariantClass(variant, itemCount)}`.trim();
+
   return (
-    <div className="collapsible-section">
+    <div className={sectionClassName} id={id || undefined}>
       <button
         className="collapsible-section-header"
         onClick={handleToggle}
@@ -36,7 +73,7 @@ export function CollapsibleSection({ title, itemCount, children, defaultExpanded
         </span>
         <span className="collapsible-section-title">{title}</span>
         {typeof itemCount === 'number' && (
-          <span className="collapsible-section-count">{itemCount}</span>
+          <span className={badgeClassName}>{itemCount}</span>
         )}
       </button>
       {isExpanded && (

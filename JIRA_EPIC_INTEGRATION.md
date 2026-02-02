@@ -11,7 +11,7 @@ Successfully integrated the JIRA Epic generation feature with full frontend-to-b
 - ✅ Uses Ollama LLM service (configurable via `OLLAMA_BASE_URL` and `OLLAMA_MODEL`)
 - ✅ Reads prompt template from `backend/prompts/jira_epic.txt`
 - ✅ Comprehensive error handling and validation
-- ✅ Automatic fallback to Claude if Ollama unavailable
+- ✅ Automatic fallback to Ollama if Circuit unavailable
 
 ### 2. Backend API Router (`backend/app/routers/jira_epic.py`)
 - ✅ POST endpoint: `/api/jira-epic/generate`
@@ -101,12 +101,15 @@ Content-Type: application/json
 
 ### Environment Variables (`.env`)
 ```bash
-# Ollama Configuration
+# Circuit Configuration (primary)
+CIRCUIT_CLIENT_ID=your-client-id
+CIRCUIT_CLIENT_SECRET=your-client-secret
+CIRCUIT_APP_KEY=your-app-key
+CIRCUIT_MODEL=gpt-4.1
+
+# Ollama Configuration (fallback)
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.2
-
-# Optional: Claude API fallback
-ANTHROPIC_API_KEY=your_key_here
 ```
 
 ### LLM Settings

@@ -130,7 +130,7 @@ class TimeoutLLMProvider:
         max_tokens: int | None = None,
         timeout: float | None = None,
     ) -> str:
-        raise LLMError("Claude API request timed out")
+        raise LLMError("LLM API request timed out")
 
 
 def _create_mock_prd_response(
@@ -1151,8 +1151,9 @@ def test_same_project_can_have_different_prd_versions(test_db: Session) -> None:
 
 def test_unique_constraint_applies_to_all_prd_statuses(test_db: Session) -> None:
     """Test that unique constraint applies regardless of PRD status (including deleted)."""
-    from sqlalchemy.exc import IntegrityError
     from datetime import datetime
+
+    from sqlalchemy.exc import IntegrityError
 
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)

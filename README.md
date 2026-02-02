@@ -2,85 +2,61 @@
 
 CX AI Assistant for Product Management — An AI-powered application that helps Product Managers create PRDs.
 
-## Quick Start
+## Quick Start (Docker Required)
 
-### Option 1: Docker (Recommended)
+This application runs in Docker containers for consistent development across all platforms.
 
-The easiest way to run the application is using Docker:
+### Prerequisites
 
-```bash
-./docker_run.sh
+1. **Install Docker Desktop**: https://www.docker.com/products/docker-desktop/
+2. **Configure LLM credentials**: Copy `backend/.env.example` to `backend/.env` and add your Circuit API keys:
+   ```env
+   CIRCUIT_CLIENT_ID=your-client-id
+   CIRCUIT_CLIENT_SECRET=your-client-secret
+   CIRCUIT_APP_KEY=your-app-key
+   ```
+
+### Start the Application
+
+**Windows (PowerShell):**
+```powershell
+.\start_dev.ps1
 ```
 
-This will:
-- Build a Docker image with AlmaLinux 9
-- Install Node.js v24.11.1 and npm 11.6.2
-- Start the container and application
-- Enable hot reload for development
+**macOS/Linux:**
+```bash
+docker-compose -f docker-compose.dev.yml up -d
+```
 
-The application will be available at `http://localhost:3000`
+The application will be available at:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+
+### Common Commands
+
+| Command | Windows | macOS/Linux |
+|---------|---------|-------------|
+| Start | `.\start_dev.ps1` | `docker-compose -f docker-compose.dev.yml up -d` |
+| Stop | `.\start_dev.ps1 -Stop` | `docker-compose -f docker-compose.dev.yml down` |
+| View logs | `.\start_dev.ps1 -Logs` | `docker-compose -f docker-compose.dev.yml logs -f` |
+| Restart | `.\start_dev.ps1 -Restart` | `docker-compose -f docker-compose.dev.yml restart` |
+| Rebuild | `.\start_dev.ps1 -Build` | `docker-compose -f docker-compose.dev.yml up --build -d` |
+
+### Development Features
+
+- **Hot-reloading**: Code changes in `ui/src/` and `backend/app/` apply automatically
+- **Database persistence**: SQLite database persists across container restarts
+- **LLM fallback**: Uses Circuit (Cisco AI) if configured, falls back to Ollama
+
+### Production Deployment
+
+For production deployment with Nginx and Ollama:
+
+```bash
+docker-compose up --build -d
+```
 
 For detailed Docker documentation, see [DOCKER.md](DOCKER.md)
-
-**Manual Docker commands:**
-
-```bash
-# Using Docker Compose
-docker-compose up --build -d
-
-# Or using plain Docker
-docker build -t cxpm-ai-prd .
-docker run -d -p 3000:3000 --name cxpm-ai-prd-app cxpm-ai-prd
-```
-
-### Option 2: Direct Installation (AlmaLinux)
-
-If you're setting up on a fresh AlmaLinux system, first install system dependencies:
-
-```bash
-sudo ./install_dependencies_alma.sh
-```
-
-This will install:
-- Node.js v24.11.1 (using nvm)
-- npm 11.6.2
-- Development tools (gcc, make, git)
-- Required utilities (lsof, curl, wget)
-- EPEL repository
-
-### Running the Application (Development)
-
-The easiest way to run the application is using the provided script:
-
-```bash
-./run_app.sh
-```
-
-This script will:
-- Check and install dependencies if needed
-- Detect and kill any existing instances running on port 3000
-- Start the development server
-
-The application will be available at `http://localhost:3000`
-
-## Manual Setup
-
-If you prefer to run manually:
-
-1. Navigate to the ui directory:
-   ```bash
-   cd ui
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
 
 ---
 
@@ -235,7 +211,7 @@ cxpm-ai-prd/
 │   │       └── llm/                # LLM providers
 │   │           ├── base.py         # Abstract LLMProvider
 │   │           ├── ollama.py       # Ollama provider
-│   │           ├── claude.py       # Claude provider
+│   │           ├── circuit.py      # Circuit (Cisco AI) provider
 │   │           └── factory.py      # Provider factory with fallback
 │   ├── prompts/                    # LLM prompt templates
 │   │   └── extract_meeting_v1.txt  # Extraction prompt
@@ -318,7 +294,7 @@ docker exec -it cxpm-ai-prd-app /bin/bash
 
 - **Backend:** FastAPI (Python 3)
 - **Database:** SQLite (SQLAlchemy ORM, Alembic migrations)
-- **LLM:** Ollama (local) / Claude (cloud fallback)
+- **LLM:** Circuit (Cisco AI) / Ollama (local fallback)
 - **Frontend:** React 18.3.1
 - **Build Tool:** Vite 6.0.5
 - **Testing:** pytest (backend), Vitest (frontend)
@@ -371,13 +347,71 @@ This feature allows users to upload meeting notes and automatically extract stru
 
 The application has two parts: a FastAPI backend and a React frontend.
 
+#### Windows Development (WSL Required)
+
+On Windows, the backend requires WSL (Windows Subsystem for Linux) with Ubuntu because Python 3.12 runs in WSL.
+
+**Quick Start (PowerShell):**
+```powershell
+# Run the startup script (starts both backend and frontend)
+.\start_dev.ps1
+
+# Or start only backend
+.\start_dev.ps1 -BackendOnly
+
+# Or start only frontend
+.\start_dev.ps1 -FrontendOnly
+```
+
+**One-time setup:**
+```powershell
+# Ensure WSL Ubuntu is installed
+wsl --install -d Ubuntu
+
+# Install Python venv package (run in WSL)
+wsl -d Ubuntu -- sudo apt update
+wsl -d Ubuntu -- sudo apt install -y python3.12-venv python3-pip
+```
+
+**Start both servers (recommended approach):**
+
+Open two terminal windows:
+
+**Terminal 1 - Backend (WSL):**
+```powershell
+wsl -d Ubuntu -- bash -c "cd /mnt/c/Users/$env:USERNAME/Projects/cxpm-ai-prd/backend && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt -q && python -m alembic upgrade head && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+```
+
+**Terminal 2 - Frontend (PowerShell):**
+```powershell
+cd ui
+npm install
+npm run dev
+```
+
+**Alternative (if python3.12-venv is not installed):**
+```powershell
+# Backend with --break-system-packages (no venv)
+wsl -d Ubuntu -- bash -c "cd /mnt/c/Users/$env:USERNAME/Projects/cxpm-ai-prd/backend && pip3 install --user --break-system-packages -r requirements.txt -q && python3 -m alembic upgrade head && python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+```
+
+The application will be available at:
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8000
+
+#### Linux/macOS Development
+
 #### Backend (API Server)
 
 ```bash
 cd backend
 
+# Create virtual environment (recommended)
+python3 -m venv .venv
+source .venv/bin/activate
+
 # Install Python dependencies
-pip install -r requirements.txt --break-system-packages
+pip install -r requirements.txt
 
 # Run database migrations
 python3 -m alembic upgrade head
@@ -394,11 +428,11 @@ cd ui
 # Install npm dependencies
 npm install
 
-# Start the development server (runs on port 5173)
+# Start the development server (runs on port 3000)
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173` with the API at `http://localhost:8000`.
+The application will be available at `http://localhost:3000` with the API at `http://localhost:8000`.
 
 ### API Endpoints
 
@@ -499,14 +533,15 @@ npm test
 
 The extraction feature supports two LLM providers with automatic fallback:
 
-1. **Ollama (Local)** - Default, runs locally
+1. **Circuit (Cisco AI)** - Primary provider
+   - Set `CIRCUIT_CLIENT_ID`, `CIRCUIT_CLIENT_SECRET`, `CIRCUIT_APP_KEY` in `.env`
+   - Optionally set `CIRCUIT_BASE_URL` and `CIRCUIT_MODEL`
+
+2. **Ollama (Local)** - Fallback, runs locally
    - Set `OLLAMA_BASE_URL` (default: `http://localhost:11434`)
-   - Set `OLLAMA_MODEL` (default: `llama3`)
+   - Set `OLLAMA_MODEL` (default: `llama3.2`)
 
-2. **Claude (Anthropic)** - Cloud fallback
-   - Set `ANTHROPIC_API_KEY` in environment or `.env` file
-
-The system automatically tries Ollama first and falls back to Claude if unavailable.
+The system automatically tries Circuit first and falls back to Ollama if unavailable.
 
 ### Environment Variables
 
@@ -516,12 +551,15 @@ Create a `.env` file in the `backend/` directory:
 # Database (default: SQLite)
 DATABASE_URL=sqlite:///./cxpm.db
 
-# Ollama (local LLM)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3
+# Circuit (Cisco AI - primary)
+CIRCUIT_CLIENT_ID=your-client-id
+CIRCUIT_CLIENT_SECRET=your-client-secret
+CIRCUIT_APP_KEY=your-app-key
+CIRCUIT_MODEL=gpt-4.1
 
-# Claude (cloud LLM - fallback)
-ANTHROPIC_API_KEY=your-api-key-here
+# Ollama (local LLM - fallback)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
 
 # File upload limit
 MAX_FILE_SIZE_KB=50

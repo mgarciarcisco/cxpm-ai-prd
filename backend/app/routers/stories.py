@@ -6,7 +6,7 @@ import json
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.responses import Response
@@ -21,17 +21,16 @@ from app.models import (
     StoryBatch,
     StoryBatchStatus,
     StoryFormat,
-    StorySize,
     StoryStatus,
     UserStory,
 )
 from app.schemas import (
     PaginatedResponse,
     ReorderRequest,
+    StoriesGenerateRequest,
     StoryBatchResponse,
     StoryBatchStatusResponse,
     StoryCreateRequest,
-    StoriesGenerateRequest,
     StoryExportFormat,
     StoryUpdateRequest,
     UserStoryResponse,
@@ -68,7 +67,7 @@ def _get_batch_or_404(batch_id: str, db: Session, verify_project_access: bool = 
     batch = db.query(StoryBatch).filter(StoryBatch.id == batch_id).first()
     if not batch:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Story batch not found")
-    
+
     # Verify project access - ensures the batch's project exists and is accessible
     # When authentication is implemented, this would also verify user permissions
     if verify_project_access:
@@ -79,7 +78,7 @@ def _get_batch_or_404(batch_id: str, db: Session, verify_project_access: bool = 
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Story batch not found"
             )
-    
+
     return batch
 
 
@@ -100,7 +99,7 @@ def _get_story_or_404(story_id: str, db: Session, verify_project_access: bool = 
     story = db.query(UserStory).filter(UserStory.id == story_id, UserStory.deleted_at.is_(None)).first()
     if not story:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Story not found")
-    
+
     # Verify project access - ensures the story's project exists and is accessible
     # When authentication is implemented, this would also verify user permissions
     if verify_project_access:
@@ -111,7 +110,7 @@ def _get_story_or_404(story_id: str, db: Session, verify_project_access: bool = 
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Story not found"
             )
-    
+
     return story
 
 
@@ -157,7 +156,7 @@ def _batch_to_response(batch: StoryBatch) -> StoryBatchResponse:
 
 def _run_generate_stories_task(
     batch_id: str,
-    created_by: Optional[str] = None,
+    created_by: str | None = None,
 ) -> None:
     """Wrapper to run generate_stories_task with a fresh database session.
 
@@ -239,7 +238,7 @@ async def stream_stories_generation(
     project_id: str,
     request: Request,
     format: StoryFormat = Query(default=StoryFormat.CLASSIC, description="Story format (classic or job_story)"),
-    section_filter: Optional[list[str]] = Query(default=None, description="Optional sections to filter requirements"),
+    section_filter: list[str] | None = Query(default=None, description="Optional sections to filter requirements"),
     db: Session = Depends(get_db),
 ) -> EventSourceResponse:
     """Stream user story generation as Server-Sent Events (SSE).
@@ -429,9 +428,9 @@ def list_project_stories(
     project_id: str,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    batch_id: Optional[str] = Query(None),
-    status_filter: Optional[StoryStatus] = Query(None, alias="status"),
-    labels: Optional[str] = Query(None, description="Comma-separated list of labels to filter by"),
+    batch_id: str | None = Query(None),
+    status_filter: StoryStatus | None = Query(None, alias="status"),
+    labels: str | None = Query(None, description="Comma-separated list of labels to filter by"),
     db: Session = Depends(get_db),
 ) -> PaginatedResponse[UserStoryResponse]:
     """List all user stories for a project with pagination.
@@ -720,7 +719,7 @@ def delete_batch_stories(
 def export_stories(
     project_id: str,
     format: StoryExportFormat = Query(StoryExportFormat.MARKDOWN),
-    batch_id: Optional[str] = Query(None),
+    batch_id: str | None = Query(None),
     db: Session = Depends(get_db),
 ) -> Response:
     """Export stories in the specified format.
