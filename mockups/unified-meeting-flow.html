@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unified Meeting → Requirements Flow Mockup</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+    }
+    
+    /* Navigation */
+    .flow-nav {
+      background: #1a1a2e;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .flow-nav h1 {
+      font-size: 18px;
+      font-weight: 500;
+    }
+    
+    .entry-toggle {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .entry-toggle button {
+      padding: 8px 16px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: transparent;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    
+    .entry-toggle button.active {
+      background: #4a9eff;
+      border-color: #4a9eff;
+    }
+    
+    /* Progress Steps */
+    .progress-bar {
+      background: white;
+      padding: 20px 40px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .step {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+    
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e0e0e0;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    
+    .step.active .step-circle {
+      background: #4a9eff;
+      color: white;
+    }
+    
+    .step.completed .step-circle {
+      background: #22c55e;
+      color: white;
+    }
+    
+    .step-label {
+      margin-left: 8px;
+      font-size: 13px;
+      color: #666;
+      white-space: nowrap;
+    }
+    
+    .step.active .step-label {
+      color: #1a1a2e;
+      font-weight: 500;
+    }
+    
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: #e0e0e0;
+      margin: 0 12px;
+    }
+    
+    .step.completed .step-line {
+      background: #22c55e;
+    }
+    
+    /* Screen Container */
+    .screen {
+      display: none;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    
+    .screen.active {
+      display: block;
+    }
+    
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #1a1a2e;
+    }
+    
+    .card p.subtitle {
+      color: #666;
+      margin-bottom: 24px;
+    }
+    
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .form-group textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #4a9eff;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #3a8eef;
+    }
+    
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+    
+    .btn-success {
+      background: #22c55e;
+      color: white;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+    
+    /* File Drop */
+    .file-drop {
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      color: #666;
+      margin-bottom: 16px;
+    }
+    
+    .file-drop-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    
+    /* Extracted Items */
+    .section-group {
+      margin-bottom: 24px;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #f5f7fa;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    
+    .section-title {
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    
+    .section-count {
+      background: #4a9eff;
+      color: white;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    
+    .item-row {
+      display: flex;
+      align-items: flex-start;
+      padding: 12px 16px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      gap: 12px;
+    }
+    
+    .item-checkbox {
+      margin-top: 3px;
+    }
+    
+    .item-content {
+      flex: 1;
+      color: #333;
+      line-height: 1.5;
+    }
+    
+    .item-source {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+    
+    /* Project Picker */
+    .project-option {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      border: 2px solid #eee;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .project-option:hover {
+      border-color: #4a9eff;
+    }
+    
+    .project-option.selected {
+      border-color: #4a9eff;
+      background: #f0f7ff;
+    }
+    
+    .project-option input[type="radio"] {
+      margin-right: 12px;
+    }
+    
+    .project-info h4 {
+      margin-bottom: 4px;
+      color: #1a1a2e;
+    }
+    
+    .project-info p {
+      font-size: 13px;
+      color: #666;
+    }
+    
+    /* Conflict Items */
+    .conflict-item {
+      border: 1px solid #fbbf24;
+      background: #fffbeb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .conflict-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .conflict-badge {
+      background: #fbbf24;
+      color: #78350f;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .conflict-type {
+      color: #92400e;
+      font-size: 13px;
+    }
+    
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .comparison-box {
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .comparison-box.existing {
+      background: #f0f0f0;
+    }
+    
+    .comparison-box.new {
+      background: #e0f2fe;
+    }
+    
+    .comparison-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .resolution-options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .resolution-btn {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    
+    .resolution-btn.selected {
+      border-color: #4a9eff;
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+    }
+    
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      max-width: 400px;
+      text-align: center;
+    }
+    
+    .modal-icon {
+      width: 64px;
+      height: 64px;
+      background: #dcfce7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 32px;
+    }
+    
+    .modal h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: #1a1a2e;
+    }
+    
+    .modal p {
+      color: #666;
+      margin-bottom: 24px;
+    }
+    
+    /* Streaming Animation */
+    .streaming-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px;
+      background: #f0f7ff;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .streaming-dot {
+      width: 8px;
+      height: 8px;
+      background: #4a9eff;
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    
+    /* Summary Stats */
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .stat-box {
+      text-align: center;
+      padding: 16px;
+      background: #f5f7fa;
+      border-radius: 8px;
+    }
+    
+    .stat-number {
+      font-size: 28px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    
+    .stat-label {
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .stat-box.added .stat-number { color: #22c55e; }
+    .stat-box.conflicts .stat-number { color: #f59e0b; }
+    .stat-box.skipped .stat-number { color: #94a3b8; }
+    
+    /* Entry Point Indicator */
+    .entry-indicator {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+    
+    /* Hide steps based on entry point */
+    .step.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="flow-nav">
+    <h1>Unified Meeting → Requirements Flow</h1>
+    <div class="entry-toggle">
+      <button id="entry-dashboard" class="active" onclick="setEntryPoint('dashboard')">From Dashboard</button>
+      <button id="entry-project" onclick="setEntryPoint('project')">From Project</button>
+    </div>
+  </nav>
+  
+  <!-- Progress Bar -->
+  <div class="progress-bar">
+    <div class="steps" id="progress-steps">
+      <div class="step active" data-step="1">
+        <div class="step-circle">1</div>
+        <div class="step-label">Add Meetings</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-circle">2</div>
+        <div class="step-label">Extract</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-circle">3</div>
+        <div class="step-label">Review</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step" data-step="4" id="step-project">
+        <div class="step-circle">4</div>
+        <div class="step-label">Select Project</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step" data-step="5">
+        <div class="step-circle">5</div>
+        <div class="step-label">Conflicts</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step" data-step="6">
+        <div class="step-circle">6</div>
+        <div class="step-label">Summary</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step" data-step="7">
+        <div class="step-circle">7</div>
+        <div class="step-label">View Requirements</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Screen 1: Add Meetings -->
+  <div class="screen active" id="screen-1">
+    <div class="entry-indicator" id="entry-label">Entry: Dashboard</div>
+    
+    <div class="card">
+      <h2>Add Meeting Notes</h2>
+      <p class="subtitle">Paste meeting notes or upload a file. You can add multiple meetings.</p>
+      
+      <div class="form-group">
+        <label>Meeting Title</label>
+        <input type="text" placeholder="e.g., Sprint Planning, User Research Session" value="Product Kickoff Meeting">
+      </div>
+      
+      <div class="form-group">
+        <label>Meeting Date</label>
+        <input type="date" value="2026-01-30">
+      </div>
+      
+      <div class="file-drop">
+        <div class="file-drop-icon">📄</div>
+        <div>Click or drag file here</div>
+        <div style="font-size: 12px; margin-top: 4px;">Supports .txt and .md files</div>
+      </div>
+      
+      <div style="text-align: center; color: #666; margin-bottom: 16px;">OR</div>
+      
+      <div class="form-group">
+        <label>Paste Meeting Notes</label>
+        <textarea placeholder="Paste your meeting notes here...">Meeting Notes - Product Kickoff
+
+Attendees: Sarah (PM), Mike (Dev Lead), Lisa (UX)
+
+Key Decisions:
+- The system must support both mobile and desktop users
+- User authentication will use SSO integration
+- Dashboard should show real-time metrics
+- Need offline mode for field workers
+
+Action Items:
+- Mike to research SSO providers
+- Lisa to create wireframes for dashboard
+- Sarah to define KPIs for metrics
+
+Requirements discussed:
+1. Users should be able to export reports to PDF
+2. Admin panel needed for user management
+3. Integration with Slack for notifications
+4. Multi-language support (English, Spanish, French)</textarea>
+      </div>
+      
+      <div class="actions">
+        <button class="btn btn-secondary">+ Add Another Meeting</button>
+        <button class="btn btn-primary" onclick="goToScreen(2)">Extract Requirements →</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Screen 2: Extracting (Loading State) -->
+  <div class="screen" id="screen-2">
+    <div class="card">
+      <h2>Extracting Requirements</h2>
+      <p class="subtitle">AI is analyzing your meeting notes...</p>
+      
+      <div class="streaming-indicator">
+        <div class="streaming-dot"></div>
+        <span>Processing: Product Kickoff Meeting</span>
+      </div>
+      
+      <div style="margin-top: 24px;">
+        <div class="section-group">
+          <div class="section-header">
+            <span class="section-title">✓ Functional Requirements</span>
+            <span class="section-count">4</span>
+          </div>
+        </div>
+        <div class="section-group">
+          <div class="section-header">
+            <span class="section-title">✓ User Goals</span>
+            <span class="section-count">2</span>
+          </div>
+        </div>
+        <div class="section-group">
+          <div class="section-header">
+            <span class="section-title">⏳ Constraints</span>
+            <span class="section-count">...</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <button class="btn btn-primary" onclick="goToScreen(3)">Skip to Review →</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Screen 3: Review Extracted Items -->
+  <div class="screen" id="screen-3">
+    <div class="card">
+      <h2>Review Extracted Requirements</h2>
+      <p class="subtitle">Select the items you want to save. You can edit or remove items.</p>
+      
+      <div class="summary-stats">
+        <div class="stat-box">
+          <div class="stat-number">8</div>
+          <div class="stat-label">Total Items</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">8</div>
+          <div class="stat-label">Selected</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">1</div>
+          <div class="stat-label">Meetings</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">4</div>
+          <div class="stat-label">Sections</div>
+        </div>
+      </div>
+      
+      <div class="section-group">
+        <div class="section-header">
+          <span class="section-title">Functional Requirements</span>
+          <span class="section-count">4</span>
+        </div>
+        <div class="item-row">
+          <input type="checkbox" class="item-checkbox" checked>
+          <div class="item-content">
+            Users should be able to export reports to PDF format
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <input type="checkbox" class="item-checkbox" checked>
+          <div class="item-content">
+            Admin panel needed for user management including role assignment
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <input type="checkbox" class="item-checkbox" checked>
+          <div class="item-content">
+            Integration with Slack for real-time notifications
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <input type="checkbox" class="item-checkbox" checked>
+          <div class="item-content">
+            Multi-language support required: English, Spanish, French
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="section-group">
+        <div class="section-header">
+          <span class="section-title">User Goals</span>
+          <span class="section-count">2</span>
+        </div>
+        <div class="item-row">
+          <input type="checkbox" class="item-checkbox" checked>
+          <div class="item-content">
+            Support both mobile and desktop users with responsive design
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <input type="checkbox" class="item-checkbox" checked>
+          <div class="item-content">
+            Dashboard should display real-time metrics and KPIs
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="section-group">
+        <div class="section-header">
+          <span class="section-title">Constraints</span>
+          <span class="section-count">2</span>
+        </div>
+        <div class="item-row">
+          <input type="checkbox" class="item-checkbox" checked>
+          <div class="item-content">
+            User authentication must use SSO integration
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <input type="checkbox" class="item-checkbox" checked>
+          <div class="item-content">
+            System must support offline mode for field workers
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="goToScreen(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goToNextFromReview()">Continue →</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Screen 4: Select Project (Dashboard flow only) -->
+  <div class="screen" id="screen-4">
+    <div class="card">
+      <h2>Select Project</h2>
+      <p class="subtitle">Choose where to save these requirements, or create a new project.</p>
+      
+      <div class="project-option" onclick="selectProject(this, 'new')">
+        <input type="radio" name="project" value="new">
+        <div class="project-info">
+          <h4>+ Create New Project</h4>
+          <p>Start a fresh project with these requirements</p>
+        </div>
+      </div>
+      
+      <div class="project-option selected" onclick="selectProject(this, 'existing-empty')">
+        <input type="radio" name="project" value="existing-empty" checked>
+        <div class="project-info">
+          <h4>Mobile App Redesign</h4>
+          <p>No existing requirements • Created 2 days ago</p>
+        </div>
+      </div>
+      
+      <div class="project-option" onclick="selectProject(this, 'existing-has-reqs')">
+        <input type="radio" name="project" value="existing-has-reqs">
+        <div class="project-info">
+          <h4>Customer Portal v2</h4>
+          <p>12 existing requirements • Last updated yesterday</p>
+        </div>
+      </div>
+      
+      <div class="project-option" onclick="selectProject(this, 'existing-has-reqs-2')">
+        <input type="radio" name="project" value="existing-has-reqs-2">
+        <div class="project-info">
+          <h4>Analytics Dashboard</h4>
+          <p>8 existing requirements • Last updated 1 week ago</p>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="goToScreen(3)">← Back</button>
+        <button class="btn btn-primary" onclick="goToConflictCheck()">Save to Project →</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Screen 5: Conflict Resolution -->
+  <div class="screen" id="screen-5">
+    <div class="card">
+      <h2>Resolve Conflicts</h2>
+      <p class="subtitle">Some items may conflict with existing requirements. Review and resolve below.</p>
+      
+      <div class="summary-stats">
+        <div class="stat-box added">
+          <div class="stat-number">5</div>
+          <div class="stat-label">Will be Added</div>
+        </div>
+        <div class="stat-box conflicts">
+          <div class="stat-number">2</div>
+          <div class="stat-label">Conflicts</div>
+        </div>
+        <div class="stat-box skipped">
+          <div class="stat-number">1</div>
+          <div class="stat-label">Duplicates</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">8</div>
+          <div class="stat-label">Total</div>
+        </div>
+      </div>
+      
+      <h3 style="margin: 24px 0 16px; font-size: 16px;">Conflicts to Resolve</h3>
+      
+      <div class="conflict-item">
+        <div class="conflict-header">
+          <span class="conflict-badge">CONFLICT</span>
+          <span class="conflict-type">Refinement - New item adds detail to existing</span>
+        </div>
+        <div class="comparison">
+          <div class="comparison-box existing">
+            <div class="comparison-label">Existing Requirement</div>
+            The system should support multiple languages
+          </div>
+          <div class="comparison-box new">
+            <div class="comparison-label">New Item (from meeting)</div>
+            Multi-language support required: English, Spanish, French
+          </div>
+        </div>
+        <div class="resolution-options">
+          <button class="resolution-btn">Keep Existing</button>
+          <button class="resolution-btn selected">Replace with New</button>
+          <button class="resolution-btn">Merge Both</button>
+        </div>
+      </div>
+      
+      <div class="conflict-item">
+        <div class="conflict-header">
+          <span class="conflict-badge">CONFLICT</span>
+          <span class="conflict-type">Contradiction - Items appear to contradict</span>
+        </div>
+        <div class="comparison">
+          <div class="comparison-box existing">
+            <div class="comparison-label">Existing Requirement</div>
+            System requires constant internet connectivity
+          </div>
+          <div class="comparison-box new">
+            <div class="comparison-label">New Item (from meeting)</div>
+            System must support offline mode for field workers
+          </div>
+        </div>
+        <div class="resolution-options">
+          <button class="resolution-btn selected">Keep Existing</button>
+          <button class="resolution-btn">Replace with New</button>
+          <button class="resolution-btn">Merge Both</button>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="goToPrevFromConflicts()">← Back</button>
+        <button class="btn btn-success" onclick="goToScreen(6)">Apply Changes →</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Screen 6: Done -->
+  <div class="screen" id="screen-6">
+    <div class="card" style="text-align: center; padding: 48px;">
+      <div class="modal-icon">✓</div>
+      <h2>Requirements Saved!</h2>
+      <p class="subtitle">8 requirements have been added to your project.</p>
+      
+      <div class="summary-stats" style="max-width: 400px; margin: 24px auto;">
+        <div class="stat-box added">
+          <div class="stat-number">5</div>
+          <div class="stat-label">Added</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">2</div>
+          <div class="stat-label">Replaced</div>
+        </div>
+        <div class="stat-box skipped">
+          <div class="stat-number">1</div>
+          <div class="stat-label">Skipped</div>
+        </div>
+      </div>
+      
+      <div class="actions" style="justify-content: center;">
+        <button class="btn btn-secondary" onclick="goToScreen(1)">Add More Meetings</button>
+        <button class="btn btn-primary" onclick="goToScreen(7)">View Requirements →</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Screen 7: View Requirements (Final Page) -->
+  <div class="screen" id="screen-7">
+    <!-- Project Header -->
+    <div class="card" style="padding: 20px 32px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 13px; color: #666; margin-bottom: 4px;">← Back to Dashboard</div>
+          <h2 style="margin: 0;">Customer Portal v2</h2>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <span class="section-count" style="background: #22c55e;">Requirements</span>
+          <span class="section-count" style="background: #e0e0e0; color: #666;">PRD</span>
+          <span class="section-count" style="background: #e0e0e0; color: #666;">Stories</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Requirements Stage Header -->
+    <div class="card" style="padding: 20px 32px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <h3 style="margin: 0; font-size: 18px;">Requirements</h3>
+            <span style="background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 12px; font-size: 12px;">20 items across 4 sections</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary" onclick="goToScreen(1)">Add Meeting</button>
+          <button class="btn btn-secondary">Add Manually</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Meetings Panel -->
+    <div class="card" style="padding: 16px 24px; margin-bottom: 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <h4 style="margin: 0; font-size: 14px; color: #666;">Meeting Sources</h4>
+        <span style="font-size: 13px; color: #999;">2 meetings</span>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <div style="background: #f5f7fa; padding: 12px 16px; border-radius: 8px; flex: 1;">
+          <div style="font-weight: 500; margin-bottom: 4px;">Sprint Planning</div>
+          <div style="font-size: 12px; color: #666;">Jan 15, 2026 • 12 items extracted</div>
+        </div>
+        <div style="background: #e0f2fe; border: 1px solid #4a9eff; padding: 12px 16px; border-radius: 8px; flex: 1;">
+          <div style="font-weight: 500; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+            Product Kickoff Meeting
+            <span style="background: #4a9eff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">NEW</span>
+          </div>
+          <div style="font-size: 12px; color: #666;">Jan 30, 2026 • 8 items extracted</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Requirements List -->
+    <div class="card">
+      <div class="section-group">
+        <div class="section-header">
+          <span class="section-title">Functional Requirements</span>
+          <span class="section-count">8</span>
+        </div>
+        <div class="item-row" style="background: #f0fdf4; border-color: #bbf7d0;">
+          <div class="item-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              Users should be able to export reports to PDF format
+              <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">NEW</span>
+            </div>
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row" style="background: #f0fdf4; border-color: #bbf7d0;">
+          <div class="item-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              Admin panel needed for user management including role assignment
+              <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">NEW</span>
+            </div>
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row" style="background: #f0fdf4; border-color: #bbf7d0;">
+          <div class="item-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              Integration with Slack for real-time notifications
+              <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">NEW</span>
+            </div>
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row" style="background: #fef3c7; border-color: #fcd34d;">
+          <div class="item-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              Multi-language support required: English, Spanish, French
+              <span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">REPLACED</span>
+            </div>
+            <div class="item-source">Source: Product Kickoff Meeting (replaced existing)</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            User profile management with avatar upload
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Search functionality across all content types
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Email notification preferences per user
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Audit logging for all administrative actions
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="section-group">
+        <div class="section-header">
+          <span class="section-title">User Goals</span>
+          <span class="section-count">5</span>
+        </div>
+        <div class="item-row" style="background: #f0fdf4; border-color: #bbf7d0;">
+          <div class="item-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              Support both mobile and desktop users with responsive design
+              <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">NEW</span>
+            </div>
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row" style="background: #f0fdf4; border-color: #bbf7d0;">
+          <div class="item-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              Dashboard should display real-time metrics and KPIs
+              <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">NEW</span>
+            </div>
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Users can complete tasks in under 3 clicks
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            First-time users can onboard without training
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Power users have keyboard shortcuts for efficiency
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="section-group">
+        <div class="section-header">
+          <span class="section-title">Constraints</span>
+          <span class="section-count">4</span>
+        </div>
+        <div class="item-row" style="background: #f0fdf4; border-color: #bbf7d0;">
+          <div class="item-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              User authentication must use SSO integration
+              <span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">NEW</span>
+            </div>
+            <div class="item-source">Source: Product Kickoff Meeting</div>
+          </div>
+        </div>
+        <div class="item-row" style="background: #fef3c7; border-color: #fcd34d;">
+          <div class="item-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              System must support offline mode for field workers
+              <span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">REPLACED</span>
+            </div>
+            <div class="item-source">Source: Product Kickoff Meeting (replaced existing)</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Must comply with GDPR requirements
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Page load time under 2 seconds
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="section-group">
+        <div class="section-header">
+          <span class="section-title">Data Needs</span>
+          <span class="section-count">3</span>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Historical data retention for 7 years
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Daily backup with point-in-time recovery
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+        <div class="item-row">
+          <div class="item-content">
+            Data encryption at rest and in transit
+            <div class="item-source">Source: Sprint Planning</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Stage Actions -->
+      <div style="display: flex; justify-content: flex-end; margin-top: 24px; padding-top: 24px; border-top: 1px solid #eee;">
+        <button class="btn btn-success">Mark as Reviewed</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- No Conflicts Modal -->
+  <div class="modal-overlay" id="no-conflicts-modal">
+    <div class="modal">
+      <div class="modal-icon">✓</div>
+      <h3>No Conflicts Found</h3>
+      <p>All 8 items can be added to your project without any conflicts with existing requirements.</p>
+      <button class="btn btn-primary" onclick="closeNoConflictsModal()">OK, Continue</button>
+    </div>
+  </div>
+
+  <script>
+    let currentScreen = 1;
+    let entryPoint = 'dashboard'; // 'dashboard' or 'project'
+    let selectedProject = 'existing-empty'; // 'new', 'existing-empty', 'existing-has-reqs'
+    
+    function setEntryPoint(entry) {
+      entryPoint = entry;
+      
+      // Update toggle buttons
+      document.getElementById('entry-dashboard').classList.toggle('active', entry === 'dashboard');
+      document.getElementById('entry-project').classList.toggle('active', entry === 'project');
+      
+      // Update entry label
+      const label = entry === 'dashboard' ? 'Entry: Dashboard' : 'Entry: Project Requirements Page';
+      document.getElementById('entry-label').textContent = label;
+      
+      // Show/hide project selection step
+      const projectStep = document.getElementById('step-project');
+      if (entry === 'project') {
+        projectStep.classList.add('hidden');
+      } else {
+        projectStep.classList.remove('hidden');
+      }
+      
+      // Reset to first screen
+      goToScreen(1);
+    }
+    
+    function getStepNumber(screenNum) {
+      if (entryPoint === 'project') {
+        // Skip step 4 (Select Project) for project entry
+        if (screenNum >= 4) return screenNum - 1;
+      }
+      return screenNum;
+    }
+    
+    function goToScreen(num) {
+      currentScreen = num;
+      
+      // Hide all screens
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      
+      // Show target screen
+      document.getElementById('screen-' + num).classList.add('active');
+      
+      // Update progress
+      updateProgress(num);
+    }
+    
+    function updateProgress(screenNum) {
+      document.querySelectorAll('.step').forEach(step => {
+        const stepNum = parseInt(step.dataset.step);
+        step.classList.remove('active', 'completed');
+        
+        // For project entry, skip step 4
+        if (entryPoint === 'project' && stepNum === 4) {
+          return;
+        }
+        
+        let effectiveScreen = screenNum;
+        let effectiveStep = stepNum;
+        
+        if (entryPoint === 'project') {
+          // Adjust for missing step 4
+          if (screenNum >= 5) effectiveScreen = screenNum - 1;
+          if (stepNum >= 5) effectiveStep = stepNum - 1;
+        }
+        
+        if (stepNum === screenNum || (entryPoint === 'project' && screenNum === 5 && stepNum === 5)) {
+          step.classList.add('active');
+        } else if (stepNum < screenNum) {
+          step.classList.add('completed');
+        }
+      });
+    }
+    
+    function goToNextFromReview() {
+      if (entryPoint === 'dashboard') {
+        goToScreen(4); // Go to project selection
+      } else {
+        goToConflictCheck(); // Skip to conflict check (project already known)
+      }
+    }
+    
+    function goToPrevFromConflicts() {
+      if (entryPoint === 'dashboard') {
+        goToScreen(4); // Back to project selection
+      } else {
+        goToScreen(3); // Back to review
+      }
+    }
+    
+    function selectProject(element, projectType) {
+      selectedProject = projectType;
+      
+      // Update UI
+      document.querySelectorAll('.project-option').forEach(opt => {
+        opt.classList.remove('selected');
+        opt.querySelector('input').checked = false;
+      });
+      element.classList.add('selected');
+      element.querySelector('input').checked = true;
+    }
+    
+    function goToConflictCheck() {
+      // Determine if there are conflicts based on selected project
+      const hasExistingReqs = selectedProject.includes('has-reqs');
+      
+      if (!hasExistingReqs && selectedProject !== 'new') {
+        // No existing requirements - show no conflicts modal
+        showNoConflictsModal();
+      } else if (selectedProject === 'new') {
+        // New project - no conflicts possible, go directly to done
+        showNoConflictsModal();
+      } else {
+        // Has existing requirements - show conflict resolution
+        goToScreen(5);
+      }
+    }
+    
+    function showNoConflictsModal() {
+      document.getElementById('no-conflicts-modal').classList.add('active');
+    }
+    
+    function closeNoConflictsModal() {
+      document.getElementById('no-conflicts-modal').classList.remove('active');
+      goToScreen(6); // Go to done screen
+    }
+    
+    // Initialize
+    setEntryPoint('dashboard');
+  </script>
+</body>
+</html>

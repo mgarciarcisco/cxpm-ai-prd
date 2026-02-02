@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extraction Results - Option B: Compact Header + Sticky Footer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #F9FAFB;
+      color: #1F2937;
+      line-height: 1.5;
+    }
+
+    /* ===== OPTION B: Compact Header + Sticky Footer (No Side Nav) ===== */
+    /* Changes:
+       - Summary bar at top with section jump pills
+       - Sticky footer with Save & Apply
+       - Color-coded badges
+       - Empty sections collapsed by default
+       - Always visible action icons
+       - Better source quote styling
+       - Simpler layout (no side nav - works better on smaller screens)
+    */
+
+    .main-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 6rem 2rem; /* Bottom padding for sticky footer */
+    }
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: #6B7280;
+      margin-bottom: 1rem;
+    }
+
+    .breadcrumbs a {
+      color: #4ECDC4;
+      text-decoration: none;
+    }
+
+    .breadcrumbs a:hover {
+      text-decoration: underline;
+    }
+
+    /* Page Header */
+    .page-header {
+      margin-bottom: 1rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 0.25rem;
+    }
+
+    .page-header__meta {
+      font-size: 0.875rem;
+      color: #6B7280;
+    }
+
+    /* Summary Bar - Shows section pills for quick navigation */
+    .summary-bar {
+      background: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .summary-bar__total {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #111827;
+      padding-right: 0.75rem;
+      border-right: 1px solid #E5E7EB;
+    }
+
+    .summary-bar__pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .summary-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.625rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .summary-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Color-coded pills */
+    .summary-pill--problems { background: #FEE2E2; color: #DC2626; }
+    .summary-pill--goals { background: #DCFCE7; color: #16A34A; }
+    .summary-pill--requirements { background: #DBEAFE; color: #2563EB; }
+    .summary-pill--data { background: #E0E7FF; color: #4F46E5; }
+    .summary-pill--constraints { background: #FEF3C7; color: #D97706; }
+    .summary-pill--risks { background: #FFEDD5; color: #EA580C; }
+    .summary-pill--questions { background: #FCE7F3; color: #DB2777; }
+    .summary-pill--actions { background: #CFFAFE; color: #0891B2; }
+    .summary-pill--empty { background: #F3F4F6; color: #9CA3AF; }
+
+    /* Content Card */
+    .content-card {
+      background: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 1.5rem;
+      scroll-margin-top: 20px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #E5E7EB;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .section-header:hover {
+      background: #FAFAFA;
+      margin: 0 -1rem;
+      padding: 0.75rem 1rem;
+    }
+
+    .section-chevron {
+      color: #9CA3AF;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .section-chevron--expanded {
+      transform: rotate(90deg);
+    }
+
+    .section-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #111827;
+      flex: 1;
+    }
+
+    /* Color-coded section badges */
+    .section-count {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.125rem 0.5rem;
+      border-radius: 10px;
+    }
+
+    .section-count--problems { background: #FEE2E2; color: #DC2626; }
+    .section-count--goals { background: #DCFCE7; color: #16A34A; }
+    .section-count--requirements { background: #DBEAFE; color: #2563EB; }
+    .section-count--data { background: #E0E7FF; color: #4F46E5; }
+    .section-count--constraints { background: #FEF3C7; color: #D97706; }
+    .section-count--nongoals { background: #F3F4F6; color: #6B7280; }
+    .section-count--risks { background: #FFEDD5; color: #EA580C; }
+    .section-count--questions { background: #FCE7F3; color: #DB2777; }
+    .section-count--actions { background: #CFFAFE; color: #0891B2; }
+
+    .section-content {
+      padding-top: 1rem;
+    }
+
+    /* Empty section - collapsed by default */
+    .section--collapsed .section-content {
+      display: none;
+    }
+
+    .section--collapsed .section-header {
+      opacity: 0.6;
+      border-bottom: none;
+    }
+
+    /* Item Row */
+    .item-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      transition: background 0.15s ease;
+    }
+
+    .item-row:hover {
+      background: #F9FAFB;
+    }
+
+    .item-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .item-drag-handle {
+      color: #D1D5DB;
+      cursor: grab;
+      padding: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    .item-drag-handle:hover {
+      color: #9CA3AF;
+    }
+
+    .item-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-text {
+      font-size: 0.875rem;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    /* Better source quote styling */
+    .item-source {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: #F9FAFB;
+      border-left: 3px solid #D1D5DB;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .item-source-icon {
+      color: #9CA3AF;
+      flex-shrink: 0;
+      margin-top: 0.125rem;
+    }
+
+    .item-source-text {
+      font-size: 0.75rem;
+      color: #6B7280;
+      font-style: italic;
+    }
+
+    /* Always visible action buttons (reduced opacity until hover) */
+    .item-actions {
+      display: flex;
+      gap: 0.25rem;
+      flex-shrink: 0;
+      opacity: 0.4;
+      transition: opacity 0.15s ease;
+    }
+
+    .item-row:hover .item-actions {
+      opacity: 1;
+    }
+
+    .item-action-btn {
+      padding: 0.375rem;
+      background: none;
+      border: none;
+      border-radius: 4px;
+      color: #9CA3AF;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .item-action-btn:hover {
+      background: #F3F4F6;
+      color: #4B5563;
+    }
+
+    .item-action-btn--delete:hover {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    .section-empty-text {
+      font-size: 0.8125rem;
+      color: #9CA3AF;
+      padding: 0.5rem 0;
+    }
+
+    /* Add item button */
+    .add-item-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.5rem 0.75rem;
+      background: none;
+      border: 1px dashed #D1D5DB;
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      color: #6B7280;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-top: 0.75rem;
+    }
+
+    .add-item-btn:hover {
+      border-color: #4ECDC4;
+      color: #0D9488;
+      background: #F0FDFC;
+    }
+
+    /* Sticky Footer */
+    .sticky-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #E5E7EB;
+      padding: 1rem 2rem;
+      z-index: 100;
+      box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .sticky-footer__inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sticky-footer__summary {
+      font-size: 0.875rem;
+      color: #6B7280;
+    }
+
+    .sticky-footer__summary strong {
+      color: #111827;
+    }
+
+    .sticky-footer__actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn--secondary {
+      background: #F3F4F6;
+      color: #374151;
+      border: none;
+    }
+
+    .btn--secondary:hover {
+      background: #E5E7EB;
+    }
+
+    .btn--primary {
+      background: #4ECDC4;
+      color: white;
+      border: none;
+    }
+
+    .btn--primary:hover {
+      background: #3BB5AD;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .main-content {
+        padding: 1rem 1rem 5rem 1rem;
+      }
+
+      .summary-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .summary-bar__total {
+        border-right: none;
+        border-bottom: 1px solid #E5E7EB;
+        padding-right: 0;
+        padding-bottom: 0.5rem;
+        width: 100%;
+      }
+
+      .sticky-footer {
+        padding: 0.75rem 1rem;
+      }
+
+      .sticky-footer__inner {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .sticky-footer__actions {
+        width: 100%;
+      }
+
+      .sticky-footer__actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="main-content">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+      <a href="#">Dashboard</a>
+      <span>›</span>
+      <span>Extraction Results</span>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Sprint 12 Planning Meeting</h1>
+      <p class="page-header__meta">Meeting Date: Feb 2, 2026</p>
+    </div>
+
+    <!-- Summary Bar with clickable section pills -->
+    <div class="summary-bar">
+      <div class="summary-bar__total">18 items extracted</div>
+      <div class="summary-bar__pills">
+        <a href="#problems" class="summary-pill summary-pill--problems">Problems 3</a>
+        <a href="#user-goals" class="summary-pill summary-pill--goals">Goals 2</a>
+        <a href="#requirements" class="summary-pill summary-pill--requirements">Requirements 5</a>
+        <a href="#data" class="summary-pill summary-pill--data">Data 2</a>
+        <a href="#constraints" class="summary-pill summary-pill--constraints">Constraints 1</a>
+        <a href="#non-goals" class="summary-pill summary-pill--empty">Non-Goals 0</a>
+        <a href="#risks" class="summary-pill summary-pill--risks">Risks 2</a>
+        <a href="#questions" class="summary-pill summary-pill--questions">Questions 1</a>
+        <a href="#actions" class="summary-pill summary-pill--actions">Actions 2</a>
+      </div>
+    </div>
+
+    <!-- Content Card -->
+    <div class="content-card">
+      <!-- Problems Section -->
+      <div class="section" id="problems">
+        <div class="section-header">
+          <svg class="section-chevron section-chevron--expanded" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 12L10 8L6 4"/>
+          </svg>
+          <span class="section-title">Problems</span>
+          <span class="section-count section-count--problems">3</span>
+        </div>
+        <div class="section-content">
+          <div class="item-row">
+            <div class="item-drag-handle">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h8M4 10h8"/>
+              </svg>
+            </div>
+            <div class="item-content">
+              <div class="item-text">Users are struggling to find relevant information in the current dashboard due to poor information architecture</div>
+              <div class="item-source">
+                <svg class="item-source-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 5h10M3 8h7M3 11h10"/>
+                </svg>
+                <span class="item-source-text">"The dashboard is too cluttered and users can't find what they need"</span>
+              </div>
+            </div>
+            <div class="item-actions">
+              <button class="item-action-btn" title="Edit">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M11.333 2C11.508 1.825 11.717 1.686 11.947 1.591C12.177 1.497 12.424 1.448 12.674 1.448C12.924 1.448 13.171 1.497 13.401 1.591C13.631 1.686 13.84 1.825 14.015 2C14.19 2.175 14.329 2.384 14.424 2.614C14.519 2.844 14.567 3.091 14.567 3.341C14.567 3.591 14.519 3.838 14.424 4.068C14.329 4.298 14.19 4.507 14.015 4.682L5 13.697L1.333 14.667L2.303 11L11.333 2Z"/>
+                </svg>
+              </button>
+              <button class="item-action-btn item-action-btn--delete" title="Delete">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-drag-handle">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h8M4 10h8"/>
+              </svg>
+            </div>
+            <div class="item-content">
+              <div class="item-text">Page load times are exceeding 3 seconds on mobile devices</div>
+            </div>
+            <div class="item-actions">
+              <button class="item-action-btn" title="Edit">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M11.333 2C11.508 1.825 11.717 1.686 11.947 1.591C12.177 1.497 12.424 1.448 12.674 1.448C12.924 1.448 13.171 1.497 13.401 1.591C13.631 1.686 13.84 1.825 14.015 2C14.19 2.175 14.329 2.384 14.424 2.614C14.519 2.844 14.567 3.091 14.567 3.341C14.567 3.591 14.519 3.838 14.424 4.068C14.329 4.298 14.19 4.507 14.015 4.682L5 13.697L1.333 14.667L2.303 11L11.333 2Z"/>
+                </svg>
+              </button>
+              <button class="item-action-btn item-action-btn--delete" title="Delete">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-drag-handle">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h8M4 10h8"/>
+              </svg>
+            </div>
+            <div class="item-content">
+              <div class="item-text">No way to export data for offline analysis</div>
+            </div>
+            <div class="item-actions">
+              <button class="item-action-btn" title="Edit">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M11.333 2C11.508 1.825 11.717 1.686 11.947 1.591C12.177 1.497 12.424 1.448 12.674 1.448C12.924 1.448 13.171 1.497 13.401 1.591C13.631 1.686 13.84 1.825 14.015 2C14.19 2.175 14.329 2.384 14.424 2.614C14.519 2.844 14.567 3.091 14.567 3.341C14.567 3.591 14.519 3.838 14.424 4.068C14.329 4.298 14.19 4.507 14.015 4.682L5 13.697L1.333 14.667L2.303 11L11.333 2Z"/>
+                </svg>
+              </button>
+              <button class="item-action-btn item-action-btn--delete" title="Delete">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button class="add-item-btn">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 3v10M3 8h10"/>
+            </svg>
+            Add item
+          </button>
+        </div>
+      </div>
+
+      <!-- User Goals Section -->
+      <div class="section" id="user-goals">
+        <div class="section-header">
+          <svg class="section-chevron section-chevron--expanded" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 12L10 8L6 4"/>
+          </svg>
+          <span class="section-title">User Goals</span>
+          <span class="section-count section-count--goals">2</span>
+        </div>
+        <div class="section-content">
+          <div class="item-row">
+            <div class="item-drag-handle">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h8M4 10h8"/>
+              </svg>
+            </div>
+            <div class="item-content">
+              <div class="item-text">Users want to quickly find and access their most-used features</div>
+            </div>
+            <div class="item-actions">
+              <button class="item-action-btn" title="Edit">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M11.333 2C11.508 1.825 11.717 1.686 11.947 1.591C12.177 1.497 12.424 1.448 12.674 1.448C12.924 1.448 13.171 1.497 13.401 1.591C13.631 1.686 13.84 1.825 14.015 2C14.19 2.175 14.329 2.384 14.424 2.614C14.519 2.844 14.567 3.091 14.567 3.341C14.567 3.591 14.519 3.838 14.424 4.068C14.329 4.298 14.19 4.507 14.015 4.682L5 13.697L1.333 14.667L2.303 11L11.333 2Z"/>
+                </svg>
+              </button>
+              <button class="item-action-btn item-action-btn--delete" title="Delete">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-drag-handle">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h8M4 10h8"/>
+              </svg>
+            </div>
+            <div class="item-content">
+              <div class="item-text">Users need to be able to work offline when traveling</div>
+            </div>
+            <div class="item-actions">
+              <button class="item-action-btn" title="Edit">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M11.333 2C11.508 1.825 11.717 1.686 11.947 1.591C12.177 1.497 12.424 1.448 12.674 1.448C12.924 1.448 13.171 1.497 13.401 1.591C13.631 1.686 13.84 1.825 14.015 2C14.19 2.175 14.329 2.384 14.424 2.614C14.519 2.844 14.567 3.091 14.567 3.341C14.567 3.591 14.519 3.838 14.424 4.068C14.329 4.298 14.19 4.507 14.015 4.682L5 13.697L1.333 14.667L2.303 11L11.333 2Z"/>
+                </svg>
+              </button>
+              <button class="item-action-btn item-action-btn--delete" title="Delete">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4m2 0v9.333a1.333 1.333 0 01-1.334 1.334H4.667a1.333 1.333 0 01-1.334-1.334V4h9.334z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button class="add-item-btn">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 3v10M3 8h10"/>
+            </svg>
+            Add item
+          </button>
+        </div>
+      </div>
+
+      <!-- Non-Goals Section - Empty, collapsed -->
+      <div class="section section--collapsed" id="non-goals">
+        <div class="section-header">
+          <svg class="section-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 12L10 8L6 4"/>
+          </svg>
+          <span class="section-title">Non-Goals</span>
+          <span class="section-count" style="background: #F3F4F6; color: #9CA3AF;">0</span>
+        </div>
+        <div class="section-content">
+          <p class="section-empty-text">No items extracted for this section</p>
+          <button class="add-item-btn">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 3v10M3 8h10"/>
+            </svg>
+            Add item
+          </button>
+        </div>
+      </div>
+
+      <!-- More sections would follow... -->
+    </div>
+  </main>
+
+  <!-- Sticky Footer -->
+  <footer class="sticky-footer">
+    <div class="sticky-footer__inner">
+      <div class="sticky-footer__summary">
+        <strong>18 items</strong> ready to apply to your project
+      </div>
+      <div class="sticky-footer__actions">
+        <a href="#" class="btn btn--secondary">Cancel</a>
+        <button class="btn btn--primary">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13.5 4.5L6 12L2.5 8.5"/>
+          </svg>
+          Save & Apply
+        </button>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -150,6 +150,11 @@
   gap: 0.625rem;
 }
 
+/* Progress Bar Container */
+.project-card__progress-container {
+  position: relative;
+}
+
 /* Progress Bar */
 .project-card__progress-bar {
   height: 8px;
@@ -157,6 +162,7 @@
   border-radius: 4px;
   overflow: hidden;
   display: flex;
+  cursor: help;
 }
 
 .project-card__progress-segment {

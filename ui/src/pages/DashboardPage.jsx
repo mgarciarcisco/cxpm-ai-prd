@@ -64,8 +64,7 @@ function getCurrentStage(project) {
  * This serves as the main landing page after login.
  */
 function DashboardPage() {
-  // User name would come from auth context in a real app
-  const userName = 'User';
+  // User name removed - cleaner welcome message
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [projects, setProjects] = useState([]);
@@ -215,7 +214,7 @@ function DashboardPage() {
       <section className="dashboard">
         {/* Welcome Header */}
         <div className="dashboard__header">
-          <h1 className="dashboard__welcome">Welcome back, {userName}</h1>
+          <h1 className="dashboard__welcome">Welcome back</h1>
           <p className="dashboard__subtitle">What would you like to work on today?</p>
         </div>
 
@@ -225,10 +224,10 @@ function DashboardPage() {
 
           {/* Row 1: 3 cards */}
           <div className="task-cards">
-            {/* Card 1: Meeting Notes to Requirements */}
-            <Link to="/quick-convert/requirements?new=1" className="task-card task-card--teal">
+            {/* Card 1: Meeting Notes to Requirements - Recommended for new users */}
+            <Link to="/app/meetings/new" className="task-card task-card--teal task-card--recommended">
               <div className="task-card__icon task-card__icon--teal">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
                   <rect x="9" y="3" width="6" height="4" rx="1"/>
                   <path d="M9 12h6M9 16h4"/>
@@ -247,7 +246,7 @@ function DashboardPage() {
             {/* Card 2: Generate PRD */}
             <div className="task-card task-card--orange task-card--disabled">
               <div className="task-card__icon task-card__icon--orange">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                   <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
                 </svg>
@@ -268,7 +267,7 @@ function DashboardPage() {
             {/* Card 3: User Stories */}
             <Link to="/quick-convert/stories?new=1" className="task-card task-card--blue">
               <div className="task-card__icon task-card__icon--blue">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="7" height="7" rx="1"/>
                   <rect x="14" y="3" width="7" height="7" rx="1"/>
                   <rect x="3" y="14" width="7" height="7" rx="1"/>
@@ -291,7 +290,7 @@ function DashboardPage() {
             {/* Card 4: Recommend Features */}
             <div className="task-card task-card--purple task-card--disabled">
               <div className="task-card__icon task-card__icon--purple">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 18V5l12-2v13"/>
                   <circle cx="6" cy="18" r="3"/>
                   <circle cx="18" cy="16" r="3"/>
@@ -313,7 +312,7 @@ function DashboardPage() {
             {/* Card 5: Mockups */}
             <div className="task-card task-card--teal task-card--disabled">
               <div className="task-card__icon task-card__icon--teal">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="18" height="18" rx="2"/>
                   <path d="M3 9h18"/>
                   <circle cx="6" cy="6" r="1" fill="currentColor"/>
@@ -342,7 +341,19 @@ function DashboardPage() {
         {/* Your Projects Section */}
         <div className="dashboard__projects-section">
           <div className="dashboard__section-header">
-            <h2 className="dashboard__section-title">Your Projects</h2>
+            <div className="dashboard__section-title-row">
+              <h2 className="dashboard__section-title">Your Projects</h2>
+              <div className="progress-legend">
+                <div className="progress-legend__item">
+                  <div className="progress-legend__color progress-legend__color--complete"></div>
+                  <span>Completed</span>
+                </div>
+                <div className="progress-legend__item">
+                  <div className="progress-legend__color progress-legend__color--active"></div>
+                  <span>In Progress</span>
+                </div>
+              </div>
+            </div>
             <div className="dashboard__filters">
               <ProjectSearch value={searchQuery} onChange={handleSearchChange} />
               <StageFilter value={stageFilter} onChange={handleFilterChange} />
