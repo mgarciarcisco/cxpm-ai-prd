@@ -150,9 +150,11 @@ function ConflictResolverPage() {
         retryCountRef.current = 0;
 
         console.log('[DEBUG Apply] Calling apply endpoint...');
+        // Increased timeout to 3 minutes for large meetings with many items
+        // Each item may require LLM classification against existing requirements
         const results = await post(`/api/meetings/${mid}/apply`, {}, {
           signal,
-          timeout: 60000
+          timeout: 180000
         });
 
         console.log('[DEBUG Apply] Apply results received:', {
