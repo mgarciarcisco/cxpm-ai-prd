@@ -120,6 +120,29 @@ When the task is **fully complete** and **committed**:
 - Do NOT update the manifest.json status - the orchestrator handles that
 - Work on ONLY the assigned task, not other tasks you might notice
 
+## Follow Agreed Processes - CRITICAL
+
+**NEVER skip steps or make assumptions about user preferences without explicit confirmation.**
+
+When the user establishes a workflow (e.g., "create mockups → I'll select one → then implement"), you MUST:
+
+1. **Follow the process for EVERY iteration** - Not just the first few
+2. **Wait for explicit user confirmation** before proceeding to implementation
+3. **Never assume** the user will prefer the same option as before
+4. **Ask if you want to change the process** - Don't silently abandon it
+
+**Bad behavior (DO NOT DO THIS):**
+- "Based on previous choices, I'll just implement Option A"
+- "These changes are straightforward, so I'll skip the mockup"
+- "To save time, I'll proceed without confirmation"
+
+**Good behavior:**
+- "Here are the mockups for Page X. Which option do you prefer?"
+- "Should we continue with the mockup process for the remaining pages, or would you like to proceed differently?"
+- Wait for response before implementing
+
+**Why this matters:** The user's time and preferences matter more than perceived efficiency. Skipping confirmation steps wastes their time reviewing unwanted changes and erodes trust.
+
 ## Important
 
 - Work on ONE task per iteration
