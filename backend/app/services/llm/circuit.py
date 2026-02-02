@@ -1,6 +1,7 @@
 """Circuit LLM provider implementation."""
 
 import base64
+import logging
 import time
 from collections.abc import AsyncIterator
 
@@ -8,6 +9,8 @@ import requests
 
 from app.config import settings
 from app.services.llm.base import LLMError, LLMProvider
+
+logger = logging.getLogger(__name__)
 
 
 class CircuitProvider(LLMProvider):
@@ -79,6 +82,9 @@ class CircuitProvider(LLMProvider):
             LLMError: If the API call fails or times out.
         """
         actual_timeout = timeout if timeout is not None else settings.LLM_TIMEOUT
+        prompt_preview = prompt[:100] + "..." if len(prompt) > 100 else prompt
+        logger.info(f"[LLM] CircuitProvider.generate() called - model={self.model}, prompt_len={len(prompt)}")
+        logger.debug(f"[LLM] CircuitProvider prompt preview: {prompt_preview}")
 
         try:
             response = self._generate_with_system(

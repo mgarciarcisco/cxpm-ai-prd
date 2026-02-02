@@ -496,9 +496,14 @@ def apply_meeting(
             detail="Cannot apply meeting unless status is processed",
         )
 
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[DEBUG Apply] Meeting {meeting_id}: project_id={meeting.project_id}")
+
     try:
         # Call conflict detection service
         result = detect_conflicts(UUID(meeting_id), db)
+        logger.info(f"[DEBUG Apply] Results: added={len(result.added)}, skipped={len(result.skipped)}, conflicts={len(result.conflicts)}")
 
         # Convert dataclass results to Pydantic response models
         def convert_result(conflict_result: Any) -> ConflictResultResponse:

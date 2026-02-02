@@ -187,17 +187,28 @@ def detect_conflicts(meeting_id: UUID, db: Session) -> ConflictDetectionResult:
         .all()
     )
 
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[DEBUG Conflict] Found {len(meeting_items)} meeting items for meeting {meeting_id}")
+
     if not meeting_items:
+        logger.info("[DEBUG Conflict] No meeting items found, returning empty result")
         return ConflictDetectionResult()
 
     # Load all active requirements for the project
+    import logging
+    logger = logging.getLogger(__name__)
+
     project_id = meeting.project_id
+    logger.info(f"[DEBUG Conflict] Loading requirements for project_id={project_id}")
+
     requirements = (
         db.query(Requirement)
         .filter(Requirement.project_id == project_id)
         .filter(Requirement.is_active == True)
         .all()
     )
+    logger.info(f"[DEBUG Conflict] Found {len(requirements)} existing requirements")
 
     # Build lookup for quick exact match detection per section
     requirements_by_section: dict[Section, list[Requirement]] = {}

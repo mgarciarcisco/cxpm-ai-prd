@@ -94,6 +94,7 @@ function ConflictResolverPage() {
   }, [applyResults, categoryCounts]);
 
   const fetchData = useCallback(async (signal, isAutoRetry = false) => {
+    console.log('[DEBUG Apply] fetchData called', { isAutoRetry, retryCount: retryCountRef.current });
     try {
       if (!isAutoRetry) {
         setLoading(true);
@@ -108,9 +109,17 @@ function ConflictResolverPage() {
       }, 10000);
 
       try {
+        console.log('[DEBUG Apply] Fetching meeting data...');
         const meetingData = await get(`/api/meetings/${mid}`, {
           signal,
           timeout: 30000
+        });
+
+        console.log('[DEBUG Apply] Meeting data received:', {
+          id: meetingData.id,
+          status: meetingData.status,
+          project_id: meetingData.project_id,
+          items_count: meetingData.items?.length
         });
 
         if (!isMountedRef.current) return;
@@ -118,11 +127,13 @@ function ConflictResolverPage() {
 
         // Check if meeting is ready to be applied
         if (meetingData.status !== 'processed' && meetingData.status !== 'applied') {
+          console.log('[DEBUG Apply] Meeting not ready, status:', meetingData.status);
           // Meeting not ready - show waiting state or auto-retry
           if (retryCountRef.current < 5) {
             setIsRetrying(true);
             retryCountRef.current += 1;
             clearTimeout(longLoadingTimer);
+            console.log('[DEBUG Apply] Scheduling retry #', retryCountRef.current);
             // Auto-retry after 2 seconds
             retryTimeoutRef.current = setTimeout(() => {
               if (isMountedRef.current && abortControllerRef.current) {
@@ -138,9 +149,17 @@ function ConflictResolverPage() {
         setIsRetrying(false);
         retryCountRef.current = 0;
 
+        console.log('[DEBUG Apply] Calling apply endpoint...');
         const results = await post(`/api/meetings/${mid}/apply`, {}, {
           signal,
           timeout: 60000
+        });
+
+        console.log('[DEBUG Apply] Apply results received:', {
+          added: results?.added?.length || 0,
+          skipped: results?.skipped?.length || 0,
+          conflicts: results?.conflicts?.length || 0,
+          raw: results
         });
 
         if (!isMountedRef.current) return;
@@ -158,11 +177,16 @@ function ConflictResolverPage() {
         clearTimeout(longLoadingTimer);
       }
     } catch (err) {
+      console.log('[DEBUG Apply] Error caught:', err.message);
       if (!isMountedRef.current) return;
-      if (err.name === 'AbortError') return;
+      if (err.name === 'AbortError') {
+        console.log('[DEBUG Apply] Request aborted');
+        return;
+      }
 
       // Check if it's a "not processed" error and auto-retry
       if (err.message?.includes('status is processed') && retryCountRef.current < 5) {
+        console.log('[DEBUG Apply] Scheduling error-based retry #', retryCountRef.current + 1);
         setIsRetrying(true);
         retryCountRef.current += 1;
         retryTimeoutRef.current = setTimeout(() => {

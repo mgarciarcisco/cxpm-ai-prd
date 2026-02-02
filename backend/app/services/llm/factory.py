@@ -1,11 +1,15 @@
 """LLM provider factory with automatic fallback logic."""
 
+import logging
+
 import httpx
 
 from app.config import settings
 from app.services.llm.base import LLMError, LLMProvider
 from app.services.llm.circuit import CircuitProvider
 from app.services.llm.ollama import OllamaProvider
+
+logger = logging.getLogger(__name__)
 
 
 def _is_circuit_available() -> bool:
@@ -51,15 +55,19 @@ def get_provider() -> LLMProvider:
     # Try Circuit first (Cisco's AI platform)
     if _is_circuit_available():
         try:
-            return CircuitProvider()
-        except Exception:
-            pass
+            provider = CircuitProvider()
+            logger.info("[LLM Factory] Selected provider: CircuitProvider")
+            return provider
+        except Exception as e:
+            logger.warning(f"[LLM Factory] CircuitProvider failed to initialize: {e}")
 
     # Fall back to Ollama if Circuit is unavailable
     if _is_ollama_available():
+        logger.info("[LLM Factory] Selected provider: OllamaProvider (fallback)")
         return OllamaProvider()
 
     # Neither provider is available
+    logger.error("[LLM Factory] No LLM provider available!")
     raise LLMError(
         "No LLM available. Please configure Circuit credentials or start Ollama."
     )

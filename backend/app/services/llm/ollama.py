@@ -1,12 +1,15 @@
 """Ollama LLM provider implementation."""
 
 import json
+import logging
 from collections.abc import AsyncIterator
 
 import httpx
 
 from app.config import settings
 from app.services.llm.base import LLMError, LLMProvider
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaProvider(LLMProvider):
@@ -62,6 +65,10 @@ class OllamaProvider(LLMProvider):
         actual_temperature = temperature if temperature is not None else self.DEFAULT_TEMPERATURE
         actual_max_tokens = max_tokens if max_tokens is not None else self.DEFAULT_MAX_TOKENS
         actual_timeout = timeout if timeout is not None else self.timeout
+
+        prompt_preview = prompt[:100] + "..." if len(prompt) > 100 else prompt
+        logger.info(f"[LLM] OllamaProvider.generate() called - model={self.model}, prompt_len={len(prompt)}")
+        logger.debug(f"[LLM] OllamaProvider prompt preview: {prompt_preview}")
 
         url = f"{self.base_url}/api/generate"
         payload = {
