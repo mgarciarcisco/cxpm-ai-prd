@@ -1,51 +1,252 @@
-/* Recap Editor Section */
-.recap-editor-section {
+/* ===== Recap Editor Page Layout ===== */
+
+.recap-editor-page {
+  min-height: 100vh;
+  background-color: #F9FAFB;
+}
+
+/* ===== Sticky Header ===== */
+.recap-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #F9FAFB;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.recap-sticky-header__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.recap-sticky-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.recap-sticky-header__title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.recap-sticky-header__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.recap-sticky-header__date {
+  font-size: 0.8125rem;
+  color: #6B7280;
+  white-space: nowrap;
+}
+
+.recap-sticky-header__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: #E0F7F6;
+  border-radius: 20px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #0D9488;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ===== Page Layout - Two Column Grid ===== */
+.recap-page-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 6rem 2rem; /* Bottom padding for sticky footer */
+}
+
+/* ===== Side Navigation ===== */
+.recap-side-nav {
+  position: sticky;
+  top: 100px;
+  align-self: start;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 1rem;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+.recap-side-nav__title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.recap-side-nav__list {
+  list-style: none;
+  margin: 0;
   padding: 0;
 }
 
-.recap-editor-date {
-  color: #6B7280;
-  font-size: 0.875rem;
-  margin: 0 0 1.5rem 0;
+.recap-side-nav__item {
+  margin-bottom: 0.25rem;
 }
 
-/* Recap Editor Content */
-.recap-editor-content {
-  background-color: #FFFFFF;
+.recap-side-nav__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-size: 0.8125rem;
+  color: #4B5563;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.recap-side-nav__link:hover {
+  background: #F3F4F6;
+  color: #111827;
+}
+
+.recap-side-nav__link--active {
+  background: #E0F7F6;
+  color: #0D9488;
+  font-weight: 500;
+}
+
+.recap-side-nav__count {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.125rem 0.375rem;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Color-coded badges for side nav */
+.recap-side-nav__count--problems { background: #FEE2E2; color: #DC2626; }
+.recap-side-nav__count--goals { background: #DCFCE7; color: #16A34A; }
+.recap-side-nav__count--requirements { background: #DBEAFE; color: #2563EB; }
+.recap-side-nav__count--data { background: #E0E7FF; color: #4F46E5; }
+.recap-side-nav__count--constraints { background: #FEF3C7; color: #D97706; }
+.recap-side-nav__count--nongoals { background: #F3F4F6; color: #6B7280; }
+.recap-side-nav__count--risks { background: #FFEDD5; color: #EA580C; }
+.recap-side-nav__count--questions { background: #FCE7F3; color: #DB2777; }
+.recap-side-nav__count--actions { background: #CFFAFE; color: #0891B2; }
+.recap-side-nav__count--empty { background: #F3F4F6; color: #9CA3AF; }
+
+/* ===== Main Content ===== */
+.recap-main-content {
+  min-width: 0;
+}
+
+.recap-main-content--full-width {
+  grid-column: 1 / -1;
+}
+
+.recap-content-card {
+  background: white;
   border: 1px solid #E5E7EB;
   border-radius: 12px;
   padding: 1.5rem;
-  min-height: 400px;
 }
 
-/* Placeholder for RecapEditor component */
-.recap-editor-placeholder {
+/* ===== Sticky Footer ===== */
+.recap-sticky-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #E5E7EB;
+  padding: 1rem 2rem;
+  z-index: 100;
+  box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.recap-sticky-footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 3rem 2rem;
-  text-align: center;
+  justify-content: space-between;
+}
+
+.recap-sticky-footer__summary {
+  font-size: 0.875rem;
   color: #6B7280;
 }
 
-.recap-editor-placeholder svg {
-  margin-bottom: 1rem;
-  color: #4ECDC4;
+.recap-sticky-footer__summary strong {
+  color: #111827;
 }
 
-.recap-editor-placeholder h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1F2937;
-  margin: 0 0 0.5rem 0;
+.recap-sticky-footer__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.recap-editor-placeholder p {
+/* ===== Buttons ===== */
+.recap-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
   font-size: 0.875rem;
-  margin: 0;
-  max-width: 400px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  border: none;
 }
+
+.recap-btn--secondary {
+  background: #F3F4F6;
+  color: #374151;
+}
+
+.recap-btn--secondary:hover {
+  background: #E5E7EB;
+}
+
+.recap-btn--primary {
+  background: #4ECDC4;
+  color: white;
+}
+
+.recap-btn--primary:hover:not(:disabled) {
+  background: #3BB5AD;
+}
+
+.recap-btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== Legacy styles for states ===== */
 
 /* Failed State */
 .recap-editor-failed {
@@ -153,49 +354,82 @@
   flex-shrink: 0;
 }
 
-/* Recap Editor Actions */
-.recap-editor-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #E5E7EB;
-}
-
-/* Save & Apply Button */
-.save-apply-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1.5rem;
-  background-color: #4ECDC4;
-  color: #FFFFFF;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
-}
-
-.save-apply-btn:hover:not(:disabled) {
-  background-color: #3BB5AD;
-}
-
-.save-apply-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Mobile Responsive */
-@media (max-width: 640px) {
-  .recap-editor-content {
-    padding: 1rem;
-    min-height: 300px;
+/* ===== Responsive - Mobile ===== */
+@media (max-width: 768px) {
+  .recap-sticky-header {
+    padding: 0.75rem 1rem;
   }
 
-  .recap-editor-placeholder,
-  .recap-editor-failed {
-    padding: 2rem 1rem;
+  .recap-sticky-header__inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .recap-sticky-header__left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    width: 100%;
+  }
+
+  .recap-sticky-header__title {
+    font-size: 1.125rem;
+  }
+
+  .recap-page-layout {
+    grid-template-columns: 1fr;
+    padding: 1rem 1rem 5rem 1rem;
+    gap: 1rem;
+  }
+
+  /* Hide side nav on mobile - users can scroll */
+  .recap-side-nav {
+    display: none;
+  }
+
+  .recap-content-card {
+    padding: 1rem;
+  }
+
+  .recap-sticky-footer {
+    padding: 0.75rem 1rem;
+  }
+
+  .recap-sticky-footer__inner {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .recap-sticky-footer__summary {
+    text-align: center;
+  }
+
+  .recap-sticky-footer__actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .recap-sticky-footer__actions .recap-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* ===== Responsive - Tablet ===== */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .recap-page-layout {
+    grid-template-columns: 180px 1fr;
+    gap: 1rem;
+    padding: 1rem 1.5rem 5rem 1.5rem;
+  }
+
+  .recap-side-nav {
+    padding: 0.75rem;
+  }
+
+  .recap-side-nav__link {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
   }
 }

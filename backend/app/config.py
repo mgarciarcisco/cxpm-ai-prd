@@ -13,16 +13,16 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./cxpm.db"
 
-    # Circuit API (Cisco's AI platform)
+    # Circuit API (Cisco's AI platform - primary LLM provider)
     CIRCUIT_BASE_URL: str = "https://chat-ai.cisco.com/openai/deployments/{model}/chat/completions"
     CIRCUIT_MODEL: str = "gpt-4.1"
+    CIRCUIT_CLIENT_ID: str | None = None
+    CIRCUIT_CLIENT_SECRET: str | None = None
+    CIRCUIT_APP_KEY: str | None = None
 
-    # Ollama LLM settings
+    # Ollama LLM settings (fallback)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.2"
-
-    # Claude API (optional fallback)
-    ANTHROPIC_API_KEY: str | None = None
 
     # File upload limits
     MAX_FILE_SIZE_KB: int = 50
@@ -36,6 +36,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"  # Ignore extra fields in .env file
 
 
 settings = Settings()

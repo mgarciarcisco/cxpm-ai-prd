@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { get } from '../services/api';
 import MeetingsList from '../components/meetings/MeetingsList';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import './ProjectDashboard.css';
 
 function ProjectDashboard() {
@@ -82,12 +83,42 @@ function ProjectDashboard() {
     }
   };
 
+  // Breadcrumb items
+  const breadcrumbItems = useMemo(() => [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: project?.name || 'Project' }
+  ], [project?.name]);
+
+  // Calculate stage progress
+  const stageProgress = useMemo(() => {
+    if (!stats) return { completed: 0, active: null, total: 4 };
+
+    let completed = 0;
+    let active = null;
+
+    // Count completed stages based on stats
+    if (stats.requirement_count > 0) completed = 1;
+    if (stats.prd_count > 0) completed = 2;
+    if (stats.story_count > 0) completed = 3;
+    // Export is the final stage
+
+    // Determine active stage
+    if (completed === 0) active = 'requirements';
+    else if (completed === 1) active = 'prd';
+    else if (completed === 2) active = 'stories';
+    else if (completed === 3) active = 'export';
+
+    return { completed, active, total: 4 };
+  }, [stats]);
+
   if (loading) {
     return (
       <main className="main-content">
-        <div className="dashboard-loading">
-          <LoadingSpinner size="large" />
-          <p>Loading project...</p>
+        <div className="project-dashboard-page">
+          <div className="dashboard-loading">
+            <LoadingSpinner size="large" />
+            <p>Loading project...</p>
+          </div>
         </div>
       </main>
     );
@@ -96,9 +127,11 @@ function ProjectDashboard() {
   if (error) {
     return (
       <main className="main-content">
-        <div className="dashboard-error">
-          <p>Error loading project: {error}</p>
-          <button onClick={fetchData} className="retry-btn">Retry</button>
+        <div className="project-dashboard-page">
+          <div className="dashboard-error">
+            <p>Error loading project: {error}</p>
+            <button onClick={fetchData} className="retry-btn">Retry</button>
+          </div>
         </div>
       </main>
     );
@@ -106,15 +139,36 @@ function ProjectDashboard() {
 
   return (
     <main className="main-content">
-      <section className="dashboard-section">
-        <div className="section-header">
-          <h2>{project?.name || 'Project Dashboard'}</h2>
-          <Link to="/app" className="back-link">Back to Projects</Link>
-        </div>
+      <div className="project-dashboard-page">
+        <Breadcrumbs items={breadcrumbItems} />
 
-        {project?.description && (
-          <p className="dashboard-description">{project.description}</p>
-        )}
+        <section className="dashboard-section">
+          <div className="section-header">
+            <div className="section-header__left">
+              <h2>{project?.name || 'Project Dashboard'}</h2>
+              {project?.description && (
+                <p className="dashboard-description">{project.description}</p>
+              )}
+            </div>
+            {/* Stage Progress Indicator */}
+            <div className="stage-progress">
+              <div className="stage-progress__bar">
+                <div
+                  className="stage-progress__filled"
+                  style={{ width: `${(stageProgress.completed / stageProgress.total) * 100}%` }}
+                ></div>
+                {stageProgress.active && (
+                  <div
+                    className="stage-progress__active"
+                    style={{ width: `${((stageProgress.completed + 1) / stageProgress.total) * 100}%` }}
+                  ></div>
+                )}
+              </div>
+              <span className="stage-progress__label">
+                {stageProgress.completed} of {stageProgress.total} stages complete
+              </span>
+            </div>
+          </div>
 
         <div className="dashboard-actions">
           <Link to={`/app/projects/${id}/meetings/new`} className="dashboard-btn dashboard-btn--primary">
@@ -195,6 +249,7 @@ function ProjectDashboard() {
           </div>
         </div>
       </section>
+      </div>
     </main>
   );
 }

@@ -6,7 +6,6 @@ pydantic
 pydantic-settings
 python-multipart
 httpx
-anthropic
 sse-starlette
 markdown
 pytest

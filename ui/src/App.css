@@ -117,6 +117,12 @@
   margin: 0 auto;
 }
 
+/* Full-width content (for components with their own layout) */
+.main-content--full {
+  padding: 0;
+  max-width: none;
+}
+
 /* Tasks Section */
 .tasks-section {
   margin-top: 1rem;

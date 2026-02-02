@@ -6,14 +6,6 @@ export function ItemRow({
   item,
   onEdit,
   onDelete,
-  draggable = false,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  isDragOver = false,
-  isDragging = false,
   apiEndpoint = 'meeting-items'  // Allows customizing API endpoint (e.g., 'requirements')
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -176,66 +168,18 @@ export function ItemRow({
     );
   }
 
-  const handleDragStart = (e) => {
-    if (onDragStart) {
-      onDragStart(e, item);
-    }
-  };
-
-  const handleDragEnd = (e) => {
-    if (onDragEnd) {
-      onDragEnd(e);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    if (onDragOver) {
-      onDragOver(e, item);
-    }
-  };
-
-  const handleDragLeave = (e) => {
-    if (onDragLeave) {
-      onDragLeave(e);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (onDrop) {
-      onDrop(e, item);
-    }
-  };
-
-  const rowClassName = [
-    'item-row',
-    isDragging ? 'item-row--dragging' : '',
-    isDragOver ? 'item-row--drag-over' : ''
-  ].filter(Boolean).join(' ');
-
   return (
-    <div
-      className={rowClassName}
-      draggable={draggable}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <div className="item-row-drag-handle" aria-label="Drag to reorder">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="6" cy="4" r="1" fill="currentColor" />
-          <circle cx="10" cy="4" r="1" fill="currentColor" />
-          <circle cx="6" cy="8" r="1" fill="currentColor" />
-          <circle cx="10" cy="8" r="1" fill="currentColor" />
-          <circle cx="6" cy="12" r="1" fill="currentColor" />
-          <circle cx="10" cy="12" r="1" fill="currentColor" />
-        </svg>
-      </div>
+    <div className="item-row">
       <div className="item-row-content">
-        {item.content}
+        <div className="item-row-text">{item.content}</div>
+        {item.source_quote && (
+          <div className="item-row-source">
+            <svg className="item-row-source-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 5h10M3 8h7M3 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="item-row-source-text">{item.source_quote}</span>
+          </div>
+        )}
       </div>
       <div className="item-row-actions">
         <button

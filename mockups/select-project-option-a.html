@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Project - Option A (Centered Card with Breadcrumbs)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      min-height: 100vh;
+    }
+
+    /* Page Container */
+    .page-container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .breadcrumbs a {
+      color: #64748b;
+      text-decoration: none;
+    }
+
+    .breadcrumbs a:hover {
+      color: #4ECDC4;
+    }
+
+    .breadcrumbs span {
+      color: #94a3b8;
+    }
+
+    .breadcrumbs .current {
+      color: #1e293b;
+      font-weight: 500;
+    }
+
+    /* Main Card */
+    .select-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    /* Card Header */
+    .card-header {
+      padding: 24px 28px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .card-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 4px;
+    }
+
+    .card-header p {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .card-header .item-count {
+      color: #4ECDC4;
+      font-weight: 600;
+    }
+
+    /* Project Options */
+    .project-options {
+      padding: 16px 28px;
+    }
+
+    .project-option {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .project-option:hover {
+      border-color: #4ECDC4;
+      background: #f8fafc;
+    }
+
+    .project-option--selected {
+      border-color: #4ECDC4;
+      background: #f0fdfb;
+    }
+
+    /* Custom Radio */
+    .custom-radio {
+      position: relative;
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .custom-radio input {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .custom-radio .radio-visual {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #d1d5db;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .custom-radio input:checked + .radio-visual {
+      border-color: #4ECDC4;
+      background: #4ECDC4;
+    }
+
+    .custom-radio input:checked + .radio-visual::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+    }
+
+    .custom-radio input:focus + .radio-visual {
+      box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
+    }
+
+    /* Project Icon */
+    .project-icon {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .project-icon--new {
+      background: linear-gradient(135deg, #e0f7f6 0%, #dbeafe 100%);
+      color: #4ECDC4;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .project-icon--folder {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    /* Project Info */
+    .project-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .project-info h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 2px;
+    }
+
+    .project-info p {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    /* Project Meta (right side) */
+    .project-meta {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .project-meta .req-count {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .project-meta .updated {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .project-meta .conflict-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: #fef3c7;
+      color: #d97706;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 6px;
+      margin-top: 4px;
+    }
+
+    /* New Project Input */
+    .new-project-input-wrapper {
+      margin-top: 12px;
+      width: 100%;
+    }
+
+    .new-project-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .new-project-input:focus {
+      outline: none;
+      border-color: #4ECDC4;
+      box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.15);
+    }
+
+    /* Card Footer */
+    .card-footer {
+      padding: 20px 28px;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background: #fafbfc;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn--secondary {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .btn--secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .btn--primary {
+      background: #4ECDC4;
+      color: white;
+    }
+
+    .btn--primary:hover {
+      background: #45b7af;
+    }
+
+    .btn--primary:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    /* Tooltip for disabled button */
+    .btn-wrapper {
+      position: relative;
+    }
+
+    .btn-wrapper .tooltip {
+      position: absolute;
+      bottom: 100%;
+      right: 0;
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      background: #1e293b;
+      color: white;
+      font-size: 12px;
+      white-space: nowrap;
+      border-radius: 6px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .btn-wrapper:hover .tooltip {
+      opacity: 1;
+    }
+
+    /* Empty state help text */
+    .help-text {
+      text-align: center;
+      padding: 16px;
+      color: #64748b;
+      font-size: 13px;
+      border-top: 1px dashed #e5e7eb;
+      margin-top: 8px;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .page-container {
+        padding: 16px;
+      }
+
+      .project-option {
+        flex-wrap: wrap;
+      }
+
+      .project-meta {
+        width: 100%;
+        text-align: left;
+        margin-top: 8px;
+        padding-left: 84px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+      <a href="#">Dashboard</a>
+      <span>›</span>
+      <a href="#">Extraction Results</a>
+      <span>›</span>
+      <span class="current">Select Project</span>
+    </nav>
+
+    <!-- Main Card -->
+    <div class="select-card">
+      <div class="card-header">
+        <h1>Save to Project</h1>
+        <p>Choose where to save <span class="item-count">18 extracted items</span> from "Q4 Planning Meeting"</p>
+      </div>
+
+      <div class="project-options">
+        <!-- Create New Project -->
+        <div class="project-option project-option--selected">
+          <label class="custom-radio">
+            <input type="radio" name="project" checked>
+            <div class="radio-visual"></div>
+          </label>
+          <div class="project-icon project-icon--new">+</div>
+          <div class="project-info">
+            <h3>Create New Project</h3>
+            <p>Start fresh with these requirements</p>
+            <div class="new-project-input-wrapper">
+              <input type="text" class="new-project-input" placeholder="Enter project name..." value="">
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing Project 1 -->
+        <div class="project-option">
+          <label class="custom-radio">
+            <input type="radio" name="project">
+            <div class="radio-visual"></div>
+          </label>
+          <div class="project-icon project-icon--folder">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="project-info">
+            <h3>Mobile App Redesign</h3>
+            <p>Active project with ongoing work</p>
+          </div>
+          <div class="project-meta">
+            <div class="req-count">24 reqs</div>
+            <div class="updated">Updated 2 days ago</div>
+            <div class="conflict-badge">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 1l7 14H1L8 1z M8 5v4M8 11h.01"/>
+              </svg>
+              May have conflicts
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing Project 2 -->
+        <div class="project-option">
+          <label class="custom-radio">
+            <input type="radio" name="project">
+            <div class="radio-visual"></div>
+          </label>
+          <div class="project-icon project-icon--folder">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="project-info">
+            <h3>API Integration</h3>
+            <p>Backend services project</p>
+          </div>
+          <div class="project-meta">
+            <div class="req-count">12 reqs</div>
+            <div class="updated">Updated 1 week ago</div>
+          </div>
+        </div>
+
+        <!-- Existing Project 3 (empty) -->
+        <div class="project-option">
+          <label class="custom-radio">
+            <input type="radio" name="project">
+            <div class="radio-visual"></div>
+          </label>
+          <div class="project-icon project-icon--folder">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="project-info">
+            <h3>Q4 Features</h3>
+            <p>Empty project</p>
+          </div>
+          <div class="project-meta">
+            <div class="req-count">0 reqs</div>
+            <div class="updated">Created yesterday</div>
+          </div>
+        </div>
+
+        <div class="help-text">
+          These are your active projects. Archived projects are hidden.
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <a href="#" class="btn btn--secondary">Cancel</a>
+        <div class="btn-wrapper">
+          <button class="btn btn--primary" disabled>
+            Continue →
+          </button>
+          <div class="tooltip">Enter a project name to continue</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

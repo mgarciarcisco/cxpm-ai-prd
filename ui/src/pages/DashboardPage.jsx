@@ -5,7 +5,6 @@ import ProjectCard from '../components/projects/ProjectCard';
 import ProjectCardSkeleton from '../components/projects/ProjectCardSkeleton';
 import StageFilter from '../components/dashboard/StageFilter';
 import ProjectSearch from '../components/dashboard/ProjectSearch';
-import NewProjectModal from '../components/dashboard/NewProjectModal';
 import EmptyState from '../components/common/EmptyState';
 import Modal from '../components/common/Modal';
 import './DashboardPage.css';
@@ -65,14 +64,12 @@ function getCurrentStage(project) {
  * This serves as the main landing page after login.
  */
 function DashboardPage() {
-  // User name would come from auth context in a real app
-  const userName = 'User';
+  // User name removed - cleaner welcome message
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -217,46 +214,146 @@ function DashboardPage() {
       <section className="dashboard">
         {/* Welcome Header */}
         <div className="dashboard__header">
-          <h1 className="dashboard__welcome">Welcome back, {userName}</h1>
+          <h1 className="dashboard__welcome">Welcome back</h1>
           <p className="dashboard__subtitle">What would you like to work on today?</p>
         </div>
 
-        {/* Action Cards */}
-        <div className="dashboard__actions">
-          <button
-            type="button"
-            className="action-card action-card--primary"
-            onClick={() => setShowNewProjectModal(true)}
-          >
-            <div className="action-card__icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div className="action-card__content">
-              <h3 className="action-card__title">New Project</h3>
-              <p className="action-card__description">Create a new project to organize requirements, PRDs, and user stories</p>
-            </div>
-          </button>
+        {/* START A TASK */}
+        <section className="task-section">
+          <div className="section-label">Start a Task</div>
 
-          <Link to="/quick-convert" className="action-card action-card--secondary">
-            <div className="action-card__icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+          {/* Row 1: 3 cards */}
+          <div className="task-cards">
+            {/* Card 1: Meeting Notes to Requirements - Recommended for new users */}
+            <Link to="/app/meetings/new" className="task-card task-card--teal task-card--recommended">
+              <div className="task-card__icon task-card__icon--teal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                  <rect x="9" y="3" width="6" height="4" rx="1"/>
+                  <path d="M9 12h6M9 16h4"/>
+                </svg>
+              </div>
+              <div className="task-card__title">Convert Meeting Notes to Requirements</div>
+              <div className="task-card__description">Transform raw meeting content into structured product requirements</div>
+              <div className="task-card__io">
+                <div className="task-card__io-label">Input</div>
+                Webex transcripts, AI notes, PM notes
+                <div className="task-card__io-label">Output</div>
+                Structured recap with problems, requirements, risks
+              </div>
+            </Link>
+
+            {/* Card 2: Generate PRD */}
+            <div className="task-card task-card--orange task-card--disabled">
+              <div className="task-card__icon task-card__icon--orange">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+                </svg>
+              </div>
+              <div className="task-card__header">
+                <span className="task-card__title">Generate PRD</span>
+                <span className="task-card__badge">Coming Soon</span>
+              </div>
+              <div className="task-card__description">Create an early PRD designed to surface clarity and gaps</div>
+              <div className="task-card__io">
+                <div className="task-card__io-label">Input</div>
+                Meeting recap, notes, or prompt
+                <div className="task-card__io-label">Output</div>
+                Draft PRD for review and iteration
+              </div>
             </div>
-            <div className="action-card__content">
-              <h3 className="action-card__title">Quick Convert</h3>
-              <p className="action-card__description">Quickly convert notes to requirements, PRDs, or user stories without saving to a project</p>
+
+            {/* Card 3: User Stories */}
+            <Link to="/quick-convert/stories?new=1" className="task-card task-card--blue">
+              <div className="task-card__icon task-card__icon--blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+              </div>
+              <div className="task-card__title">User Stories</div>
+              <div className="task-card__description">Generate actionable user stories from your requirements</div>
+              <div className="task-card__io">
+                <div className="task-card__io-label">Input</div>
+                Requirements from meeting recap
+                <div className="task-card__io-label">Output</div>
+                User stories with acceptance criteria
+              </div>
+            </Link>
+          </div>
+
+          {/* Row 2: 2 cards */}
+          <div className="task-cards-row-2">
+            {/* Card 4: Recommend Features */}
+            <div className="task-card task-card--purple task-card--disabled">
+              <div className="task-card__icon task-card__icon--purple">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18V5l12-2v13"/>
+                  <circle cx="6" cy="18" r="3"/>
+                  <circle cx="18" cy="16" r="3"/>
+                </svg>
+              </div>
+              <div className="task-card__header">
+                <span className="task-card__title">Recommend Features from Feedback</span>
+                <span className="task-card__badge">Coming Soon</span>
+              </div>
+              <div className="task-card__description">Identify patterns and opportunities from customer input</div>
+              <div className="task-card__io">
+                <div className="task-card__io-label">Input</div>
+                Feedback, support tickets, notes
+                <div className="task-card__io-label">Output</div>
+                Clustered themes and recommendations
+              </div>
             </div>
-          </Link>
-        </div>
+
+            {/* Card 5: Mockups */}
+            <div className="task-card task-card--teal task-card--disabled">
+              <div className="task-card__icon task-card__icon--teal">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M3 9h18"/>
+                  <circle cx="6" cy="6" r="1" fill="currentColor"/>
+                  <circle cx="9" cy="6" r="1" fill="currentColor"/>
+                  <path d="M8 15l2-2 3 3 3-4 2 2"/>
+                </svg>
+              </div>
+              <div className="task-card__header">
+                <span className="task-card__title">Generate CX / AI Assistant Mockups</span>
+                <span className="task-card__badge">Coming Soon</span>
+              </div>
+              <div className="task-card__description">Create screen flows and UI specifications for features</div>
+              <div className="task-card__io">
+                <div className="task-card__io-label">Input</div>
+                Feature idea or PRD
+                <div className="task-card__io-label">Output</div>
+                Screen flows and UI specs
+              </div>
+            </div>
+
+            {/* Spacer for grid alignment */}
+            <div className="task-card task-card--spacer" aria-hidden="true"></div>
+          </div>
+        </section>
 
         {/* Your Projects Section */}
         <div className="dashboard__projects-section">
           <div className="dashboard__section-header">
-            <h2 className="dashboard__section-title">Your Projects</h2>
+            <div className="dashboard__section-title-row">
+              <h2 className="dashboard__section-title">Your Projects</h2>
+              <div className="progress-legend">
+                <div className="progress-legend__item">
+                  <div className="progress-legend__color progress-legend__color--complete"></div>
+                  <span>Completed</span>
+                </div>
+                <div className="progress-legend__item">
+                  <div className="progress-legend__color progress-legend__color--active"></div>
+                  <span>In Progress</span>
+                </div>
+              </div>
+            </div>
             <div className="dashboard__filters">
               <ProjectSearch value={searchQuery} onChange={handleSearchChange} />
               <StageFilter value={stageFilter} onChange={handleFilterChange} />
@@ -337,24 +434,10 @@ function DashboardPage() {
                 </svg>
               }
               title="No projects yet"
-              description="Create your first project to start organizing requirements and generating PRDs."
-              actionButton={
-                <button
-                  type="button"
-                  className="empty-state-link-btn"
-                  onClick={() => setShowNewProjectModal(true)}
-                >
-                  Create Project
-                </button>
-              }
+              description="Start a task above to begin working on requirements, PRDs, or user stories."
             />
           )}
         </div>
-
-        {/* New Project Modal */}
-        {showNewProjectModal && (
-          <NewProjectModal onClose={() => setShowNewProjectModal(false)} />
-        )}
 
         {/* Delete Confirmation Modal */}
         {projectToDelete && (

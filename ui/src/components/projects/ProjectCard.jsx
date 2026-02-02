@@ -120,21 +120,27 @@ function formatTimeAgo(dateString) {
 }
 
 /**
- * Progress bar component
+ * Progress bar component with tooltip
  */
-function ProgressBar({ progressPercent, activePercent }) {
+function ProgressBar({ progressPercent, activePercent, completedCount, activeStageLabel }) {
+  const tooltipText = activeStageLabel
+    ? `${completedCount} stage${completedCount !== 1 ? 's' : ''} completed • ${activeStageLabel} in progress`
+    : `${completedCount} stage${completedCount !== 1 ? 's' : ''} completed`;
+
   return (
-    <div className="project-card__progress-bar">
-      <div
-        className="project-card__progress-segment project-card__progress-segment--complete"
-        style={{ width: `${progressPercent}%` }}
-      />
-      {activePercent > 0 && (
+    <div className="project-card__progress-container">
+      <div className="project-card__progress-bar" title={tooltipText}>
         <div
-          className="project-card__progress-segment project-card__progress-segment--active"
-          style={{ width: `${activePercent}%` }}
+          className="project-card__progress-segment project-card__progress-segment--complete"
+          style={{ width: `${progressPercent}%` }}
         />
-      )}
+        {activePercent > 0 && (
+          <div
+            className="project-card__progress-segment project-card__progress-segment--active"
+            style={{ width: `${activePercent}%` }}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -202,9 +208,11 @@ function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
               <span className="project-card__archived-badge">Archived</span>
             )}
           </div>
-          <p className="project-card__description">
-            {project.description || 'No description'}
-          </p>
+          {project.description && (
+            <p className="project-card__description">
+              {project.description}
+            </p>
+          )}
         </div>
         <div className="project-card__meta">
           <span className="project-card__time">
@@ -238,6 +246,8 @@ function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
         <ProgressBar
           progressPercent={progressInfo.progressPercent}
           activePercent={progressInfo.activePercent}
+          completedCount={progressInfo.completedCount}
+          activeStageLabel={progressInfo.activeStageLabel}
         />
         <div className="project-card__progress-info">
           {stageLabel}

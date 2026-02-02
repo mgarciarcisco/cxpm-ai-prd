@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Requirements Stage - Option C: Horizontal Tabs with Table View</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
+      color: #1f2937;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* Layout */
+    .page-wrapper {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Sticky Header */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+    }
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 1rem;
+    }
+
+    .breadcrumbs a {
+      color: #4ECDC4;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .breadcrumbs a:hover {
+      color: #3dbdb5;
+      text-decoration: underline;
+    }
+
+    .breadcrumbs span.separator {
+      color: #9ca3af;
+    }
+
+    .breadcrumbs span.current {
+      color: #374151;
+      font-weight: 500;
+    }
+
+    /* Header Row */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .total-count {
+      font-size: 0.875rem;
+      color: #6b7280;
+      background: #f3f4f6;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .status-badge--in-progress {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .status-badge--reviewed {
+      background: #d1fae5;
+      color: #059669;
+    }
+
+    .status-badge__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-badge--in-progress .status-badge__dot {
+      background: #3b82f6;
+    }
+
+    .status-badge--reviewed .status-badge__dot {
+      background: #10b981;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn--primary {
+      background: #4ECDC4;
+      color: white;
+    }
+
+    .btn--primary:hover {
+      background: #3dbdb5;
+    }
+
+    .btn--secondary {
+      background: white;
+      color: #4b5563;
+      border: 1px solid #e5e7eb;
+    }
+
+    .btn--secondary:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    .btn--icon {
+      padding: 0.625rem;
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Horizontal Tabs */
+    .tabs-container {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky;
+      top: 88px; /* Below header */
+      z-index: 90;
+    }
+
+    .tabs-wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #d1d5db #f3f4f6;
+    }
+
+    .tabs-wrapper::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    .tabs-wrapper::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .tabs-wrapper::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      min-width: max-content;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #6b7280;
+      background: none;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      position: relative;
+      transition: color 0.2s;
+    }
+
+    .tab:hover {
+      color: #374151;
+    }
+
+    .tab--active {
+      color: #4ECDC4;
+    }
+
+    .tab--active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #4ECDC4;
+    }
+
+    .tab__icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+    }
+
+    .tab__count {
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f3f4f6;
+      color: #6b7280;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .tab--active .tab__count {
+      background: rgba(78, 205, 196, 0.15);
+      color: #4ECDC4;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem;
+      width: 100%;
+    }
+
+    /* Filter/Search Bar */
+    .filter-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+      max-width: 400px;
+      padding: 0.625rem 1rem 0.625rem 2.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      background: white url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='7' cy='7' r='5' stroke='%239ca3af' stroke-width='1.5'/%3E%3Cpath d='M11 11L14 14' stroke='%239ca3af' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 0.75rem center no-repeat;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #4ECDC4;
+      box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+    }
+
+    .search-input::placeholder {
+      color: #9ca3af;
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .meetings-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #4b5563;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .meetings-toggle:hover {
+      background: #f9fafb;
+      border-color: #4ECDC4;
+      color: #4ECDC4;
+    }
+
+    .meetings-toggle--active {
+      background: rgba(78, 205, 196, 0.1);
+      border-color: #4ECDC4;
+      color: #4ECDC4;
+    }
+
+    .meetings-toggle svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .meetings-badge {
+      background: #4ECDC4;
+      color: white;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 0.125rem 0.375rem;
+      border-radius: 9999px;
+    }
+
+    /* Table */
+    .requirements-table-wrapper {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .requirements-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .requirements-table th {
+      text-align: left;
+      padding: 0.875rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .requirements-table th:first-child {
+      width: 50px;
+    }
+
+    .requirements-table th.col-number {
+      width: 60px;
+    }
+
+    .requirements-table th.col-source {
+      width: 180px;
+    }
+
+    .requirements-table th.col-actions {
+      width: 100px;
+      text-align: right;
+    }
+
+    .requirements-table td {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+    }
+
+    .requirements-table tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+
+    .requirements-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .requirements-table tr:hover td {
+      background: rgba(78, 205, 196, 0.05);
+    }
+
+    /* Checkbox */
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #d1d5db;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      appearance: none;
+      background: white;
+    }
+
+    .checkbox:checked {
+      background: #4ECDC4;
+      border-color: #4ECDC4;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 6L5 8.5L9.5 3.5' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .checkbox:hover {
+      border-color: #4ECDC4;
+    }
+
+    /* Row Number */
+    .row-number {
+      font-size: 0.8125rem;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    /* Requirement Content */
+    .requirement-content {
+      font-size: 0.9375rem;
+      color: #374151;
+      line-height: 1.6;
+    }
+
+    /* Source Chip */
+    .source-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      color: #4b5563;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .source-chip:hover {
+      background: #e5e7eb;
+      border-color: #d1d5db;
+    }
+
+    .source-chip svg {
+      width: 12px;
+      height: 12px;
+      color: #9ca3af;
+    }
+
+    .source-chip--manual {
+      background: #fef3c7;
+      border-color: #fcd34d;
+      color: #92400e;
+    }
+
+    /* Actions */
+    .row-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    tr:hover .row-actions {
+      opacity: 1;
+    }
+
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: #f3f4f6;
+      border-color: #e5e7eb;
+      color: #374151;
+    }
+
+    .action-btn--delete:hover {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    .action-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Sticky Footer */
+    .sticky-footer {
+      position: sticky;
+      bottom: 0;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      padding: 1rem 2rem;
+      z-index: 90;
+    }
+
+    .footer-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    .pagination-info {
+      margin-right: 1rem;
+    }
+
+    .pagination-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .selected-count {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    /* Meetings Panel (Slide-out Drawer) */
+    .meetings-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 360px;
+      max-width: 90vw;
+      background: white;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+      z-index: 200;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .meetings-drawer--open {
+      transform: translateX(0);
+    }
+
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 190;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .drawer-overlay--visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .drawer-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .drawer-close {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 6px;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .drawer-close:hover {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .drawer-close svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .drawer-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 1.5rem;
+    }
+
+    .meeting-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .meeting-card:hover {
+      border-color: #4ECDC4;
+      background: white;
+    }
+
+    .meeting-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+
+    .meeting-card__title {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: #1f2937;
+    }
+
+    .meeting-card__date {
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+
+    .meeting-card__meta {
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.8125rem;
+      color: #6b7280;
+    }
+
+    .meeting-card__stat {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .meeting-card__stat svg {
+      width: 14px;
+      height: 14px;
+      color: #9ca3af;
+    }
+
+    .drawer-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .drawer-footer .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* Section Icons (for tabs) */
+    .icon-problems { color: #ef4444; }
+    .icon-user-goals { color: #3b82f6; }
+    .icon-functional { color: #10b981; }
+    .icon-data { color: #8b5cf6; }
+    .icon-constraints { color: #f59e0b; }
+    .icon-non-goals { color: #6b7280; }
+    .icon-risks { color: #ec4899; }
+    .icon-questions { color: #06b6d4; }
+    .icon-actions { color: #84cc16; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .header-content,
+      .main-content,
+      .footer-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      .tabs-wrapper {
+        padding: 0 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-input {
+        max-width: none;
+      }
+
+      .footer-content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .pagination {
+        order: 2;
+      }
+
+      .footer-actions {
+        order: 1;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* Design Notes */
+    .design-notes {
+      max-width: 1400px;
+      margin: 3rem auto 2rem;
+      padding: 0 2rem;
+    }
+
+    .design-notes__card {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .design-notes h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #92400e;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .design-notes h3::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 1.25rem;
+      background: #f59e0b;
+      border-radius: 2px;
+    }
+
+    .design-notes ul {
+      font-size: 0.875rem;
+      color: #78350f;
+      margin-left: 1.5rem;
+      line-height: 1.8;
+    }
+
+    .design-notes li {
+      margin-bottom: 0.5rem;
+    }
+
+    .design-notes strong {
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- Sticky Header -->
+    <header class="sticky-header">
+      <div class="header-content">
+        <!-- Breadcrumbs -->
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          <a href="#">Dashboard</a>
+          <span class="separator">/</span>
+          <a href="#">E-commerce Platform Redesign</a>
+          <span class="separator">/</span>
+          <span class="current">Requirements</span>
+        </nav>
+
+        <!-- Header Row -->
+        <div class="header-row">
+          <div class="header-left">
+            <h1 class="page-title">Requirements</h1>
+            <span class="total-count">24 items</span>
+            <span class="status-badge status-badge--in-progress">
+              <span class="status-badge__dot"></span>
+              In Progress
+            </span>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn--secondary">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Add Meeting
+            </button>
+            <button class="btn btn--secondary">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M10 1H2v14h12V5l-4-4zm0 0v4h4M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Add Manually
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Horizontal Tabs -->
+    <div class="tabs-container">
+      <div class="tabs-wrapper">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" aria-selected="false">
+            <span class="tab__icon icon-problems">!</span>
+            <span>Problems</span>
+            <span class="tab__count">3</span>
+          </button>
+          <button class="tab" role="tab" aria-selected="false">
+            <span class="tab__icon icon-user-goals">@</span>
+            <span>User Goals</span>
+            <span class="tab__count">4</span>
+          </button>
+          <button class="tab tab--active" role="tab" aria-selected="true">
+            <span class="tab__icon icon-functional">*</span>
+            <span>Functional Requirements</span>
+            <span class="tab__count">8</span>
+          </button>
+          <button class="tab" role="tab" aria-selected="false">
+            <span class="tab__icon icon-data">#</span>
+            <span>Data Needs</span>
+            <span class="tab__count">2</span>
+          </button>
+          <button class="tab" role="tab" aria-selected="false">
+            <span class="tab__icon icon-constraints">~</span>
+            <span>Constraints</span>
+            <span class="tab__count">2</span>
+          </button>
+          <button class="tab" role="tab" aria-selected="false">
+            <span class="tab__icon icon-non-goals">-</span>
+            <span>Non Goals</span>
+            <span class="tab__count">1</span>
+          </button>
+          <button class="tab" role="tab" aria-selected="false">
+            <span class="tab__icon icon-risks">^</span>
+            <span>Risks & Assumptions</span>
+            <span class="tab__count">2</span>
+          </button>
+          <button class="tab" role="tab" aria-selected="false">
+            <span class="tab__icon icon-questions">?</span>
+            <span>Open Questions</span>
+            <span class="tab__count">1</span>
+          </button>
+          <button class="tab" role="tab" aria-selected="false">
+            <span class="tab__icon icon-actions">></span>
+            <span>Action Items</span>
+            <span class="tab__count">1</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Filter/Search Bar -->
+      <div class="filter-bar">
+        <input type="text" class="search-input" placeholder="Search requirements...">
+        <div class="filter-actions">
+          <button class="meetings-toggle" id="meetingsToggle" onclick="toggleDrawer()">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 7h8M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Meetings
+            <span class="meetings-badge">3</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Requirements Table -->
+      <div class="requirements-table-wrapper">
+        <table class="requirements-table">
+          <thead>
+            <tr>
+              <th><div class="checkbox-wrapper"><input type="checkbox" class="checkbox" aria-label="Select all"></div></th>
+              <th class="col-number">#</th>
+              <th>Requirement</th>
+              <th class="col-source">Source</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="checkbox-wrapper"><input type="checkbox" class="checkbox" aria-label="Select row"></div></td>
+              <td><span class="row-number">1</span></td>
+              <td><span class="requirement-content">Users should be able to filter products by category, price range, color, size, and brand</span></td>
+              <td>
+                <button class="source-chip" onclick="toggleDrawer()">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Sprint Planning
+                </button>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M10.5 1.75L12.25 3.5M1.75 12.25L2.625 9.1875L9.625 2.1875L11.8125 4.375L4.8125 11.375L1.75 12.25Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5H12.25M5.25 6.125V10.375M8.75 6.125V10.375M2.625 3.5L3.5 11.375C3.5 11.8391 3.68437 12.2842 4.01256 12.6124C4.34075 12.9406 4.78587 13.125 5.25 13.125H8.75C9.21413 13.125 9.65925 12.9406 9.98744 12.6124C10.3156 12.2842 10.5 11.8391 10.5 11.375L11.375 3.5M4.8125 3.5V1.75C4.8125 1.5181 4.90469 1.29564 5.06909 1.13128C5.2335 0.966911 5.45595 0.875 5.6875 0.875H8.3125C8.54405 0.875 8.7665 0.966911 8.93091 1.13128C9.09531 1.29564 9.1875 1.5181 9.1875 1.75V3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="checkbox-wrapper"><input type="checkbox" class="checkbox" aria-label="Select row"></div></td>
+              <td><span class="row-number">2</span></td>
+              <td><span class="requirement-content">The checkout process should support guest checkout without requiring account creation</span></td>
+              <td>
+                <button class="source-chip" onclick="toggleDrawer()">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  UX Review
+                </button>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M10.5 1.75L12.25 3.5M1.75 12.25L2.625 9.1875L9.625 2.1875L11.8125 4.375L4.8125 11.375L1.75 12.25Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5H12.25M5.25 6.125V10.375M8.75 6.125V10.375M2.625 3.5L3.5 11.375C3.5 11.8391 3.68437 12.2842 4.01256 12.6124C4.34075 12.9406 4.78587 13.125 5.25 13.125H8.75C9.21413 13.125 9.65925 12.9406 9.98744 12.6124C10.3156 12.2842 10.5 11.8391 10.5 11.375L11.375 3.5M4.8125 3.5V1.75C4.8125 1.5181 4.90469 1.29564 5.06909 1.13128C5.2335 0.966911 5.45595 0.875 5.6875 0.875H8.3125C8.54405 0.875 8.7665 0.966911 8.93091 1.13128C9.09531 1.29564 9.1875 1.5181 9.1875 1.75V3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="checkbox-wrapper"><input type="checkbox" class="checkbox" aria-label="Select row"></div></td>
+              <td><span class="row-number">3</span></td>
+              <td><span class="requirement-content">Product pages should display real-time inventory status and estimated delivery dates</span></td>
+              <td>
+                <button class="source-chip" onclick="toggleDrawer()">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Sprint Planning
+                </button>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M10.5 1.75L12.25 3.5M1.75 12.25L2.625 9.1875L9.625 2.1875L11.8125 4.375L4.8125 11.375L1.75 12.25Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5H12.25M5.25 6.125V10.375M8.75 6.125V10.375M2.625 3.5L3.5 11.375C3.5 11.8391 3.68437 12.2842 4.01256 12.6124C4.34075 12.9406 4.78587 13.125 5.25 13.125H8.75C9.21413 13.125 9.65925 12.9406 9.98744 12.6124C10.3156 12.2842 10.5 11.8391 10.5 11.375L11.375 3.5M4.8125 3.5V1.75C4.8125 1.5181 4.90469 1.29564 5.06909 1.13128C5.2335 0.966911 5.45595 0.875 5.6875 0.875H8.3125C8.54405 0.875 8.7665 0.966911 8.93091 1.13128C9.09531 1.29564 9.1875 1.5181 9.1875 1.75V3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="checkbox-wrapper"><input type="checkbox" class="checkbox" aria-label="Select row"></div></td>
+              <td><span class="row-number">4</span></td>
+              <td><span class="requirement-content">Users should be able to save items to a wishlist for later purchase</span></td>
+              <td>
+                <button class="source-chip source-chip--manual">
+                  <svg viewBox="0 0 16 16" fill="none"><path d="M10 1H2v14h12V5l-4-4zm0 0v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Manual
+                </button>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M10.5 1.75L12.25 3.5M1.75 12.25L2.625 9.1875L9.625 2.1875L11.8125 4.375L4.8125 11.375L1.75 12.25Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5H12.25M5.25 6.125V10.375M8.75 6.125V10.375M2.625 3.5L3.5 11.375C3.5 11.8391 3.68437 12.2842 4.01256 12.6124C4.34075 12.9406 4.78587 13.125 5.25 13.125H8.75C9.21413 13.125 9.65925 12.9406 9.98744 12.6124C10.3156 12.2842 10.5 11.8391 10.5 11.375L11.375 3.5M4.8125 3.5V1.75C4.8125 1.5181 4.90469 1.29564 5.06909 1.13128C5.2335 0.966911 5.45595 0.875 5.6875 0.875H8.3125C8.54405 0.875 8.7665 0.966911 8.93091 1.13128C9.09531 1.29564 9.1875 1.5181 9.1875 1.75V3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="checkbox-wrapper"><input type="checkbox" class="checkbox" aria-label="Select row"></div></td>
+              <td><span class="row-number">5</span></td>
+              <td><span class="requirement-content">The system should support multiple payment methods including credit cards, PayPal, and Apple Pay</span></td>
+              <td>
+                <button class="source-chip" onclick="toggleDrawer()">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Stakeholder Sync
+                </button>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M10.5 1.75L12.25 3.5M1.75 12.25L2.625 9.1875L9.625 2.1875L11.8125 4.375L4.8125 11.375L1.75 12.25Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5H12.25M5.25 6.125V10.375M8.75 6.125V10.375M2.625 3.5L3.5 11.375C3.5 11.8391 3.68437 12.2842 4.01256 12.6124C4.34075 12.9406 4.78587 13.125 5.25 13.125H8.75C9.21413 13.125 9.65925 12.9406 9.98744 12.6124C10.3156 12.2842 10.5 11.8391 10.5 11.375L11.375 3.5M4.8125 3.5V1.75C4.8125 1.5181 4.90469 1.29564 5.06909 1.13128C5.2335 0.966911 5.45595 0.875 5.6875 0.875H8.3125C8.54405 0.875 8.7665 0.966911 8.93091 1.13128C9.09531 1.29564 9.1875 1.5181 9.1875 1.75V3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="checkbox-wrapper"><input type="checkbox" class="checkbox" aria-label="Select row"></div></td>
+              <td><span class="row-number">6</span></td>
+              <td><span class="requirement-content">Product search should include autocomplete suggestions and typo tolerance</span></td>
+              <td>
+                <button class="source-chip" onclick="toggleDrawer()">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  UX Review
+                </button>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M10.5 1.75L12.25 3.5M1.75 12.25L2.625 9.1875L9.625 2.1875L11.8125 4.375L4.8125 11.375L1.75 12.25Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5H12.25M5.25 6.125V10.375M8.75 6.125V10.375M2.625 3.5L3.5 11.375C3.5 11.8391 3.68437 12.2842 4.01256 12.6124C4.34075 12.9406 4.78587 13.125 5.25 13.125H8.75C9.21413 13.125 9.65925 12.9406 9.98744 12.6124C10.3156 12.2842 10.5 11.8391 10.5 11.375L11.375 3.5M4.8125 3.5V1.75C4.8125 1.5181 4.90469 1.29564 5.06909 1.13128C5.2335 0.966911 5.45595 0.875 5.6875 0.875H8.3125C8.54405 0.875 8.7665 0.966911 8.93091 1.13128C9.09531 1.29564 9.1875 1.5181 9.1875 1.75V3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="checkbox-wrapper"><input type="checkbox" class="checkbox" aria-label="Select row"></div></td>
+              <td><span class="row-number">7</span></td>
+              <td><span class="requirement-content">Users should receive email notifications for order status changes including shipped, delivered, and delays</span></td>
+              <td>
+                <button class="source-chip" onclick="toggleDrawer()">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Sprint Planning
+                </button>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M10.5 1.75L12.25 3.5M1.75 12.25L2.625 9.1875L9.625 2.1875L11.8125 4.375L4.8125 11.375L1.75 12.25Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5H12.25M5.25 6.125V10.375M8.75 6.125V10.375M2.625 3.5L3.5 11.375C3.5 11.8391 3.68437 12.2842 4.01256 12.6124C4.34075 12.9406 4.78587 13.125 5.25 13.125H8.75C9.21413 13.125 9.65925 12.9406 9.98744 12.6124C10.3156 12.2842 10.5 11.8391 10.5 11.375L11.375 3.5M4.8125 3.5V1.75C4.8125 1.5181 4.90469 1.29564 5.06909 1.13128C5.2335 0.966911 5.45595 0.875 5.6875 0.875H8.3125C8.54405 0.875 8.7665 0.966911 8.93091 1.13128C9.09531 1.29564 9.1875 1.5181 9.1875 1.75V3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><div class="checkbox-wrapper"><input type="checkbox" class="checkbox" aria-label="Select row"></div></td>
+              <td><span class="row-number">8</span></td>
+              <td><span class="requirement-content">The shopping cart should persist across sessions and sync across devices for logged-in users</span></td>
+              <td>
+                <button class="source-chip" onclick="toggleDrawer()">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Stakeholder Sync
+                </button>
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M10.5 1.75L12.25 3.5M1.75 12.25L2.625 9.1875L9.625 2.1875L11.8125 4.375L4.8125 11.375L1.75 12.25Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5H12.25M5.25 6.125V10.375M8.75 6.125V10.375M2.625 3.5L3.5 11.375C3.5 11.8391 3.68437 12.2842 4.01256 12.6124C4.34075 12.9406 4.78587 13.125 5.25 13.125H8.75C9.21413 13.125 9.65925 12.9406 9.98744 12.6124C10.3156 12.2842 10.5 11.8391 10.5 11.375L11.375 3.5M4.8125 3.5V1.75C4.8125 1.5181 4.90469 1.29564 5.06909 1.13128C5.2335 0.966911 5.45595 0.875 5.6875 0.875H8.3125C8.54405 0.875 8.7665 0.966911 8.93091 1.13128C9.09531 1.29564 9.1875 1.5181 9.1875 1.75V3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- Sticky Footer -->
+    <footer class="sticky-footer">
+      <div class="footer-content">
+        <div class="pagination">
+          <span class="pagination-info">Showing 1-8 of 8</span>
+          <button class="pagination-btn" disabled aria-label="Previous page">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="pagination-btn" disabled aria-label="Next page">
+            <svg viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="footer-actions">
+          <span class="selected-count">0 selected</span>
+          <button class="btn btn--primary">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 4.5l-7 7L3 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Mark as Reviewed
+          </button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Drawer Overlay -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+
+  <!-- Meetings Panel (Slide-out Drawer) -->
+  <aside class="meetings-drawer" id="meetingsDrawer" aria-label="Meetings panel">
+    <div class="drawer-header">
+      <h2 class="drawer-title">Meetings</h2>
+      <button class="drawer-close" onclick="toggleDrawer()" aria-label="Close panel">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="drawer-content">
+      <div class="meeting-card">
+        <div class="meeting-card__header">
+          <span class="meeting-card__title">Sprint Planning</span>
+          <span class="meeting-card__date">Jan 28, 2026</span>
+        </div>
+        <div class="meeting-card__meta">
+          <span class="meeting-card__stat">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 7h8M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            12 items
+          </span>
+          <span class="meeting-card__stat">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 4.5l-7 7L3 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            All applied
+          </span>
+        </div>
+      </div>
+      <div class="meeting-card">
+        <div class="meeting-card__header">
+          <span class="meeting-card__title">UX Review</span>
+          <span class="meeting-card__date">Jan 25, 2026</span>
+        </div>
+        <div class="meeting-card__meta">
+          <span class="meeting-card__stat">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 7h8M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            8 items
+          </span>
+          <span class="meeting-card__stat">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 4.5l-7 7L3 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            All applied
+          </span>
+        </div>
+      </div>
+      <div class="meeting-card">
+        <div class="meeting-card__header">
+          <span class="meeting-card__title">Stakeholder Sync</span>
+          <span class="meeting-card__date">Jan 22, 2026</span>
+        </div>
+        <div class="meeting-card__meta">
+          <span class="meeting-card__stat">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M2 3h12M2 7h8M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            6 items
+          </span>
+          <span class="meeting-card__stat">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 4.5l-7 7L3 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            All applied
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="btn btn--primary" onclick="toggleDrawer()">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Add Meeting
+      </button>
+    </div>
+  </aside>
+
+  <!-- Design Notes -->
+  <div class="design-notes">
+    <div class="design-notes__card">
+      <h3>Design Notes - Option C: Horizontal Tabs with Table View</h3>
+      <ul>
+        <li><strong>Layout:</strong> Sticky header with breadcrumbs, title, count, status badge, and action buttons. Horizontal tabs below for section navigation.</li>
+        <li><strong>Tabs:</strong> Each section has its own tab with icon, name, and count badge. Active tab has teal underline. Tabs scroll horizontally on small screens.</li>
+        <li><strong>Table view:</strong> Requirements displayed in a clean table format with columns for checkbox, row number, requirement text, source, and actions.</li>
+        <li><strong>Source chips:</strong> Clickable chips showing which meeting the requirement came from. "Manual" entries have distinct yellow styling.</li>
+        <li><strong>Actions on hover:</strong> Edit and delete buttons appear when hovering over a row, keeping the UI clean.</li>
+        <li><strong>Bulk selection:</strong> Checkboxes for selecting multiple requirements at once. Selected count shown in footer.</li>
+        <li><strong>Meetings drawer:</strong> Slide-out panel on the right showing all meetings. Triggered by "Meetings" toggle button in filter bar.</li>
+        <li><strong>Sticky footer:</strong> Pagination info and "Mark as Reviewed" button always visible at bottom of screen.</li>
+        <li><strong>Benefits:</strong> Table view allows quick scanning of many requirements. Tabs reduce scrolling. Drawer keeps meetings accessible without taking up screen space.</li>
+        <li><strong>Accessibility:</strong> Proper ARIA labels, keyboard navigation support, and focus states throughout.</li>
+        <li><strong>Responsive:</strong> Tabs scroll horizontally on mobile. Filter bar stacks vertically. Footer adapts to narrow screens.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Simple drawer toggle functionality
+    function toggleDrawer() {
+      const drawer = document.getElementById('meetingsDrawer');
+      const overlay = document.getElementById('drawerOverlay');
+      const toggle = document.getElementById('meetingsToggle');
+
+      drawer.classList.toggle('meetings-drawer--open');
+      overlay.classList.toggle('drawer-overlay--visible');
+      toggle.classList.toggle('meetings-toggle--active');
+    }
+
+    // Tab switching (demo only)
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => {
+          t.classList.remove('tab--active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        this.classList.add('tab--active');
+        this.setAttribute('aria-selected', 'true');
+      });
+    });
+
+    // Checkbox handling (demo only)
+    const selectAllCheckbox = document.querySelector('thead .checkbox');
+    const rowCheckboxes = document.querySelectorAll('tbody .checkbox');
+    const selectedCount = document.querySelector('.selected-count');
+
+    function updateSelectedCount() {
+      const checked = document.querySelectorAll('tbody .checkbox:checked').length;
+      selectedCount.textContent = `${checked} selected`;
+    }
+
+    selectAllCheckbox?.addEventListener('change', function() {
+      rowCheckboxes.forEach(cb => cb.checked = this.checked);
+      updateSelectedCount();
+    });
+
+    rowCheckboxes.forEach(cb => {
+      cb.addEventListener('change', updateSelectedCount);
+    });
+  </script>
+</body>
+</html>

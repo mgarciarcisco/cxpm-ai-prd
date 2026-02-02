@@ -11,12 +11,12 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.models import (
+    PRD,
     ExportStatus,
     MockupsStatus,
-    PRD,
     PRDMode,
-    PRDStatus,
     PRDStageStatus,
+    PRDStatus,
     Project,
     Requirement,
     RequirementsStatus,
@@ -32,7 +32,6 @@ from app.services.stage_status import (
     update_requirements_status,
     update_stories_status,
 )
-
 
 # =============================================================================
 # HELPER FUNCTIONS

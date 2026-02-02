@@ -85,7 +85,26 @@
       "Bash(/mnt/c/Users/ravigar/Projects/cxpm-ai-prd/backend/fix_project_statuses.sh)",
       "Bash(BANKING_ID=\"a7228cc6-c2c9-470b-a589-d4bf2b85c273\")",
       "Bash(/mnt/c/Users/ravigar/Projects/cxpm-ai-prd/backend/seed_stories.sh)",
-      "Bash(npm run test)"
+      "Bash(npm run test)",
+      "Bash(gh run list:*)",
+      "Bash(ruff check:*)",
+      "Bash(npm run test:*)",
+      "Bash(cd /mnt/c/Users/ravigar/Projects/cxpm-ai-prd/ui && npx vitest run:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git checkout:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(pgrep:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx stylelint:*)",
+      "Bash(node:*)",
+      "Bash(tasklist.exe:*)",
+      "Bash(powershell.exe -Command \"Stop-Process -Name ''ollama*'' -Force -ErrorAction SilentlyContinue; Start-Sleep 3; $env:OLLAMA_HOST=''0.0.0.0''; Start-Process -FilePath ''$env:LOCALAPPDATA\\\\Programs\\\\Ollama\\\\ollama.exe'' -ArgumentList ''serve'' -WindowStyle Hidden\")",
+      "Bash(git status:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker.exe ps:*)",
+      "Bash(docker.exe logs:*)",
+      "Bash(npx vitest run:*)"
     ]
   }
 }

@@ -123,6 +123,7 @@ class ProjectResponse(BaseModel):
     stories_status: StoriesStatusSchema
     mockups_status: MockupsStatusSchema
     export_status: ExportStatusSchema
+    requirements_count: int = 0
 
     model_config = {"from_attributes": True}
 
