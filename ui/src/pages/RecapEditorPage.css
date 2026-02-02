@@ -26,10 +26,17 @@
 
 .recap-sticky-header__left {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.25rem;
   min-width: 0;
   flex: 1;
+}
+
+.recap-sticky-header__title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .recap-sticky-header__title {
@@ -37,9 +44,6 @@
   font-weight: 600;
   color: #111827;
   margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .recap-sticky-header__date {
@@ -108,12 +112,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   padding: 0.5rem 0.75rem;
+  border: none;
   border-radius: 6px;
-  text-decoration: none;
+  background: none;
   font-size: 0.8125rem;
   color: #4B5563;
+  cursor: pointer;
   transition: all 0.15s ease;
+  text-align: left;
 }
 
 .recap-side-nav__link:hover {
@@ -346,12 +354,6 @@
   flex-shrink: 0;
 }
 
-/* ===== Scroll margin for jump-to behavior ===== */
-/* These IDs are added to section wrapper divs in RecapEditor */
-.recap-editor-section {
-  scroll-margin-top: 120px;
-}
-
 /* ===== Responsive - Mobile ===== */
 @media (max-width: 768px) {
   .recap-sticky-header {
@@ -411,11 +413,6 @@
   .recap-sticky-footer__actions .recap-btn {
     flex: 1;
     justify-content: center;
-  }
-
-  /* Adjust scroll margin for mobile header */
-  .recap-editor-section {
-    scroll-margin-top: 100px;
   }
 }
 

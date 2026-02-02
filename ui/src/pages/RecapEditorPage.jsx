@@ -24,9 +24,9 @@ const SECTIONS = [
 ];
 
 /**
- * Side Navigation component for section quick-links
+ * Side Navigation component for section selection (tab-style)
  */
-function SideNav({ sections, sectionCounts, activeSection }) {
+function SideNav({ sections, sectionCounts, activeSection, onSectionChange }) {
   return (
     <aside className="recap-side-nav">
       <div className="recap-side-nav__title">Sections</div>
@@ -37,15 +37,16 @@ function SideNav({ sections, sectionCounts, activeSection }) {
           const isEmpty = count === 0;
           return (
             <li key={section.key} className="recap-side-nav__item">
-              <a
-                href={`#${section.key}`}
+              <button
+                type="button"
+                onClick={() => onSectionChange(section.key)}
                 className={`recap-side-nav__link ${isActive ? 'recap-side-nav__link--active' : ''}`}
               >
                 <span>{section.label}</span>
                 <span className={`recap-side-nav__count recap-side-nav__count--${isEmpty ? 'empty' : section.colorClass}`}>
                   {count}
                 </span>
-              </a>
+              </button>
             </li>
           );
         })}
@@ -95,22 +96,9 @@ function RecapEditorPage() {
     return Object.values(sectionCounts).reduce((sum, count) => sum + count, 0);
   }, [sectionCounts]);
 
-  // Track active section on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + 150; // Offset for sticky header
-
-      for (let i = SECTIONS.length - 1; i >= 0; i--) {
-        const section = document.getElementById(SECTIONS[i].key);
-        if (section && section.offsetTop <= scrollPosition) {
-          setActiveSection(SECTIONS[i].key);
-          break;
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+  // Handle section change from side nav
+  const handleSectionChange = useCallback((sectionKey) => {
+    setActiveSection(sectionKey);
   }, []);
 
   // Transition from streaming to processed state when streaming completes
@@ -153,21 +141,6 @@ function RecapEditorPage() {
   // Handle item delete callback - remove item from local state
   const handleDeleteItem = useCallback((deletedItem) => {
     setMeetingItems(prev => prev.filter(item => item.id !== deletedItem.id));
-  }, []);
-
-  // Handle item reorder callback - update order in local state
-  const handleReorderItems = useCallback((section, newItemIds) => {
-    setMeetingItems(prev => {
-      // Get items not in this section
-      const otherItems = prev.filter(item => item.section !== section);
-      // Get items in this section and reorder them
-      const sectionItems = prev.filter(item => item.section === section);
-      const reorderedSectionItems = newItemIds.map((itemId, index) => {
-        const item = sectionItems.find(i => i.id === itemId);
-        return item ? { ...item, order: index + 1 } : null;
-      }).filter(Boolean);
-      return [...otherItems, ...reorderedSectionItems];
-    });
   }, []);
 
   // Handle add item callback - add new item to local state
@@ -266,13 +239,13 @@ function RecapEditorPage() {
       <header className="recap-sticky-header">
         <div className="recap-sticky-header__inner">
           <div className="recap-sticky-header__left">
-            <div>
-              <Breadcrumbs items={breadcrumbItems} />
+            <Breadcrumbs items={breadcrumbItems} />
+            <div className="recap-sticky-header__title-group">
               <h1 className="recap-sticky-header__title">{meeting?.title || 'Meeting Recap'}</h1>
+              {formattedDate && (
+                <span className="recap-sticky-header__date">{formattedDate}</span>
+              )}
             </div>
-            {formattedDate && (
-              <span className="recap-sticky-header__date">{formattedDate}</span>
-            )}
           </div>
           {showRecapEditor && (
             <div className="recap-sticky-header__summary">
@@ -294,6 +267,7 @@ function RecapEditorPage() {
             sections={SECTIONS}
             sectionCounts={sectionCounts}
             activeSection={activeSection}
+            onSectionChange={handleSectionChange}
           />
         )}
 
@@ -324,9 +298,9 @@ function RecapEditorPage() {
               <RecapEditor
                 meetingId={mid}
                 items={meetingItems}
+                activeSection={activeSection}
                 onEditItem={handleEditItem}
                 onDeleteItem={handleDeleteItem}
-                onReorderItems={handleReorderItems}
                 onAddItem={handleAddItem}
                 readOnly={isApplied}
               />
