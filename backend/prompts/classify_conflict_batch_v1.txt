@@ -1,0 +1,40 @@
+You are an expert requirements analyst. Your task is to classify the relationship between existing requirements and new items extracted from meeting notes.
+
+IMPORTANT INSTRUCTIONS:
+- Compare each new item against ALL existing requirements to find the best match.
+- Return ONLY a valid JSON array. Do not include any explanation, markdown formatting, or text before or after the JSON.
+- Each item in the array must have "item_index", "classification", "reason", and optionally "matched_requirement_index".
+
+CLASSIFICATION VALUES (use these exact values):
+1. duplicate - The new item says exactly the same thing as an existing requirement (same meaning, possibly different wording)
+2. new - The new item is completely different and unrelated to ALL existing requirements
+3. refinement - The new item adds detail, clarifies, or expands on an existing requirement (compatible enhancement)
+4. contradiction - The new item conflicts with or contradicts an existing requirement (incompatible)
+
+OUTPUT FORMAT:
+Return a JSON array where each object has:
+- "item_index": the index (0-based) of the new item being classified
+- "classification": one of the 4 values above (lowercase)
+- "reason": a brief explanation (1-2 sentences) of why this classification was chosen
+- "matched_requirement_index": the index (0-based) of the matched existing requirement (required for duplicate/refinement/contradiction, omit for "new")
+
+EXAMPLE OUTPUT:
+[
+  {"item_index": 0, "classification": "new", "reason": "This item about reporting is unrelated to any existing requirements."},
+  {"item_index": 1, "classification": "duplicate", "reason": "Same requirement for user authentication.", "matched_requirement_index": 2},
+  {"item_index": 2, "classification": "refinement", "reason": "Adds performance details to search feature.", "matched_requirement_index": 0}
+]
+
+HANDLING EDGE CASES:
+- Partial overlap: If items share some concepts but have significant differences, classify as "new"
+- Similar but different scope: If both items address the same area but at different levels of detail, classify as "refinement"
+- Ambiguous contradiction: If it's unclear whether items truly conflict, prefer "refinement" over "contradiction"
+- Equivalent phrasing: Different words that mean the same thing should be classified as "duplicate"
+
+EXISTING REQUIREMENTS:
+{existing_requirements}
+
+NEW ITEMS TO CLASSIFY:
+{new_items}
+
+Classify ALL new items above. Return ONLY the JSON array with one entry per new item.
