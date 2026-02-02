@@ -758,9 +758,64 @@ HTML mockup files created in `mockups/` folder for review:
 9. **Inline source quotes** - Source quotes displayed within ItemRow component with left border accent
 10. **Removed duplicate source rendering** - RecapEditor no longer duplicates source_quote (now handled by ItemRow)
 
-### Pending Implementation
+### Select Project Page - COMPLETED
 
-Next pages in user flow to redesign:
-- **SelectProjectPage** - Fix redundant back navigation, improve radio button styling
-- **ProjectDashboard/ProjectViewPage** - Status explanations, meeting card hover states
-- **RequirementsPage** - Edit/delete visibility, source link styling
+**Files Modified:**
+- `ui/src/pages/SelectProjectPage.jsx`
+- `ui/src/pages/SelectProjectPage.css`
+
+**Changes Implemented:**
+1. **Removed redundant navigation** - Eliminated duplicate "Back to Review" link, now uses breadcrumbs
+2. **Breadcrumb navigation** - Dashboard > Extraction Results > Select Project
+3. **Custom large radio buttons** - 24px radio buttons with clear selected state (teal fill)
+4. **Project metadata** - Shows requirement count and relative update time (e.g., "2 days ago")
+5. **Conflict warning badge** - "May have conflicts" badge for projects with existing requirements
+6. **Tooltip on disabled button** - Shows "Enter a project name to continue" or "Select a project..."
+7. **Help text** - Explains archived projects are hidden
+8. **Centered card design** - Consistent with previous pages
+9. **Responsive design** - Mobile-friendly layout with stacked meta info
+
+**Mockups Created:**
+- `mockups/select-project-option-a.html` - Selected (centered card)
+- `mockups/select-project-option-b.html` - Alternative (two-column with preview)
+
+### Project Dashboard Page - COMPLETED
+
+**Files Modified:**
+- `ui/src/pages/ProjectDashboard.jsx`
+- `ui/src/pages/ProjectDashboard.css`
+- `ui/src/components/meetings/MeetingsList.css`
+- `ui/src/components/common/StatusBadge.jsx`
+
+**Changes Implemented:**
+1. **Breadcrumbs navigation** - Replaced "Back to Projects" link with proper breadcrumbs
+2. **Stage progress indicator** - Shows completed stages (green) and active stage (teal gradient)
+3. **Meeting card hover states** - Clear teal border, lift effect, and arrow indicator on hover
+4. **Status badge tooltips** - Explains what each status means:
+   - "Processed" = Ready to apply to requirements
+   - "Applied" = Requirements have been added to the project
+5. **Improved header layout** - Description and progress indicator side by side
+
+### Requirements Page - COMPLETED
+
+**Files Modified:**
+- `ui/src/pages/RequirementsPage.jsx`
+- `ui/src/pages/RequirementsPage.css`
+
+**Changes Implemented:**
+1. **Breadcrumbs navigation** - Dashboard > Project > Requirements
+2. **Requirements count badge** - Shows total item count in header
+3. **Color-coded section badges** - Each section has unique color via variant prop
+4. **Chip-style source links** - Source meeting links now styled as teal chips with hover effect
+5. **Improved header layout** - Title, count badge, and export button properly aligned
+6. **Edit/delete actions visible** - Inherited from ItemRow component updates
+
+### All User Flow Pages Complete
+
+The following pages have been redesigned:
+1. Dashboard Page
+2. Upload Meeting Notes Page
+3. Extraction Results Page (RecapEditorPage)
+4. Select Project Page
+5. Project Dashboard Page
+6. Requirements Page
