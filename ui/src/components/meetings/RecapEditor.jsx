@@ -200,36 +200,30 @@ export function RecapEditor({ meetingId, items = [], onEditItem, onDeleteItem, o
         // Filter out items with empty content for accurate count and display
         const nonEmptyItems = sectionItems.filter(item => item.content && item.content.trim());
         return (
-          <CollapsibleSection
-            key={section.key}
-            title={section.label}
-            itemCount={nonEmptyItems.length}
-            defaultExpanded={true}
-          >
+          <div key={section.key} id={section.key} className="recap-editor-section">
+            <CollapsibleSection
+              title={section.label}
+              itemCount={nonEmptyItems.length}
+              defaultExpanded={true}
+              variant={section.key}
+            >
             {nonEmptyItems.length > 0 ? (
               <div className="recap-editor-items">
                 {nonEmptyItems.map((item) => (
-                  <div key={item.id} className="recap-editor-item-wrapper">
-                    <ItemRow
-                      item={item}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      draggable={!isReordering}
-                      onDragStart={handleDragStart}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      isDragging={draggedItem?.id === item.id}
-                      isDragOver={dragOverItem?.id === item.id}
-                    />
-                    {item.source_quote && (
-                      <div className="recap-editor-source-quote">
-                        <span className="recap-editor-source-label">Source:</span>
-                        <span className="recap-editor-source-text">"{item.source_quote}"</span>
-                      </div>
-                    )}
-                  </div>
+                  <ItemRow
+                    key={item.id}
+                    item={item}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    draggable={!isReordering}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    isDragging={draggedItem?.id === item.id}
+                    isDragOver={dragOverItem?.id === item.id}
+                  />
                 ))}
               </div>
             ) : (
@@ -284,7 +278,8 @@ export function RecapEditor({ meetingId, items = [], onEditItem, onDeleteItem, o
                 Add item
               </button>
             )}
-          </CollapsibleSection>
+            </CollapsibleSection>
+          </div>
         );
       })}
     </div>

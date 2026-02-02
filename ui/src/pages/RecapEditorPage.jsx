@@ -1,13 +1,61 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { get } from '../services/api';
 import { useStreaming } from '../hooks/useStreaming';
 import StreamingPreview from '../components/meetings/StreamingPreview';
 import { RecapEditor } from '../components/meetings/RecapEditor';
+import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import './RecapEditorPage.css';
 
+/**
+ * Section configuration for side navigation
+ * Matches the sections in RecapEditor
+ */
+const SECTIONS = [
+  { key: 'problems', label: 'Problems', colorClass: 'problems' },
+  { key: 'user_goals', label: 'User Goals', colorClass: 'goals' },
+  { key: 'functional_requirements', label: 'Functional Req.', colorClass: 'requirements' },
+  { key: 'data_needs', label: 'Data Needs', colorClass: 'data' },
+  { key: 'constraints', label: 'Constraints', colorClass: 'constraints' },
+  { key: 'non_goals', label: 'Non-Goals', colorClass: 'nongoals' },
+  { key: 'risks_assumptions', label: 'Risks', colorClass: 'risks' },
+  { key: 'open_questions', label: 'Open Questions', colorClass: 'questions' },
+  { key: 'action_items', label: 'Action Items', colorClass: 'actions' },
+];
+
+/**
+ * Side Navigation component for section quick-links
+ */
+function SideNav({ sections, sectionCounts, activeSection }) {
+  return (
+    <aside className="recap-side-nav">
+      <div className="recap-side-nav__title">Sections</div>
+      <ul className="recap-side-nav__list">
+        {sections.map((section) => {
+          const count = sectionCounts[section.key] || 0;
+          const isActive = activeSection === section.key;
+          const isEmpty = count === 0;
+          return (
+            <li key={section.key} className="recap-side-nav__item">
+              <a
+                href={`#${section.key}`}
+                className={`recap-side-nav__link ${isActive ? 'recap-side-nav__link--active' : ''}`}
+              >
+                <span>{section.label}</span>
+                <span className={`recap-side-nav__count recap-side-nav__count--${isEmpty ? 'empty' : section.colorClass}`}>
+                  {count}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </aside>
+  );
+}
+
 function RecapEditorPage() {
-  const { id, mid } = useParams();
+  const { id: projectId, mid } = useParams(); // projectId may be undefined for dashboard flow
   const navigate = useNavigate();
   const location = useLocation();
   const [meeting, setMeeting] = useState(null);
@@ -15,6 +63,10 @@ function RecapEditorPage() {
   const [error, setError] = useState(null);
   const [meetingItems, setMeetingItems] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeSection, setActiveSection] = useState('problems');
+
+  // Determine if we're in project context or standalone (dashboard) flow
+  const hasProjectContext = Boolean(projectId);
 
   // Get jobId from navigation state or use meeting id
   const jobId = location.state?.job_id || mid;
@@ -23,6 +75,43 @@ function RecapEditorPage() {
   const { items: streamingItems, status: streamStatus, error: streamError, retry } = useStreaming(
     meeting?.status === 'pending' || meeting?.status === 'processing' ? jobId : null
   );
+
+  // Calculate section counts from meetingItems
+  const sectionCounts = useMemo(() => {
+    const counts = {};
+    SECTIONS.forEach((section) => {
+      counts[section.key] = 0;
+    });
+    meetingItems.forEach((item) => {
+      if (item.content && item.content.trim() && counts[item.section] !== undefined) {
+        counts[item.section]++;
+      }
+    });
+    return counts;
+  }, [meetingItems]);
+
+  // Calculate total item count
+  const totalItemCount = useMemo(() => {
+    return Object.values(sectionCounts).reduce((sum, count) => sum + count, 0);
+  }, [sectionCounts]);
+
+  // Track active section on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 150; // Offset for sticky header
+
+      for (let i = SECTIONS.length - 1; i >= 0; i--) {
+        const section = document.getElementById(SECTIONS[i].key);
+        if (section && section.offsetTop <= scrollPosition) {
+          setActiveSection(SECTIONS[i].key);
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Transition from streaming to processed state when streaming completes
   useEffect(() => {
@@ -86,10 +175,16 @@ function RecapEditorPage() {
     setMeetingItems(prev => [...prev, newItem]);
   }, []);
 
-  // Handle Save & Apply - navigate to apply/conflict resolver page
+  // Handle Save & Apply - navigate to appropriate next step
   const handleSaveAndApply = () => {
     setIsSaving(true);
-    navigate(`/app/projects/${id}/meetings/${mid}/apply`);
+    if (hasProjectContext) {
+      // Project flow: go directly to conflict resolution
+      navigate(`/app/projects/${projectId}/meetings/${mid}/apply`);
+    } else {
+      // Dashboard flow: go to project selection first
+      navigate(`/app/meetings/${mid}/select-project`);
+    }
   };
 
   const handleRetry = async () => {
@@ -109,6 +204,24 @@ function RecapEditorPage() {
       setError(err.message);
     }
   };
+
+  // Build breadcrumb items
+  const breadcrumbItems = useMemo(() => {
+    if (hasProjectContext) {
+      return [
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Project', href: `/app/projects/${projectId}` },
+        { label: 'Extraction Results' }
+      ];
+    }
+    return [
+      { label: 'Dashboard', href: '/dashboard' },
+      { label: 'Extraction Results' }
+    ];
+  }, [hasProjectContext, projectId]);
+
+  // Determine the return URL for cancel
+  const returnTo = hasProjectContext ? `/app/projects/${projectId}` : '/dashboard';
 
   if (loading) {
     return (
@@ -138,32 +251,67 @@ function RecapEditorPage() {
   const showFailedState = meeting?.status === 'failed';
   const isApplied = meeting?.status === 'applied';
 
-  return (
-    <main className="main-content">
-      <section className="recap-editor-section">
-        <div className="section-header">
-          <h2>{meeting?.title || 'Meeting Recap'}</h2>
-          <Link to={`/app/projects/${id}`} className="back-link">Back to Project</Link>
-        </div>
+  // Format meeting date
+  const formattedDate = meeting?.meeting_date
+    ? new Date(meeting.meeting_date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    : null;
 
-        {meeting?.meeting_date && (
-          <p className="recap-editor-date">
-            Meeting Date: {new Date(meeting.meeting_date).toLocaleDateString()}
-          </p>
+  return (
+    <div className="recap-editor-page">
+      {/* Sticky Header */}
+      <header className="recap-sticky-header">
+        <div className="recap-sticky-header__inner">
+          <div className="recap-sticky-header__left">
+            <div>
+              <Breadcrumbs items={breadcrumbItems} />
+              <h1 className="recap-sticky-header__title">{meeting?.title || 'Meeting Recap'}</h1>
+            </div>
+            {formattedDate && (
+              <span className="recap-sticky-header__date">{formattedDate}</span>
+            )}
+          </div>
+          {showRecapEditor && (
+            <div className="recap-sticky-header__summary">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z"/>
+                <path d="M8 5v3l2 1"/>
+              </svg>
+              {totalItemCount} items extracted
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div className="recap-page-layout">
+        {/* Side Navigation - only show when editing */}
+        {showRecapEditor && (
+          <SideNav
+            sections={SECTIONS}
+            sectionCounts={sectionCounts}
+            activeSection={activeSection}
+          />
         )}
 
-        <div className="recap-editor-content">
+        {/* Main Content */}
+        <main className={`recap-main-content ${!showRecapEditor ? 'recap-main-content--full-width' : ''}`}>
           {showStreamingPreview && (
-            <StreamingPreview
-              items={streamingItems}
-              status={streamStatus}
-              error={streamError}
-              onRetry={retry}
-            />
+            <div className="recap-content-card">
+              <StreamingPreview
+                items={streamingItems}
+                status={streamStatus}
+                error={streamError}
+                onRetry={retry}
+              />
+            </div>
           )}
 
           {showRecapEditor && (
-            <>
+            <div className="recap-content-card">
               {isApplied && (
                 <div className="recap-editor-applied-notice">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -182,44 +330,61 @@ function RecapEditorPage() {
                 onAddItem={handleAddItem}
                 readOnly={isApplied}
               />
-              {!isApplied && (
-                <div className="recap-editor-actions">
-                  <button
-                    className="save-apply-btn"
-                    onClick={handleSaveAndApply}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? 'Saving...' : 'Save & Apply'}
-                  </button>
-                </div>
-              )}
-            </>
+            </div>
           )}
 
           {showFailedState && (
-            <div className="recap-editor-failed">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
-              </svg>
-              <h3>Extraction Failed</h3>
-              <p>{meeting?.error_message || 'An error occurred during extraction.'}</p>
-              <button className="retry-btn" onClick={handleRetry}>
-                Try Again
-              </button>
+            <div className="recap-content-card">
+              <div className="recap-editor-failed">
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                <h3>Extraction Failed</h3>
+                <p>{meeting?.error_message || 'An error occurred during extraction.'}</p>
+                <button className="retry-btn" onClick={handleRetry}>
+                  Try Again
+                </button>
+              </div>
             </div>
           )}
-        </div>
-      </section>
-    </main>
+        </main>
+      </div>
+
+      {/* Sticky Footer - only show when editing and not applied */}
+      {showRecapEditor && !isApplied && (
+        <footer className="recap-sticky-footer">
+          <div className="recap-sticky-footer__inner">
+            <div className="recap-sticky-footer__summary">
+              <strong>{totalItemCount} items</strong> across {Object.values(sectionCounts).filter(c => c > 0).length} categories ready to apply
+            </div>
+            <div className="recap-sticky-footer__actions">
+              <Link to={returnTo} className="recap-btn recap-btn--secondary">
+                Cancel
+              </Link>
+              <button
+                className="recap-btn recap-btn--primary"
+                onClick={handleSaveAndApply}
+                disabled={isSaving}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M13.5 4.5L6 12L2.5 8.5"/>
+                </svg>
+                {isSaving ? 'Saving...' : 'Save & Apply'}
+              </button>
+            </div>
+          </div>
+        </footer>
+      )}
+    </div>
   );
 }
 
