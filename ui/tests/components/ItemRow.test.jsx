@@ -339,6 +339,25 @@ describe('ItemRow', () => {
     })
   })
 
+  describe('Source Quote Display', () => {
+    it('renders source quote when present', () => {
+      const itemWithSource = {
+        ...mockItem,
+        source_quote: 'This is the original quote from the meeting'
+      }
+      render(<ItemRow {...defaultProps} item={itemWithSource} />)
+
+      expect(screen.getByText('This is the original quote from the meeting')).toBeInTheDocument()
+    })
+
+    it('does not render source quote when not present', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      // Should not have any source quote element
+      expect(screen.queryByText(/original quote/)).not.toBeInTheDocument()
+    })
+  })
+
   describe('Edge Cases', () => {
     it('handles item without onEdit callback', () => {
       render(<ItemRow item={mockItem} onDelete={vi.fn()} />)

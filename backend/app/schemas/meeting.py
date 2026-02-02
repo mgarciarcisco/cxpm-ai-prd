@@ -11,7 +11,7 @@ from app.models.meeting_recap import InputType, MeetingStatus
 class MeetingUpload(BaseModel):
     """Schema for uploading meeting notes."""
 
-    project_id: str
+    project_id: str | None = None  # Optional for unified flow
     title: str
     meeting_date: date
     text: str | None = None
@@ -33,7 +33,7 @@ class MeetingResponse(BaseModel):
     """Schema for meeting response with all fields including status and items list."""
 
     id: str
-    project_id: str
+    project_id: str | None = None  # Optional for unified flow
     title: str
     meeting_date: date
     raw_input: str
@@ -54,7 +54,7 @@ class MeetingListItemResponse(BaseModel):
     """Schema for meeting in list view (without items)."""
 
     id: str
-    project_id: str
+    project_id: str | None = None  # Optional for unified flow
     title: str
     meeting_date: date
     input_type: InputType

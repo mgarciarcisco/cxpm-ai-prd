@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Requirements Stage - Option A (Side Navigation)</title>
+  <style>
+    /* Reset and Base */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
+      color: #1f2937;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* Design Tokens */
+    :root {
+      --teal-accent: #4ECDC4;
+      --teal-hover: #3dbdb5;
+      --teal-light: #e6faf8;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e5e7eb;
+      --border-hover: #d1d5db;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
+      --success-bg: #dcfce7;
+      --success-color: #15803d;
+      --info-bg: #dbeafe;
+      --info-color: #1d4ed8;
+      --warning-bg: #fef3c7;
+      --warning-color: #b45309;
+      --danger-color: #dc2626;
+      --danger-bg: #fee2e2;
+    }
+
+    /* Layout */
+    .page-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 250px;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-color);
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+
+    .sidebar-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .nav-item:hover {
+      background: #f9fafb;
+      color: var(--text-primary);
+    }
+
+    .nav-item--active {
+      background: var(--teal-light);
+      color: var(--teal-accent);
+      border-left-color: var(--teal-accent);
+    }
+
+    .nav-item--active:hover {
+      background: var(--teal-light);
+      color: var(--teal-accent);
+    }
+
+    .nav-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .nav-label {
+      flex: 1;
+    }
+
+    .nav-count {
+      background: #f3f4f6;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .nav-item--active .nav-count {
+      background: rgba(78, 205, 196, 0.2);
+      color: var(--teal-accent);
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      margin-left: 250px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Sticky Header */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background: var(--bg-page);
+      z-index: 50;
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      margin-bottom: 16px;
+    }
+
+    .breadcrumb-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .breadcrumb-link:hover {
+      color: var(--teal-accent);
+    }
+
+    .breadcrumb-separator {
+      color: var(--text-tertiary);
+    }
+
+    .breadcrumb-current {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .page-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .total-count-badge {
+      background: var(--teal-light);
+      color: var(--teal-accent);
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 16px;
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 16px;
+      background: var(--warning-bg);
+      color: var(--warning-color);
+    }
+
+    .status-badge--reviewed {
+      background: var(--success-bg);
+      color: var(--success-color);
+    }
+
+    .page-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--teal-accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--teal-hover);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: #f9fafb;
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+    }
+
+    .btn-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Content Area */
+    .content-area {
+      flex: 1;
+      padding: 24px 32px;
+      padding-bottom: 100px; /* Space for sticky footer */
+    }
+
+    /* Meetings Panel */
+    .meetings-panel {
+      margin-bottom: 24px;
+    }
+
+    .meetings-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .meetings-panel-icon {
+      width: 18px;
+      height: 18px;
+      color: var(--text-secondary);
+    }
+
+    .meetings-panel-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .meetings-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+    }
+
+    .meetings-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .meetings-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .meetings-scroll::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+
+    .meeting-card {
+      flex-shrink: 0;
+      width: 280px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px 16px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .meeting-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .meeting-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .meeting-title {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .meeting-status {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+
+    .meeting-status--processed {
+      background: var(--success-bg);
+      color: var(--success-color);
+    }
+
+    .meeting-status--applied {
+      background: var(--info-bg);
+      color: var(--info-color);
+    }
+
+    .meeting-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+    }
+
+    .meeting-date {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .meeting-items-count {
+      color: var(--text-secondary);
+    }
+
+    .meeting-view-link {
+      color: var(--teal-accent);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.75rem;
+    }
+
+    .meeting-view-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Requirement Section */
+    .requirement-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      user-select: none;
+    }
+
+    .section-header:hover {
+      background: #fafafa;
+    }
+
+    .section-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-chevron {
+      width: 16px;
+      height: 16px;
+      color: var(--text-tertiary);
+      transition: transform 0.2s ease;
+    }
+
+    .section-chevron--expanded {
+      transform: rotate(90deg);
+    }
+
+    .section-icon {
+      width: 18px;
+      height: 18px;
+      color: var(--text-secondary);
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .section-count {
+      background: #f3f4f6;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .section-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--teal-accent);
+      background: transparent;
+      border: 1px solid var(--teal-accent);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .section-add-btn:hover {
+      background: var(--teal-light);
+    }
+
+    .section-add-icon {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Section Content */
+    .section-content {
+      border-top: 1px solid var(--border-color);
+      padding: 0;
+    }
+
+    .section-list {
+      list-style: none;
+    }
+
+    .requirement-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .requirement-item:last-child {
+      border-bottom: none;
+    }
+
+    .requirement-bullet {
+      color: var(--teal-accent);
+      font-size: 1.25rem;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+
+    .requirement-content {
+      flex: 1;
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .requirement-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .action-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .action-btn:hover {
+      background: #f3f4f6;
+      color: var(--text-secondary);
+    }
+
+    .action-btn--delete:hover {
+      background: var(--danger-bg);
+      color: var(--danger-color);
+    }
+
+    .action-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Empty Section */
+    .section-empty {
+      padding: 16px;
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 0.875rem;
+      font-style: italic;
+    }
+
+    /* Sticky Footer */
+    .sticky-footer {
+      position: fixed;
+      bottom: 0;
+      left: 250px;
+      right: 0;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-color);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: flex-end;
+      z-index: 50;
+    }
+
+    .btn-large {
+      padding: 12px 24px;
+      font-size: 0.9375rem;
+    }
+
+    /* Section collapsed state */
+    .section-content--collapsed {
+      display: none;
+    }
+
+    /* Design Notes Section */
+    .design-notes {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 32px;
+      margin-left: 282px;
+    }
+
+    .design-notes h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #92400e;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .design-notes h3 {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #b45309;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    .design-notes ul {
+      margin-left: 20px;
+      color: #78350f;
+      font-size: 0.875rem;
+    }
+
+    .design-notes li {
+      margin-bottom: 6px;
+    }
+
+    .design-notes code {
+      background: rgba(0, 0, 0, 0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8125rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Sections</div>
+        <div class="sidebar-subtitle">24 items total</div>
+      </div>
+      <nav class="sidebar-nav">
+        <!-- Problems - Active -->
+        <a href="#problems" class="nav-item nav-item--active">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="9" cy="9" r="7"/>
+            <path d="M9 5v4M9 12v1" stroke-linecap="round"/>
+          </svg>
+          <span class="nav-label">Problems</span>
+          <span class="nav-count">3</span>
+        </a>
+        <!-- User Goals -->
+        <a href="#user_goals" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="9" cy="6" r="3"/>
+            <path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke-linecap="round"/>
+          </svg>
+          <span class="nav-label">User Goals</span>
+          <span class="nav-count">4</span>
+        </a>
+        <!-- Functional Requirements -->
+        <a href="#functional" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="2" width="14" height="14" rx="2"/>
+            <path d="M6 9l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="nav-label">Functional Reqs</span>
+          <span class="nav-count">6</span>
+        </a>
+        <!-- Data Needs -->
+        <a href="#data_needs" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <ellipse cx="9" cy="5" rx="6" ry="2"/>
+            <path d="M3 5v8c0 1.1 2.7 2 6 2s6-.9 6-2V5"/>
+            <path d="M3 9c0 1.1 2.7 2 6 2s6-.9 6-2"/>
+          </svg>
+          <span class="nav-label">Data Needs</span>
+          <span class="nav-count">2</span>
+        </a>
+        <!-- Constraints -->
+        <a href="#constraints" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 2l6 3v5c0 3-2.5 5-6 7-3.5-2-6-4-6-7V5l6-3z"/>
+          </svg>
+          <span class="nav-label">Constraints</span>
+          <span class="nav-count">2</span>
+        </a>
+        <!-- Non Goals -->
+        <a href="#non_goals" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="9" cy="9" r="6"/>
+            <path d="M5 5l8 8M13 5l-8 8" stroke-linecap="round"/>
+          </svg>
+          <span class="nav-label">Non Goals</span>
+          <span class="nav-count">2</span>
+        </a>
+        <!-- Risks & Assumptions -->
+        <a href="#risks" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 2L2 15h14L9 2z"/>
+            <path d="M9 7v3M9 12v1" stroke-linecap="round"/>
+          </svg>
+          <span class="nav-label">Risks & Assumptions</span>
+          <span class="nav-count">3</span>
+        </a>
+        <!-- Open Questions -->
+        <a href="#questions" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="9" cy="9" r="7"/>
+            <path d="M7 7c0-1.1.9-2 2-2s2 .9 2 2c0 .7-.4 1.3-1 1.7-.4.2-.6.4-.8.6-.1.2-.2.4-.2.7M9 13v1" stroke-linecap="round"/>
+          </svg>
+          <span class="nav-label">Open Questions</span>
+          <span class="nav-count">1</span>
+        </a>
+        <!-- Action Items -->
+        <a href="#actions" class="nav-item">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 9h12M12 5l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="nav-label">Action Items</span>
+          <span class="nav-count">1</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Sticky Header -->
+      <header class="sticky-header">
+        <!-- Breadcrumbs -->
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          <a href="#" class="breadcrumb-link">Dashboard</a>
+          <span class="breadcrumb-separator">/</span>
+          <a href="#" class="breadcrumb-link">Mobile Banking Redesign</a>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">Requirements</span>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1 class="page-title">Requirements</h1>
+            <span class="total-count-badge">24 items</span>
+            <span class="status-badge">In Progress</span>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-primary">
+              <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="12" height="12" rx="2"/>
+                <path d="M10 1v2M6 1v2M2 6h12"/>
+              </svg>
+              Add Meeting
+            </button>
+            <button class="btn btn-secondary">
+              <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M8 3v10M3 8h10" stroke-linecap="round"/>
+              </svg>
+              Add Manually
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div class="content-area">
+        <!-- Meetings Panel -->
+        <section class="meetings-panel">
+          <div class="meetings-panel-header">
+            <svg class="meetings-panel-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="2" y="3" width="14" height="12" rx="2"/>
+              <path d="M12 1v3M6 1v3M2 7h14"/>
+            </svg>
+            <h2 class="meetings-panel-title">Meetings (3)</h2>
+          </div>
+          <div class="meetings-scroll">
+            <!-- Meeting Card 1 -->
+            <div class="meeting-card">
+              <div class="meeting-card-header">
+                <span class="meeting-title">Product Kickoff Meeting</span>
+                <span class="meeting-status meeting-status--applied">Applied</span>
+              </div>
+              <div class="meeting-meta">
+                <span class="meeting-date">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
+                    <circle cx="6" cy="6" r="5"/>
+                    <path d="M6 3v3l2 1"/>
+                  </svg>
+                  2 days ago
+                </span>
+                <span class="meeting-items-count">12 items extracted</span>
+              </div>
+            </div>
+            <!-- Meeting Card 2 -->
+            <div class="meeting-card">
+              <div class="meeting-card-header">
+                <span class="meeting-title">Stakeholder Review Session</span>
+                <span class="meeting-status meeting-status--applied">Applied</span>
+              </div>
+              <div class="meeting-meta">
+                <span class="meeting-date">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
+                    <circle cx="6" cy="6" r="5"/>
+                    <path d="M6 3v3l2 1"/>
+                  </svg>
+                  5 days ago
+                </span>
+                <span class="meeting-items-count">8 items extracted</span>
+              </div>
+            </div>
+            <!-- Meeting Card 3 -->
+            <div class="meeting-card">
+              <div class="meeting-card-header">
+                <span class="meeting-title">Technical Discovery Call</span>
+                <span class="meeting-status meeting-status--processed">Ready to Apply</span>
+              </div>
+              <div class="meeting-meta">
+                <span class="meeting-date">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
+                    <circle cx="6" cy="6" r="5"/>
+                    <path d="M6 3v3l2 1"/>
+                  </svg>
+                  1 hour ago
+                </span>
+                <a href="#" class="meeting-view-link">View Items</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Requirement Sections -->
+
+        <!-- Problems Section (Expanded) -->
+        <div id="problems" class="requirement-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <div class="section-header-left">
+              <svg class="section-chevron section-chevron--expanded" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              <svg class="section-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="9" cy="9" r="7"/>
+                <path d="M9 5v4M9 12v1" stroke-linecap="round"/>
+              </svg>
+              <span class="section-title">Problems</span>
+              <span class="section-count">3</span>
+            </div>
+            <button class="section-add-btn" onclick="event.stopPropagation()">
+              <svg class="section-add-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 1v10M1 6h10" stroke-linecap="round"/>
+              </svg>
+              Add
+            </button>
+          </div>
+          <div class="section-content">
+            <ul class="section-list">
+              <li class="requirement-item">
+                <span class="requirement-bullet">•</span>
+                <span class="requirement-content">Current mobile app has poor navigation, causing users to abandon tasks before completion with a 45% drop-off rate</span>
+                <div class="requirement-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.5 1.75l1.75 1.75M1.75 12.25l.875-3.0625 7-7 2.1875 2.1875-7 7z"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1.75 3.5h10.5M5.25 6.125v4.25M8.75 6.125v4.25M2.625 3.5l.875 7.875a1.75 1.75 0 001.75 1.75h3.5a1.75 1.75 0 001.75-1.75L11.375 3.5M4.8125 3.5V1.75a.875.875 0 01.875-.875h2.625a.875.875 0 01.875.875V3.5"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+              <li class="requirement-item">
+                <span class="requirement-bullet">•</span>
+                <span class="requirement-content">Users cannot easily view their transaction history across multiple accounts in a unified view</span>
+                <div class="requirement-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.5 1.75l1.75 1.75M1.75 12.25l.875-3.0625 7-7 2.1875 2.1875-7 7z"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1.75 3.5h10.5M5.25 6.125v4.25M8.75 6.125v4.25M2.625 3.5l.875 7.875a1.75 1.75 0 001.75 1.75h3.5a1.75 1.75 0 001.75-1.75L11.375 3.5M4.8125 3.5V1.75a.875.875 0 01.875-.875h2.625a.875.875 0 01.875.875V3.5"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+              <li class="requirement-item">
+                <span class="requirement-bullet">•</span>
+                <span class="requirement-content">Customer support tickets have increased 30% due to confusing bill payment workflows</span>
+                <div class="requirement-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.5 1.75l1.75 1.75M1.75 12.25l.875-3.0625 7-7 2.1875 2.1875-7 7z"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1.75 3.5h10.5M5.25 6.125v4.25M8.75 6.125v4.25M2.625 3.5l.875 7.875a1.75 1.75 0 001.75 1.75h3.5a1.75 1.75 0 001.75-1.75L11.375 3.5M4.8125 3.5V1.75a.875.875 0 01.875-.875h2.625a.875.875 0 01.875.875V3.5"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- User Goals Section (Expanded) -->
+        <div id="user_goals" class="requirement-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <div class="section-header-left">
+              <svg class="section-chevron section-chevron--expanded" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              <svg class="section-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="9" cy="6" r="3"/>
+                <path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke-linecap="round"/>
+              </svg>
+              <span class="section-title">User Goals</span>
+              <span class="section-count">4</span>
+            </div>
+            <button class="section-add-btn" onclick="event.stopPropagation()">
+              <svg class="section-add-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 1v10M1 6h10" stroke-linecap="round"/>
+              </svg>
+              Add
+            </button>
+          </div>
+          <div class="section-content">
+            <ul class="section-list">
+              <li class="requirement-item">
+                <span class="requirement-bullet">•</span>
+                <span class="requirement-content">Quickly check account balances without logging in (widget/biometric)</span>
+                <div class="requirement-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.5 1.75l1.75 1.75M1.75 12.25l.875-3.0625 7-7 2.1875 2.1875-7 7z"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1.75 3.5h10.5M5.25 6.125v4.25M8.75 6.125v4.25M2.625 3.5l.875 7.875a1.75 1.75 0 001.75 1.75h3.5a1.75 1.75 0 001.75-1.75L11.375 3.5M4.8125 3.5V1.75a.875.875 0 01.875-.875h2.625a.875.875 0 01.875.875V3.5"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+              <li class="requirement-item">
+                <span class="requirement-bullet">•</span>
+                <span class="requirement-content">Transfer money between accounts in under 30 seconds</span>
+                <div class="requirement-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.5 1.75l1.75 1.75M1.75 12.25l.875-3.0625 7-7 2.1875 2.1875-7 7z"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1.75 3.5h10.5M5.25 6.125v4.25M8.75 6.125v4.25M2.625 3.5l.875 7.875a1.75 1.75 0 001.75 1.75h3.5a1.75 1.75 0 001.75-1.75L11.375 3.5M4.8125 3.5V1.75a.875.875 0 01.875-.875h2.625a.875.875 0 01.875.875V3.5"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+              <li class="requirement-item">
+                <span class="requirement-bullet">•</span>
+                <span class="requirement-content">Set up and manage recurring payments easily</span>
+                <div class="requirement-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.5 1.75l1.75 1.75M1.75 12.25l.875-3.0625 7-7 2.1875 2.1875-7 7z"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1.75 3.5h10.5M5.25 6.125v4.25M8.75 6.125v4.25M2.625 3.5l.875 7.875a1.75 1.75 0 001.75 1.75h3.5a1.75 1.75 0 001.75-1.75L11.375 3.5M4.8125 3.5V1.75a.875.875 0 01.875-.875h2.625a.875.875 0 01.875.875V3.5"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+              <li class="requirement-item">
+                <span class="requirement-bullet">•</span>
+                <span class="requirement-content">Receive instant notifications for all account activity</span>
+                <div class="requirement-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.5 1.75l1.75 1.75M1.75 12.25l.875-3.0625 7-7 2.1875 2.1875-7 7z"/>
+                    </svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1.75 3.5h10.5M5.25 6.125v4.25M8.75 6.125v4.25M2.625 3.5l.875 7.875a1.75 1.75 0 001.75 1.75h3.5a1.75 1.75 0 001.75-1.75L11.375 3.5M4.8125 3.5V1.75a.875.875 0 01.875-.875h2.625a.875.875 0 01.875.875V3.5"/>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Functional Requirements Section (Collapsed) -->
+        <div id="functional" class="requirement-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <div class="section-header-left">
+              <svg class="section-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              <svg class="section-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="14" height="14" rx="2"/>
+                <path d="M6 9l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="section-title">Functional Requirements</span>
+              <span class="section-count">6</span>
+            </div>
+            <button class="section-add-btn" onclick="event.stopPropagation()">
+              <svg class="section-add-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 1v10M1 6h10" stroke-linecap="round"/>
+              </svg>
+              Add
+            </button>
+          </div>
+          <div class="section-content section-content--collapsed">
+            <ul class="section-list">
+              <li class="requirement-item">
+                <span class="requirement-bullet">•</span>
+                <span class="requirement-content">Support biometric authentication (Face ID, Touch ID, fingerprint)</span>
+                <div class="requirement-actions">
+                  <button class="action-btn" title="Edit">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M10.5 1.75l1.75 1.75M1.75 12.25l.875-3.0625 7-7 2.1875 2.1875-7 7z"/></svg>
+                  </button>
+                  <button class="action-btn action-btn--delete" title="Delete">
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M1.75 3.5h10.5M5.25 6.125v4.25M8.75 6.125v4.25M2.625 3.5l.875 7.875a1.75 1.75 0 001.75 1.75h3.5a1.75 1.75 0 001.75-1.75L11.375 3.5M4.8125 3.5V1.75a.875.875 0 01.875-.875h2.625a.875.875 0 01.875.875V3.5"/></svg>
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Data Needs Section (Collapsed) -->
+        <div id="data_needs" class="requirement-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <div class="section-header-left">
+              <svg class="section-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              <svg class="section-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <ellipse cx="9" cy="5" rx="6" ry="2"/>
+                <path d="M3 5v8c0 1.1 2.7 2 6 2s6-.9 6-2V5"/>
+                <path d="M3 9c0 1.1 2.7 2 6 2s6-.9 6-2"/>
+              </svg>
+              <span class="section-title">Data Needs</span>
+              <span class="section-count">2</span>
+            </div>
+            <button class="section-add-btn" onclick="event.stopPropagation()">
+              <svg class="section-add-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 1v10M1 6h10" stroke-linecap="round"/>
+              </svg>
+              Add
+            </button>
+          </div>
+          <div class="section-content section-content--collapsed"></div>
+        </div>
+
+        <!-- Constraints Section (Collapsed) -->
+        <div id="constraints" class="requirement-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <div class="section-header-left">
+              <svg class="section-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              <svg class="section-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 2l6 3v5c0 3-2.5 5-6 7-3.5-2-6-4-6-7V5l6-3z"/>
+              </svg>
+              <span class="section-title">Constraints</span>
+              <span class="section-count">2</span>
+            </div>
+            <button class="section-add-btn" onclick="event.stopPropagation()">
+              <svg class="section-add-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 1v10M1 6h10" stroke-linecap="round"/>
+              </svg>
+              Add
+            </button>
+          </div>
+          <div class="section-content section-content--collapsed"></div>
+        </div>
+
+        <!-- Non Goals Section (Collapsed) -->
+        <div id="non_goals" class="requirement-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <div class="section-header-left">
+              <svg class="section-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              <svg class="section-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="9" cy="9" r="6"/>
+                <path d="M5 5l8 8M13 5l-8 8" stroke-linecap="round"/>
+              </svg>
+              <span class="section-title">Non Goals</span>
+              <span class="section-count">2</span>
+            </div>
+            <button class="section-add-btn" onclick="event.stopPropagation()">
+              <svg class="section-add-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 1v10M1 6h10" stroke-linecap="round"/>
+              </svg>
+              Add
+            </button>
+          </div>
+          <div class="section-content section-content--collapsed"></div>
+        </div>
+
+        <!-- Risks & Assumptions Section (Collapsed) -->
+        <div id="risks" class="requirement-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <div class="section-header-left">
+              <svg class="section-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              <svg class="section-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 2L2 15h14L9 2z"/>
+                <path d="M9 7v3M9 12v1" stroke-linecap="round"/>
+              </svg>
+              <span class="section-title">Risks & Assumptions</span>
+              <span class="section-count">3</span>
+            </div>
+            <button class="section-add-btn" onclick="event.stopPropagation()">
+              <svg class="section-add-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 1v10M1 6h10" stroke-linecap="round"/>
+              </svg>
+              Add
+            </button>
+          </div>
+          <div class="section-content section-content--collapsed"></div>
+        </div>
+
+        <!-- Open Questions Section (Collapsed) -->
+        <div id="questions" class="requirement-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <div class="section-header-left">
+              <svg class="section-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              <svg class="section-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="9" cy="9" r="7"/>
+                <path d="M7 7c0-1.1.9-2 2-2s2 .9 2 2c0 .7-.4 1.3-1 1.7-.4.2-.6.4-.8.6-.1.2-.2.4-.2.7M9 13v1" stroke-linecap="round"/>
+              </svg>
+              <span class="section-title">Open Questions</span>
+              <span class="section-count">1</span>
+            </div>
+            <button class="section-add-btn" onclick="event.stopPropagation()">
+              <svg class="section-add-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 1v10M1 6h10" stroke-linecap="round"/>
+              </svg>
+              Add
+            </button>
+          </div>
+          <div class="section-content section-content--collapsed"></div>
+        </div>
+
+        <!-- Action Items Section (Collapsed) -->
+        <div id="actions" class="requirement-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <div class="section-header-left">
+              <svg class="section-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4l4 4-4 4"/>
+              </svg>
+              <svg class="section-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 9h12M12 5l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="section-title">Action Items</span>
+              <span class="section-count">1</span>
+            </div>
+            <button class="section-add-btn" onclick="event.stopPropagation()">
+              <svg class="section-add-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 1v10M1 6h10" stroke-linecap="round"/>
+              </svg>
+              Add
+            </button>
+          </div>
+          <div class="section-content section-content--collapsed"></div>
+        </div>
+
+      </div>
+
+      <!-- Sticky Footer -->
+      <footer class="sticky-footer">
+        <button class="btn btn-primary btn-large">
+          <svg class="btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M13.5 4.5l-7 7L3 8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Mark as Reviewed
+        </button>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Design Notes -->
+  <section class="design-notes">
+    <h2>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="10" cy="10" r="8"/>
+        <path d="M10 6v4M10 13v1" stroke-linecap="round"/>
+      </svg>
+      Design Notes - Option A: Side Navigation
+    </h2>
+
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Two-column layout</strong>: Fixed 250px sidebar with scrollable section navigation + main content area</li>
+      <li><strong>Sticky sidebar navigation</strong>: Shows all 9 requirement sections with item counts; highlights active section in teal</li>
+      <li><strong>Sticky header</strong>: Breadcrumbs, page title with total count badge (24 items), "In Progress" status, and action buttons</li>
+      <li><strong>Meetings panel</strong>: Horizontal scrollable cards showing 3 meetings with status badges (Applied/Ready to Apply)</li>
+      <li><strong>Collapsible sections</strong>: Expand/collapse with chevron rotation; section icon, title, count badge, and "Add" button</li>
+      <li><strong>Always-visible actions</strong>: Edit and delete buttons shown on every item (not hover-only for better discoverability)</li>
+      <li><strong>Sticky footer</strong>: "Mark as Reviewed" primary action button fixed at bottom</li>
+    </ul>
+
+    <h3>Design Tokens Used</h3>
+    <ul>
+      <li><code>--teal-accent: #4ECDC4</code> - Primary accent color for active states, buttons, bullets</li>
+      <li><code>--bg-page: #f8fafc</code> - Page background</li>
+      <li><code>--bg-card: #ffffff</code> - Card/section backgrounds</li>
+      <li><code>--border-color: #e5e7eb</code> - Default borders</li>
+      <li>System fonts: <code>-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif</code></li>
+    </ul>
+
+    <h3>Interaction Patterns</h3>
+    <ul>
+      <li>Clicking sidebar nav items scrolls main content to that section and highlights the nav item</li>
+      <li>Section headers are clickable to expand/collapse (chevron animates 90deg)</li>
+      <li>"Add" buttons on section headers open a modal pre-filled with that section</li>
+      <li>Edit button enables inline editing (shown in full implementation)</li>
+      <li>Delete button shows confirmation dialog</li>
+      <li>Meeting cards with "Ready to Apply" status show "View Items" link</li>
+    </ul>
+
+    <h3>Accessibility Considerations</h3>
+    <ul>
+      <li>All interactive elements have visible focus states (teal outline)</li>
+      <li><code>aria-expanded</code> on section headers indicates collapsed/expanded state</li>
+      <li>Semantic HTML: <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;header&gt;</code>, <code>&lt;footer&gt;</code></li>
+      <li>Action buttons have descriptive <code>title</code> attributes</li>
+      <li>Sufficient color contrast for all text</li>
+    </ul>
+
+    <h3>Responsive Notes</h3>
+    <ul>
+      <li>Below 768px: Consider collapsing sidebar into a hamburger menu or bottom tab bar</li>
+      <li>Meetings panel scrolls horizontally on all screen sizes</li>
+      <li>Sticky footer ensures primary action is always accessible</li>
+    </ul>
+  </section>
+
+  <script>
+    function toggleSection(headerEl) {
+      const section = headerEl.closest('.requirement-section');
+      const content = section.querySelector('.section-content');
+      const chevron = section.querySelector('.section-chevron');
+
+      content.classList.toggle('section-content--collapsed');
+      chevron.classList.toggle('section-chevron--expanded');
+    }
+
+    // Smooth scroll to section when clicking sidebar nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+        const targetEl = document.getElementById(targetId);
+
+        // Update active state
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-item--active'));
+        this.classList.add('nav-item--active');
+
+        // Scroll to section
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+          // Expand section if collapsed
+          const content = targetEl.querySelector('.section-content');
+          const chevron = targetEl.querySelector('.section-chevron');
+          if (content.classList.contains('section-content--collapsed')) {
+            content.classList.remove('section-content--collapsed');
+            chevron.classList.add('section-chevron--expanded');
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

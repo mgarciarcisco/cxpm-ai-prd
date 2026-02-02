@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { EmptyState } from '../common/EmptyState';
 import { ConfirmationDialog } from '../common/ConfirmationDialog';
 import { StageHeader } from '../stage/StageHeader';
 import { StageActions } from '../stage/StageActions';
 import { StageLoader } from './StageLoader';
-import AddMeetingModal from '../requirements/AddMeetingModal';
 import AddManuallyModal from '../requirements/AddManuallyModal';
 import MeetingsPanel from '../requirements/MeetingsPanel';
 import ViewMeetingModal from '../requirements/ViewMeetingModal';
@@ -43,7 +43,7 @@ function getStatusLabel(status) {
  * Shows requirements list grouped by sections when requirements exist.
  */
 function RequirementsStage({ project, onProjectUpdate }) {
-  const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
+  const navigate = useNavigate();
   const [showAddManuallyModal, setShowAddManuallyModal] = useState(false);
   const [showViewMeetingModal, setShowViewMeetingModal] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
@@ -114,15 +114,15 @@ function RequirementsStage({ project, onProjectUpdate }) {
     </svg>
   );
 
-  // Handle Add Meeting button click
+  // Handle Add Meeting button click - navigate to full page upload view
   const handleAddMeeting = () => {
-    setShowAddMeetingModal(true);
+    const returnTo = encodeURIComponent(`/projects/${project.id}/requirements`);
+    navigate(`/app/projects/${project.id}/meetings/new?returnTo=${returnTo}`);
   };
 
-  // Handle Save Requirements - called when requirements are saved from the modal
+  // Handle Save Requirements - called when requirements are saved from the view meeting modal
   const handleSaveRequirements = (savedCount) => {
     console.log('Requirements saved:', savedCount);
-    setShowAddMeetingModal(false);
     setShowViewMeetingModal(false);
     setSelectedMeeting(null);
     // Refresh requirements list
@@ -314,13 +314,6 @@ function RequirementsStage({ project, onProjectUpdate }) {
             <button key="manual" className="secondary" onClick={handleAddManually}>Add Manually</button>
           ]}
         />
-        {showAddMeetingModal && (
-          <AddMeetingModal
-            projectId={project?.id}
-            onClose={() => setShowAddMeetingModal(false)}
-            onSave={handleSaveRequirements}
-          />
-        )}
         {showAddManuallyModal && (
           <AddManuallyModal
             projectId={project?.id}
@@ -419,13 +412,6 @@ function RequirementsStage({ project, onProjectUpdate }) {
       </div>
 
       {/* Modals */}
-      {showAddMeetingModal && (
-        <AddMeetingModal
-          projectId={project?.id}
-          onClose={() => setShowAddMeetingModal(false)}
-          onSave={handleSaveRequirements}
-        />
-      )}
       {showAddManuallyModal && (
         <AddManuallyModal
           projectId={project?.id}

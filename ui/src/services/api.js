@@ -9,38 +9,107 @@ const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'h
 /**
  * Make a GET request to the API
  * @param {string} endpoint - API endpoint (e.g., '/api/projects')
+ * @param {object} [options] - Request options
+ * @param {number} [options.timeout=30000] - Timeout in milliseconds (0 to disable)
+ * @param {AbortSignal} [options.signal] - AbortSignal for request cancellation
  * @returns {Promise<any>} - Parsed JSON response
- * @throws {Error} - Error with message on non-ok response
+ * @throws {Error} - Error with message on non-ok response or timeout
  */
-export async function get(endpoint) {
-  const response = await fetch(`${BASE_URL}${endpoint}`);
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Request failed with status ${response.status}`);
+export async function get(endpoint, options = {}) {
+  const { timeout = 30000, signal } = options;
+  const controller = new AbortController();
+  const timeoutId = timeout > 0 ? setTimeout(() => controller.abort(), timeout) : null;
+
+  // Combine external signal with timeout signal
+  const combinedSignal = signal
+    ? (typeof AbortSignal.any === 'function'
+        ? AbortSignal.any([signal, controller.signal])
+        : controller.signal)
+    : controller.signal;
+
+  // If external signal provided, abort our controller when it aborts
+  if (signal && typeof AbortSignal.any !== 'function') {
+    signal.addEventListener('abort', () => controller.abort(), { once: true });
   }
-  return response.json();
+
+  try {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      signal: combinedSignal,
+    });
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Request failed with status ${response.status}`);
+    }
+    return response.json();
+  } catch (err) {
+    if (timeoutId) clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      if (signal?.aborted) {
+        throw err; // Re-throw if externally aborted (component unmount)
+      }
+      throw new Error('Request timed out. Please try again.');
+    }
+    throw err;
+  }
 }
 
 /**
  * Make a POST request to the API
  * @param {string} endpoint - API endpoint
  * @param {object} data - JSON body to send
+ * @param {object} [options] - Request options
+ * @param {number} [options.timeout=30000] - Timeout in milliseconds (0 to disable)
+ * @param {AbortSignal} [options.signal] - AbortSignal for request cancellation
  * @returns {Promise<any>} - Parsed JSON response
- * @throws {Error} - Error with message on non-ok response
+ * @throws {Error} - Error with message on non-ok response or timeout
  */
-export async function post(endpoint, data) {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || `Request failed with status ${response.status}`);
+export async function post(endpoint, data, options = {}) {
+  const { timeout = 30000, signal } = options;
+  const controller = new AbortController();
+  const timeoutId = timeout > 0 ? setTimeout(() => controller.abort(), timeout) : null;
+
+  // Combine external signal with timeout signal
+  const combinedSignal = signal
+    ? (typeof AbortSignal.any === 'function'
+        ? AbortSignal.any([signal, controller.signal])
+        : controller.signal)
+    : controller.signal;
+
+  // If external signal provided, abort our controller when it aborts
+  if (signal && typeof AbortSignal.any !== 'function') {
+    signal.addEventListener('abort', () => controller.abort(), { once: true });
   }
-  return response.json();
+
+  try {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+      signal: combinedSignal,
+    });
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Request failed with status ${response.status}`);
+    }
+    return response.json();
+  } catch (err) {
+    if (timeoutId) clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      if (signal?.aborted) {
+        throw err; // Re-throw if externally aborted (component unmount)
+      }
+      throw new Error('Request timed out. Please try again.');
+    }
+    throw err;
+  }
 }
 
 /**

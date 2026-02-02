@@ -12,6 +12,54 @@ You are an autonomous coding agent working on a software project.
 - **History:** `ralph/history.jsonl` - Structured completion log
 - **Prompt:** `ralph/prompt.md` - Full agent instructions (used by ralph.sh)
 
+## CRITICAL: Confirm Before Implementing
+
+**ALWAYS get user confirmation before starting any implementation work.**
+
+When the user describes a problem, feature request, or asks for changes:
+
+1. **Investigate first** - Read code, understand the issue, explore the codebase
+2. **Present your findings** - Explain what you found, what the root cause is, or what approach you'd take
+3. **Propose a solution** - Describe what you plan to do, which files you'll change, the approach
+4. **Wait for explicit approval** - Do NOT start implementing until the user confirms
+
+**Bad behavior (DO NOT DO THIS):**
+- User: "There's a bug in X" → Immediately start writing code
+- User: "Can you add feature Y?" → Jump straight to implementation
+- User: "Look into this issue" → Fix it without discussing first
+
+**Good behavior:**
+- User: "There's a bug in X" → Investigate, explain the root cause, propose fix, wait for "go ahead"
+- User: "Can you add feature Y?" → Explore requirements, present options/approach, wait for approval
+- User: "Look into this issue" → Research, present findings, ask if user wants you to fix it
+
+**Exception:** If the user explicitly says "fix it", "implement it", "go ahead", or similar - then proceed.
+
+## Use Subagents for Implementation
+
+**When implementing changes, prefer using subagents (Task tool) wherever possible.**
+
+Benefits:
+- Parallel execution for independent tasks
+- Reduced context usage in main conversation
+- Better isolation of concerns
+- Faster completion for multi-file changes
+
+**When to use subagents:**
+- Multi-file implementations
+- Independent code changes that can run in parallel
+- Complex refactoring across multiple components
+- Any implementation involving 3+ file changes
+
+**Example workflow:**
+1. User approves implementation plan
+2. Launch subagents in parallel for independent pieces:
+   - Agent 1: Update backend model and schema
+   - Agent 2: Update frontend component
+   - Agent 3: Add tests
+3. Collect results and verify integration
+4. Commit the combined changes
+
 ## Your Task
 
 **IMPORTANT: Read files ONE AT A TIME, not in parallel. Wait for each read to complete before starting the next.**

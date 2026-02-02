@@ -22,6 +22,7 @@ import PRDGeneratorPage from './pages/PRDGeneratorPage'
 import PRDStreamingPage from './pages/PRDStreamingPage'
 import PRDEditorPage from './pages/PRDEditorPage'
 import UserStoriesPage from './pages/UserStoriesPage'
+import SelectProjectPage from './pages/SelectProjectPage'
 import NotFoundPage from './pages/NotFoundPage'
 import JiraEpicPage from './pages/jira_epic/JiraEpicPage'
 
@@ -44,6 +45,12 @@ const router = createBrowserRouter([
       { path: 'projects/:id', element: <ProjectViewPage /> },
       { path: 'projects/:id/:stage', element: <ProjectViewPage /> },
       { path: 'app', element: <ProjectsPage /> },
+      // Unified meeting flow - no project context (from dashboard)
+      { path: 'app/meetings/new', element: <UploadMeetingPage /> },
+      { path: 'app/meetings/:mid', element: <RecapEditorPage /> },
+      { path: 'app/meetings/:mid/select-project', element: <SelectProjectPage /> },
+      { path: 'app/meetings/:mid/apply', element: <ConflictResolverPage /> },
+      // Project-specific meeting flow
       { path: 'app/projects/:id', element: <ProjectDashboard /> },
       { path: 'app/projects/:id/meetings/new', element: <UploadMeetingPage /> },
       { path: 'app/projects/:id/meetings/:mid', element: <RecapEditorPage /> },
