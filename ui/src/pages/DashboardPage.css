@@ -121,23 +121,17 @@
   letter-spacing: 0.03em;
 }
 
-/* Disabled cards - stronger visual distinction */
+/* Disabled cards */
 .task-card--disabled {
   cursor: not-allowed;
   background: #FAFAFA;
-  opacity: 0.55;
-  filter: grayscale(40%);
+  opacity: 0.8;
 }
 
 .task-card--disabled:hover {
   transform: none;
   box-shadow: none;
   border-color: #E5E7EB;
-}
-
-.task-card--disabled .task-card__icon {
-  opacity: 0.5;
-  filter: grayscale(100%);
 }
 
 .task-card--disabled .task-card__description,
@@ -227,13 +221,14 @@
 /* Task Card Badge */
 .task-card__badge {
   display: inline-block;
-  background: #F3F4F6;
-  color: #6B7280;
-  font-size: 0.5625rem;
-  font-weight: 600;
-  padding: 0.15rem 0.35rem;
-  border-radius: 3px;
+  background: #DBEAFE;
+  color: #1D4ED8;
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
   letter-spacing: 0.03em;
   white-space: nowrap;
 }
