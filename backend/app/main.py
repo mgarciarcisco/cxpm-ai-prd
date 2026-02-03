@@ -12,7 +12,7 @@ from app.routers import (
 )
 
 app = FastAPI(
-    title="PM Co-Pilot",
+    title="CX AIA for Product Managers",
     description="Meeting Notes to Requirements API",
     version="1.0.0",
 )
