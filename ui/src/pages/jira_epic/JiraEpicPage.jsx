@@ -7,10 +7,12 @@ import { generateJiraEpic } from '../../services/api';
 import './JiraEpicPage.css';
 
 const MAX_FILE_SIZE_KB = 1024 * 1024; // 1 GB in KB
+const MAX_TEXT_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB in bytes
 
 function JiraEpicPage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
+  const [additionalNotes, setAdditionalNotes] = useState('');
   const [error, setError] = useState(null);
   const [epics, setEpics] = useState([]);
   const [selectedEpic, setSelectedEpic] = useState(null);
@@ -53,9 +55,23 @@ function JiraEpicPage() {
     }
   };
 
+  const handleTextChange = (e) => {
+    const text = e.target.value;
+    
+    // Check size limit (5MB)
+    const textSizeBytes = new Blob([text]).size;
+    if (textSizeBytes > MAX_TEXT_SIZE_BYTES) {
+      setError(`Additional notes too large. Maximum size is 5MB. Current size is ${(textSizeBytes / 1024 / 1024).toFixed(2)}MB.`);
+      return;
+    }
+    
+    setError(null);
+    setAdditionalNotes(text);
+  };
+
   const handleGenerate = async () => {
-    if (!fileContent) {
-      setError('Please select a valid text file first.');
+    if (!fileContent && !additionalNotes.trim()) {
+      setError('Please upload a file or paste additional notes.');
       return;
     }
 
@@ -66,8 +82,16 @@ function JiraEpicPage() {
     setSelectedEpic(null);
 
     try {
+      // Combine file content and additional notes
+      let combinedContent = fileContent;
+      if (fileContent && additionalNotes.trim()) {
+        combinedContent = `${fileContent}\n\n--- Additional Notes ---\n\n${additionalNotes.trim()}`;
+      } else if (additionalNotes.trim()) {
+        combinedContent = additionalNotes.trim();
+      }
+      
       // Call backend API to generate JIRA Epic
-      const response = await generateJiraEpic(fileContent);
+      const response = await generateJiraEpic(combinedContent);
       
       if (!response || !response.epic) {
         throw new Error('Invalid response from server');
@@ -402,7 +426,7 @@ function JiraEpicPage() {
     return html;
   };
 
-  const isSubmitDisabled = isGenerating || !selectedFile;
+  const isSubmitDisabled = isGenerating || (!selectedFile && !additionalNotes.trim());
 
   // Calculate pagination
   const totalPages = Math.ceil(epics.length / rowsPerPage);
@@ -436,7 +460,7 @@ function JiraEpicPage() {
           <div className="upload-form">
             <div className="form-group">
               <label className="form-label">
-                Upload Requirements File <span className="required">*</span>
+                Upload Requirements File
               </label>
               <FileDropzone
                 onFile={handleFileSelect}
@@ -464,6 +488,29 @@ function JiraEpicPage() {
               )}
             </div>
 
+            <div className="form-divider">
+              <span>and / or</span>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="text-input" className="form-label">
+                Paste Additional Notes
+              </label>
+              <textarea
+                id="text-input"
+                className="form-textarea"
+                value={additionalNotes}
+                onChange={handleTextChange}
+                placeholder="Paste your requirements, user stories, or additional context here..."
+                rows={10}
+              />
+              {selectedFile && additionalNotes.trim() && (
+                <p className="form-hint form-hint--info">
+                  Both file and pasted notes will be processed together.
+                </p>
+              )}
+            </div>
+
             {error && (
               <div className="form-error">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -479,7 +526,7 @@ function JiraEpicPage() {
               </Link>
               <div
                 className="btn-wrapper"
-                title={isSubmitDisabled ? 'Upload a file to continue' : ''}
+                title={isSubmitDisabled ? 'Upload a file or paste notes to continue' : ''}
               >
                 <button
                   type="button"
