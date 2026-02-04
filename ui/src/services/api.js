@@ -449,3 +449,31 @@ export async function generateJiraEpic(requirements) {
   // Use 6 minute timeout (360 seconds) to match backend timeout of 5 minutes + buffer
   return post('/api/jira-epic/generate', { requirements }, { timeout: 360000 });
 }
+
+/**
+ * Save JIRA stories to the database
+ * @param {string} projectId - Project UUID
+ * @param {Array} epics - Array of epic objects to save
+ * @returns {Promise<object>} - Response with saved count and saved stories
+ */
+export async function saveJiraStories(projectId, epics) {
+  return post('/api/jira-stories/save', { project_id: projectId, epics });
+}
+
+/**
+ * List JIRA stories for a project
+ * @param {string} projectId - Project UUID
+ * @returns {Promise<Array>} - Array of JIRA stories
+ */
+export async function listJiraStories(projectId) {
+  return get(`/api/jira-stories/project/${projectId}`);
+}
+
+/**
+ * Delete all JIRA stories for a project
+ * @param {string} projectId - Project UUID
+ * @returns {Promise<object>} - Response with deleted count
+ */
+export async function deleteJiraStories(projectId) {
+  return del(`/api/jira-stories/project/${projectId}`);
+}

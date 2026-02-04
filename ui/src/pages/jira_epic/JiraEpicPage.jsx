@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../../components/common/Breadcrumbs';
 import { FileDropzone } from '../../components/common/FileDropzone';
 import Modal from '../../components/common/Modal';
-import { generateJiraEpic, get } from '../../services/api';
+import { generateJiraEpic, saveJiraStories, listJiraStories, deleteJiraStories, get } from '../../services/api';
 import './JiraEpicPage.css';
 
 const MAX_FILE_SIZE_KB = 1024 * 1024; // 1 GB in KB
@@ -20,6 +20,12 @@ function JiraEpicPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [epicsLoadedFromDB, setEpicsLoadedFromDB] = useState(false);
+  const [loadingExistingEpics, setLoadingExistingEpics] = useState(false);
+  const [showReplaceConfirmation, setShowReplaceConfirmation] = useState(false);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
+  const [showGenerateSuccess, setShowGenerateSuccess] = useState(false);
   const rowsPerPage = 30;
   
   // Project and requirements selection state
@@ -32,6 +38,9 @@ function JiraEpicPage() {
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingRequirements, setLoadingRequirements] = useState(false);
   const [projectRequirementsText, setProjectRequirementsText] = useState('');
+
+  // Ref for scrolling to epics section
+  const epicsDisplayRef = useRef(null);
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -52,6 +61,67 @@ function JiraEpicPage() {
       }
     }
   }, []);
+
+  // Load existing JIRA stories when project is selected
+  useEffect(() => {
+    const loadExistingStories = async () => {
+      if (!selectedProject?.id) {
+        return;
+      }
+
+      setLoadingExistingEpics(true);
+      setError(null);
+
+      try {
+        const stories = await listJiraStories(selectedProject.id);
+        
+        if (stories && stories.length > 0) {
+          // Convert database stories to epic format
+          const loadedEpics = stories.map((story, index) => ({
+            id: index + 1, // Display ID for table
+            databaseId: story.id, // Store actual database UUID
+            name: story.title,
+            title: story.title,
+            description: story.description || '',
+            problemStatement: story.problem_statement || '',
+            targetUserRoles: story.target_user_roles || '',
+            dataSources: story.data_sources || '',
+            businessRules: story.business_rules || '',
+            responseExample: story.response_example || '',
+            acceptanceCriteria: story.acceptance_criteria || '',
+            content: `**Title:** ${story.title}\n\n` +
+                     (story.description ? `**Description:** ${story.description}\n\n` : '') +
+                     (story.problem_statement ? `**Problem Statement:** ${story.problem_statement}\n\n` : '') +
+                     (story.target_user_roles ? `**Target User Roles:** ${story.target_user_roles}\n\n` : '') +
+                     (story.data_sources ? `**Data Sources:** ${story.data_sources}\n\n` : '') +
+                     (story.business_rules ? `**Business Rules:** ${story.business_rules}\n\n` : '') +
+                     (story.response_example ? `**Response Example:** ${story.response_example}\n\n` : '') +
+                     (story.acceptance_criteria ? `**Acceptance Criteria:** ${story.acceptance_criteria}` : '')
+          }));
+
+          setEpics(loadedEpics);
+          setSelectedEpic(loadedEpics[0]);
+          setEpicsLoadedFromDB(true);
+          console.log(`Loaded ${loadedEpics.length} existing JIRA stories from database`);
+        } else {
+          // No existing stories
+          setEpics([]);
+          setSelectedEpic(null);
+          setEpicsLoadedFromDB(false);
+        }
+      } catch (err) {
+        console.error('Error loading existing JIRA stories:', err);
+        // Don't show error to user if no stories exist
+        setEpics([]);
+        setSelectedEpic(null);
+        setEpicsLoadedFromDB(false);
+      } finally {
+        setLoadingExistingEpics(false);
+      }
+    };
+
+    loadExistingStories();
+  }, [selectedProject]);
 
   const handleFileSelect = async (file) => {
     setError(null);
@@ -191,11 +261,24 @@ function JiraEpicPage() {
   };
 
   const handleGenerate = async () => {
+    // Check if there are existing epics (either loaded from DB or newly generated)
+    if (epics.length > 0) {
+      // Show confirmation modal
+      setShowReplaceConfirmation(true);
+      return;
+    }
+
+    // No existing epics, proceed with generation
+    await performGeneration();
+  };
+
+  const performGeneration = async () => {
     // Clear all previous epics, selections, and pagination immediately when button is clicked
     setEpics([]);
     setSelectedEpic(null);
     setCurrentPage(1);
     setError(null);
+    setEpicsLoadedFromDB(false);
     
     // Validate input
     if (!fileContent && !additionalNotes.trim() && !projectRequirementsText.trim()) {
@@ -244,6 +327,24 @@ function JiraEpicPage() {
       
       // Select the first epic by default
       setSelectedEpic(generatedEpics[0]);
+
+      // Show success notification
+      setShowGenerateSuccess(true);
+      
+      // Auto-hide notification after 4 seconds
+      setTimeout(() => {
+        setShowGenerateSuccess(false);
+      }, 4000);
+
+      // Scroll to the epics section after a brief delay to ensure DOM update
+      setTimeout(() => {
+        if (epicsDisplayRef.current) {
+          epicsDisplayRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }
+      }, 100);
     } catch (err) {
       // Ensure epics are cleared on error (safety measure)
       setEpics([]);
@@ -264,6 +365,29 @@ function JiraEpicPage() {
     }
   };
 
+  const handleConfirmReplace = async () => {
+    setShowReplaceConfirmation(false);
+
+    // Delete existing stories if they were loaded from database
+    if (epicsLoadedFromDB && selectedProject) {
+      try {
+        await deleteJiraStories(selectedProject.id);
+        console.log('Deleted existing JIRA stories from database');
+      } catch (err) {
+        console.error('Error deleting existing stories:', err);
+        setError('Failed to delete existing stories. Please try again.');
+        return;
+      }
+    }
+
+    // Proceed with generation
+    await performGeneration();
+  };
+
+  const handleCancelReplace = () => {
+    setShowReplaceConfirmation(false);
+  };
+
   const handleSaveJiraStories = async () => {
     if (!epics || epics.length === 0) {
       setError('No epics to save.');
@@ -279,19 +403,38 @@ function JiraEpicPage() {
     setError(null);
 
     try {
-      // TODO: Implement API endpoint to save JIRA stories
-      // For now, this is a placeholder
-      console.log('Saving JIRA stories:', {
-        projectId: selectedProject.id,
-        epics: epics
-      });
+      // Map epics to the format expected by the API
+      const epicData = epics.map(epic => ({
+        title: epic.title || epic.name || 'Untitled Epic',
+        description: epic.description || null,
+        problem_statement: epic.problemStatement || null,
+        target_user_roles: epic.targetUserRoles || null,
+        data_sources: epic.dataSources || null,
+        business_rules: epic.businessRules || null,
+        response_example: epic.responseExample || null,
+        acceptance_criteria: epic.acceptanceCriteria || null,
+        reporter: null, // Can be set if you have user info
+        notes: null, // Can be set if needed
+        parent_jira_id: null, // Can be set if there's a parent JIRA
+      }));
 
-      // Placeholder success message
-      alert(`Successfully saved ${epics.length} JIRA story(ies) to project "${selectedProject.name}"`);
+      // Call the API to save JIRA stories
+      const response = await saveJiraStories(selectedProject.id, epicData);
+
+      // Mark epics as loaded from database (so save button will be disabled)
+      setEpicsLoadedFromDB(true);
+
+      // Show success modal
+      setError(null);
+      setSavedCount(response.saved_count);
+      setShowSaveSuccess(true);
+      
+      console.log('Saved JIRA stories:', response.saved_stories);
       
     } catch (err) {
       const errorMessage = err.message || 'Failed to save JIRA stories';
       setError(`Failed to save JIRA stories: ${errorMessage}`);
+      console.error('Error saving JIRA stories:', err);
     } finally {
       setIsSaving(false);
     }
@@ -825,10 +968,23 @@ function JiraEpicPage() {
           </aside>
         </div>
 
+        {/* Success Notification Banner */}
+        {showGenerateSuccess && (
+          <div className="success-banner">
+            <div className="success-banner-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span>✓ {epics.length} JIRA {epics.length === 1 ? 'Epic' : 'Epics'} successfully generated! Scroll down to view.</span>
+            </div>
+          </div>
+        )}
+
         {/* Generated Epics Display */}
         {epics.length > 0 && (
           <>
-          <div className="epics-display">
+          <div className="epics-display" ref={epicsDisplayRef}>
             <div className="epics-layout">
               {/* Left Side - Epics Table */}
               <div className="epics-table-container">
@@ -1007,7 +1163,7 @@ function JiraEpicPage() {
             <button
               className="form-btn form-btn--primary save-jira-stories-btn"
               onClick={handleSaveJiraStories}
-              disabled={isSaving || !selectedProject}
+              disabled={isSaving || !selectedProject || epicsLoadedFromDB}
             >
               {isSaving ? (
                 <>
@@ -1176,6 +1332,76 @@ function JiraEpicPage() {
                 </div>
               </>
             )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Replace Confirmation Modal */}
+      {showReplaceConfirmation && (
+        <Modal
+          title="Replace Existing JIRA Stories?"
+          subtitle="This action cannot be undone"
+          onClose={handleCancelReplace}
+          size="medium"
+        >
+          <div className="confirmation-modal-content">
+            <div className="warning-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <p className="confirmation-message">
+              All previous JIRA stories will be completely replaced. 
+              {epicsLoadedFromDB && ' Existing stories in the database will be permanently deleted.'}
+            </p>
+            <p className="confirmation-question">Do you want to continue?</p>
+          </div>
+          <div className="modal-footer">
+            <button
+              className="form-btn form-btn--secondary"
+              onClick={handleCancelReplace}
+              autoFocus
+            >
+              Cancel
+            </button>
+            <button
+              className="form-btn form-btn--danger"
+              onClick={handleConfirmReplace}
+            >
+              Confirm
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Save Success Modal */}
+      {showSaveSuccess && (
+        <Modal
+          title="Jira Stories Successfully Created"
+          onClose={() => setShowSaveSuccess(false)}
+          size="medium"
+        >
+          <div className="success-modal-content">
+            <div className="success-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <p className="success-message">
+              {savedCount} JIRA {savedCount === 1 ? 'story' : 'stories'} successfully saved to the database with unique IDs.
+            </p>
+          </div>
+          <div className="modal-footer">
+            <button
+              className="form-btn form-btn--primary"
+              onClick={() => setShowSaveSuccess(false)}
+              autoFocus
+            >
+              Done
+            </button>
           </div>
         </Modal>
       )}

@@ -1,5 +1,11 @@
 """Pydantic schemas for API request/response validation."""
 
+from app.schemas.jira_story import (
+    JiraStoryCreate,
+    JiraStoryResponse,
+    JiraStoriesSaveRequest,
+    JiraStoriesSaveResponse,
+)
 from app.schemas.meeting import (
     ApplyResponse,
     ConflictResultResponse,
@@ -137,4 +143,9 @@ __all__ = [
     "StoryExportItem",
     "StoryUpdateRequest",
     "UserStoryResponse",
+    # JIRA Story schemas
+    "JiraStoryCreate",
+    "JiraStoryResponse",
+    "JiraStoriesSaveRequest",
+    "JiraStoriesSaveResponse",
 ]

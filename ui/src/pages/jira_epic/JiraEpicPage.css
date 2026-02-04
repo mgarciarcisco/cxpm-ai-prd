@@ -1182,3 +1182,137 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Confirmation Modal */
+.confirmation-modal-content {
+  padding: 24px;
+  text-align: center;
+}
+
+.warning-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.warning-icon svg {
+  color: #f59e0b;
+  stroke-width: 2;
+}
+
+.confirmation-message {
+  font-size: 16px;
+  color: #334155;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.confirmation-question {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.form-btn--danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.form-btn--danger:hover {
+  background: #dc2626;
+}
+
+.form-btn--danger:active {
+  transform: scale(0.98);
+}
+
+.form-btn--danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Success Modal */
+.success-modal-content {
+  padding: 24px;
+  text-align: center;
+}
+
+.success-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.success-icon svg {
+  color: #10b981;
+  stroke-width: 2;
+}
+
+.success-message {
+  font-size: 16px;
+  color: #334155;
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+}
+
+/* Success Banner Notification */
+.success-banner {
+  position: sticky;
+  top: 80px;
+  z-index: 100;
+  margin: 24px 0;
+  animation: slideDown 0.3s ease-out, fadeOut 0.5s ease-in 3.5s forwards;
+}
+
+.success-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.success-banner-content svg {
+  flex-shrink: 0;
+  stroke-width: 2.5;
+}
+
+.success-banner-content span {
+  flex: 1;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
