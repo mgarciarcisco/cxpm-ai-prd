@@ -53,6 +53,12 @@
   color: #DC2626;
 }
 
+.form-label-hint {
+  font-weight: 400;
+  color: #6B7280;
+  font-size: 0.8125rem;
+}
+
 .form-hint {
   font-size: 0.75rem;
   color: #6B7280;
@@ -921,4 +927,205 @@
   .markdown-table td {
     padding: 0.625rem 0.75rem;
   }
+}
+
+/* ============================================
+   Functional Requirements Button
+   ============================================ */
+
+.form-btn--outline {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.form-btn--outline:hover:not(:disabled) {
+  background: #f5f7ff;
+  border-color: #5568d3;
+  color: #5568d3;
+}
+
+.requirements-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ============================================
+   Project Selector Modal
+   ============================================ */
+
+.project-selector-modal,
+.requirements-selector-modal {
+  min-height: 300px;
+}
+
+.modal-loading,
+.modal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px;
+  color: #64748b;
+  font-size: 14px;
+  gap: 12px;
+}
+
+.modal-loading .loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #4ECDC4;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.project-list {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Project Option (in modal) */
+.project-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.project-option:hover {
+  border-color: #4ECDC4;
+  background: #f8fafc;
+}
+
+.project-option:focus-visible {
+  border-color: #4ECDC4;
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
+}
+
+.project-option__icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.project-option__icon--folder {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.project-option__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.project-option__info h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 2px 0;
+}
+
+.project-option__info p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.project-option__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.project-option__count {
+  padding: 2px 8px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+/* ============================================
+   Requirements Selector Modal
+   ============================================ */
+
+.requirements-list {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.requirements-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.requirements-table thead {
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.requirements-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  color: #475569;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.requirements-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.requirements-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.checkbox-col {
+  width: 50px;
+  text-align: center;
+}
+
+.checkbox-col input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.requirement-content {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
 }

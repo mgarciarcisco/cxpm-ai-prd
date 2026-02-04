@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../../components/common/Breadcrumbs';
 import { FileDropzone } from '../../components/common/FileDropzone';
 import Modal from '../../components/common/Modal';
-import { generateJiraEpic } from '../../services/api';
+import { generateJiraEpic, get } from '../../services/api';
 import './JiraEpicPage.css';
 
 const MAX_FILE_SIZE_KB = 1024 * 1024; // 1 GB in KB
@@ -20,12 +20,37 @@ function JiraEpicPage() {
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 30;
+  
+  // Project and requirements selection state
+  const [showProjectSelector, setShowProjectSelector] = useState(false);
+  const [showRequirementsSelector, setShowRequirementsSelector] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [functionalRequirements, setFunctionalRequirements] = useState([]);
+  const [selectedRequirements, setSelectedRequirements] = useState(new Set());
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [loadingRequirements, setLoadingRequirements] = useState(false);
+  const [projectRequirementsText, setProjectRequirementsText] = useState('');
 
   // Breadcrumb items
   const breadcrumbItems = [
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'User Stories' },
   ];
+
+  // Load selected project from localStorage on mount
+  useEffect(() => {
+    const savedProject = localStorage.getItem('jiraEpic_selectedProject');
+    if (savedProject) {
+      try {
+        const project = JSON.parse(savedProject);
+        setSelectedProject(project);
+      } catch (err) {
+        console.error('Failed to load saved project:', err);
+        localStorage.removeItem('jiraEpic_selectedProject');
+      }
+    }
+  }, []);
 
   const handleFileSelect = async (file) => {
     setError(null);
@@ -69,9 +94,104 @@ function JiraEpicPage() {
     setAdditionalNotes(text);
   };
 
+  // Fetch projects list
+  const fetchProjects = async () => {
+    try {
+      setLoadingProjects(true);
+      const projectsData = await get('/api/projects');
+      // Filter out archived projects and sort by updated_at desc
+      const activeProjects = projectsData
+        .filter(p => !p.archived)
+        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+      setProjects(activeProjects);
+    } catch (err) {
+      setError('Failed to load projects: ' + err.message);
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
+  // Fetch functional requirements for selected project
+  const fetchFunctionalRequirements = async (projectId) => {
+    try {
+      setLoadingRequirements(true);
+      const requirementsData = await get(`/api/projects/${projectId}/requirements`);
+      const funcReqs = requirementsData.functional_requirements || [];
+      setFunctionalRequirements(funcReqs);
+      // Select all by default
+      setSelectedRequirements(new Set(funcReqs.map(req => req.id)));
+    } catch (err) {
+      setError('Failed to load requirements: ' + err.message);
+    } finally {
+      setLoadingRequirements(false);
+    }
+  };
+
+  // Handle Add Project Functional Requirements button click
+  const handleAddFunctionalRequirements = async () => {
+    setError(null);
+    
+    // If no project is selected, show project selector
+    if (!selectedProject) {
+      await fetchProjects();
+      setShowProjectSelector(true);
+    } else {
+      // If project is selected, show requirements selector
+      await fetchFunctionalRequirements(selectedProject.id);
+      setShowRequirementsSelector(true);
+    }
+  };
+
+  // Handle project selection from modal
+  const handleProjectSelect = async (project) => {
+    setSelectedProject(project);
+    
+    // Save selected project to localStorage
+    localStorage.setItem('jiraEpic_selectedProject', JSON.stringify(project));
+    
+    setShowProjectSelector(false);
+    
+    // Fetch requirements for selected project
+    await fetchFunctionalRequirements(project.id);
+    setShowRequirementsSelector(true);
+  };
+
+  // Handle requirement checkbox toggle
+  const handleRequirementToggle = (reqId) => {
+    setSelectedRequirements(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(reqId)) {
+        newSet.delete(reqId);
+      } else {
+        newSet.add(reqId);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle Apply button in requirements selector
+  const handleApplyRequirements = () => {
+    const selectedReqs = functionalRequirements.filter(req => selectedRequirements.has(req.id));
+    
+    if (selectedReqs.length === 0) {
+      setError('Please select at least one requirement');
+      return;
+    }
+    
+    // Format requirements as text
+    const requirementsText = selectedReqs
+      .map((req, index) => `${index + 1}. ${req.content}`)
+      .join('\n\n');
+    
+    // Replace project requirements textbox content with new requirements
+    setProjectRequirementsText(`--- Functional Requirements from ${selectedProject.name} ---\n\n${requirementsText}`);
+    
+    setShowRequirementsSelector(false);
+  };
+
   const handleGenerate = async () => {
-    if (!fileContent && !additionalNotes.trim()) {
-      setError('Please upload a file or paste additional notes.');
+    if (!fileContent && !additionalNotes.trim() && !projectRequirementsText.trim()) {
+      setError('Please upload a file, add project requirements, or paste additional notes.');
       return;
     }
 
@@ -82,13 +202,22 @@ function JiraEpicPage() {
     setSelectedEpic(null);
 
     try {
-      // Combine file content and additional notes
-      let combinedContent = fileContent;
-      if (fileContent && additionalNotes.trim()) {
-        combinedContent = `${fileContent}\n\n--- Additional Notes ---\n\n${additionalNotes.trim()}`;
-      } else if (additionalNotes.trim()) {
-        combinedContent = additionalNotes.trim();
+      // Combine all content sources
+      const contentParts = [];
+      
+      if (fileContent) {
+        contentParts.push(fileContent);
       }
+      
+      if (projectRequirementsText.trim()) {
+        contentParts.push(projectRequirementsText.trim());
+      }
+      
+      if (additionalNotes.trim()) {
+        contentParts.push(`--- Additional Notes ---\n\n${additionalNotes.trim()}`);
+      }
+      
+      const combinedContent = contentParts.join('\n\n');
       
       // Call backend API to generate JIRA Epic
       const response = await generateJiraEpic(combinedContent);
@@ -426,7 +555,7 @@ function JiraEpicPage() {
     return html;
   };
 
-  const isSubmitDisabled = isGenerating || (!selectedFile && !additionalNotes.trim());
+  const isSubmitDisabled = isGenerating || (!selectedFile && !additionalNotes.trim() && !projectRequirementsText.trim());
 
   // Calculate pagination
   const totalPages = Math.ceil(epics.length / rowsPerPage);
@@ -449,7 +578,7 @@ function JiraEpicPage() {
       <section className="upload-section">
         {/* Page Header */}
         <div className="upload-header">
-          <h1>User Stories</h1>
+          <h1>User Stories{selectedProject ? `: ${selectedProject.name}` : ''}</h1>
           <p className="upload-header__subtitle">
             Generate actionable user stories from your requirements
           </p>
@@ -458,6 +587,51 @@ function JiraEpicPage() {
         <div className="upload-layout">
           {/* Form */}
           <div className="upload-form">
+            {/* Add Project Functional Requirements Button */}
+            <div className="form-group">
+              <button
+                type="button"
+                className="form-btn form-btn--outline requirements-btn"
+                onClick={handleAddFunctionalRequirements}
+                disabled={isGenerating}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 12h6M12 9v6M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Add Project Functional Requirements
+              </button>
+              {selectedProject && (
+                <p className="form-hint form-hint--info">
+                  Using requirements from: <strong>{selectedProject.name}</strong>
+                </p>
+              )}
+            </div>
+
+            {/* Project Requirements Textbox - Only visible when requirements are added */}
+            {projectRequirementsText && (
+              <div className="form-group">
+                <label htmlFor="project-requirements" className="form-label">
+                  Project Functional Requirements
+                  <span className="form-label-hint"> (from {selectedProject?.name})</span>
+                </label>
+                <textarea
+                  id="project-requirements"
+                  className="form-textarea"
+                  value={projectRequirementsText}
+                  onChange={(e) => setProjectRequirementsText(e.target.value)}
+                  placeholder="Project functional requirements will appear here..."
+                  rows={8}
+                />
+                <p className="form-hint">
+                  These requirements were loaded from your project. You can edit them or click "Add Project Functional Requirements" to load different ones.
+                </p>
+              </div>
+            )}
+
+            <div className="form-divider">
+              <span>and / or</span>
+            </div>
+
             <div className="form-group">
               <label className="form-label">
                 Upload Requirements File
@@ -504,11 +678,21 @@ function JiraEpicPage() {
                 placeholder="Paste your requirements, user stories, or additional context here..."
                 rows={10}
               />
-              {selectedFile && additionalNotes.trim() && (
-                <p className="form-hint form-hint--info">
-                  Both file and pasted notes will be processed together.
-                </p>
-              )}
+              {(() => {
+                const contentSources = [];
+                if (selectedFile) contentSources.push('file');
+                if (projectRequirementsText.trim()) contentSources.push('project requirements');
+                if (additionalNotes.trim()) contentSources.push('additional notes');
+                
+                if (contentSources.length > 1) {
+                  return (
+                    <p className="form-hint form-hint--info">
+                      Multiple content sources will be processed together: {contentSources.join(', ')}.
+                    </p>
+                  );
+                }
+                return null;
+              })()}
             </div>
 
             {error && (
@@ -526,7 +710,7 @@ function JiraEpicPage() {
               </Link>
               <div
                 className="btn-wrapper"
-                title={isSubmitDisabled ? 'Upload a file or paste notes to continue' : ''}
+                title={isSubmitDisabled ? 'Upload a file, add project requirements, or paste notes to continue' : ''}
               >
                 <button
                   type="button"
@@ -793,6 +977,139 @@ function JiraEpicPage() {
         >
           <div className="file-preview-content">
             <pre className="file-preview-text">{fileContent}</pre>
+          </div>
+        </Modal>
+      )}
+
+      {/* Project Selector Modal */}
+      {showProjectSelector && (
+        <Modal
+          title="Select Project"
+          subtitle="Choose a project to load functional requirements from"
+          onClose={() => setShowProjectSelector(false)}
+          size="large"
+        >
+          <div className="project-selector-modal">
+            {loadingProjects ? (
+              <div className="modal-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading projects...</p>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="modal-empty">
+                <p>No projects found. Create a project first.</p>
+              </div>
+            ) : (
+              <div className="project-list">
+                {projects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="project-option"
+                    onClick={() => handleProjectSelect(project)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleProjectSelect(project)}
+                  >
+                    <div className="project-option__icon project-option__icon--folder">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                      </svg>
+                    </div>
+                    <div className="project-option__info">
+                      <h3>{project.name}</h3>
+                      <p>
+                        {project.requirements_count > 0
+                          ? `${project.requirements_count} requirements`
+                          : 'Empty project'
+                        }
+                      </p>
+                    </div>
+                    <div className="project-option__meta">
+                      <span className="project-option__count">
+                        {project.requirements_count || 0} reqs
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Functional Requirements Selector Modal */}
+      {showRequirementsSelector && (
+        <Modal
+          title="Select Functional Requirements"
+          subtitle={selectedProject ? `From: ${selectedProject.name}` : ''}
+          onClose={() => setShowRequirementsSelector(false)}
+          size="large"
+        >
+          <div className="requirements-selector-modal">
+            {loadingRequirements ? (
+              <div className="modal-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading requirements...</p>
+              </div>
+            ) : functionalRequirements.length === 0 ? (
+              <div className="modal-empty">
+                <p>No functional requirements found in this project.</p>
+              </div>
+            ) : (
+              <>
+                <div className="requirements-list">
+                  <table className="requirements-table">
+                    <thead>
+                      <tr>
+                        <th className="checkbox-col">
+                          <input
+                            type="checkbox"
+                            checked={selectedRequirements.size === functionalRequirements.length}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedRequirements(new Set(functionalRequirements.map(req => req.id)));
+                              } else {
+                                setSelectedRequirements(new Set());
+                              }
+                            }}
+                          />
+                        </th>
+                        <th>Requirement</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {functionalRequirements.map((req) => (
+                        <tr key={req.id}>
+                          <td className="checkbox-col">
+                            <input
+                              type="checkbox"
+                              checked={selectedRequirements.has(req.id)}
+                              onChange={() => handleRequirementToggle(req.id)}
+                            />
+                          </td>
+                          <td className="requirement-content">{req.content}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    className="form-btn form-btn--secondary"
+                    onClick={() => setShowRequirementsSelector(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="form-btn form-btn--primary"
+                    onClick={handleApplyRequirements}
+                    disabled={selectedRequirements.size === 0}
+                  >
+                    Add {selectedRequirements.size} Requirements
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </Modal>
       )}

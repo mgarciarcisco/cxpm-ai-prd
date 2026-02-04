@@ -97,7 +97,7 @@ Write above section headings in bold letters
 
 General Guidelines 
 
-Write concise, outcome oriented “Title” 
+Write concise, outcome oriented “Title”. Make sure there is always a proper title. 
 
 In “Description” section provide brief explanation of the stakeholder requirement,  business objective and benefits. Add Context such as when and why is this used? Any relevant background 
 
