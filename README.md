@@ -1,6 +1,6 @@
-# CXPM AI PRD
+# CX AIA for Product Manager
 
-CX AI Assistant for Product Management — An AI-powered application that helps Product Managers create PRDs.
+CX AIA for Product Manager — An AI-powered application that helps Product Managers create PRDs.
 
 ## Quick Start (Docker Required)
 

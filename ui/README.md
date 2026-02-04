@@ -1,4 +1,4 @@
-# CXPM AI PRD - UI
+# CX AIA for Product Manager - UI
 
 A modern React web application built with React 18 and Vite.
 

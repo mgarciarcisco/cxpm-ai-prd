@@ -1,5 +1,5 @@
 {
-  "project": "CXPM AI PRD - Meeting Notes to Requirements",
+  "project": "CX AIA for Product Manager - Meeting Notes to Requirements",
   "branchName": "ralph/meeting-notes-to-requirements",
   "description": "Build the first feature of CXPM AI PRD: converting meeting notes into structured requirements that accumulate over time into a coherent Working Requirements document.",
   "userStories": [

@@ -1,6 +1,6 @@
 # Docker Setup Guide
 
-This guide provides detailed information about running the CXPM AI PRD application in Docker.
+This guide provides detailed information about running the CX AIA for Product Manager application in Docker.
 
 ## Architecture
 

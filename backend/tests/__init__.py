@@ -1,1 +1,1 @@
-"""Tests package for the CXPM AI PRD backend."""
+"""Tests package for the CX AIA for Product Manager backend."""
