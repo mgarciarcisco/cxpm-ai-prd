@@ -17,6 +17,7 @@ function JiraEpicPage() {
   const [epics, setEpics] = useState([]);
   const [selectedEpic, setSelectedEpic] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 30;
@@ -190,16 +191,19 @@ function JiraEpicPage() {
   };
 
   const handleGenerate = async () => {
+    // Clear all previous epics, selections, and pagination immediately when button is clicked
+    setEpics([]);
+    setSelectedEpic(null);
+    setCurrentPage(1);
+    setError(null);
+    
+    // Validate input
     if (!fileContent && !additionalNotes.trim() && !projectRequirementsText.trim()) {
       setError('Please upload a file, add project requirements, or paste additional notes.');
       return;
     }
 
     setIsGenerating(true);
-    setError(null);
-    // Clear previous results
-    setEpics([]);
-    setSelectedEpic(null);
 
     try {
       // Combine all content sources
@@ -240,9 +244,8 @@ function JiraEpicPage() {
       
       // Select the first epic by default
       setSelectedEpic(generatedEpics[0]);
-      setCurrentPage(1);
     } catch (err) {
-      // Clear epics on error
+      // Ensure epics are cleared on error (safety measure)
       setEpics([]);
       setSelectedEpic(null);
       
@@ -258,6 +261,39 @@ function JiraEpicPage() {
       }
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSaveJiraStories = async () => {
+    if (!epics || epics.length === 0) {
+      setError('No epics to save.');
+      return;
+    }
+
+    if (!selectedProject) {
+      setError('Please select a project before saving JIRA stories.');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      // TODO: Implement API endpoint to save JIRA stories
+      // For now, this is a placeholder
+      console.log('Saving JIRA stories:', {
+        projectId: selectedProject.id,
+        epics: epics
+      });
+
+      // Placeholder success message
+      alert(`Successfully saved ${epics.length} JIRA story(ies) to project "${selectedProject.name}"`);
+      
+    } catch (err) {
+      const errorMessage = err.message || 'Failed to save JIRA stories';
+      setError(`Failed to save JIRA stories: ${errorMessage}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -791,6 +827,7 @@ function JiraEpicPage() {
 
         {/* Generated Epics Display */}
         {epics.length > 0 && (
+          <>
           <div className="epics-display">
             <div className="epics-layout">
               {/* Left Side - Epics Table */}
@@ -964,6 +1001,35 @@ function JiraEpicPage() {
               </div>
             </div>
           </div>
+
+          {/* Save Jira Stories Button */}
+          <div className="save-jira-stories-container">
+            <button
+              className="form-btn form-btn--primary save-jira-stories-btn"
+              onClick={handleSaveJiraStories}
+              disabled={isSaving || !selectedProject}
+            >
+              {isSaving ? (
+                <>
+                  <div className="btn-spinner"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                  </svg>
+                  Save Jira Stories
+                </>
+              )}
+            </button>
+            {!selectedProject && (
+              <p className="save-hint">Please select a project to save JIRA stories</p>
+            )}
+          </div>
+          </>
         )}
       </section>
 

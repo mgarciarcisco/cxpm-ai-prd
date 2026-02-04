@@ -95,6 +95,7 @@ class Project(Base):
     prds = relationship("PRD", back_populates="project", cascade="all, delete-orphan")
     user_stories = relationship("UserStory", back_populates="project", cascade="all, delete-orphan")
     story_batches = relationship("StoryBatch", back_populates="project", cascade="all, delete-orphan")
+    jira_stories = relationship("JiraStory", back_populates="project", cascade="all, delete-orphan")
 
     @property
     def requirements_count(self) -> int:
