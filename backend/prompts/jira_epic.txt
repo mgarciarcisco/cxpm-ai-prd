@@ -1,3 +1,7 @@
+With all the information given create as many JIRA EPICS as needed. If some requirements are very similar you can aggregate them into a single JIRA EPIC. 
+
+Each JIRA EPIC should follow the following rules:
+
 In Jira, an **Epic** is a high-level issue type that represents a large body of work. Think of it as a "container" or a "folder" for a major project or feature that is too big to be completed in a single sprint.
 
 Here is a breakdown of what makes an Epic unique:

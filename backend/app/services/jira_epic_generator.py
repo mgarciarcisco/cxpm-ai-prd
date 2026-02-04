@@ -106,27 +106,17 @@ class JiraEpicGenerator:
         # Generate the JIRA Epic using Circuit AI
         # Use the prompt template as system prompt and requirements as user prompt
         try:
-            response = provider.generate(
+            epic = provider.generate(
+                prompt=requirements,
                 system_prompt=self._prompt_template,
-                user_prompt=requirements
+                timeout=JIRA_EPIC_LLM_TIMEOUT
             )
 
-            # Extract the content from the response
-            # Circuit API returns a dict with 'choices' array
-            if not response or not isinstance(response, dict):
-                raise JiraEpicGeneratorError("Circuit API returned invalid response")
-
-            choices = response.get('choices', [])
-            if not choices:
-                raise JiraEpicGeneratorError("Circuit API returned no choices")
-
-            message = choices[0].get('message', {})
-            epic = message.get('content', '').strip()
-
-            if not epic:
+            # The generate() method returns a string directly
+            if not epic or not epic.strip():
                 raise JiraEpicGeneratorError("Circuit API returned empty content")
 
-            return epic
+            return epic.strip()
 
         except JiraEpicGeneratorError:
             # Re-raise our custom errors

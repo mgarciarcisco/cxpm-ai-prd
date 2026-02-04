@@ -84,7 +84,7 @@ def suggest_merge(existing: str, new: str) -> str:
     for attempt in range(max_attempts):
         try:
             provider = get_provider()
-            response = provider.generate(prompt)
+            response = provider.generate(prompt, system_prompt="")
             merged_text = _clean_response(response)
 
             # Validate that we got some text back

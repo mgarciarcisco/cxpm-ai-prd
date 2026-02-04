@@ -446,5 +446,6 @@ export async function exportStories(projectId, format = 'markdown', batchId = nu
  * @returns {Promise<object>} - Response with epic field containing generated epic
  */
 export async function generateJiraEpic(requirements) {
-  return post('/api/jira-epic/generate', { requirements });
+  // Use 6 minute timeout (360 seconds) to match backend timeout of 5 minutes + buffer
+  return post('/api/jira-epic/generate', { requirements }, { timeout: 360000 });
 }

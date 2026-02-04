@@ -186,6 +186,7 @@ class StoriesGenerator:
         try:
             response = provider.generate(
                 prompt,
+                system_prompt="",
                 temperature=STORIES_LLM_TEMPERATURE,
                 max_tokens=STORIES_LLM_MAX_TOKENS,
                 timeout=STORIES_LLM_TIMEOUT,
@@ -654,6 +655,7 @@ def generate_stories_task(
         provider = get_provider()
         response = provider.generate(
             prompt,
+            system_prompt="",
             temperature=STORIES_LLM_TEMPERATURE,
             max_tokens=STORIES_LLM_MAX_TOKENS,
             timeout=STORIES_LLM_TIMEOUT,

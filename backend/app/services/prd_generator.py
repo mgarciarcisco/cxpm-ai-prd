@@ -276,6 +276,7 @@ class PRDGenerator:
         try:
             response = provider.generate(
                 prompt,
+                system_prompt="",
                 temperature=PRD_LLM_TEMPERATURE,
                 max_tokens=PRD_LLM_MAX_TOKENS,
                 timeout=PRD_LLM_TIMEOUT,
@@ -1392,6 +1393,7 @@ def generate_prd_task(
         provider = get_provider()
         response = provider.generate(
             prompt,
+            system_prompt="",
             temperature=PRD_LLM_TEMPERATURE,
             max_tokens=PRD_LLM_MAX_TOKENS,
             timeout=PRD_LLM_TIMEOUT,

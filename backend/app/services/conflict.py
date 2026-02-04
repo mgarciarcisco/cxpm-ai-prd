@@ -216,7 +216,7 @@ def _classify_batch_with_llm(
     for attempt in range(max_attempts):
         try:
             provider = get_provider()
-            response = provider.generate(prompt)
+            response = provider.generate(prompt, system_prompt="")
             result = _parse_batch_classification_response(response, len(new_items))
             return result
 
@@ -264,7 +264,7 @@ def _classify_with_llm(
     for attempt in range(max_attempts):
         try:
             provider = get_provider()
-            response = provider.generate(prompt)
+            response = provider.generate(prompt, system_prompt="")
             result = _parse_classification_response(response)
             return result
 

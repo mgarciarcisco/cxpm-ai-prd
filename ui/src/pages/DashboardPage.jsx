@@ -265,7 +265,7 @@ function DashboardPage() {
             </div>
 
             {/* Card 3: User Stories */}
-            <Link to="/quick-convert/stories?new=1" className="task-card task-card--blue">
+            <Link to="/app/jira-epic" className="task-card task-card--blue">
               <div className="task-card__icon task-card__icon--blue">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="7" height="7" rx="1"/>

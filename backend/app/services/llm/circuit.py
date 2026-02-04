@@ -63,6 +63,7 @@ class CircuitProvider(LLMProvider):
         self,
         prompt: str,
         *,
+        system_prompt: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
         timeout: float | None = None,
@@ -71,6 +72,8 @@ class CircuitProvider(LLMProvider):
 
         Args:
             prompt: The input prompt to send to the LLM (used as user message).
+            system_prompt: Optional system prompt to set context/behavior. 
+                          If None, uses DEFAULT_SYSTEM_PROMPT.
             temperature: Optional temperature for response randomness (0.0-1.0).
             max_tokens: Optional maximum tokens in the response.
             timeout: Optional timeout in seconds for this specific request.
@@ -82,13 +85,14 @@ class CircuitProvider(LLMProvider):
             LLMError: If the API call fails or times out.
         """
         actual_timeout = timeout if timeout is not None else settings.LLM_TIMEOUT
+        actual_system_prompt = system_prompt if system_prompt is not None else self.DEFAULT_SYSTEM_PROMPT
         prompt_preview = prompt[:100] + "..." if len(prompt) > 100 else prompt
         logger.info(f"[LLM] CircuitProvider.generate() called - model={self.model}, prompt_len={len(prompt)}")
         logger.debug(f"[LLM] CircuitProvider prompt preview: {prompt_preview}")
 
         try:
             response = self._generate_with_system(
-                system_prompt=self.DEFAULT_SYSTEM_PROMPT,
+                system_prompt=actual_system_prompt,
                 user_prompt=prompt,
                 timeout=actual_timeout,
             )

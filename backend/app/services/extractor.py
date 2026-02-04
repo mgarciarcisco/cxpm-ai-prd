@@ -176,7 +176,7 @@ def _extract_single_chunk(
     for attempt in range(max_attempts):
         try:
             provider = get_provider()
-            response = provider.generate(prompt)
+            response = provider.generate(prompt, system_prompt="")
             items_data = _parse_llm_response(response)
             return items_data
 
