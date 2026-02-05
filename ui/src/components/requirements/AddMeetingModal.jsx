@@ -121,7 +121,8 @@ function AddMeetingModal({ projectId, onClose, onSave }) {
     let completed = false;
 
     const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
-    const eventSource = new EventSource(`${BASE_URL}/api/meetings/${jobId}/stream`);
+    const sseToken = localStorage.getItem('auth_token');
+    const eventSource = new EventSource(`${BASE_URL}/api/meetings/${jobId}/stream?token=${sseToken}`);
 
     eventSource.addEventListener('status', (e) => {
       const status = JSON.parse(e.data);
@@ -197,8 +198,10 @@ function AddMeetingModal({ projectId, onClose, onSave }) {
 
       // Call the upload API
       const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${BASE_URL}/api/meetings/upload`, {
         method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData,
       });
 
