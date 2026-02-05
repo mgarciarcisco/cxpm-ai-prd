@@ -1,59 +1,32 @@
-FROM almalinux:9
+# Frontend Production Dockerfile - Multi-stage build
+# Stage 1: Build the React application
+FROM node:20-alpine AS builder
 
-# Set environment variables
-ENV NODE_VERSION=v24.11.1 \
-    NPM_VERSION=11.6.2 \
-    NVM_DIR=/root/.nvm \
-    NODE_PATH=/usr/local/bin
-
-# Install system dependencies
-RUN dnf update -y && \
-    dnf install -y epel-release && \
-    dnf groupinstall -y "Development Tools" && \
-    dnf install -y --allowerasing \
-    gcc-c++ \
-    make \
-    git \
-    curl \
-    wget \
-    lsof \
-    && dnf clean all
-
-# Install nvm and Node.js
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
-    . $NVM_DIR/nvm.sh && \
-    nvm install $NODE_VERSION && \
-    nvm use $NODE_VERSION && \
-    nvm alias default $NODE_VERSION && \
-    npm install -g npm@$NPM_VERSION
-
-# Create symlinks for system-wide access
-RUN ln -sf $NVM_DIR/versions/node/$NODE_VERSION/bin/node /usr/local/bin/node && \
-    ln -sf $NVM_DIR/versions/node/$NODE_VERSION/bin/npm /usr/local/bin/npm && \
-    ln -sf $NVM_DIR/versions/node/$NODE_VERSION/bin/npx /usr/local/bin/npx
-
-# Verify installations
-RUN node --version && npm --version
-
-# Set working directory
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY ui/package*.json ./ui/
+# Copy package files
+COPY package*.json ./
 
 # Install dependencies
-WORKDIR /app/ui
-RUN . $NVM_DIR/nvm.sh && npm install
+RUN npm ci
 
-# Copy the rest of the application
-WORKDIR /app
-COPY ui/ ./ui/
+# Copy source code
+COPY . .
 
-# Expose port
-EXPOSE 3000
+# Build the production bundle
+RUN npm run build
 
-# Set working directory to ui
-WORKDIR /app/ui
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
 
-# Start the application
-CMD ["/bin/bash", "-c", "source $NVM_DIR/nvm.sh && npm run dev -- --host 0.0.0.0"]
+# Copy built assets from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

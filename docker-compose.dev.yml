@@ -43,7 +43,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: ui/Dockerfile
+      dockerfile: ui/Dockerfile.dev
     container_name: cxpm-frontend-dev
     ports:
       - "3000:3000"

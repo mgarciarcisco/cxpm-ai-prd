@@ -41,7 +41,7 @@ services:
   frontend:
     build:
       context: ./ui
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile
     container_name: cxpm-frontend
     ports:
       - "3000:80"
