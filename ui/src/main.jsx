@@ -6,11 +6,7 @@ import './index.css'
 
 // Import all page components
 import DashboardPage from './pages/DashboardPage'
-// QuickConvertPage archived - task cards now on main dashboard
-import QuickConvertRequirementsPage from './pages/QuickConvertRequirementsPage'
-// QuickConvertPRDPage archived - coming soon
-import QuickConvertStoriesPage from './pages/QuickConvertStoriesPage'
-// QuickConvertMockupsPage archived - coming soon
+// Quick Convert pages removed - all flows are now project-based
 import ProjectViewPage from './pages/ProjectViewPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDashboard from './pages/ProjectDashboard'
@@ -34,14 +30,9 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'dashboard', element: <DashboardPage /> },
-      // Quick Convert landing page archived - redirect to dashboard
+      // Quick Convert removed - redirect all to dashboard
       { path: 'quick-convert', element: <Navigate to="/dashboard" replace /> },
-      { path: 'quick-convert/requirements', element: <QuickConvertRequirementsPage /> },
-      // PRD quick convert archived - coming soon
-      { path: 'quick-convert/prd', element: <Navigate to="/dashboard" replace /> },
-      { path: 'quick-convert/stories', element: <QuickConvertStoriesPage /> },
-      // Mockups quick convert archived - coming soon
-      { path: 'quick-convert/mockups', element: <Navigate to="/dashboard" replace /> },
+      { path: 'quick-convert/*', element: <Navigate to="/dashboard" replace /> },
       { path: 'projects/:id', element: <ProjectViewPage /> },
       { path: 'projects/:id/:stage', element: <ProjectViewPage /> },
       { path: 'app', element: <ProjectsPage /> },

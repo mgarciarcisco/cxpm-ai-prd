@@ -265,7 +265,7 @@ function DashboardPage() {
             </div>
 
             {/* Card 3: User Stories */}
-            <Link to="/quick-convert/stories?new=1" className="task-card task-card--blue">
+            <div className="task-card task-card--blue task-card--disabled">
               <div className="task-card__icon task-card__icon--blue">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -274,7 +274,10 @@ function DashboardPage() {
                   <rect x="14" y="14" width="7" height="7" rx="1"/>
                 </svg>
               </div>
-              <div className="task-card__title">User Stories</div>
+              <div className="task-card__header">
+                <span className="task-card__title">User Stories</span>
+                <span className="task-card__badge">Coming Soon</span>
+              </div>
               <div className="task-card__description">Generate actionable user stories from your requirements</div>
               <div className="task-card__io">
                 <div className="task-card__io-label">Input</div>
@@ -282,7 +285,7 @@ function DashboardPage() {
                 <div className="task-card__io-label">Output</div>
                 User stories with acceptance criteria
               </div>
-            </Link>
+            </div>
           </div>
 
           {/* Row 2: 2 cards */}
