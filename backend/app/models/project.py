@@ -6,7 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, String, Text
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.dialects.sqlite import CHAR
+from sqlalchemy import CHAR
 from sqlalchemy.orm import relationship
 
 from app.database import Base

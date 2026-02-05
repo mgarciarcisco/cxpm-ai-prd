@@ -17,6 +17,25 @@ services:
     #           count: 1
     #           capabilities: [gpu]
 
+  # PostgreSQL - Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: cxpm-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: cxpm
+      POSTGRES_USER: cxpm
+      POSTGRES_PASSWORD: cxpm_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cxpm"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   # Backend - FastAPI application
   backend:
     build:
@@ -29,12 +48,14 @@ services:
       - ./backend/.env
     environment:
       # Docker-specific overrides (these override values from .env)
-      - DATABASE_URL=sqlite:///./data/cxpm.db
+      - DATABASE_URL=postgresql://cxpm:cxpm_dev@postgres:5432/cxpm
       - OLLAMA_BASE_URL=http://ollama:11434
     volumes:
       - backend_data:/app/data
     depends_on:
-      - ollama
+      postgres:
+        condition: service_healthy
+      ollama: {}
     restart: unless-stopped
 
   # Frontend - React application (Production mode with Nginx)
@@ -51,6 +72,8 @@ services:
 
 volumes:
   ollama_data:
+    driver: local
+  postgres_data:
     driver: local
   backend_data:
     driver: local

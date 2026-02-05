@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # Chunking settings
     CHUNK_SIZE_CHARS: int = 4000
 
+    # CORS
+    CORS_ORIGINS: str = ""
+
     class Config:
         env_file = ".env"
         extra = "ignore"  # Ignore extra fields in .env file
