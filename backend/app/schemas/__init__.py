@@ -1,5 +1,11 @@
 """Pydantic schemas for API request/response validation."""
 
+from app.schemas.auth import (
+    TokenResponse,
+    UserLogin,
+    UserRegister,
+    UserResponse,
+)
 from app.schemas.meeting import (
     ApplyResponse,
     ConflictResultResponse,
@@ -72,6 +78,11 @@ from app.schemas.user_story import (
 )
 
 __all__ = [
+    # Auth schemas
+    "UserRegister",
+    "UserLogin",
+    "TokenResponse",
+    "UserResponse",
     # Project schemas
     "ProjectCreate",
     "ProjectUpdate",

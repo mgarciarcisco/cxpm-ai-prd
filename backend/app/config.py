@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: str = ""
 
+    # JWT Authentication
+    JWT_SECRET_KEY: str = "dev-secret-change-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRY_HOURS: int = 24
+
     class Config:
         env_file = ".env"
         extra = "ignore"  # Ignore extra fields in .env file

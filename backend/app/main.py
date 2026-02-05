@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import (
+    auth_router,
     jira_epic_router,
     meeting_items_router,
     meetings_router,
@@ -47,6 +48,7 @@ async def health_check() -> dict[str, str]:
 
 
 # Register routers
+app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(meetings_router)
 app.include_router(meeting_items_router)
