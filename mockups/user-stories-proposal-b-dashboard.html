@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Stories — Proposal B: Project-first dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F9FAFB; color: #1F2937; line-height: 1.5; }
+    .main-content { max-width: 1200px; margin: 0 auto; padding: 1.5rem 2rem; }
+    .breadcrumb { font-size: 0.875rem; color: #6B7280; margin-bottom: 1rem; }
+    .breadcrumb a { color: #4ECDC4; text-decoration: none; }
+    .upload-header { margin-bottom: 1.5rem; }
+    .upload-header h1 { font-size: 1.5rem; font-weight: 600; color: #111827; margin: 0 0 0.25rem 0; }
+    .upload-header__subtitle { font-size: 0.9375rem; color: #6B7280; margin: 0; }
+    .project-bar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding: 0.75rem 1rem; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 12px; }
+    .project-bar label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+    .project-bar select { max-width: 280px; padding: 0.5rem 0.75rem; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 0.875rem; color: #1F2937; }
+    .project-bar .muted { font-size: 0.8125rem; color: #6B7280; }
+    .upload-layout { display: grid; grid-template-columns: 1fr 320px; gap: 2rem; align-items: start; }
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .card { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 12px; padding: 1.25rem; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .card-title { font-size: 1rem; font-weight: 600; color: #1F2937; }
+    .card-badge { font-size: 0.75rem; background: #E0F7F6; color: #0D9488; padding: 0.25rem 0.5rem; border-radius: 6px; font-weight: 500; }
+    .card-desc { font-size: 0.875rem; color: #6B7280; margin-bottom: 1rem; }
+    .card-list { font-size: 0.875rem; color: #374151; max-height: 180px; overflow-y: auto; }
+    .card-list li { padding: 0.35rem 0; border-bottom: 1px solid #F3F4F6; list-style: none; }
+    .card-list li:last-child { border-bottom: none; }
+    .form-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; text-decoration: none; margin-top: 0.75rem; margin-right: 0.5rem; }
+    .form-btn--primary { background-color: #4ECDC4; color: #FFFFFF; }
+    .form-btn--primary:hover { background-color: #3BB5AD; }
+    .form-btn--secondary { background-color: #F3F4F6; color: #374151; }
+    .form-btn--secondary:hover { background-color: #E5E7EB; }
+    .tips-panel { background: linear-gradient(135deg, #F0FDFC 0%, #E0F7F6 100%); border: 1px solid #99E6E0; border-radius: 12px; padding: 1.25rem; }
+    .tips-panel__header { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 600; color: #0D9488; margin-bottom: 1rem; }
+    .tips-panel__list { list-style: none; font-size: 0.8125rem; color: #374151; padding: 0; margin: 0; }
+    .tips-panel__list li { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .tips-panel__list li:last-child { margin-bottom: 0; }
+    .tips-panel__list svg { flex-shrink: 0; color: #4ECDC4; margin-top: 0.125rem; }
+    .tips-panel__example { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #99E6E0; }
+    .tips-panel__example-label { font-size: 0.6875rem; font-weight: 600; color: #0D9488; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .tips-panel__example-text { background: white; border-radius: 6px; padding: 0.75rem; font-size: 0.75rem; color: #4B5563; font-family: Consolas, monospace; line-height: 1.5; white-space: pre-wrap; }
+    .mock-badge { font-size: 0.7rem; background: #FEF3C7; color: #92400E; padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; }
+  </style>
+</head>
+<body>
+  <main class="main-content">
+    <nav class="breadcrumb"><a href="#">Dashboard</a> / User Stories</nav>
+    <div class="upload-header">
+      <h1>User Stories</h1>
+      <p class="upload-header__subtitle">Generate actionable user stories from your project requirements</p>
+    </div>
+
+    <div class="project-bar">
+      <label for="project">Project</label>
+      <select id="project">
+        <option>CX Pipeline 2025</option>
+        <option>Revenue Analytics</option>
+        <option>Seller Experience</option>
+      </select>
+      <span class="muted">Stories are generated and saved for this project.</span>
+    </div>
+
+    <div class="upload-layout">
+      <div class="cards">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Requirements</span>
+            <span class="card-badge">87 selected</span>
+          </div>
+          <p class="card-desc">Functional requirements from your project. Scroll to see all; many requirements are supported.</p>
+          <ul class="card-list">
+            <li>FR-1: Deal risk factors must be visible on deal view</li>
+            <li>FR-2: Seller notes with timestamp</li>
+            <li>FR-3: Export notes to CSV</li>
+            <li>FR-4: Filter deals by risk score</li>
+            <li>FR-5: Add notes to opportunities</li>
+            <li>… and 82 more</li>
+          </ul>
+          <button class="form-btn form-btn--secondary">Change requirements</button>
+          <button class="form-btn form-btn--primary">Generate stories</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Generated stories <span class="mock-badge">Mock</span></span>
+            <span class="card-badge">47 stories</span>
+          </div>
+          <p class="card-desc">User stories created from your requirements. List is paginated when there are many.</p>
+          <ul class="card-list">
+            <li>As a seller I can view deal risk factors</li>
+            <li>As an admin I can manage seller notes</li>
+            <li>As a user I can export notes to CSV</li>
+            <li>As a manager I can filter deals by risk score</li>
+            <li>… and 43 more</li>
+          </ul>
+          <button class="form-btn form-btn--primary">View & save stories</button>
+        </div>
+      </div>
+
+      <aside class="tips-panel">
+        <div class="tips-panel__header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Tips for Best Results
+        </div>
+        <ul class="tips-panel__list">
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.5 4.5L6 12L2.5 8.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Focus on user value and benefits, not implementation</span></li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.5 4.5L6 12L2.5 8.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Keep stories small, independent, and deliverable</span></li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.5 4.5L6 12L2.5 8.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Include specific, testable acceptance criteria</span></li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.5 4.5L6 12L2.5 8.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Describe the "who," "what," and "why" clearly</span></li>
+        </ul>
+        <div class="tips-panel__example">
+          <div class="tips-panel__example-label">Expected Format</div>
+          <div class="tips-panel__example-text">Your requirements should describe:
+
+• The user persona or role
+• The specific action or capability needed
+• The business value or benefit
+• Clear acceptance criteria
+• Any relevant context or constraints
+
+The AI will structure these into proper JIRA User Stories.</div>
+        </div>
+      </aside>
+    </div>
+
+    <p style="font-size: 0.8rem; color: #9CA3AF; margin-top: 1.5rem;">Proposal B <span class="mock-badge">Mock</span>. Same colors & style. Tips kept. Large counts: 87 requirements, 47 stories (scrollable lists in cards; "View & save" opens paginated list).</p>
+  </main>
+</body>
+</html>
