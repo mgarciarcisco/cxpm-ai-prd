@@ -266,14 +266,6 @@ function SelectProjectPage() {
                   <span className="project-option__updated">
                     {formatRelativeTime(project.updated_at)}
                   </span>
-                  {project.requirements_count > 0 && (
-                    <span className="project-option__conflict-badge">
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M8 1.5L1 14.5h14L8 1.5zM8 5v4M8 11h.01"/>
-                      </svg>
-                      May have conflicts
-                    </span>
-                  )}
                 </div>
               </div>
             ))}

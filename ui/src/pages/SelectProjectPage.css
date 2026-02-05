@@ -223,24 +223,6 @@
   color: #94a3b8;
 }
 
-.project-option__conflict-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: #fef3c7;
-  color: #d97706;
-  font-size: 11px;
-  font-weight: 500;
-  border-radius: 6px;
-  margin-top: 4px;
-}
-
-.project-option__conflict-badge svg {
-  width: 12px;
-  height: 12px;
-}
-
 /* New Project Input */
 .project-option__input-wrapper {
   margin-top: 12px;
