@@ -23,6 +23,7 @@ def _create_test_project(db: Session, name: str = "Test Project") -> Project:
     """Create a test project."""
     project = Project(
         name=name,
+        user_id="test-user-0000-0000-000000000001",
         description="For PRD API tests"
     )
     db.add(project)
@@ -101,14 +102,14 @@ def _get_prd_id(prd: PRD) -> str:
 # =============================================================================
 
 
-def test_generate_returns_queued_status(test_client: TestClient, test_db: Session) -> None:
+def test_generate_returns_queued_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /generate creates PRD with status=queued and returns it."""
     # Create a project with requirements
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_requirement(test_db, project_id)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/prds/generate",
         json={"mode": "draft"},
     )
@@ -122,11 +123,11 @@ def test_generate_returns_queued_status(test_client: TestClient, test_db: Sessio
     assert data["version"] is None
 
 
-def test_generate_returns_404_for_missing_project(test_client: TestClient) -> None:
+def test_generate_returns_404_for_missing_project(auth_client: TestClient) -> None:
     """Test that POST /generate returns 404 for non-existent project."""
     fake_uuid = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{fake_uuid}/prds/generate",
         json={"mode": "draft"},
     )
@@ -135,12 +136,12 @@ def test_generate_returns_404_for_missing_project(test_client: TestClient) -> No
     assert response.json()["detail"] == "Project not found"
 
 
-def test_generate_validates_mode(test_client: TestClient, test_db: Session) -> None:
+def test_generate_validates_mode(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /generate validates the mode field."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/prds/generate",
         json={"mode": "invalid_mode"},
     )
@@ -148,13 +149,13 @@ def test_generate_validates_mode(test_client: TestClient, test_db: Session) -> N
     assert response.status_code == 422  # Validation error
 
 
-def test_generate_accepts_detailed_mode(test_client: TestClient, test_db: Session) -> None:
+def test_generate_accepts_detailed_mode(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /generate accepts detailed mode."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_requirement(test_db, project_id)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/prds/generate",
         json={"mode": "detailed"},
     )
@@ -169,14 +170,14 @@ def test_generate_accepts_detailed_mode(test_client: TestClient, test_db: Sessio
 # =============================================================================
 
 
-def test_status_polling_returns_queued(test_client: TestClient, test_db: Session) -> None:
+def test_status_polling_returns_queued(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /status returns queued status for new PRD."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.QUEUED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/status")
+    response = auth_client.get(f"/api/prds/{prd_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -186,28 +187,28 @@ def test_status_polling_returns_queued(test_client: TestClient, test_db: Session
     assert data["version"] is None  # Not assigned until ready
 
 
-def test_status_polling_returns_generating(test_client: TestClient, test_db: Session) -> None:
+def test_status_polling_returns_generating(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /status returns generating status."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.GENERATING)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/status")
+    response = auth_client.get(f"/api/prds/{prd_id}/status")
 
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "generating"
 
 
-def test_status_polling_returns_ready_with_version(test_client: TestClient, test_db: Session) -> None:
+def test_status_polling_returns_ready_with_version(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /status returns ready status with version."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, version=3, status=PRDStatus.READY)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/status")
+    response = auth_client.get(f"/api/prds/{prd_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -215,7 +216,7 @@ def test_status_polling_returns_ready_with_version(test_client: TestClient, test
     assert data["version"] == 3
 
 
-def test_status_polling_returns_failed_with_error(test_client: TestClient, test_db: Session) -> None:
+def test_status_polling_returns_failed_with_error(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /status returns failed status with error message."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -224,7 +225,7 @@ def test_status_polling_returns_failed_with_error(test_client: TestClient, test_
     test_db.commit()
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/status")
+    response = auth_client.get(f"/api/prds/{prd_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -232,11 +233,11 @@ def test_status_polling_returns_failed_with_error(test_client: TestClient, test_
     assert data["error_message"] == "LLM connection failed"
 
 
-def test_status_polling_returns_404_for_missing_prd(test_client: TestClient) -> None:
+def test_status_polling_returns_404_for_missing_prd(auth_client: TestClient) -> None:
     """Test that GET /status returns 404 for non-existent PRD."""
     fake_uuid = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.get(f"/api/prds/{fake_uuid}/status")
+    response = auth_client.get(f"/api/prds/{fake_uuid}/status")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "PRD not found"
@@ -247,14 +248,14 @@ def test_status_polling_returns_404_for_missing_prd(test_client: TestClient) -> 
 # =============================================================================
 
 
-def test_cancel_generation_from_queued(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_generation_from_queued(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /cancel sets status=cancelled when queued."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.QUEUED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/cancel")
+    response = auth_client.post(f"/api/prds/{prd_id}/cancel")
 
     assert response.status_code == 200
     data = response.json()
@@ -265,50 +266,50 @@ def test_cancel_generation_from_queued(test_client: TestClient, test_db: Session
     assert prd.status == PRDStatus.CANCELLED
 
 
-def test_cancel_generation_from_generating(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_generation_from_generating(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /cancel sets status=cancelled when generating."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.GENERATING)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/cancel")
+    response = auth_client.post(f"/api/prds/{prd_id}/cancel")
 
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "cancelled"
 
 
-def test_cancel_fails_for_ready_prd(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_fails_for_ready_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /cancel returns 400 for already ready PRD."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.READY)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/cancel")
+    response = auth_client.post(f"/api/prds/{prd_id}/cancel")
 
     assert response.status_code == 400
     assert "Cannot cancel PRD with status 'ready'" in response.json()["detail"]
 
 
-def test_cancel_fails_for_already_cancelled_prd(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_fails_for_already_cancelled_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /cancel returns 400 for already cancelled PRD."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.CANCELLED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/cancel")
+    response = auth_client.post(f"/api/prds/{prd_id}/cancel")
 
     assert response.status_code == 400
 
 
-def test_cancel_returns_404_for_missing_prd(test_client: TestClient) -> None:
+def test_cancel_returns_404_for_missing_prd(auth_client: TestClient) -> None:
     """Test that POST /cancel returns 404 for non-existent PRD."""
     fake_uuid = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.post(f"/api/prds/{fake_uuid}/cancel")
+    response = auth_client.post(f"/api/prds/{fake_uuid}/cancel")
 
     assert response.status_code == 404
 
@@ -318,12 +319,12 @@ def test_cancel_returns_404_for_missing_prd(test_client: TestClient) -> None:
 # =============================================================================
 
 
-def test_list_prds_returns_empty_for_new_project(test_client: TestClient, test_db: Session) -> None:
+def test_list_prds_returns_empty_for_new_project(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds returns empty list for project with no PRDs."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.get(f"/api/projects/{project_id}/prds")
+    response = auth_client.get(f"/api/projects/{project_id}/prds")
 
     assert response.status_code == 200
     data = response.json()
@@ -331,14 +332,14 @@ def test_list_prds_returns_empty_for_new_project(test_client: TestClient, test_d
     assert data["total"] == 0
 
 
-def test_list_prds_returns_prds(test_client: TestClient, test_db: Session) -> None:
+def test_list_prds_returns_prds(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds returns PRDs for project."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_prd(test_db, project_id, version=1, title="PRD v1")
     _create_test_prd(test_db, project_id, version=2, title="PRD v2")
 
-    response = test_client.get(f"/api/projects/{project_id}/prds")
+    response = auth_client.get(f"/api/projects/{project_id}/prds")
 
     assert response.status_code == 200
     data = response.json()
@@ -349,14 +350,14 @@ def test_list_prds_returns_prds(test_client: TestClient, test_db: Session) -> No
     assert data["items"][1]["version"] == 1
 
 
-def test_list_prds_pagination_skip(test_client: TestClient, test_db: Session) -> None:
+def test_list_prds_pagination_skip(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds respects skip parameter."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     for i in range(5):
         _create_test_prd(test_db, project_id, version=i + 1, title=f"PRD v{i + 1}")
 
-    response = test_client.get(f"/api/projects/{project_id}/prds?skip=2")
+    response = auth_client.get(f"/api/projects/{project_id}/prds?skip=2")
 
     assert response.status_code == 200
     data = response.json()
@@ -365,14 +366,14 @@ def test_list_prds_pagination_skip(test_client: TestClient, test_db: Session) ->
     assert data["skip"] == 2
 
 
-def test_list_prds_pagination_limit(test_client: TestClient, test_db: Session) -> None:
+def test_list_prds_pagination_limit(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds respects limit parameter."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     for i in range(5):
         _create_test_prd(test_db, project_id, version=i + 1, title=f"PRD v{i + 1}")
 
-    response = test_client.get(f"/api/projects/{project_id}/prds?limit=2")
+    response = auth_client.get(f"/api/projects/{project_id}/prds?limit=2")
 
     assert response.status_code == 200
     data = response.json()
@@ -381,14 +382,14 @@ def test_list_prds_pagination_limit(test_client: TestClient, test_db: Session) -
     assert data["limit"] == 2
 
 
-def test_list_prds_pagination_skip_and_limit(test_client: TestClient, test_db: Session) -> None:
+def test_list_prds_pagination_skip_and_limit(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds respects both skip and limit parameters."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     for i in range(10):
         _create_test_prd(test_db, project_id, version=i + 1, title=f"PRD v{i + 1}")
 
-    response = test_client.get(f"/api/projects/{project_id}/prds?skip=3&limit=4")
+    response = auth_client.get(f"/api/projects/{project_id}/prds?skip=3&limit=4")
 
     assert response.status_code == 200
     data = response.json()
@@ -398,14 +399,14 @@ def test_list_prds_pagination_skip_and_limit(test_client: TestClient, test_db: S
     assert data["limit"] == 4
 
 
-def test_list_prds_excludes_archived_by_default(test_client: TestClient, test_db: Session) -> None:
+def test_list_prds_excludes_archived_by_default(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds excludes archived PRDs by default."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_prd(test_db, project_id, version=1, status=PRDStatus.READY)
     _create_test_prd(test_db, project_id, version=2, status=PRDStatus.ARCHIVED)
 
-    response = test_client.get(f"/api/projects/{project_id}/prds")
+    response = auth_client.get(f"/api/projects/{project_id}/prds")
 
     assert response.status_code == 200
     data = response.json()
@@ -413,25 +414,25 @@ def test_list_prds_excludes_archived_by_default(test_client: TestClient, test_db
     assert data["items"][0]["version"] == 1
 
 
-def test_list_prds_includes_archived_when_requested(test_client: TestClient, test_db: Session) -> None:
+def test_list_prds_includes_archived_when_requested(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds includes archived PRDs when include_archived=true."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_prd(test_db, project_id, version=1, status=PRDStatus.READY)
     _create_test_prd(test_db, project_id, version=2, status=PRDStatus.ARCHIVED)
 
-    response = test_client.get(f"/api/projects/{project_id}/prds?include_archived=true")
+    response = auth_client.get(f"/api/projects/{project_id}/prds?include_archived=true")
 
     assert response.status_code == 200
     data = response.json()
     assert len(data["items"]) == 2
 
 
-def test_list_prds_returns_404_for_missing_project(test_client: TestClient) -> None:
+def test_list_prds_returns_404_for_missing_project(auth_client: TestClient) -> None:
     """Test that GET /prds returns 404 for non-existent project."""
     fake_uuid = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.get(f"/api/projects/{fake_uuid}/prds")
+    response = auth_client.get(f"/api/projects/{fake_uuid}/prds")
 
     assert response.status_code == 404
 
@@ -441,7 +442,7 @@ def test_list_prds_returns_404_for_missing_project(test_client: TestClient) -> N
 # =============================================================================
 
 
-def test_get_prd_returns_prd(test_client: TestClient, test_db: Session) -> None:
+def test_get_prd_returns_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds/{id} returns the PRD with all sections."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -457,7 +458,7 @@ def test_get_prd_returns_prd(test_client: TestClient, test_db: Session) -> None:
     )
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}")
+    response = auth_client.get(f"/api/prds/{prd_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -468,11 +469,11 @@ def test_get_prd_returns_prd(test_client: TestClient, test_db: Session) -> None:
     assert data["sections"][0]["title"] == "Executive Summary"
 
 
-def test_get_prd_returns_404_for_missing(test_client: TestClient) -> None:
+def test_get_prd_returns_404_for_missing(auth_client: TestClient) -> None:
     """Test that GET /prds/{id} returns 404 for non-existent PRD."""
     fake_uuid = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.get(f"/api/prds/{fake_uuid}")
+    response = auth_client.get(f"/api/prds/{fake_uuid}")
 
     assert response.status_code == 404
 
@@ -482,14 +483,14 @@ def test_get_prd_returns_404_for_missing(test_client: TestClient) -> None:
 # =============================================================================
 
 
-def test_update_prd_title(test_client: TestClient, test_db: Session) -> None:
+def test_update_prd_title(auth_client: TestClient, test_db: Session) -> None:
     """Test that PUT /prds/{id} updates the title."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, title="Original Title")
     prd_id = _get_prd_id(prd)
 
-    response = test_client.put(
+    response = auth_client.put(
         f"/api/prds/{prd_id}",
         json={"title": "Updated Title"},
     )
@@ -499,7 +500,7 @@ def test_update_prd_title(test_client: TestClient, test_db: Session) -> None:
     assert data["title"] == "Updated Title"
 
 
-def test_update_prd_sections(test_client: TestClient, test_db: Session) -> None:
+def test_update_prd_sections(auth_client: TestClient, test_db: Session) -> None:
     """Test that PUT /prds/{id} updates sections and regenerates markdown."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -511,7 +512,7 @@ def test_update_prd_sections(test_client: TestClient, test_db: Session) -> None:
         {"title": "New Section 2", "content": "New content 2"},
     ]
 
-    response = test_client.put(
+    response = auth_client.put(
         f"/api/prds/{prd_id}",
         json={"sections": new_sections},
     )
@@ -524,14 +525,14 @@ def test_update_prd_sections(test_client: TestClient, test_db: Session) -> None:
     assert "New Section 1" in data["raw_markdown"]
 
 
-def test_update_prd_fails_for_queued_status(test_client: TestClient, test_db: Session) -> None:
+def test_update_prd_fails_for_queued_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that PUT /prds/{id} fails for PRD with queued status."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.QUEUED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.put(
+    response = auth_client.put(
         f"/api/prds/{prd_id}",
         json={"title": "Won't Work"},
     )
@@ -545,14 +546,14 @@ def test_update_prd_fails_for_queued_status(test_client: TestClient, test_db: Se
 # =============================================================================
 
 
-def test_soft_delete_prd(test_client: TestClient, test_db: Session) -> None:
+def test_soft_delete_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that DELETE /prds/{id} soft deletes the PRD."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.delete(f"/api/prds/{prd_id}")
+    response = auth_client.delete(f"/api/prds/{prd_id}")
 
     assert response.status_code == 204
 
@@ -561,7 +562,7 @@ def test_soft_delete_prd(test_client: TestClient, test_db: Session) -> None:
     assert prd.deleted_at is not None
 
 
-def test_soft_deleted_prd_excluded_from_list(test_client: TestClient, test_db: Session) -> None:
+def test_soft_deleted_prd_excluded_from_list(auth_client: TestClient, test_db: Session) -> None:
     """Test that soft-deleted PRDs are excluded from list."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -569,16 +570,16 @@ def test_soft_deleted_prd_excluded_from_list(test_client: TestClient, test_db: S
     prd2 = _create_test_prd(test_db, project_id, version=2)
 
     # Delete one PRD
-    test_client.delete(f"/api/prds/{_get_prd_id(prd1)}")
+    auth_client.delete(f"/api/prds/{_get_prd_id(prd1)}")
 
     # List should only show the non-deleted one
-    response = test_client.get(f"/api/projects/{project_id}/prds")
+    response = auth_client.get(f"/api/projects/{project_id}/prds")
     data = response.json()
     assert len(data["items"]) == 1
     assert data["items"][0]["version"] == 2
 
 
-def test_soft_deleted_prd_not_accessible_by_id(test_client: TestClient, test_db: Session) -> None:
+def test_soft_deleted_prd_not_accessible_by_id(auth_client: TestClient, test_db: Session) -> None:
     """Test that soft-deleted PRDs return 404 when accessed by ID."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -586,18 +587,18 @@ def test_soft_deleted_prd_not_accessible_by_id(test_client: TestClient, test_db:
     prd_id = _get_prd_id(prd)
 
     # Delete the PRD
-    test_client.delete(f"/api/prds/{prd_id}")
+    auth_client.delete(f"/api/prds/{prd_id}")
 
     # Try to get it
-    response = test_client.get(f"/api/prds/{prd_id}")
+    response = auth_client.get(f"/api/prds/{prd_id}")
     assert response.status_code == 404
 
 
-def test_delete_returns_404_for_missing_prd(test_client: TestClient) -> None:
+def test_delete_returns_404_for_missing_prd(auth_client: TestClient) -> None:
     """Test that DELETE /prds/{id} returns 404 for non-existent PRD."""
     fake_uuid = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.delete(f"/api/prds/{fake_uuid}")
+    response = auth_client.delete(f"/api/prds/{fake_uuid}")
 
     assert response.status_code == 404
 
@@ -607,14 +608,14 @@ def test_delete_returns_404_for_missing_prd(test_client: TestClient) -> None:
 # =============================================================================
 
 
-def test_archive_prd(test_client: TestClient, test_db: Session) -> None:
+def test_archive_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /archive sets status to archived."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.READY)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/archive")
+    response = auth_client.post(f"/api/prds/{prd_id}/archive")
 
     assert response.status_code == 200
     data = response.json()
@@ -625,14 +626,14 @@ def test_archive_prd(test_client: TestClient, test_db: Session) -> None:
     assert prd.status == PRDStatus.ARCHIVED
 
 
-def test_archive_fails_for_non_ready_prd(test_client: TestClient, test_db: Session) -> None:
+def test_archive_fails_for_non_ready_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /archive fails for non-ready PRD."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.QUEUED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/archive")
+    response = auth_client.post(f"/api/prds/{prd_id}/archive")
 
     assert response.status_code == 400
     assert "Cannot archive PRD with status 'queued'" in response.json()["detail"]
@@ -643,7 +644,7 @@ def test_archive_fails_for_non_ready_prd(test_client: TestClient, test_db: Sessi
 # =============================================================================
 
 
-def test_export_markdown(test_client: TestClient, test_db: Session) -> None:
+def test_export_markdown(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /export?format=markdown returns valid markdown."""
     project = _create_test_project(test_db, name="Export Test Project")
     project_id = _get_project_id(project)
@@ -654,7 +655,7 @@ def test_export_markdown(test_client: TestClient, test_db: Session) -> None:
     )
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export?format=markdown")
+    response = auth_client.get(f"/api/prds/{prd_id}/export?format=markdown")
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/markdown; charset=utf-8"
@@ -666,7 +667,7 @@ def test_export_markdown(test_client: TestClient, test_db: Session) -> None:
     assert "## Summary" in content
 
 
-def test_export_json(test_client: TestClient, test_db: Session) -> None:
+def test_export_json(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /export?format=json returns valid JSON."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -681,7 +682,7 @@ def test_export_json(test_client: TestClient, test_db: Session) -> None:
     )
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export?format=json")
+    response = auth_client.get(f"/api/prds/{prd_id}/export?format=json")
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"
@@ -692,7 +693,7 @@ def test_export_json(test_client: TestClient, test_db: Session) -> None:
     assert len(data["sections"]) == 2
 
 
-def test_export_json_conforms_to_schema(test_client: TestClient, test_db: Session) -> None:
+def test_export_json_conforms_to_schema(auth_client: TestClient, test_db: Session) -> None:
     """Test that JSON export conforms to the documented PRDExportJSON schema.
     
     Validates that the export endpoint produces data matching the schema defined
@@ -715,7 +716,7 @@ def test_export_json_conforms_to_schema(test_client: TestClient, test_db: Sessio
     )
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export?format=json")
+    response = auth_client.get(f"/api/prds/{prd_id}/export?format=json")
 
     assert response.status_code == 200
     data = response.json()
@@ -741,49 +742,49 @@ def test_export_json_conforms_to_schema(test_client: TestClient, test_db: Sessio
     assert "T" in export_model.created_at
 
 
-def test_export_default_format_is_markdown(test_client: TestClient, test_db: Session) -> None:
+def test_export_default_format_is_markdown(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /export without format parameter defaults to markdown."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export")
+    response = auth_client.get(f"/api/prds/{prd_id}/export")
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/markdown; charset=utf-8"
 
 
-def test_export_fails_for_queued_prd(test_client: TestClient, test_db: Session) -> None:
+def test_export_fails_for_queued_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /export fails for PRD that is not ready."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.QUEUED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export")
+    response = auth_client.get(f"/api/prds/{prd_id}/export")
 
     assert response.status_code == 400
     assert "Cannot export PRD with status 'queued'" in response.json()["detail"]
 
 
-def test_export_works_for_archived_prd(test_client: TestClient, test_db: Session) -> None:
+def test_export_works_for_archived_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /export works for archived PRDs."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.ARCHIVED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export?format=markdown")
+    response = auth_client.get(f"/api/prds/{prd_id}/export?format=markdown")
 
     assert response.status_code == 200
 
 
-def test_export_returns_404_for_missing_prd(test_client: TestClient) -> None:
+def test_export_returns_404_for_missing_prd(auth_client: TestClient) -> None:
     """Test that GET /export returns 404 for non-existent PRD."""
     fake_uuid = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.get(f"/api/prds/{fake_uuid}/export")
+    response = auth_client.get(f"/api/prds/{fake_uuid}/export")
 
     assert response.status_code == 404
 
@@ -793,7 +794,7 @@ def test_export_returns_404_for_missing_prd(test_client: TestClient) -> None:
 # =============================================================================
 
 
-def test_prds_isolated_between_projects(test_client: TestClient, test_db: Session) -> None:
+def test_prds_isolated_between_projects(auth_client: TestClient, test_db: Session) -> None:
     """Test that PRDs from one project don't appear in another project's list."""
     project1 = _create_test_project(test_db, name="Project 1")
     project2 = _create_test_project(test_db, name="Project 2")
@@ -802,8 +803,8 @@ def test_prds_isolated_between_projects(test_client: TestClient, test_db: Sessio
     _create_test_prd(test_db, _get_project_id(project2), version=1, title="PRD for Project 2")
     _create_test_prd(test_db, _get_project_id(project2), version=2, title="Another PRD for Project 2")
 
-    response1 = test_client.get(f"/api/projects/{_get_project_id(project1)}/prds")
-    response2 = test_client.get(f"/api/projects/{_get_project_id(project2)}/prds")
+    response1 = auth_client.get(f"/api/projects/{_get_project_id(project1)}/prds")
+    response2 = auth_client.get(f"/api/projects/{_get_project_id(project2)}/prds")
 
     assert len(response1.json()["items"]) == 1
     assert response1.json()["items"][0]["title"] == "PRD for Project 1"
@@ -816,7 +817,7 @@ def test_prds_isolated_between_projects(test_client: TestClient, test_db: Sessio
 # =============================================================================
 
 
-def test_get_prd_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_get_prd_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds/{prd_id} returns 404 when the PRD's project has been deleted.
     
     This verifies project access is enforced even when accessing a PRD by its ID.
@@ -831,13 +832,13 @@ def test_get_prd_returns_404_when_project_deleted(test_client: TestClient, test_
     test_db.commit()
 
     # Now try to access the PRD - should get 404 because project access check fails
-    response = test_client.get(f"/api/prds/{prd_id}")
+    response = auth_client.get(f"/api/prds/{prd_id}")
 
     assert response.status_code == 404
     assert "PRD not found" in response.json()["detail"]
 
 
-def test_update_prd_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_update_prd_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that PUT /prds/{prd_id} returns 404 when the PRD's project has been deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -849,7 +850,7 @@ def test_update_prd_returns_404_when_project_deleted(test_client: TestClient, te
     test_db.commit()
 
     # Try to update the PRD
-    response = test_client.put(
+    response = auth_client.put(
         f"/api/prds/{prd_id}",
         json={"title": "New Title"}
     )
@@ -857,7 +858,7 @@ def test_update_prd_returns_404_when_project_deleted(test_client: TestClient, te
     assert response.status_code == 404
 
 
-def test_delete_prd_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_delete_prd_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that DELETE /prds/{prd_id} returns 404 when the PRD's project has been deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -869,12 +870,12 @@ def test_delete_prd_returns_404_when_project_deleted(test_client: TestClient, te
     test_db.commit()
 
     # Try to delete the PRD
-    response = test_client.delete(f"/api/prds/{prd_id}")
+    response = auth_client.delete(f"/api/prds/{prd_id}")
 
     assert response.status_code == 404
 
 
-def test_prd_status_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_prd_status_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds/{prd_id}/status returns 404 when project is deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -886,12 +887,12 @@ def test_prd_status_returns_404_when_project_deleted(test_client: TestClient, te
     test_db.commit()
 
     # Try to get status
-    response = test_client.get(f"/api/prds/{prd_id}/status")
+    response = auth_client.get(f"/api/prds/{prd_id}/status")
 
     assert response.status_code == 404
 
 
-def test_cancel_prd_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_prd_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /prds/{prd_id}/cancel returns 404 when project is deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -903,12 +904,12 @@ def test_cancel_prd_returns_404_when_project_deleted(test_client: TestClient, te
     test_db.commit()
 
     # Try to cancel
-    response = test_client.post(f"/api/prds/{prd_id}/cancel")
+    response = auth_client.post(f"/api/prds/{prd_id}/cancel")
 
     assert response.status_code == 404
 
 
-def test_archive_prd_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_archive_prd_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /prds/{prd_id}/archive returns 404 when project is deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -920,12 +921,12 @@ def test_archive_prd_returns_404_when_project_deleted(test_client: TestClient, t
     test_db.commit()
 
     # Try to archive
-    response = test_client.post(f"/api/prds/{prd_id}/archive")
+    response = auth_client.post(f"/api/prds/{prd_id}/archive")
 
     assert response.status_code == 404
 
 
-def test_export_prd_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_export_prd_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /prds/{prd_id}/export returns 404 when project is deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -937,12 +938,12 @@ def test_export_prd_returns_404_when_project_deleted(test_client: TestClient, te
     test_db.commit()
 
     # Try to export
-    response = test_client.get(f"/api/prds/{prd_id}/export")
+    response = auth_client.get(f"/api/prds/{prd_id}/export")
 
     assert response.status_code == 404
 
 
-def test_prd_accessible_when_project_exists(test_client: TestClient, test_db: Session) -> None:
+def test_prd_accessible_when_project_exists(auth_client: TestClient, test_db: Session) -> None:
     """Test that PRD is accessible when its project exists (positive case)."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -950,7 +951,7 @@ def test_prd_accessible_when_project_exists(test_client: TestClient, test_db: Se
     prd_id = _get_prd_id(prd)
 
     # PRD should be accessible
-    response = test_client.get(f"/api/prds/{prd_id}")
+    response = auth_client.get(f"/api/prds/{prd_id}")
 
     assert response.status_code == 200
     assert response.json()["title"] == "Accessible PRD"
@@ -961,7 +962,7 @@ def test_prd_accessible_when_project_exists(test_client: TestClient, test_db: Se
 # =============================================================================
 
 
-def test_failed_prd_includes_error_message_in_status(test_client: TestClient, test_db: Session) -> None:
+def test_failed_prd_includes_error_message_in_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that failed PRD status includes helpful error message."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -970,7 +971,7 @@ def test_failed_prd_includes_error_message_in_status(test_client: TestClient, te
     test_db.commit()
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/status")
+    response = auth_client.get(f"/api/prds/{prd_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -978,7 +979,7 @@ def test_failed_prd_includes_error_message_in_status(test_client: TestClient, te
     assert "no requirements" in data["error_message"].lower()
 
 
-def test_failed_prd_with_timeout_includes_specific_message(test_client: TestClient, test_db: Session) -> None:
+def test_failed_prd_with_timeout_includes_specific_message(auth_client: TestClient, test_db: Session) -> None:
     """Test that timeout errors include specific timeout message."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -987,7 +988,7 @@ def test_failed_prd_with_timeout_includes_specific_message(test_client: TestClie
     test_db.commit()
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/status")
+    response = auth_client.get(f"/api/prds/{prd_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -995,7 +996,7 @@ def test_failed_prd_with_timeout_includes_specific_message(test_client: TestClie
     assert "timed out" in data["error_message"].lower()
 
 
-def test_failed_prd_with_parsing_error_includes_details(test_client: TestClient, test_db: Session) -> None:
+def test_failed_prd_with_parsing_error_includes_details(auth_client: TestClient, test_db: Session) -> None:
     """Test that malformed LLM response includes parsing error details."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1004,7 +1005,7 @@ def test_failed_prd_with_parsing_error_includes_details(test_client: TestClient,
     test_db.commit()
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/status")
+    response = auth_client.get(f"/api/prds/{prd_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -1012,23 +1013,23 @@ def test_failed_prd_with_parsing_error_includes_details(test_client: TestClient,
     assert "parse" in data["error_message"].lower() or "invalid json" in data["error_message"].lower()
 
 
-def test_cancel_returns_400_not_500_for_failed_prd(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_returns_400_not_500_for_failed_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that cancelling failed PRD returns user-friendly 400, not 500."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.FAILED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/cancel")
+    response = auth_client.post(f"/api/prds/{prd_id}/cancel")
 
     # Should return 400 Bad Request, not 500 Internal Server Error
     assert response.status_code == 400
     assert "Cannot cancel" in response.json()["detail"]
 
 
-def test_update_non_existent_prd_returns_404(test_client: TestClient, test_db: Session) -> None:
+def test_update_non_existent_prd_returns_404(auth_client: TestClient, test_db: Session) -> None:
     """Test that updating non-existent PRD returns 404."""
-    response = test_client.put(
+    response = auth_client.put(
         "/api/prds/00000000-0000-0000-0000-000000000000",
         json={"title": "New Title"}
     )
@@ -1037,44 +1038,44 @@ def test_update_non_existent_prd_returns_404(test_client: TestClient, test_db: S
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_archive_non_existent_prd_returns_404(test_client: TestClient, test_db: Session) -> None:
+def test_archive_non_existent_prd_returns_404(auth_client: TestClient, test_db: Session) -> None:
     """Test that archiving non-existent PRD returns 404."""
-    response = test_client.post("/api/prds/00000000-0000-0000-0000-000000000000/archive")
+    response = auth_client.post("/api/prds/00000000-0000-0000-0000-000000000000/archive")
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_export_with_invalid_format_returns_422(test_client: TestClient, test_db: Session) -> None:
+def test_export_with_invalid_format_returns_422(auth_client: TestClient, test_db: Session) -> None:
     """Test that invalid export format returns validation error."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export?format=invalid")
+    response = auth_client.get(f"/api/prds/{prd_id}/export?format=invalid")
 
     # FastAPI returns 422 for validation errors
     assert response.status_code == 422
 
 
-def test_list_prds_with_invalid_skip_returns_422(test_client: TestClient, test_db: Session) -> None:
+def test_list_prds_with_invalid_skip_returns_422(auth_client: TestClient, test_db: Session) -> None:
     """Test that invalid skip parameter returns validation error."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.get(f"/api/projects/{project_id}/prds?skip=-1")
+    response = auth_client.get(f"/api/projects/{project_id}/prds?skip=-1")
 
     # FastAPI returns 422 for validation errors (negative skip)
     assert response.status_code == 422
 
 
-def test_list_prds_with_invalid_limit_returns_422(test_client: TestClient, test_db: Session) -> None:
+def test_list_prds_with_invalid_limit_returns_422(auth_client: TestClient, test_db: Session) -> None:
     """Test that invalid limit parameter returns validation error."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.get(f"/api/projects/{project_id}/prds?limit=0")
+    response = auth_client.get(f"/api/projects/{project_id}/prds?limit=0")
 
     # FastAPI returns 422 for validation errors (limit too low)
     assert response.status_code == 422
@@ -1267,7 +1268,7 @@ async def _mock_regenerate_section_llm_error(
 # =============================================================================
 
 
-def test_stream_prd_generation_returns_status_event(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_returns_status_event(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns initial status event."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1279,7 +1280,7 @@ def test_stream_prd_generation_returns_status_event(test_client: TestClient, tes
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
 
-        response = test_client.get(f"/api/projects/{project_id}/prds/stream?mode=draft")
+        response = auth_client.get(f"/api/projects/{project_id}/prds/stream?mode=draft")
 
     assert response.status_code == 200
     events = _parse_sse_events(response.text)
@@ -1292,7 +1293,7 @@ def test_stream_prd_generation_returns_status_event(test_client: TestClient, tes
     assert events[0]["data"]["staged"] is True
 
 
-def test_stream_prd_generation_returns_stage_events(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_returns_stage_events(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns stage events."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1304,7 +1305,7 @@ def test_stream_prd_generation_returns_stage_events(test_client: TestClient, tes
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
 
-        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/prds/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1315,7 +1316,7 @@ def test_stream_prd_generation_returns_stage_events(test_client: TestClient, tes
     assert "problem_statement" in stage_events[0]["data"]["sections"]
 
 
-def test_stream_prd_generation_returns_chunk_events(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_returns_chunk_events(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns chunk events during section generation."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1327,7 +1328,7 @@ def test_stream_prd_generation_returns_chunk_events(test_client: TestClient, tes
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
 
-        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/prds/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1338,7 +1339,7 @@ def test_stream_prd_generation_returns_chunk_events(test_client: TestClient, tes
     assert "content" in chunk_events[0]["data"]
 
 
-def test_stream_prd_generation_returns_section_complete_events(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_returns_section_complete_events(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns section_complete events."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1350,7 +1351,7 @@ def test_stream_prd_generation_returns_section_complete_events(test_client: Test
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
 
-        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/prds/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1365,7 +1366,7 @@ def test_stream_prd_generation_returns_section_complete_events(test_client: Test
     assert "order" in problem_event["data"]
 
 
-def test_stream_prd_generation_returns_complete_event(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_returns_complete_event(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns complete event."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1377,7 +1378,7 @@ def test_stream_prd_generation_returns_complete_event(test_client: TestClient, t
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
 
-        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/prds/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1391,7 +1392,7 @@ def test_stream_prd_generation_returns_complete_event(test_client: TestClient, t
     assert complete_events[0]["data"]["status"] == "ready"
 
 
-def test_stream_prd_generation_handles_section_failures(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_handles_section_failures(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint handles section failures gracefully."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1403,7 +1404,7 @@ def test_stream_prd_generation_handles_section_failures(test_client: TestClient,
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream_staged = _mock_generate_stream_staged_with_failures
 
-        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/prds/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1418,7 +1419,7 @@ def test_stream_prd_generation_handles_section_failures(test_client: TestClient,
     assert complete_events[0]["data"]["failed_count"] == 1
 
 
-def test_stream_prd_generation_returns_error_for_no_requirements(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_returns_error_for_no_requirements(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns error when no requirements."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1430,7 +1431,7 @@ def test_stream_prd_generation_returns_error_for_no_requirements(test_client: Te
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream_staged = _mock_generate_stream_no_requirements
 
-        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/prds/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1440,7 +1441,7 @@ def test_stream_prd_generation_returns_error_for_no_requirements(test_client: Te
     assert "no requirements" in error_events[0]["data"]["message"].lower()
 
 
-def test_stream_prd_generation_returns_error_for_llm_failure(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_returns_error_for_llm_failure(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns error on LLM failure."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1452,7 +1453,7 @@ def test_stream_prd_generation_returns_error_for_llm_failure(test_client: TestCl
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream_staged = _mock_generate_stream_llm_error
 
-        response = test_client.get(f"/api/projects/{project_id}/prds/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/prds/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1462,16 +1463,16 @@ def test_stream_prd_generation_returns_error_for_llm_failure(test_client: TestCl
     assert "LLM" in error_events[0]["data"]["message"]
 
 
-def test_stream_prd_generation_returns_404_for_missing_project(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_returns_404_for_missing_project(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns 404 for non-existent project."""
     fake_project_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.get(f"/api/projects/{fake_project_id}/prds/stream")
+    response = auth_client.get(f"/api/projects/{fake_project_id}/prds/stream")
 
     assert response.status_code == 404
 
 
-def test_stream_prd_generation_accepts_mode_parameter(test_client: TestClient, test_db: Session) -> None:
+def test_stream_prd_generation_accepts_mode_parameter(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint accepts mode parameter."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1483,7 +1484,7 @@ def test_stream_prd_generation_accepts_mode_parameter(test_client: TestClient, t
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream_staged = _mock_generate_stream_staged_success
 
-        response = test_client.get(f"/api/projects/{project_id}/prds/stream?mode=detailed")
+        response = auth_client.get(f"/api/projects/{project_id}/prds/stream?mode=detailed")
 
     events = _parse_sse_events(response.text)
 
@@ -1498,7 +1499,7 @@ def test_stream_prd_generation_accepts_mode_parameter(test_client: TestClient, t
 # =============================================================================
 
 
-def test_regenerate_section_returns_status_event(test_client: TestClient, test_db: Session) -> None:
+def test_regenerate_section_returns_status_event(auth_client: TestClient, test_db: Session) -> None:
     """Test that section regeneration endpoint returns initial status event."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1511,7 +1512,7 @@ def test_regenerate_section_returns_status_event(test_client: TestClient, test_d
         mock_instance = mock_generator_class.return_value
         mock_instance.regenerate_section = _mock_regenerate_section_success
 
-        response = test_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
+        response = auth_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
 
     assert response.status_code == 200
     events = _parse_sse_events(response.text)
@@ -1523,7 +1524,7 @@ def test_regenerate_section_returns_status_event(test_client: TestClient, test_d
     assert events[0]["data"]["section_id"] == "problem_statement"
 
 
-def test_regenerate_section_returns_chunk_events(test_client: TestClient, test_db: Session) -> None:
+def test_regenerate_section_returns_chunk_events(auth_client: TestClient, test_db: Session) -> None:
     """Test that section regeneration returns chunk events."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1536,7 +1537,7 @@ def test_regenerate_section_returns_chunk_events(test_client: TestClient, test_d
         mock_instance = mock_generator_class.return_value
         mock_instance.regenerate_section = _mock_regenerate_section_success
 
-        response = test_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
+        response = auth_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
 
     events = _parse_sse_events(response.text)
 
@@ -1546,7 +1547,7 @@ def test_regenerate_section_returns_chunk_events(test_client: TestClient, test_d
     assert chunk_events[0]["data"]["section_id"] == "problem_statement"
 
 
-def test_regenerate_section_returns_section_complete_event(test_client: TestClient, test_db: Session) -> None:
+def test_regenerate_section_returns_section_complete_event(auth_client: TestClient, test_db: Session) -> None:
     """Test that section regeneration returns section_complete event."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1559,7 +1560,7 @@ def test_regenerate_section_returns_section_complete_event(test_client: TestClie
         mock_instance = mock_generator_class.return_value
         mock_instance.regenerate_section = _mock_regenerate_section_success
 
-        response = test_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
+        response = auth_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
 
     events = _parse_sse_events(response.text)
 
@@ -1572,7 +1573,7 @@ def test_regenerate_section_returns_section_complete_event(test_client: TestClie
     assert "affected_sections" in complete_events[0]["data"]
 
 
-def test_regenerate_section_returns_error_for_llm_failure(test_client: TestClient, test_db: Session) -> None:
+def test_regenerate_section_returns_error_for_llm_failure(auth_client: TestClient, test_db: Session) -> None:
     """Test that section regeneration returns error on LLM failure."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1585,7 +1586,7 @@ def test_regenerate_section_returns_error_for_llm_failure(test_client: TestClien
         mock_instance = mock_generator_class.return_value
         mock_instance.regenerate_section = _mock_regenerate_section_llm_error
 
-        response = test_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
+        response = auth_client.post(f"/api/prds/{prd_id}/sections/problem_statement/regenerate")
 
     events = _parse_sse_events(response.text)
 
@@ -1595,11 +1596,11 @@ def test_regenerate_section_returns_error_for_llm_failure(test_client: TestClien
     assert "LLM" in error_events[0]["data"]["message"]
 
 
-def test_regenerate_section_returns_404_for_missing_prd(test_client: TestClient, test_db: Session) -> None:
+def test_regenerate_section_returns_404_for_missing_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that section regeneration returns 404 for non-existent PRD."""
     fake_prd_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.post(f"/api/prds/{fake_prd_id}/sections/problem_statement/regenerate")
+    response = auth_client.post(f"/api/prds/{fake_prd_id}/sections/problem_statement/regenerate")
 
     assert response.status_code == 404
 
@@ -1609,7 +1610,7 @@ def test_regenerate_section_returns_404_for_missing_prd(test_client: TestClient,
 # =============================================================================
 
 
-def test_restore_prd_creates_new_version(test_client: TestClient, test_db: Session) -> None:
+def test_restore_prd_creates_new_version(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /prds/{prd_id}/restore creates a new PRD version."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1621,7 +1622,7 @@ def test_restore_prd_creates_new_version(test_client: TestClient, test_db: Sessi
     )
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/restore")
+    response = auth_client.post(f"/api/prds/{prd_id}/restore")
 
     assert response.status_code == 200
     data = response.json()
@@ -1637,7 +1638,7 @@ def test_restore_prd_creates_new_version(test_client: TestClient, test_db: Sessi
     assert data["status"] == "ready"
 
 
-def test_restore_archived_prd(test_client: TestClient, test_db: Session) -> None:
+def test_restore_archived_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that archived PRDs can be restored."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1649,7 +1650,7 @@ def test_restore_archived_prd(test_client: TestClient, test_db: Session) -> None
     )
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/restore")
+    response = auth_client.post(f"/api/prds/{prd_id}/restore")
 
     assert response.status_code == 200
     data = response.json()
@@ -1657,53 +1658,53 @@ def test_restore_archived_prd(test_client: TestClient, test_db: Session) -> None
     assert data["status"] == "ready"
 
 
-def test_restore_prd_fails_for_queued_status(test_client: TestClient, test_db: Session) -> None:
+def test_restore_prd_fails_for_queued_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that restoring a queued PRD returns 400."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.QUEUED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/restore")
+    response = auth_client.post(f"/api/prds/{prd_id}/restore")
 
     assert response.status_code == 400
     assert "Cannot restore" in response.json()["detail"]
 
 
-def test_restore_prd_fails_for_generating_status(test_client: TestClient, test_db: Session) -> None:
+def test_restore_prd_fails_for_generating_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that restoring a generating PRD returns 400."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.GENERATING)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/restore")
+    response = auth_client.post(f"/api/prds/{prd_id}/restore")
 
     assert response.status_code == 400
 
 
-def test_restore_prd_fails_for_failed_status(test_client: TestClient, test_db: Session) -> None:
+def test_restore_prd_fails_for_failed_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that restoring a failed PRD returns 400."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     prd = _create_test_prd(test_db, project_id, status=PRDStatus.FAILED)
     prd_id = _get_prd_id(prd)
 
-    response = test_client.post(f"/api/prds/{prd_id}/restore")
+    response = auth_client.post(f"/api/prds/{prd_id}/restore")
 
     assert response.status_code == 400
 
 
-def test_restore_prd_returns_404_for_missing_prd(test_client: TestClient, test_db: Session) -> None:
+def test_restore_prd_returns_404_for_missing_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that restoring a non-existent PRD returns 404."""
     fake_prd_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.post(f"/api/prds/{fake_prd_id}/restore")
+    response = auth_client.post(f"/api/prds/{fake_prd_id}/restore")
 
     assert response.status_code == 404
 
 
-def test_restore_increments_version_correctly(test_client: TestClient, test_db: Session) -> None:
+def test_restore_increments_version_correctly(auth_client: TestClient, test_db: Session) -> None:
     """Test that restore creates correct version number with existing PRDs."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1715,7 +1716,7 @@ def test_restore_increments_version_correctly(test_client: TestClient, test_db: 
 
     # Restore from version 1
     prd1_id = _get_prd_id(prd1)
-    response = test_client.post(f"/api/prds/{prd1_id}/restore")
+    response = auth_client.post(f"/api/prds/{prd1_id}/restore")
 
     assert response.status_code == 200
     data = response.json()
@@ -1730,12 +1731,12 @@ def test_restore_increments_version_correctly(test_client: TestClient, test_db: 
 # =============================================================================
 
 
-def test_create_manual_prd(test_client: TestClient, test_db: Session) -> None:
+def test_create_manual_prd(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /projects/{project_id}/prds creates a manual PRD."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/prds",
         json={
             "title": "Manual PRD",
@@ -1753,12 +1754,12 @@ def test_create_manual_prd(test_client: TestClient, test_db: Session) -> None:
     assert len(data["sections"]) == 1
 
 
-def test_create_manual_prd_empty(test_client: TestClient, test_db: Session) -> None:
+def test_create_manual_prd_empty(auth_client: TestClient, test_db: Session) -> None:
     """Test that creating a blank PRD works."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/prds",
         json={}
     )
@@ -1769,11 +1770,11 @@ def test_create_manual_prd_empty(test_client: TestClient, test_db: Session) -> N
     assert data["sections"] is None
 
 
-def test_create_manual_prd_returns_404_for_missing_project(test_client: TestClient, test_db: Session) -> None:
+def test_create_manual_prd_returns_404_for_missing_project(auth_client: TestClient, test_db: Session) -> None:
     """Test that creating PRD for non-existent project returns 404."""
     fake_project_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{fake_project_id}/prds",
         json={"title": "Test PRD"}
     )

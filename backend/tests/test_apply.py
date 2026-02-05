@@ -41,7 +41,7 @@ def _get_id(obj: Project | MeetingRecap | MeetingItem | Requirement) -> str:
 
 def _create_project(db: Session, name: str = "Test Project") -> Project:
     """Create a test project."""
-    project = Project(name=name, description="For apply/resolve tests")
+    project = Project(name=name, user_id="test-user-0000-0000-000000000001", description="For apply/resolve tests")
     db.add(project)
     db.commit()
     db.refresh(project)
@@ -57,6 +57,7 @@ def _create_meeting(
     """Create a test meeting recap."""
     meeting = MeetingRecap(
         project_id=project_id,
+        user_id="test-user-0000-0000-000000000001",
         title=title,
         meeting_date=date(2026, 1, 22),
         raw_input="Test meeting notes",
@@ -136,7 +137,7 @@ class MockLLMProvider:
 
 
 def test_apply_endpoint_returns_categorized_items(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that apply endpoint returns categorized items (added, skipped, conflicts)."""
     project = _create_project(test_db)
@@ -150,7 +151,7 @@ def test_apply_endpoint_returns_categorized_items(
         "Users are having difficulty finding features",
     )
 
-    response = test_client.post(f"/api/meetings/{_get_id(meeting)}/apply")
+    response = auth_client.post(f"/api/meetings/{_get_id(meeting)}/apply")
 
     assert response.status_code == 200
     data = response.json()
@@ -163,7 +164,7 @@ def test_apply_endpoint_returns_categorized_items(
 
 
 def test_apply_endpoint_detects_exact_duplicates(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that apply endpoint detects exact duplicates and marks them as skipped."""
     project = _create_project(test_db)
@@ -186,7 +187,7 @@ def test_apply_endpoint_detects_exact_duplicates(
         "User must be able to log in",
     )
 
-    response = test_client.post(f"/api/meetings/{_get_id(meeting)}/apply")
+    response = auth_client.post(f"/api/meetings/{_get_id(meeting)}/apply")
 
     assert response.status_code == 200
     data = response.json()
@@ -196,31 +197,31 @@ def test_apply_endpoint_detects_exact_duplicates(
 
 
 def test_apply_endpoint_returns_404_for_missing_meeting(
-    test_client: TestClient,
+    auth_client: TestClient,
 ) -> None:
     """Test that apply endpoint returns 404 for non-existent meeting."""
     fake_id = "00000000-0000-0000-0000-000000000000"
-    response = test_client.post(f"/api/meetings/{fake_id}/apply")
+    response = auth_client.post(f"/api/meetings/{fake_id}/apply")
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
 
 
 def test_apply_endpoint_returns_400_for_non_processed_meeting(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that apply endpoint returns 400 if meeting status is not processed."""
     project = _create_project(test_db)
     meeting = _create_meeting(test_db, _get_id(project), status=MeetingStatus.pending)
 
-    response = test_client.post(f"/api/meetings/{_get_id(meeting)}/apply")
+    response = auth_client.post(f"/api/meetings/{_get_id(meeting)}/apply")
 
     assert response.status_code == 400
     assert "processed" in response.json()["detail"].lower()
 
 
 def test_apply_endpoint_with_conflicts(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that apply endpoint correctly identifies conflicts."""
     project = _create_project(test_db)
@@ -251,7 +252,7 @@ def test_apply_endpoint_with_conflicts(
     mock_provider = MockLLMProvider(mock_response)
 
     with patch("app.services.conflict.get_provider", return_value=mock_provider):
-        response = test_client.post(f"/api/meetings/{_get_id(meeting)}/apply")
+        response = auth_client.post(f"/api/meetings/{_get_id(meeting)}/apply")
 
     assert response.status_code == 200
     data = response.json()
@@ -265,7 +266,7 @@ def test_apply_endpoint_with_conflicts(
 
 
 def test_resolve_endpoint_creates_requirements_for_added_items(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint creates requirements for added items."""
     project = _create_project(test_db)
@@ -289,7 +290,7 @@ def test_resolve_endpoint_creates_requirements_for_added_items(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
 
@@ -309,11 +310,11 @@ def test_resolve_endpoint_creates_requirements_for_added_items(
 
 
 def test_resolve_endpoint_returns_404_for_missing_meeting(
-    test_client: TestClient,
+    auth_client: TestClient,
 ) -> None:
     """Test that resolve endpoint returns 404 for non-existent meeting."""
     fake_id = "00000000-0000-0000-0000-000000000000"
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{fake_id}/resolve", json={"decisions": []}
     )
 
@@ -321,13 +322,13 @@ def test_resolve_endpoint_returns_404_for_missing_meeting(
 
 
 def test_resolve_endpoint_returns_400_for_non_processed_meeting(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint returns 400 if meeting status is not processed."""
     project = _create_project(test_db)
     meeting = _create_meeting(test_db, _get_id(project), status=MeetingStatus.pending)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json={"decisions": []}
     )
 
@@ -340,7 +341,7 @@ def test_resolve_endpoint_returns_400_for_non_processed_meeting(
 
 
 def test_resolve_records_added_decision(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint records 'added' decisions in MeetingItemDecision table."""
     project = _create_project(test_db)
@@ -357,7 +358,7 @@ def test_resolve_records_added_decision(
         "decisions": [{"item_id": _get_id(item), "decision": "added"}]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -372,7 +373,7 @@ def test_resolve_records_added_decision(
 
 
 def test_resolve_records_skipped_duplicate_decision(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint records 'skipped_duplicate' decisions."""
     project = _create_project(test_db)
@@ -404,7 +405,7 @@ def test_resolve_records_skipped_duplicate_decision(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -419,7 +420,7 @@ def test_resolve_records_skipped_duplicate_decision(
 
 
 def test_resolve_records_conflict_merged_decision(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint records 'conflict_merged' decisions."""
     project = _create_project(test_db)
@@ -451,7 +452,7 @@ def test_resolve_records_conflict_merged_decision(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -466,7 +467,7 @@ def test_resolve_records_conflict_merged_decision(
 
 
 def test_resolve_records_conflict_replaced_decision(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint records 'conflict_replaced' decisions."""
     project = _create_project(test_db)
@@ -497,7 +498,7 @@ def test_resolve_records_conflict_replaced_decision(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -517,7 +518,7 @@ def test_resolve_records_conflict_replaced_decision(
 
 
 def test_resolve_creates_history_for_added_requirements(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint creates RequirementHistory for added requirements."""
     project = _create_project(test_db)
@@ -534,7 +535,7 @@ def test_resolve_creates_history_for_added_requirements(
         "decisions": [{"item_id": _get_id(item), "decision": "added"}]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -558,7 +559,7 @@ def test_resolve_creates_history_for_added_requirements(
 
 
 def test_resolve_creates_history_for_merged_requirements(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint creates RequirementHistory with ai_merge actor for merged requirements."""
     project = _create_project(test_db)
@@ -590,7 +591,7 @@ def test_resolve_creates_history_for_merged_requirements(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -607,7 +608,7 @@ def test_resolve_creates_history_for_merged_requirements(
 
 
 def test_resolve_creates_history_for_replaced_requirements(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint creates RequirementHistory for replaced requirements."""
     project = _create_project(test_db)
@@ -638,7 +639,7 @@ def test_resolve_creates_history_for_replaced_requirements(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -660,7 +661,7 @@ def test_resolve_creates_history_for_replaced_requirements(
 
 
 def test_resolve_creates_requirement_source_for_added_items(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint creates RequirementSource linking requirement to meeting and meeting_item."""
     project = _create_project(test_db)
@@ -678,7 +679,7 @@ def test_resolve_creates_requirement_source_for_added_items(
         "decisions": [{"item_id": _get_id(item), "decision": "added"}]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -700,7 +701,7 @@ def test_resolve_creates_requirement_source_for_added_items(
 
 
 def test_resolve_creates_requirement_source_for_merged_items(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint creates RequirementSource for merged requirements."""
     project = _create_project(test_db)
@@ -733,7 +734,7 @@ def test_resolve_creates_requirement_source_for_merged_items(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -749,7 +750,7 @@ def test_resolve_creates_requirement_source_for_merged_items(
 
 
 def test_resolve_creates_requirement_source_for_replaced_items(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint creates RequirementSource for replaced requirements."""
     project = _create_project(test_db)
@@ -781,7 +782,7 @@ def test_resolve_creates_requirement_source_for_replaced_items(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -802,7 +803,7 @@ def test_resolve_creates_requirement_source_for_replaced_items(
 
 
 def test_resolve_updates_meeting_status_to_applied(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint updates meeting status to applied."""
     project = _create_project(test_db)
@@ -819,7 +820,7 @@ def test_resolve_updates_meeting_status_to_applied(
         "decisions": [{"item_id": _get_id(item), "decision": "added"}]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -830,7 +831,7 @@ def test_resolve_updates_meeting_status_to_applied(
 
 
 def test_resolve_sets_applied_at_timestamp(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint sets applied_at timestamp on meeting."""
     project = _create_project(test_db)
@@ -850,7 +851,7 @@ def test_resolve_sets_applied_at_timestamp(
         "decisions": [{"item_id": _get_id(item), "decision": "added"}]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -861,7 +862,7 @@ def test_resolve_sets_applied_at_timestamp(
 
 
 def test_resolve_with_empty_decisions_still_updates_status(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve with empty decisions still updates meeting status to applied."""
     project = _create_project(test_db)
@@ -869,7 +870,7 @@ def test_resolve_with_empty_decisions_still_updates_status(
 
     resolve_payload: dict[str, list[dict[str, str]]] = {"decisions": []}
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -886,7 +887,7 @@ def test_resolve_with_empty_decisions_still_updates_status(
 
 
 def test_resolve_handles_multiple_decisions(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint handles multiple decisions in a single request."""
     project = _create_project(test_db)
@@ -933,7 +934,7 @@ def test_resolve_handles_multiple_decisions(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -955,7 +956,7 @@ def test_resolve_handles_multiple_decisions(
 
 
 def test_resolve_returns_correct_counts(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that resolve endpoint returns correct counts for all decision types."""
     project = _create_project(test_db)
@@ -1012,7 +1013,7 @@ def test_resolve_returns_correct_counts(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200
@@ -1024,7 +1025,7 @@ def test_resolve_returns_correct_counts(
 
 
 def test_resolve_conflict_kept_both_creates_new_requirement(
-    test_client: TestClient, test_db: Session
+    auth_client: TestClient, test_db: Session
 ) -> None:
     """Test that 'conflict_kept_both' decision creates a new requirement alongside existing."""
     project = _create_project(test_db)
@@ -1055,7 +1056,7 @@ def test_resolve_conflict_kept_both_creates_new_requirement(
         ]
     }
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/meetings/{_get_id(meeting)}/resolve", json=resolve_payload
     )
     assert response.status_code == 200

@@ -7,6 +7,25 @@
 const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
 
 /**
+ * Get auth headers for authenticated requests
+ */
+function getAuthHeaders() {
+  const token = localStorage.getItem('auth_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+/**
+ * Handle 401 responses by redirecting to login
+ */
+function handle401(response) {
+  if (response.status === 401) {
+    localStorage.removeItem('auth_token');
+    window.location.href = '/login';
+    throw new Error('Session expired. Please log in again.');
+  }
+}
+
+/**
  * Make a GET request to the API
  * @param {string} endpoint - API endpoint (e.g., '/api/projects')
  * @param {object} [options] - Request options
@@ -34,10 +53,12 @@ export async function get(endpoint, options = {}) {
 
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
+      headers: { ...getAuthHeaders() },
       signal: combinedSignal,
     });
 
     if (timeoutId) clearTimeout(timeoutId);
+    handle401(response);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -88,12 +109,14 @@ export async function post(endpoint, data, options = {}) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
       },
       body: JSON.stringify(data),
       signal: combinedSignal,
     });
 
     if (timeoutId) clearTimeout(timeoutId);
+    handle401(response);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -124,9 +147,11 @@ export async function put(endpoint, data) {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(data),
   });
+  handle401(response);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Request failed with status ${response.status}`);
@@ -146,9 +171,11 @@ export async function patch(endpoint, data) {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(data),
   });
+  handle401(response);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Request failed with status ${response.status}`);
@@ -165,7 +192,9 @@ export async function patch(endpoint, data) {
 export async function del(endpoint) {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method: 'DELETE',
+    headers: { ...getAuthHeaders() },
   });
+  handle401(response);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Request failed with status ${response.status}`);
@@ -284,7 +313,10 @@ export async function restorePRD(prdId) {
  * @returns {Promise<Blob>} - File blob for download
  */
 export async function exportPRD(prdId, format = 'markdown') {
-  const response = await fetch(`${BASE_URL}/api/prds/${prdId}/export?format=${format}`);
+  const response = await fetch(`${BASE_URL}/api/prds/${prdId}/export?format=${format}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  handle401(response);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Export failed with status ${response.status}`);
@@ -428,7 +460,10 @@ export async function exportStories(projectId, format = 'markdown', batchId = nu
   params.append('format', format);
   if (batchId) params.append('batch_id', batchId);
   const query = params.toString();
-  const response = await fetch(`${BASE_URL}/api/projects/${projectId}/stories/export?${query}`);
+  const response = await fetch(`${BASE_URL}/api/projects/${projectId}/stories/export?${query}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  handle401(response);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || `Export failed with status ${response.status}`);

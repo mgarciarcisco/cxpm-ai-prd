@@ -108,7 +108,8 @@ export function usePRDStreamingV2(projectId, mode, shouldConnect = false) {
     setStatus('connecting');
     cleanup();
 
-    const url = `${BASE_URL}/api/projects/${projectId}/prds/stream?mode=${mode}`;
+    const token = localStorage.getItem('auth_token');
+    const url = `${BASE_URL}/api/projects/${projectId}/prds/stream?mode=${mode}${token ? `&token=${token}` : ''}`;
     console.log('[PRD Streaming] Creating EventSource:', url);
     const eventSource = new EventSource(url);
     eventSourceRef.current = eventSource;
@@ -413,9 +414,10 @@ export function useSectionRegeneration(prdId, sectionId) {
     setStatus('regenerating');
     cleanup();
 
-    let url = `${BASE_URL}/api/prds/${prdId}/sections/${sectionId}/regenerate`;
+    const token = localStorage.getItem('auth_token');
+    let url = `${BASE_URL}/api/prds/${prdId}/sections/${sectionId}/regenerate${token ? `?token=${token}` : ''}`;
     if (customInstructions) {
-      url += `?custom_instructions=${encodeURIComponent(customInstructions)}`;
+      url += `${token ? '&' : '?'}custom_instructions=${encodeURIComponent(customInstructions)}`;
     }
 
     const eventSource = new EventSource(url);

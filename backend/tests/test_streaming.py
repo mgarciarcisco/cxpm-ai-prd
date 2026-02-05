@@ -25,6 +25,7 @@ def _create_test_project(db: Session) -> Project:
     """Create a test project."""
     project = Project(
         name="Test Project",
+        user_id="test-user-0000-0000-000000000001",
         description="For streaming tests"
     )
     db.add(project)
@@ -42,6 +43,7 @@ def _create_test_meeting(
     """Create a test meeting recap."""
     meeting = MeetingRecap(
         project_id=project_id,
+        user_id="test-user-0000-0000-000000000001",
         title="Test Meeting",
         meeting_date=date(2026, 1, 22),
         raw_input=raw_input,
@@ -141,7 +143,7 @@ class TestStreamingEndpointStatusEvent:
     """Tests for status event emission."""
 
     def test_status_event_emitted_first(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that the status event is emitted first in the stream."""
         project = _create_test_project(test_db)
@@ -151,7 +153,7 @@ class TestStreamingEndpointStatusEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_success
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         assert response.status_code == 200
         events = _parse_sse_events(response.text)
@@ -162,7 +164,7 @@ class TestStreamingEndpointStatusEvent:
         assert events[0]['data'] == 'processing'
 
     def test_status_event_before_item_events(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that status event comes before any item events."""
         project = _create_test_project(test_db)
@@ -172,7 +174,7 @@ class TestStreamingEndpointStatusEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_success
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
 
@@ -189,7 +191,7 @@ class TestStreamingEndpointItemEvents:
     """Tests for item event emission."""
 
     def test_item_events_emitted_for_each_extraction(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that an item event is emitted for each extracted item."""
         project = _create_test_project(test_db)
@@ -199,7 +201,7 @@ class TestStreamingEndpointItemEvents:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_success
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         item_events = [e for e in events if e['event'] == 'item']
@@ -208,7 +210,7 @@ class TestStreamingEndpointItemEvents:
         assert len(item_events) == 2
 
     def test_item_event_contains_section(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that item events contain the section field."""
         project = _create_test_project(test_db)
@@ -218,7 +220,7 @@ class TestStreamingEndpointItemEvents:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_success
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         item_events = [e for e in events if e['event'] == 'item']
@@ -227,7 +229,7 @@ class TestStreamingEndpointItemEvents:
         assert item_events[1]['data']['section'] == 'user_goals'
 
     def test_item_event_contains_content(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that item events contain the content field."""
         project = _create_test_project(test_db)
@@ -237,7 +239,7 @@ class TestStreamingEndpointItemEvents:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_success
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         item_events = [e for e in events if e['event'] == 'item']
@@ -246,7 +248,7 @@ class TestStreamingEndpointItemEvents:
         assert item_events[1]['data']['content'] == 'A user goal'
 
     def test_item_event_contains_source_quote(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that item events contain the source_quote field."""
         project = _create_test_project(test_db)
@@ -256,7 +258,7 @@ class TestStreamingEndpointItemEvents:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_success
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         item_events = [e for e in events if e['event'] == 'item']
@@ -269,7 +271,7 @@ class TestStreamingEndpointCompleteEvent:
     """Tests for complete event emission."""
 
     def test_complete_event_emitted_when_done(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that a complete event is emitted when extraction is done."""
         project = _create_test_project(test_db)
@@ -279,7 +281,7 @@ class TestStreamingEndpointCompleteEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_success
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         complete_events = [e for e in events if e['event'] == 'complete']
@@ -287,7 +289,7 @@ class TestStreamingEndpointCompleteEvent:
         assert len(complete_events) == 1
 
     def test_complete_event_has_correct_item_count(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that complete event contains correct item count."""
         project = _create_test_project(test_db)
@@ -297,7 +299,7 @@ class TestStreamingEndpointCompleteEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_success
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         complete_events = [e for e in events if e['event'] == 'complete']
@@ -305,7 +307,7 @@ class TestStreamingEndpointCompleteEvent:
         assert complete_events[0]['data']['item_count'] == 2
 
     def test_complete_event_after_all_items(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that complete event is emitted after all item events."""
         project = _create_test_project(test_db)
@@ -315,7 +317,7 @@ class TestStreamingEndpointCompleteEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_success
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
 
@@ -326,7 +328,7 @@ class TestStreamingEndpointCompleteEvent:
         assert complete_index > max(item_indices)
 
     def test_complete_event_with_zero_items(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that complete event shows item_count=0 when no items extracted."""
         project = _create_test_project(test_db)
@@ -336,7 +338,7 @@ class TestStreamingEndpointCompleteEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_empty
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         complete_events = [e for e in events if e['event'] == 'complete']
@@ -349,7 +351,7 @@ class TestStreamingEndpointErrorEvent:
     """Tests for error event emission."""
 
     def test_error_event_emitted_on_extraction_error(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that an error event is emitted when ExtractionError occurs."""
         project = _create_test_project(test_db)
@@ -359,7 +361,7 @@ class TestStreamingEndpointErrorEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_error
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         error_events = [e for e in events if e['event'] == 'error']
@@ -367,7 +369,7 @@ class TestStreamingEndpointErrorEvent:
         assert len(error_events) == 1
 
     def test_error_event_contains_message(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that error event contains the error message."""
         project = _create_test_project(test_db)
@@ -377,7 +379,7 @@ class TestStreamingEndpointErrorEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_error
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         error_events = [e for e in events if e['event'] == 'error']
@@ -385,7 +387,7 @@ class TestStreamingEndpointErrorEvent:
         assert error_events[0]['data']['message'] == 'LLM failed to process'
 
     def test_error_event_on_unexpected_error(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that error event is emitted for unexpected exceptions."""
         project = _create_test_project(test_db)
@@ -395,7 +397,7 @@ class TestStreamingEndpointErrorEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_unexpected_error
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         error_events = [e for e in events if e['event'] == 'error']
@@ -404,7 +406,7 @@ class TestStreamingEndpointErrorEvent:
         assert 'Something unexpected happened' in error_events[0]['data']['message']
 
     def test_no_complete_event_after_error(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that no complete event is emitted after an error."""
         project = _create_test_project(test_db)
@@ -414,7 +416,7 @@ class TestStreamingEndpointErrorEvent:
             "app.routers.meetings.extract_stream",
             _mock_extract_stream_error
         ):
-            response = test_client.get(f"/api/meetings/{meeting.id}/stream")
+            response = auth_client.get(f"/api/meetings/{meeting.id}/stream")
 
         events = _parse_sse_events(response.text)
         complete_events = [e for e in events if e['event'] == 'complete']
@@ -426,11 +428,11 @@ class TestStreamingEndpointMeetingNotFound:
     """Tests for meeting not found handling."""
 
     def test_returns_404_for_missing_meeting(
-        self, test_client: TestClient, test_db: Session
+        self, auth_client: TestClient, test_db: Session
     ) -> None:
         """Test that 404 is returned for non-existent meeting."""
         fake_id = str(uuid4())
-        response = test_client.get(f"/api/meetings/{fake_id}/stream")
+        response = auth_client.get(f"/api/meetings/{fake_id}/stream")
 
         assert response.status_code == 404
         assert response.json()['detail'] == 'Meeting not found'

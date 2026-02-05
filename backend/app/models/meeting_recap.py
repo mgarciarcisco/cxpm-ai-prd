@@ -51,6 +51,7 @@ class MeetingRecap(Base):
 
     # Processing metadata
     error_message = Column(Text, nullable=True)
+    user_id = Column(CHAR(36), ForeignKey("users.id"), nullable=False, index=True)
     prompt_version = Column(String(100), nullable=True)
 
     # Relationships

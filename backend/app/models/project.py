@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import CHAR
 from sqlalchemy.orm import relationship
@@ -56,6 +56,7 @@ class Project(Base):
     archived = Column(Boolean, nullable=False, default=False, server_default="0")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    user_id = Column(CHAR(36), ForeignKey("users.id"), nullable=False, index=True)
 
     # Stage status fields
     requirements_status = Column(
@@ -95,6 +96,7 @@ class Project(Base):
     prds = relationship("PRD", back_populates="project", cascade="all, delete-orphan")
     user_stories = relationship("UserStory", back_populates="project", cascade="all, delete-orphan")
     story_batches = relationship("StoryBatch", back_populates="project", cascade="all, delete-orphan")
+    owner = relationship("User", backref="projects")
 
     @property
     def requirements_count(self) -> int:

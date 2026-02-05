@@ -21,9 +21,13 @@ import UserStoriesPage from './pages/UserStoriesPage'
 import SelectProjectPage from './pages/SelectProjectPage'
 import NotFoundPage from './pages/NotFoundPage'
 import JiraEpicPage from './pages/jira_epic/JiraEpicPage'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 
 // Create data router with all routes
 const router = createBrowserRouter([
+  { path: '/login', element: <LoginPage /> },
+  { path: '/register', element: <RegisterPage /> },
   {
     path: '/',
     element: <App />,

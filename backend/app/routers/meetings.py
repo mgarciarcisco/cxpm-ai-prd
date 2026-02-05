@@ -11,6 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
+from app.auth import get_current_user, get_current_user_from_query
 from app.database import get_db
 from app.models import (
     Action,
@@ -25,6 +26,7 @@ from app.models import (
     RequirementSource,
 )
 from app.models.meeting_recap import InputType, MeetingStatus
+from app.models.user import User
 from app.schemas import (
     ApplyResponse,
     ConflictResultResponse,
@@ -61,6 +63,7 @@ async def upload_meeting(
     text: Optional[str] = Form(default=None),
     project_id: Optional[str] = Form(default=None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
     """
     Upload meeting notes for processing.
@@ -73,7 +76,7 @@ async def upload_meeting(
     """
     # Validate project exists if provided
     if project_id:
-        project = db.query(Project).filter(Project.id == project_id).first()
+        project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -103,6 +106,7 @@ async def upload_meeting(
     # Create meeting recap with status=pending
     meeting = MeetingRecap(
         project_id=project_id,
+        user_id=current_user.id,
         title=title,
         meeting_date=meeting_date,
         raw_input=content,
@@ -121,6 +125,7 @@ def associate_meeting_with_project(
     meeting_id: str,
     project_id: str = Form(...),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
     """
     Associate a meeting with a project.
@@ -129,7 +134,7 @@ def associate_meeting_with_project(
     and the project is selected later (e.g., dashboard -> add meeting -> extract -> pick project).
     """
     # Validate meeting exists
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -137,7 +142,7 @@ def associate_meeting_with_project(
         )
 
     # Validate project exists
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -160,7 +165,7 @@ def associate_meeting_with_project(
 
 
 @router.post("/{meeting_id}/retry", response_model=MeetingResponse)
-def retry_meeting(meeting_id: str, db: Session = Depends(get_db)) -> dict:
+def retry_meeting(meeting_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict:
     """
     Retry a failed extraction by resetting the meeting status.
 
@@ -168,7 +173,7 @@ def retry_meeting(meeting_id: str, db: Session = Depends(get_db)) -> dict:
     Returns 404 if meeting not found.
     Returns 400 if meeting status is not 'failed'.
     """
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -217,13 +222,13 @@ def retry_meeting(meeting_id: str, db: Session = Depends(get_db)) -> dict:
 
 
 @router.get("/{meeting_id}", response_model=MeetingResponse)
-def get_meeting(meeting_id: str, db: Session = Depends(get_db)) -> dict:
+def get_meeting(meeting_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict:
     """
     Get a single meeting by ID with its items.
 
     Items filtered to exclude is_deleted=true.
     """
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -258,13 +263,13 @@ def get_meeting(meeting_id: str, db: Session = Depends(get_db)) -> dict:
 
 
 @router.delete("/{meeting_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_meeting(meeting_id: str, db: Session = Depends(get_db)) -> None:
+def delete_meeting(meeting_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
     """
     Delete a meeting and its associated items.
 
     Returns 204 No Content on success, 404 if meeting not found.
     """
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -281,6 +286,7 @@ def add_meeting_item(
     meeting_id: str,
     item_data: MeetingItemCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> MeetingItem:
     """
     Add a new item to a meeting.
@@ -290,7 +296,7 @@ def add_meeting_item(
     Returns 400 if meeting status is not processed.
     """
     # Find the meeting
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -332,6 +338,7 @@ def reorder_meeting_items(
     meeting_id: str,
     reorder_data: MeetingItemReorderRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> list[MeetingItem]:
     """
     Reorder meeting items within a section.
@@ -341,7 +348,7 @@ def reorder_meeting_items(
     Returns 400 if meeting status is not processed.
     """
     # Find the meeting
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -396,6 +403,7 @@ async def stream_extraction(
     job_id: str,
     request: Request,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_query),
 ) -> EventSourceResponse:
     """
     Stream extraction results as Server-Sent Events (SSE).
@@ -407,7 +415,7 @@ async def stream_extraction(
     - {type: 'error', data: {message}} on failure
     """
     # Verify meeting exists
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == job_id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == job_id, MeetingRecap.user_id == current_user.id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -468,6 +476,7 @@ async def stream_extraction(
 def apply_meeting(
     meeting_id: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> ApplyResponse:
     """
     Apply meeting items with conflict detection.
@@ -482,7 +491,7 @@ def apply_meeting(
     Returns 404 if meeting not found.
     """
     # Verify meeting exists
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -541,6 +550,7 @@ def apply_meeting(
 @router.post("/suggest-merge", response_model=MergeSuggestionResponse)
 def suggest_merge_endpoint(
     request: MergeSuggestionRequest,
+    current_user: User = Depends(get_current_user),
 ) -> MergeSuggestionResponse:
     """
     Get an AI-suggested merge of two conflicting requirement texts.
@@ -565,6 +575,7 @@ def resolve_meeting(
     meeting_id: str,
     request: ResolveRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> ResolveResponse:
     """
     Resolve conflicts and create requirements from meeting items.
@@ -587,7 +598,7 @@ def resolve_meeting(
     Returns 404 if meeting not found.
     """
     # Verify meeting exists
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -859,6 +870,7 @@ def resolve_meeting(
 @router.post("/quick-extract")
 async def quick_extract(
     request: Request,
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
     Quick extraction endpoint for the Quick Convert feature.

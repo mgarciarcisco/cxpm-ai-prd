@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy.orm import Session
 
-from app.models import MeetingItem, MeetingRecap, Project
+from app.models import MeetingItem, MeetingRecap, Project, User
 from app.models.meeting_item import Section
 from app.models.meeting_recap import InputType, MeetingStatus
 from app.services.extractor import ExtractionError, extract
@@ -25,10 +25,21 @@ def _get_meeting_uuid(meeting: MeetingRecap) -> UUID:
     return UUID(cast(str, meeting.id))
 
 
+def _ensure_test_user(db: Session) -> None:
+    """Ensure the test user exists in the database."""
+    existing = db.query(User).filter(User.id == "test-user-0000-0000-000000000001").first()
+    if not existing:
+        user = User(id="test-user-0000-0000-000000000001", email="test@example.com", name="Test User", hashed_password="x", is_active=True, is_admin=False)
+        db.add(user)
+        db.commit()
+
+
 def _create_test_project(db: Session) -> Project:
     """Create a test project."""
+    _ensure_test_user(db)
     project = Project(
         name="Test Project",
+        user_id="test-user-0000-0000-000000000001",
         description="For extractor tests"
     )
     db.add(project)
@@ -46,6 +57,7 @@ def _create_test_meeting(
     """Create a test meeting recap."""
     meeting = MeetingRecap(
         project_id=project_id,
+        user_id="test-user-0000-0000-000000000001",
         title="Test Meeting",
         meeting_date=date(2026, 1, 22),
         raw_input=raw_input,

@@ -65,7 +65,8 @@ export function useStreaming(jobId) {
     setStatus('connecting');
     cleanup();
 
-    const url = `${BASE_URL}/api/meetings/${jobId}/stream`;
+    const token = localStorage.getItem('auth_token');
+    const url = `${BASE_URL}/api/meetings/${jobId}/stream${token ? `?token=${token}` : ''}`;
     const eventSource = new EventSource(url);
     eventSourceRef.current = eventSource;
 
