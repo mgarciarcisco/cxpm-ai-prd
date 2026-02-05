@@ -3,7 +3,7 @@
 .select-project-page {
   min-height: 100vh;
   background: #f8fafc;
-  padding: 32px 24px;
+  padding: var(--spacing-xl) var(--spacing-lg);
 }
 
 .select-project-container {
@@ -17,10 +17,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 64px;
+  padding: 4rem;
   color: #64748b;
   font-size: 14px;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .select-project-loading .loading-spinner {
@@ -39,15 +39,15 @@
 /* Main Card */
 .select-card {
   background: white;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  margin-top: 24px;
+  margin-top: var(--spacing-lg);
 }
 
 /* Card Header */
 .select-card__header {
-  padding: 24px 28px;
+  padding: var(--spacing-lg) 1.75rem;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -55,7 +55,7 @@
   font-size: 20px;
   font-weight: 600;
   color: #1e293b;
-  margin: 0 0 4px 0;
+  margin: 0 0 0.25rem 0;
 }
 
 .select-card__header p {
@@ -73,8 +73,8 @@
 .select-card__error {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 28px;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
   background: #fef2f2;
   border-bottom: 1px solid #fecaca;
   color: #dc2626;
@@ -83,18 +83,18 @@
 
 /* Project Options */
 .select-card__options {
-  padding: 16px 28px 24px;
+  padding: var(--spacing-md) 1.75rem var(--spacing-lg);
 }
 
 /* Individual Project Option */
 .project-option {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  padding: 16px;
-  margin-bottom: 12px;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  margin-bottom: 0.75rem;
   border: 2px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.2s ease;
   outline: none;
@@ -168,7 +168,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
 }
 
@@ -208,7 +208,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: 0.25rem;
   flex-shrink: 0;
 }
 
@@ -225,14 +225,14 @@
 
 /* New Project Input */
 .project-option__input-wrapper {
-  margin-top: 12px;
+  margin-top: 0.75rem;
 }
 
 .project-option__input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 0.75rem 0.875rem;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
 }
 
@@ -245,7 +245,7 @@
 /* Empty State */
 .select-card__empty-hint {
   text-align: center;
-  padding: 24px;
+  padding: var(--spacing-lg);
   color: #64748b;
   font-size: 14px;
 }
@@ -253,20 +253,20 @@
 /* Help Text */
 .select-card__help-text {
   text-align: center;
-  padding: 16px;
+  padding: var(--spacing-md);
   color: #94a3b8;
   font-size: 13px;
   border-top: 1px dashed #e5e7eb;
-  margin-top: 8px;
+  margin-top: 0.5rem;
 }
 
 /* Card Footer */
 .select-card__footer {
-  padding: 20px 28px;
+  padding: 1.25rem 1.75rem;
   border-top: 1px solid #f1f5f9;
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 0.75rem;
   background: #fafbfc;
 }
 
@@ -275,9 +275,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border-radius: 10px;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -328,13 +328,13 @@
   position: absolute;
   bottom: 100%;
   right: 0;
-  margin-bottom: 8px;
-  padding: 8px 12px;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: #1e293b;
   color: white;
   font-size: 12px;
   white-space: nowrap;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
@@ -357,14 +357,14 @@
 /* Responsive */
 @media (max-width: 640px) {
   .select-project-page {
-    padding: 16px;
+    padding: var(--spacing-md);
   }
 
   .select-card__header,
   .select-card__options,
   .select-card__footer {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
   }
 
   .project-option {
@@ -375,8 +375,8 @@
     width: 100%;
     flex-direction: row;
     align-items: center;
-    gap: 12px;
-    margin-top: 8px;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
     padding-left: 84px;
   }
 

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { get, listStories, deleteStory, updateStory } from '../services/api'
 import { useStoriesStreaming } from '../hooks/useStoriesStreaming'
 import LoadingSpinner from '../components/common/LoadingSpinner'
+import { Breadcrumbs } from '../components/common/Breadcrumbs'
 import StoryCard from '../components/stories/StoryCard'
 import StoryEditModal from '../components/stories/StoryEditModal'
 import StoriesExportModal from '../components/stories/StoriesExportModal'
@@ -296,6 +297,13 @@ function UserStoriesPage() {
   const isCooldownActive = cooldownRemaining > 0
   const canGenerate = !isGenerating && !isCooldownActive && project
 
+  // Breadcrumb items
+  const breadcrumbItems = useMemo(() => [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: project?.name || 'Project', href: `/app/projects/${projectId}` },
+    { label: 'User Stories' }
+  ], [project?.name, projectId])
+
   // Loading state
   if (loadingProject) {
     return (
@@ -329,6 +337,8 @@ function UserStoriesPage() {
   return (
     <main className="main-content">
       <section className="stories-generator-section">
+        <Breadcrumbs items={breadcrumbItems} />
+
         <div className="section-header">
           <h2>User Stories</h2>
           <Link to="/dashboard" className="back-link">Back to Dashboard</Link>

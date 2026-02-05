@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { get } from '../services/api'
 import LoadingSpinner from '../components/common/LoadingSpinner'
+import { Breadcrumbs } from '../components/common/Breadcrumbs'
 import './PRDGeneratorPage.css'
 
 // Mode options with descriptions
@@ -72,6 +73,13 @@ function PRDGeneratorPage() {
 
   const canGenerate = project !== null
 
+  // Breadcrumb items
+  const breadcrumbItems = useMemo(() => [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: project?.name || 'Project', href: `/app/projects/${projectId}` },
+    { label: 'Generate PRD' }
+  ], [project?.name, projectId])
+
   // Loading state
   if (loadingProject) {
     return (
@@ -105,6 +113,8 @@ function PRDGeneratorPage() {
   return (
     <main className="main-content">
       <section className="prd-generator-section">
+        <Breadcrumbs items={breadcrumbItems} />
+
         <div className="section-header">
           <h2>Generate PRD</h2>
           <Link to="/dashboard" className="back-link">Back to PRD</Link>
