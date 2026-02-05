@@ -1,6 +1,7 @@
 # MGR - Custom
 circuit.key
 mockups/
+.claude/settings.local.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
