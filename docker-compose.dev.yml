@@ -32,17 +32,8 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      # Database (override if needed)
+      # Database
       - DATABASE_URL=postgresql://cxpm:cxpm_dev@postgres:5432/cxpm
-      
-      # Ollama LLM (fallback) - use Docker network hostname
-      - OLLAMA_BASE_URL=http://ollama:11434
-      
-      # App settings
-      - LLM_TIMEOUT=120
-      - LLM_MAX_RETRIES=1
-      - CHUNK_SIZE_CHARS=4000
-      - MAX_FILE_SIZE_KB=50
     volumes:
       # Mount source code for hot-reloading
       - ./backend/app:/app/app:ro
@@ -78,20 +69,8 @@ services:
       - backend
     restart: unless-stopped
 
-  # Ollama - Local LLM server (optional, uncomment if needed)
-  # ollama:
-  #   image: ollama/ollama:latest
-  #   container_name: cxpm-ollama-dev
-  #   ports:
-  #     - "11434:11434"
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-  #   restart: unless-stopped
-
 volumes:
   postgres_data:
     driver: local
   backend_data:
     driver: local
-  # ollama_data:
-  #   driver: local

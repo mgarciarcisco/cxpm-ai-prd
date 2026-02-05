@@ -1,22 +1,4 @@
 services:
-  # Ollama - Local LLM server
-  ollama:
-    image: ollama/ollama:latest
-    container_name: cxpm-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    # Uncomment for GPU support (NVIDIA):
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
-
   # PostgreSQL - Database
   postgres:
     image: postgres:16-alpine
@@ -49,13 +31,11 @@ services:
     environment:
       # Docker-specific overrides (these override values from .env)
       - DATABASE_URL=postgresql://cxpm:cxpm_dev@postgres:5432/cxpm
-      - OLLAMA_BASE_URL=http://ollama:11434
     volumes:
       - backend_data:/app/data
     depends_on:
       postgres:
         condition: service_healthy
-      ollama: {}
     restart: unless-stopped
 
   # Frontend - React application (Production mode with Nginx)
@@ -71,8 +51,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  ollama_data:
-    driver: local
   postgres_data:
     driver: local
   backend_data:
