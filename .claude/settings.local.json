@@ -104,7 +104,22 @@
       "Bash(docker ps:*)",
       "Bash(docker.exe ps:*)",
       "Bash(docker.exe logs:*)",
-      "Bash(npx vitest run:*)"
+      "Bash(npx vitest run:*)",
+      "Bash(git push)",
+      "Bash(find:*)",
+      "Bash(while read f)",
+      "Bash(do basename \"$f\" .css)",
+      "Bash(do basename \"$f\" .jsx)",
+      "Bash(file:*)",
+      "Bash(git rm:*)",
+      "Bash(for f in \"docs/artifacts/meetingNotesToRequirements\" \"docs/artifacts/Generate features from feedback.docx\")",
+      "Bash(do)",
+      "Bash(tree:*)",
+      "Bash(git branch:*)",
+      "Bash(wc:*)",
+      "Bash(git fetch:*)",
+      "Bash(git config:*)",
+      "Bash(git diff:*)"
     ]
   }
 }

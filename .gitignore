@@ -71,8 +71,8 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
-docs/_build/
+# Docs (design docs, plans, mockups, audits - not committed)
+docs/
 
 # PyBuilder
 .pybuilder/
@@ -215,7 +215,6 @@ cxpm-ai-prd-key
 *.pem
 
 # Sensitive artifacts - never commit
-docs/artifacts/
 
 # SQLite databases
 *.db
@@ -237,7 +236,6 @@ ralph_orig.sh
 
 # Screenshots and snapshots (testing/debugging artifacts)
 screenshots/
-docs/snapshots/
 *.png
 
 # Ralph session state
