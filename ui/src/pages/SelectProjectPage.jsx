@@ -14,6 +14,7 @@ function formatRelativeTime(dateStr) {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now - date;
+  if (diffMs < 0) return 'Just now';
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) return 'Today';
