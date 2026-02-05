@@ -1,24 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../../components/common/Breadcrumbs';
-import { FileDropzone } from '../../components/common/FileDropzone';
 import Modal from '../../components/common/Modal';
 import { generateJiraEpic, saveJiraStories, listJiraStories, deleteJiraStories, get } from '../../services/api';
 import './JiraEpicPage.css';
 
-const MAX_FILE_SIZE_KB = 1024 * 1024; // 1 GB in KB
-const MAX_TEXT_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB in bytes
-
 function JiraEpicPage() {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [fileContent, setFileContent] = useState('');
-  const [additionalNotes, setAdditionalNotes] = useState('');
   const [error, setError] = useState(null);
   const [epics, setEpics] = useState([]);
   const [selectedEpic, setSelectedEpic] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showFilePreview, setShowFilePreview] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [epicsLoadedFromDB, setEpicsLoadedFromDB] = useState(false);
   const [loadingExistingEpics, setLoadingExistingEpics] = useState(false);
@@ -122,48 +114,6 @@ function JiraEpicPage() {
 
     loadExistingStories();
   }, [selectedProject]);
-
-  const handleFileSelect = async (file) => {
-    setError(null);
-
-    if (!file) {
-      setSelectedFile(null);
-      setFileContent('');
-      return;
-    }
-
-    // Validate file size (1GB limit)
-    const fileSizeKB = file.size / 1024;
-    if (fileSizeKB > MAX_FILE_SIZE_KB) {
-      setError(`File too large. Maximum size is 1GB. Your file is ${(fileSizeKB / 1024).toFixed(1)}MB.`);
-      setSelectedFile(null);
-      return;
-    }
-
-    // Read file content
-    try {
-      const content = await file.text();
-      setSelectedFile(file);
-      setFileContent(content);
-    } catch (err) {
-      setError('Failed to read file. Please try again.');
-      setSelectedFile(null);
-    }
-  };
-
-  const handleTextChange = (e) => {
-    const text = e.target.value;
-    
-    // Check size limit (5MB)
-    const textSizeBytes = new Blob([text]).size;
-    if (textSizeBytes > MAX_TEXT_SIZE_BYTES) {
-      setError(`Additional notes too large. Maximum size is 5MB. Current size is ${(textSizeBytes / 1024 / 1024).toFixed(2)}MB.`);
-      return;
-    }
-    
-    setError(null);
-    setAdditionalNotes(text);
-  };
 
   // Fetch projects list
   const fetchProjects = async () => {
@@ -281,30 +231,15 @@ function JiraEpicPage() {
     setEpicsLoadedFromDB(false);
     
     // Validate input
-    if (!fileContent && !additionalNotes.trim() && !projectRequirementsText.trim()) {
-      setError('Please upload a file, add project requirements, or paste additional notes.');
+    if (!projectRequirementsText.trim()) {
+      setError('Please add project functional requirements to continue.');
       return;
     }
 
     setIsGenerating(true);
 
     try {
-      // Combine all content sources
-      const contentParts = [];
-      
-      if (fileContent) {
-        contentParts.push(fileContent);
-      }
-      
-      if (projectRequirementsText.trim()) {
-        contentParts.push(projectRequirementsText.trim());
-      }
-      
-      if (additionalNotes.trim()) {
-        contentParts.push(`--- Additional Notes ---\n\n${additionalNotes.trim()}`);
-      }
-      
-      const combinedContent = contentParts.join('\n\n');
+      const combinedContent = projectRequirementsText.trim();
       
       // Call backend API to generate JIRA Epic
       const response = await generateJiraEpic(combinedContent);
@@ -320,7 +255,7 @@ function JiraEpicPage() {
       console.log('Parsed epics:', generatedEpics.length, generatedEpics);
       
       if (generatedEpics.length === 0) {
-        throw new Error('No valid epics were generated. Please check your requirements file.');
+        throw new Error('No valid stories were generated. Please check your requirements file.');
       }
       
       setEpics(generatedEpics);
@@ -351,14 +286,14 @@ function JiraEpicPage() {
       setSelectedEpic(null);
       
       // Handle different error types
-      const errorMessage = err.message || 'Failed to generate JIRA Epic';
+      const errorMessage = err.message || 'Failed to generate JIRA Stories';
       
       if (errorMessage.includes('503') || errorMessage.includes('unavailable')) {
         setError('LLM service is not available. Please ensure Ollama is running and try again.');
       } else if (errorMessage.includes('400')) {
         setError('Invalid requirements. Please check your file content and try again.');
       } else {
-        setError(`Failed to generate JIRA Epic: ${errorMessage}`);
+        setError(`Failed to generate JIRA Stories: ${errorMessage}`);
       }
     } finally {
       setIsGenerating(false);
@@ -390,7 +325,7 @@ function JiraEpicPage() {
 
   const handleSaveJiraStories = async () => {
     if (!epics || epics.length === 0) {
-      setError('No epics to save.');
+      setError('No stories to save.');
       return;
     }
 
@@ -734,7 +669,7 @@ function JiraEpicPage() {
     return html;
   };
 
-  const isSubmitDisabled = isGenerating || (!selectedFile && !additionalNotes.trim() && !projectRequirementsText.trim());
+  const isSubmitDisabled = isGenerating || !projectRequirementsText.trim();
 
   // Calculate pagination
   const totalPages = Math.ceil(epics.length / rowsPerPage);
@@ -807,73 +742,6 @@ function JiraEpicPage() {
               </div>
             )}
 
-            <div className="form-divider">
-              <span>and / or</span>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                Upload Requirements File
-              </label>
-              <FileDropzone
-                onFile={handleFileSelect}
-                accept=".txt,.md"
-              />
-              <p className="form-hint">Upload a .txt or .md file (max 1GB). Large files may take up to 5 minutes to process.</p>
-              
-              {/* File Info with Preview Link */}
-              {selectedFile && !error && (
-                <div className="file-preview-info">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 16v-4M12 8h.01"/>
-                  </svg>
-                  <span>File loaded: </span>
-                  <button
-                    type="button"
-                    className="file-preview-link"
-                    onClick={() => setShowFilePreview(true)}
-                    title="Click to preview file contents"
-                  >
-                    {selectedFile.name}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="form-divider">
-              <span>and / or</span>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="text-input" className="form-label">
-                Paste Additional Notes
-              </label>
-              <textarea
-                id="text-input"
-                className="form-textarea"
-                value={additionalNotes}
-                onChange={handleTextChange}
-                placeholder="Paste your requirements, user stories, or additional context here..."
-                rows={10}
-              />
-              {(() => {
-                const contentSources = [];
-                if (selectedFile) contentSources.push('file');
-                if (projectRequirementsText.trim()) contentSources.push('project requirements');
-                if (additionalNotes.trim()) contentSources.push('additional notes');
-                
-                if (contentSources.length > 1) {
-                  return (
-                    <p className="form-hint form-hint--info">
-                      Multiple content sources will be processed together: {contentSources.join(', ')}.
-                    </p>
-                  );
-                }
-                return null;
-              })()}
-            </div>
-
             {error && (
               <div className="form-error">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -889,7 +757,7 @@ function JiraEpicPage() {
               </Link>
               <div
                 className="btn-wrapper"
-                title={isSubmitDisabled ? 'Upload a file, add project requirements, or paste notes to continue' : ''}
+                title={isSubmitDisabled ? 'Add project functional requirements to continue' : ''}
               >
                 <button
                   type="button"
@@ -908,7 +776,7 @@ function JiraEpicPage() {
                         <polyline points="16 18 22 12 16 6"/>
                         <polyline points="8 6 2 12 8 18"/>
                       </svg>
-                      Generate JIRA Epic
+                      Generate JIRA Stories
                     </>
                   )}
                 </button>
@@ -930,25 +798,25 @@ function JiraEpicPage() {
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M13.5 4.5L6 12L2.5 8.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <span>Include clear problem statement and business goals</span>
+                <span>Focus on user value and benefits, not implementation</span>
               </li>
               <li>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M13.5 4.5L6 12L2.5 8.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <span>Specify target user roles and personas</span>
+                <span>Keep stories small, independent, and deliverable</span>
               </li>
               <li>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M13.5 4.5L6 12L2.5 8.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <span>List data sources and technical constraints</span>
+                <span>Include specific, testable acceptance criteria</span>
               </li>
               <li>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M13.5 4.5L6 12L2.5 8.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <span>Define success criteria and acceptance criteria</span>
+                <span>Describe the "who," "what," and "why" clearly</span>
               </li>
             </ul>
             <div className="tips-panel__example">
@@ -956,13 +824,13 @@ function JiraEpicPage() {
               <div className="tips-panel__example-text">
                 Your requirements should describe:{'\n'}
                 {'\n'}
-                • What problem needs solving{'\n'}
-                • Who will use this feature{'\n'}
-                • What success looks like{'\n'}
-                • Any technical constraints{'\n'}
-                • Required data or integrations{'\n'}
+                • The user persona or role{'\n'}
+                • The specific action or capability needed{'\n'}
+                • The business value or benefit{'\n'}
+                • Clear acceptance criteria{'\n'}
+                • Any relevant context or constraints{'\n'}
                 {'\n'}
-                The AI will structure these into proper JIRA Epics.
+                The AI will structure these into proper JIRA User Stories.
               </div>
             </div>
           </aside>
@@ -976,12 +844,12 @@ function JiraEpicPage() {
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                 <polyline points="22 4 12 14.01 9 11.01"/>
               </svg>
-              <span>✓ {epics.length} JIRA {epics.length === 1 ? 'Epic' : 'Epics'} successfully generated! Scroll down to view.</span>
+              <span>✓ {epics.length} JIRA {epics.length === 1 ? 'Story' : 'Stories'} successfully generated! Scroll down to view.</span>
             </div>
           </div>
         )}
 
-        {/* Generated Epics Display */}
+        {/* Generated Stories Display */}
         {epics.length > 0 && (
           <>
           <div className="epics-display" ref={epicsDisplayRef}>
@@ -989,7 +857,7 @@ function JiraEpicPage() {
               {/* Left Side - Epics Table */}
               <div className="epics-table-container">
                 <div className="epics-table-header">
-                  <h2>Generated Epics ({epics.length})</h2>
+                  <h2>Generated Stories ({epics.length})</h2>
                 </div>
                 
                 <div className="epics-table-wrapper">
@@ -997,7 +865,7 @@ function JiraEpicPage() {
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Epic Name</th>
+                        <th>Story Name</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1047,10 +915,10 @@ function JiraEpicPage() {
                 )}
               </div>
 
-              {/* Right Side - Epic Details */}
+              {/* Right Side - Story Details */}
               <div className="epic-details-container">
                 <div className="epic-details-header">
-                  <h2>{selectedEpic ? selectedEpic.name : 'Select an Epic'}</h2>
+                  <h2>{selectedEpic ? selectedEpic.name : 'Select a Story'}</h2>
                   {selectedEpic && (
                     <button
                       onClick={() => {
@@ -1150,7 +1018,7 @@ function JiraEpicPage() {
                         <line x1="9" y1="13" x2="15" y2="13"/>
                         <line x1="9" y1="17" x2="13" y2="17"/>
                       </svg>
-                      <p>Select an epic from the table to view details</p>
+                      <p>Select a story from the table to view details</p>
                     </div>
                   )}
                 </div>
@@ -1188,20 +1056,6 @@ function JiraEpicPage() {
           </>
         )}
       </section>
-
-      {/* File Preview Modal */}
-      {showFilePreview && selectedFile && (
-        <Modal
-          title="File Contents"
-          subtitle={selectedFile.name}
-          onClose={() => setShowFilePreview(false)}
-          size="large"
-        >
-          <div className="file-preview-content">
-            <pre className="file-preview-text">{fileContent}</pre>
-          </div>
-        </Modal>
-      )}
 
       {/* Project Selector Modal */}
       {showProjectSelector && (
