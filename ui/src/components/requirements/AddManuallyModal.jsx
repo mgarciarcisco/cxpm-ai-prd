@@ -60,10 +60,12 @@ function AddManuallyModal({ projectId, defaultSection, onClose, onAdd }) {
 
     try {
       const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${BASE_URL}/api/projects/${projectId}/requirements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           section,

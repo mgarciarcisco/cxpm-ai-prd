@@ -93,9 +93,13 @@ function SelectProjectPage() {
       
       // Create new project if needed
       if (isCreatingNew && newProjectName.trim()) {
+        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${API_BASE_URL}/api/projects`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ name: newProjectName.trim() }),
         });
         
@@ -111,8 +115,10 @@ function SelectProjectPage() {
       const formData = new FormData();
       formData.append('project_id', projectId);
       
+      const patchToken = localStorage.getItem('auth_token');
       const response = await fetch(`${API_BASE_URL}/api/meetings/${mid}/project`, {
         method: 'PATCH',
+        headers: patchToken ? { 'Authorization': `Bearer ${patchToken}` } : {},
         body: formData,
       });
       

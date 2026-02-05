@@ -268,7 +268,10 @@ function AddMeetingModal({ projectId, onClose, onSave }) {
     try {
       // We need to get the item IDs first by fetching the meeting
       const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
-      const meetingResponse = await fetch(`${BASE_URL}/api/meetings/${jobId}`);
+      const resolveToken = localStorage.getItem('auth_token');
+      const meetingResponse = await fetch(`${BASE_URL}/api/meetings/${jobId}`, {
+        headers: resolveToken ? { 'Authorization': `Bearer ${resolveToken}` } : {},
+      });
 
       if (!meetingResponse.ok) {
         throw new Error('Failed to fetch meeting data');
@@ -298,6 +301,7 @@ function AddMeetingModal({ projectId, onClose, onSave }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(resolveToken ? { 'Authorization': `Bearer ${resolveToken}` } : {}),
         },
         body: JSON.stringify({ decisions: decisionsWithIds }),
       });

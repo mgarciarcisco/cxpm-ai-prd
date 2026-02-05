@@ -43,7 +43,10 @@ function GeneratePRDModal({ projectId, requirementsCount: propRequirementsCount,
     const fetchRequirementsCount = async () => {
       try {
         const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
-        const response = await fetch(`${BASE_URL}/api/projects/${projectId}/requirements`);
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`${BASE_URL}/api/projects/${projectId}/requirements`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
         if (response.ok) {
           const data = await response.json();
           // Count all requirements across sections
