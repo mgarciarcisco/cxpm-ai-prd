@@ -35,7 +35,7 @@ from app.schemas import (
 
 def _create_test_project(db: Session, name: str = "Test Project") -> Project:
     """Create a test project."""
-    project = Project(name=name, description="For export schema tests")
+    project = Project(name=name, user_id="test-user-0000-0000-000000000001", description="For export schema tests")
     db.add(project)
     db.commit()
     db.refresh(project)
@@ -168,7 +168,7 @@ def _create_test_story(
 # =============================================================================
 
 
-def test_prd_export_json_matches_schema(test_client: TestClient, test_db: Session) -> None:
+def test_prd_export_json_matches_schema(auth_client: TestClient, test_db: Session) -> None:
     """Test that PRD JSON export exactly matches the PRDExportJSON schema.
     
     Schema fields (in order):
@@ -193,7 +193,7 @@ def test_prd_export_json_matches_schema(test_client: TestClient, test_db: Sessio
     )
     prd_id = cast(str, prd.id)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export?format=json")
+    response = auth_client.get(f"/api/prds/{prd_id}/export?format=json")
 
     assert response.status_code == 200
     data = response.json()
@@ -223,7 +223,7 @@ def test_prd_export_json_matches_schema(test_client: TestClient, test_db: Sessio
     assert export_model.updated_at is None or isinstance(export_model.updated_at, str)
 
 
-def test_prd_export_json_has_required_fields(test_client: TestClient, test_db: Session) -> None:
+def test_prd_export_json_has_required_fields(auth_client: TestClient, test_db: Session) -> None:
     """Test that PRD JSON export contains all required fields."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -231,7 +231,7 @@ def test_prd_export_json_has_required_fields(test_client: TestClient, test_db: S
     prd = _create_test_prd(test_db, project_id, mode=PRDMode.DRAFT)
     prd_id = cast(str, prd.id)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export?format=json")
+    response = auth_client.get(f"/api/prds/{prd_id}/export?format=json")
     data = response.json()
 
     # Required fields per PRDExportJSON schema
@@ -239,7 +239,7 @@ def test_prd_export_json_has_required_fields(test_client: TestClient, test_db: S
     assert required_fields <= set(data.keys()), f"Missing fields: {required_fields - set(data.keys())}"
 
 
-def test_prd_export_json_sections_structure(test_client: TestClient, test_db: Session) -> None:
+def test_prd_export_json_sections_structure(auth_client: TestClient, test_db: Session) -> None:
     """Test that PRD sections have correct structure per PRDExportSection schema."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -253,7 +253,7 @@ def test_prd_export_json_sections_structure(test_client: TestClient, test_db: Se
     )
     prd_id = cast(str, prd.id)
 
-    response = test_client.get(f"/api/prds/{prd_id}/export?format=json")
+    response = auth_client.get(f"/api/prds/{prd_id}/export?format=json")
     data = response.json()
 
     sections = data["sections"]
@@ -270,7 +270,7 @@ def test_prd_export_json_sections_structure(test_client: TestClient, test_db: Se
 # =============================================================================
 
 
-def test_stories_export_json_matches_schema(test_client: TestClient, test_db: Session) -> None:
+def test_stories_export_json_matches_schema(auth_client: TestClient, test_db: Session) -> None:
     """Test that Stories JSON export matches the StoriesExportJSON schema.
     
     Schema fields for each story (StoryExportItem):
@@ -317,7 +317,7 @@ def test_stories_export_json_matches_schema(test_client: TestClient, test_db: Se
     batch.story_count = 2
     test_db.commit()
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=json")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=json")
 
     assert response.status_code == 200
     data = response.json()
@@ -341,7 +341,7 @@ def test_stories_export_json_matches_schema(test_client: TestClient, test_db: Se
     assert story1.format == "classic"
 
 
-def test_stories_export_json_has_required_fields(test_client: TestClient, test_db: Session) -> None:
+def test_stories_export_json_has_required_fields(auth_client: TestClient, test_db: Session) -> None:
     """Test that Stories JSON export contains all required fields per story."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -353,7 +353,7 @@ def test_stories_export_json_has_required_fields(test_client: TestClient, test_d
     batch.story_count = 1
     test_db.commit()
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=json")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=json")
     data = response.json()
 
     assert "stories" in data
@@ -373,7 +373,7 @@ def test_stories_export_json_has_required_fields(test_client: TestClient, test_d
 # =============================================================================
 
 
-def test_stories_export_csv_has_correct_columns(test_client: TestClient, test_db: Session) -> None:
+def test_stories_export_csv_has_correct_columns(auth_client: TestClient, test_db: Session) -> None:
     """Test that Stories CSV export has the documented column headers.
     
     Column order per STORIES_CSV_COLUMNS:
@@ -396,7 +396,7 @@ def test_stories_export_csv_has_correct_columns(test_client: TestClient, test_db
     batch.story_count = 1
     test_db.commit()
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
@@ -409,7 +409,7 @@ def test_stories_export_csv_has_correct_columns(test_client: TestClient, test_db
     assert headers == STORIES_CSV_COLUMNS
 
 
-def test_stories_export_csv_acceptance_criteria_format(test_client: TestClient, test_db: Session) -> None:
+def test_stories_export_csv_acceptance_criteria_format(auth_client: TestClient, test_db: Session) -> None:
     """Test that acceptance criteria in CSV are pipe-separated as documented."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -424,7 +424,7 @@ def test_stories_export_csv_acceptance_criteria_format(test_client: TestClient, 
     batch.story_count = 1
     test_db.commit()
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
 
     content = response.content.decode()
     reader = csv.reader(io.StringIO(content))
@@ -439,7 +439,7 @@ def test_stories_export_csv_acceptance_criteria_format(test_client: TestClient, 
     assert ac_column == "First criterion | Second criterion | Third criterion"
 
 
-def test_stories_export_csv_labels_format(test_client: TestClient, test_db: Session) -> None:
+def test_stories_export_csv_labels_format(auth_client: TestClient, test_db: Session) -> None:
     """Test that labels in CSV are comma-separated as documented."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -454,7 +454,7 @@ def test_stories_export_csv_labels_format(test_client: TestClient, test_db: Sess
     batch.story_count = 1
     test_db.commit()
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
 
     content = response.content.decode()
     reader = csv.reader(io.StringIO(content))
@@ -468,7 +468,7 @@ def test_stories_export_csv_labels_format(test_client: TestClient, test_db: Sess
     assert labels_column == "feature, backend, api"
 
 
-def test_stories_export_csv_size_uppercase(test_client: TestClient, test_db: Session) -> None:
+def test_stories_export_csv_size_uppercase(auth_client: TestClient, test_db: Session) -> None:
     """Test that size in CSV is uppercase as documented."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -480,7 +480,7 @@ def test_stories_export_csv_size_uppercase(test_client: TestClient, test_db: Ses
     batch.story_count = 1
     test_db.commit()
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
 
     content = response.content.decode()
     reader = csv.reader(io.StringIO(content))
@@ -492,7 +492,7 @@ def test_stories_export_csv_size_uppercase(test_client: TestClient, test_db: Ses
     assert size_column == "XL"
 
 
-def test_stories_export_csv_column_order(test_client: TestClient, test_db: Session) -> None:
+def test_stories_export_csv_column_order(auth_client: TestClient, test_db: Session) -> None:
     """Test that CSV columns are in the documented order."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -514,7 +514,7 @@ def test_stories_export_csv_column_order(test_client: TestClient, test_db: Sessi
     batch.story_count = 1
     test_db.commit()
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
 
     content = response.content.decode()
     reader = csv.reader(io.StringIO(content))

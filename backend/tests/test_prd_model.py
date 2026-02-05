@@ -14,7 +14,7 @@ from typing import cast
 import pytest
 from sqlalchemy.orm import Session
 
-from app.models import PRD, Project
+from app.models import PRD, Project, User
 from app.models.prd import PRDMode, PRDStatus
 
 # =============================================================================
@@ -22,10 +22,21 @@ from app.models.prd import PRDMode, PRDStatus
 # =============================================================================
 
 
+def _ensure_test_user(db: Session) -> None:
+    """Ensure the test user exists in the database."""
+    existing = db.query(User).filter(User.id == "test-user-0000-0000-000000000001").first()
+    if not existing:
+        user = User(id="test-user-0000-0000-000000000001", email="test@example.com", name="Test User", hashed_password="x", is_active=True, is_admin=False)
+        db.add(user)
+        db.commit()
+
+
 def _create_test_project(db: Session, name: str = "Test Project") -> Project:
     """Create a test project."""
+    _ensure_test_user(db)
     project = Project(
         name=name,
+        user_id="test-user-0000-0000-000000000001",
         description="For PRD model tests"
     )
     db.add(project)

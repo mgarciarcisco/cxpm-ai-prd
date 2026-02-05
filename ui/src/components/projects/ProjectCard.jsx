@@ -104,6 +104,7 @@ function formatTimeAgo(dateString) {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now - date;
+  if (diffMs < 0) return 'Updated just now';
   const diffMinutes = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMinutes / 60);
   const diffDays = Math.floor(diffHours / 24);

@@ -28,8 +28,10 @@ from app.models import (
     StoryPriority,
     StorySize,
     StoryStatus,
+    User,
     UserStory,
 )
+from app.auth import hash_password
 
 
 def clear_existing_data(db):
@@ -39,11 +41,28 @@ def clear_existing_data(db):
     db.query(PRD).delete()
     db.query(Requirement).delete()
     db.query(Project).delete()
+    db.query(User).delete()
     db.commit()
     print("✓ Cleared existing data")
 
 
-def create_projects(db):
+def create_demo_user(db):
+    """Create a demo user for seeded data."""
+    user = User(
+        id="demo-user-0000-0000-000000000001",
+        email="demo@example.com",
+        name="Demo User",
+        hashed_password=hash_password("password123"),
+        is_active=True,
+        is_admin=True,
+    )
+    db.add(user)
+    db.commit()
+    print("✓ Created demo user (demo@example.com / password123)")
+    return user
+
+
+def create_projects(db, user_id):
     """Create sample projects at various stages."""
     now = datetime.utcnow()
 
@@ -51,6 +70,7 @@ def create_projects(db):
         # Project 1: Fully completed - AI Customer Support Chatbot
         Project(
             id=str(uuid.uuid4()),
+            user_id=user_id,
             name="AI Customer Support Chatbot",
             description="An intelligent chatbot that handles tier-1 customer support inquiries, reduces response times, and escalates complex issues to human agents.",
             archived=False,
@@ -65,6 +85,7 @@ def create_projects(db):
         # Project 2: In Stories stage - Mobile Banking App
         Project(
             id=str(uuid.uuid4()),
+            user_id=user_id,
             name="Mobile Banking Redesign",
             description="Complete redesign of the mobile banking experience with focus on quick transfers, bill payments, and financial insights.",
             archived=False,
@@ -79,6 +100,7 @@ def create_projects(db):
         # Project 3: In PRD stage - Employee Onboarding Portal
         Project(
             id=str(uuid.uuid4()),
+            user_id=user_id,
             name="Employee Onboarding Portal",
             description="Self-service portal for new hires to complete paperwork, access training materials, and meet their team before day one.",
             archived=False,
@@ -93,6 +115,7 @@ def create_projects(db):
         # Project 4: Just started - Inventory Management System
         Project(
             id=str(uuid.uuid4()),
+            user_id=user_id,
             name="Inventory Management System",
             description="Real-time inventory tracking for warehouse operations with barcode scanning, low-stock alerts, and supplier integration.",
             archived=False,
@@ -107,6 +130,7 @@ def create_projects(db):
         # Project 5: Archived project
         Project(
             id=str(uuid.uuid4()),
+            user_id=user_id,
             name="Legacy CRM Migration (Cancelled)",
             description="Migration of customer data from legacy CRM to new Salesforce instance - project cancelled due to vendor change.",
             archived=True,
@@ -947,8 +971,11 @@ def main():
         # Clear existing data
         clear_existing_data(db)
 
+        # Create demo user
+        demo_user = create_demo_user(db)
+
         # Create projects
-        projects = create_projects(db)
+        projects = create_projects(db, demo_user.id)
 
         # Create requirements
         create_all_requirements(db, projects)

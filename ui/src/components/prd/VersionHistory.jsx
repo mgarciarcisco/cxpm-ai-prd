@@ -144,6 +144,7 @@ function VersionHistory({ projectId, currentPrdId, currentVersion, onVersionSele
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
+    if (diffMs < 0) return 'just now';
     const diffSecs = Math.floor(diffMs / 1000);
     const diffMins = Math.floor(diffSecs / 60);
     const diffHours = Math.floor(diffMins / 60);

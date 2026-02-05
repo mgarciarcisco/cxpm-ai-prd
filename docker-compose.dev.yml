@@ -2,6 +2,25 @@
 # Usage: docker-compose -f docker-compose.dev.yml up --build
 
 services:
+  # PostgreSQL - Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: cxpm-postgres-dev
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: cxpm
+      POSTGRES_USER: cxpm
+      POSTGRES_PASSWORD: cxpm_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cxpm"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   # Backend - FastAPI application with hot-reload
   backend:
     build:
@@ -13,17 +32,8 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      # Database (override if needed)
-      - DATABASE_URL=sqlite:///./data/cxpm.db
-      
-      # Ollama LLM (fallback) - use Docker network hostname
-      - OLLAMA_BASE_URL=http://ollama:11434
-      
-      # App settings
-      - LLM_TIMEOUT=120
-      - LLM_MAX_RETRIES=1
-      - CHUNK_SIZE_CHARS=4000
-      - MAX_FILE_SIZE_KB=50
+      # Database
+      - DATABASE_URL=postgresql://cxpm:cxpm_dev@postgres:5432/cxpm
     volumes:
       # Mount source code for hot-reloading
       - ./backend/app:/app/app:ro
@@ -34,10 +44,10 @@ services:
     command: >
       sh -c "alembic upgrade head && 
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
-    # Uncomment to use Ollama as fallback
-    # depends_on:
-    #   - ollama
 
   # Frontend - React application with hot-reload
   frontend:
@@ -59,18 +69,8 @@ services:
       - backend
     restart: unless-stopped
 
-  # Ollama - Local LLM server (optional, uncomment if needed)
-  # ollama:
-  #   image: ollama/ollama:latest
-  #   container_name: cxpm-ollama-dev
-  #   ports:
-  #     - "11434:11434"
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-  #   restart: unless-stopped
-
 volumes:
+  postgres_data:
+    driver: local
   backend_data:
     driver: local
-  # ollama_data:
-  #   driver: local

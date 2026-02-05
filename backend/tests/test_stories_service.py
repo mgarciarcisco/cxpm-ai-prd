@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.exceptions import LLMResponseError, NoRequirementsError
-from app.models import Project, Requirement, StoryBatch, UserStory
+from app.models import Project, Requirement, StoryBatch, User, UserStory
 from app.models.meeting_item import Section
 from app.models.story_batch import StoryBatchStatus
 from app.models.user_story import StoryFormat, StorySize, StoryStatus
@@ -27,10 +27,21 @@ def _get_batch_id(batch: StoryBatch) -> str:
     return cast(str, batch.id)
 
 
+def _ensure_test_user(db: Session) -> None:
+    """Ensure the test user exists in the database."""
+    existing = db.query(User).filter(User.id == "test-user-0000-0000-000000000001").first()
+    if not existing:
+        user = User(id="test-user-0000-0000-000000000001", email="test@example.com", name="Test User", hashed_password="x", is_active=True, is_admin=False)
+        db.add(user)
+        db.commit()
+
+
 def _create_test_project(db: Session, name: str = "Test Project") -> Project:
     """Create a test project."""
+    _ensure_test_user(db)
     project = Project(
         name=name,
+        user_id="test-user-0000-0000-000000000001",
         description="For stories generator tests"
     )
     db.add(project)

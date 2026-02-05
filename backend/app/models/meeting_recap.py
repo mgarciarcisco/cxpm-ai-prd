@@ -6,7 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, Date, DateTime, ForeignKey, String, Text
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.dialects.sqlite import CHAR
+from sqlalchemy import CHAR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -51,6 +51,7 @@ class MeetingRecap(Base):
 
     # Processing metadata
     error_message = Column(Text, nullable=True)
+    user_id = Column(CHAR(36), ForeignKey("users.id"), nullable=False, index=True)
     prompt_version = Column(String(100), nullable=True)
 
     # Relationships

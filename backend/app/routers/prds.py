@@ -15,9 +15,11 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
+from app.auth import get_current_user, get_current_user_from_query
 from app.database import SessionLocal, get_db
 from app.exceptions import LLMResponseError, NoRequirementsError
 from app.models import PRD, PRDMode, PRDStatus, Project
+from app.models.user import User
 from app.schemas import (
     ExportFormat,
     PaginatedResponse,
@@ -36,25 +38,22 @@ from app.services.prd_generator import PRDGenerator
 router = APIRouter(prefix="/api", tags=["prds"])
 
 
-def _get_project_or_404(project_id: str, db: Session) -> Project:
+def _get_project_or_404(project_id: str, db: Session, current_user: User) -> Project:
     """Get a project by ID or raise 404."""
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     return project
 
 
-def _get_prd_or_404(prd_id: str, db: Session, verify_project_access: bool = True) -> PRD:
+def _get_prd_or_404(prd_id: str, db: Session, current_user: User | None = None) -> PRD:
     """Get a PRD by ID or raise 404. Excludes soft-deleted PRDs.
-    
+
     Args:
         prd_id: The PRD's unique identifier.
         db: Database session.
-        verify_project_access: If True (default), also verify the PRD's project exists
-            and is accessible. This ensures users can only access PRDs belonging to
-            projects they have access to. When authentication is implemented, this
-            will also verify the current user has permission to access the project.
-    
+        current_user: If provided, verify the PRD's project belongs to this user.
+
     Raises:
         HTTPException: 404 if PRD not found or project not accessible.
     """
@@ -62,12 +61,9 @@ def _get_prd_or_404(prd_id: str, db: Session, verify_project_access: bool = True
     if not prd:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PRD not found")
 
-    # Verify project access - ensures the PRD's project exists and is accessible
-    # When authentication is implemented, this would also verify user permissions
-    if verify_project_access:
-        project = db.query(Project).filter(Project.id == prd.project_id).first()
+    if current_user:
+        project = db.query(Project).filter(Project.id == prd.project_id, Project.user_id == current_user.id).first()
         if not project:
-            # Project was deleted but PRD still exists - treat as inaccessible
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="PRD not found"
@@ -155,14 +151,15 @@ def generate_prd(
     request: PRDGenerateRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> PRDStatusResponse:
     """Start PRD generation for a project.
-    
+
     Creates a PRD record with status=queued and starts generation in the background.
     Use GET /prds/{prd_id}/status to poll for completion.
     """
     # Verify project exists
-    _get_project_or_404(project_id, db)
+    _get_project_or_404(project_id, db, current_user)
 
     # Calculate next version number for this project
     max_version = db.query(func.max(PRD.version)).filter(
@@ -177,8 +174,8 @@ def generate_prd(
         version=next_version,
         mode=request.mode,
         status=PRDStatus.QUEUED,
-        created_by=None,  # Would be set from auth context
-        updated_by=None,
+        created_by=current_user.name,
+        updated_by=current_user.name,
     )
     db.add(prd)
     db.commit()
@@ -190,7 +187,7 @@ def generate_prd(
         prd_id=str(prd.id),
         project_id=project_id,
         mode=request.mode,
-        created_by=None,  # Would be set from auth context
+        created_by=current_user.name,
     )
 
     return PRDStatusResponse(
@@ -210,6 +207,7 @@ def create_prd(
     project_id: str,
     request: PRDCreateRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> PRDResponse:
     """Create a blank PRD for manual writing.
 
@@ -227,7 +225,7 @@ def create_prd(
     from app.models import PRDStageStatus
 
     # Verify project exists
-    project = _get_project_or_404(project_id, db)
+    project = _get_project_or_404(project_id, db, current_user)
 
     # Calculate next version number for this project
     max_version = db.query(func.max(PRD.version)).filter(
@@ -252,8 +250,8 @@ def create_prd(
         sections=sections,
         raw_markdown=raw_markdown,
         status=PRDStatus.READY,
-        created_by=None,  # Would be set from auth context
-        updated_by=None,
+        created_by=current_user.name,
+        updated_by=current_user.name,
     )
     db.add(prd)
 
@@ -272,6 +270,7 @@ async def stream_prd_generation(
     request: Request,
     mode: PRDMode = Query(default=PRDMode.DRAFT, description="Generation mode (draft or detailed)"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_query),
 ) -> EventSourceResponse:
     """Stream PRD generation using staged approach for faster perceived response.
 
@@ -301,7 +300,7 @@ async def stream_prd_generation(
     # Verify project exists
     logger.warning(f"[PRD Stream] Request received for project {project_id}, mode={mode}")
     print(f"[PRD Stream] Request received for project {project_id}, mode={mode}", flush=True)
-    project = _get_project_or_404(project_id, db)
+    project = _get_project_or_404(project_id, db, current_user)
     logger.warning(f"[PRD Stream] Project found: {project.name}")
 
     async def event_generator() -> AsyncIterator[dict[str, Any]]:
@@ -325,7 +324,7 @@ async def stream_prd_generation(
             async for event in generator.generate_stream_staged(
                 project_id=project_id,
                 mode=mode,
-                created_by=None,  # Would be set from auth context
+                created_by=current_user.name,
             ):
                 # Check if client disconnected
                 if await request.is_disconnected():
@@ -413,6 +412,7 @@ async def regenerate_section(
     request: Request,
     custom_instructions: str | None = None,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_query),
 ) -> EventSourceResponse:
     """Regenerate a single section of an existing PRD.
 
@@ -429,7 +429,7 @@ async def regenerate_section(
         EventSourceResponse streaming the regeneration events.
     """
     # Verify PRD exists
-    prd = _get_prd_or_404(prd_id, db)
+    prd = _get_prd_or_404(prd_id, db, current_user)
 
     async def event_generator() -> AsyncIterator[dict[str, Any]]:
         """Generate SSE events for section regeneration."""
@@ -448,7 +448,7 @@ async def regenerate_section(
                 prd_id=prd_id,
                 section_id=section_id,
                 custom_instructions=custom_instructions,
-                updated_by=None,  # Would be set from auth context
+                updated_by=current_user.name,
             ):
                 # Check if client disconnected
                 if await request.is_disconnected():
@@ -498,13 +498,13 @@ async def regenerate_section(
 
 
 @router.get("/prds/{prd_id}/status", response_model=PRDStatusResponse)
-def get_prd_status(prd_id: str, db: Session = Depends(get_db)) -> PRDStatusResponse:
+def get_prd_status(prd_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> PRDStatusResponse:
     """Get the current generation status of a PRD.
-    
+
     Use this endpoint to poll for generation completion.
     Returns status=ready when generation is complete.
     """
-    prd = _get_prd_or_404(prd_id, db)
+    prd = _get_prd_or_404(prd_id, db, current_user)
 
     return PRDStatusResponse(
         id=str(prd.id),
@@ -515,13 +515,13 @@ def get_prd_status(prd_id: str, db: Session = Depends(get_db)) -> PRDStatusRespo
 
 
 @router.post("/prds/{prd_id}/cancel", response_model=PRDStatusResponse)
-def cancel_prd_generation(prd_id: str, db: Session = Depends(get_db)) -> PRDStatusResponse:
+def cancel_prd_generation(prd_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> PRDStatusResponse:
     """Cancel PRD generation if still in progress.
-    
+
     Only works if status is queued or generating.
     Returns the updated status.
     """
-    prd = _get_prd_or_404(prd_id, db)
+    prd = _get_prd_or_404(prd_id, db, current_user)
 
     if prd.status not in (PRDStatus.QUEUED, PRDStatus.GENERATING):
         raise HTTPException(
@@ -552,14 +552,15 @@ def list_project_prds(
     limit: int = Query(20, ge=1, le=100),
     include_archived: bool = Query(False),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[PRDSummary]:
     """List all PRDs for a project with pagination.
-    
+
     By default excludes archived PRDs. Set include_archived=true to include them.
     PRDs are sorted by version descending (newest first).
     """
     # Verify project exists
-    _get_project_or_404(project_id, db)
+    _get_project_or_404(project_id, db, current_user)
 
     # Build query
     query = db.query(PRD).filter(
@@ -585,9 +586,9 @@ def list_project_prds(
 
 
 @router.get("/prds/{prd_id}", response_model=PRDResponse)
-def get_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDResponse:
+def get_prd(prd_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> PRDResponse:
     """Get a single PRD with all sections and content."""
-    prd = _get_prd_or_404(prd_id, db)
+    prd = _get_prd_or_404(prd_id, db, current_user)
     return _prd_to_response(prd)
 
 
@@ -596,13 +597,14 @@ def update_prd(
     prd_id: str,
     update_data: PRDUpdateRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> PRDResponse:
     """Update a PRD's title and/or sections.
-    
+
     Only title and sections can be updated.
     Returns the updated PRD.
     """
-    prd = _get_prd_or_404(prd_id, db)
+    prd = _get_prd_or_404(prd_id, db, current_user)
 
     # Cannot update non-ready PRDs
     if prd.status not in (PRDStatus.READY, PRDStatus.ARCHIVED):
@@ -623,7 +625,7 @@ def update_prd(
         prd.raw_markdown = _generate_markdown(prd.title or "", prd.sections)
 
     prd.updated_at = datetime.utcnow()
-    prd.updated_by = None  # Would be set from auth context
+    prd.updated_by = current_user.name
     db.commit()
     db.refresh(prd)
 
@@ -647,12 +649,12 @@ def _generate_markdown(title: str, sections: list[dict]) -> str:
 
 
 @router.delete("/prds/{prd_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_prd(prd_id: str, db: Session = Depends(get_db)) -> None:
+def delete_prd(prd_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
     """Soft delete a PRD by setting deleted_at timestamp.
-    
+
     The PRD will no longer appear in list results.
     """
-    prd = _get_prd_or_404(prd_id, db)
+    prd = _get_prd_or_404(prd_id, db, current_user)
 
     prd.deleted_at = datetime.utcnow()
     db.commit()
@@ -661,13 +663,13 @@ def delete_prd(prd_id: str, db: Session = Depends(get_db)) -> None:
 
 
 @router.post("/prds/{prd_id}/archive", response_model=PRDStatusResponse)
-def archive_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDStatusResponse:
+def archive_prd(prd_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> PRDStatusResponse:
     """Archive a PRD by setting status to archived.
-    
+
     Archived PRDs are excluded from list by default but can be included
     with include_archived=true.
     """
-    prd = _get_prd_or_404(prd_id, db)
+    prd = _get_prd_or_404(prd_id, db, current_user)
 
     if prd.status != PRDStatus.READY:
         raise HTTPException(
@@ -689,7 +691,7 @@ def archive_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDStatusResponse
 
 
 @router.post("/prds/{prd_id}/restore", response_model=PRDResponse)
-def restore_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDResponse:
+def restore_prd(prd_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> PRDResponse:
     """Restore a historical PRD version by creating a new version with its content.
 
     Creates a new PRD with the next version number, copying the title, sections,
@@ -710,7 +712,7 @@ def restore_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDResponse:
     from app.models import PRDStageStatus
 
     # Get the source PRD
-    source_prd = _get_prd_or_404(prd_id, db)
+    source_prd = _get_prd_or_404(prd_id, db, current_user)
 
     # Only allow restoring from ready or archived PRDs
     if source_prd.status not in (PRDStatus.READY, PRDStatus.ARCHIVED):
@@ -735,8 +737,8 @@ def restore_prd(prd_id: str, db: Session = Depends(get_db)) -> PRDResponse:
         sections=source_prd.sections,
         raw_markdown=source_prd.raw_markdown,
         status=PRDStatus.READY,
-        created_by=None,  # Would be set from auth context
-        updated_by=None,
+        created_by=current_user.name,
+        updated_by=current_user.name,
     )
     db.add(new_prd)
 
@@ -756,6 +758,7 @@ def export_prd(
     prd_id: str,
     format: ExportFormat = Query(ExportFormat.MARKDOWN),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> Response:
     """Export a PRD in the specified format.
     
@@ -765,7 +768,7 @@ def export_prd(
     
     Returns a downloadable file with appropriate content-type.
     """
-    prd = _get_prd_or_404(prd_id, db)
+    prd = _get_prd_or_404(prd_id, db, current_user)
 
     # Cannot export incomplete PRDs
     if prd.status not in (PRDStatus.READY, PRDStatus.ARCHIVED):

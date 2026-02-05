@@ -9,20 +9,20 @@ from app.models import MeetingRecap
 from app.models.meeting_recap import MeetingStatus
 
 
-def _create_project(test_client: TestClient) -> str:
+def _create_project(auth_client: TestClient) -> str:
     """Helper to create a project and return its ID."""
-    response = test_client.post(
+    response = auth_client.post(
         "/api/projects",
         json={"name": "Test Project", "description": "For meeting tests"},
     )
     return response.json()["id"]
 
 
-def test_upload_meeting_with_text(test_client: TestClient) -> None:
+def test_upload_meeting_with_text(auth_client: TestClient) -> None:
     """Test POST /api/meetings/upload with text content."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
-    response = test_client.post(
+    response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -38,15 +38,15 @@ def test_upload_meeting_with_text(test_client: TestClient) -> None:
     assert data["job_id"] == data["meeting_id"]
 
 
-def test_upload_meeting_with_file(test_client: TestClient) -> None:
+def test_upload_meeting_with_file(auth_client: TestClient) -> None:
     """Test POST /api/meetings/upload with file upload."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create a simple text file
     file_content = b"Meeting notes from the planning session."
     file = BytesIO(file_content)
 
-    response = test_client.post(
+    response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -61,15 +61,15 @@ def test_upload_meeting_with_file(test_client: TestClient) -> None:
     assert "meeting_id" in data
 
 
-def test_upload_meeting_with_md_file(test_client: TestClient) -> None:
+def test_upload_meeting_with_md_file(auth_client: TestClient) -> None:
     """Test POST /api/meetings/upload with markdown file."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create a markdown file
     file_content = b"# Meeting Notes\n\n- First item\n- Second item"
     file = BytesIO(file_content)
 
-    response = test_client.post(
+    response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -81,11 +81,11 @@ def test_upload_meeting_with_md_file(test_client: TestClient) -> None:
     assert response.status_code == 201
 
 
-def test_upload_meeting_requires_file_or_text(test_client: TestClient) -> None:
+def test_upload_meeting_requires_file_or_text(auth_client: TestClient) -> None:
     """Test POST /api/meetings/upload returns 400 when neither file nor text provided."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
-    response = test_client.post(
+    response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -97,11 +97,11 @@ def test_upload_meeting_requires_file_or_text(test_client: TestClient) -> None:
     assert "Either file or text must be provided" in response.json()["detail"]
 
 
-def test_upload_meeting_404_on_missing_project(test_client: TestClient) -> None:
+def test_upload_meeting_404_on_missing_project(auth_client: TestClient) -> None:
     """Test POST /api/meetings/upload returns 404 for non-existent project."""
     fake_project_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.post(
+    response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": fake_project_id,
@@ -114,13 +114,13 @@ def test_upload_meeting_404_on_missing_project(test_client: TestClient) -> None:
     assert response.json()["detail"] == "Project not found"
 
 
-def test_list_meetings_by_project(test_client: TestClient) -> None:
+def test_list_meetings_by_project(auth_client: TestClient) -> None:
     """Test GET /api/projects/{id}/meetings returns meetings for the project."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create some meetings
     for i in range(3):
-        test_client.post(
+        auth_client.post(
             "/api/meetings/upload",
             data={
                 "project_id": project_id,
@@ -130,7 +130,7 @@ def test_list_meetings_by_project(test_client: TestClient) -> None:
             },
         )
 
-    response = test_client.get(f"/api/projects/{project_id}/meetings")
+    response = auth_client.get(f"/api/projects/{project_id}/meetings")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 3
@@ -140,31 +140,31 @@ def test_list_meetings_by_project(test_client: TestClient) -> None:
     assert "Meeting 3" in titles
 
 
-def test_list_meetings_empty_for_new_project(test_client: TestClient) -> None:
+def test_list_meetings_empty_for_new_project(auth_client: TestClient) -> None:
     """Test GET /api/projects/{id}/meetings returns empty list for new project."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
-    response = test_client.get(f"/api/projects/{project_id}/meetings")
+    response = auth_client.get(f"/api/projects/{project_id}/meetings")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 0
 
 
-def test_list_meetings_404_on_missing_project(test_client: TestClient) -> None:
+def test_list_meetings_404_on_missing_project(auth_client: TestClient) -> None:
     """Test GET /api/projects/{id}/meetings returns 404 for non-existent project."""
     fake_project_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.get(f"/api/projects/{fake_project_id}/meetings")
+    response = auth_client.get(f"/api/projects/{fake_project_id}/meetings")
     assert response.status_code == 404
     assert response.json()["detail"] == "Project not found"
 
 
-def test_get_meeting_with_items(test_client: TestClient) -> None:
+def test_get_meeting_with_items(auth_client: TestClient) -> None:
     """Test GET /api/meetings/{id} returns meeting with items list."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create a meeting
-    upload_response = test_client.post(
+    upload_response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -175,7 +175,7 @@ def test_get_meeting_with_items(test_client: TestClient) -> None:
     )
     meeting_id = upload_response.json()["meeting_id"]
 
-    response = test_client.get(f"/api/meetings/{meeting_id}")
+    response = auth_client.get(f"/api/meetings/{meeting_id}")
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == meeting_id
@@ -187,21 +187,21 @@ def test_get_meeting_with_items(test_client: TestClient) -> None:
     assert isinstance(data["items"], list)
 
 
-def test_get_meeting_404_on_missing(test_client: TestClient) -> None:
+def test_get_meeting_404_on_missing(auth_client: TestClient) -> None:
     """Test GET /api/meetings/{id} returns 404 for non-existent meeting."""
     fake_meeting_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.get(f"/api/meetings/{fake_meeting_id}")
+    response = auth_client.get(f"/api/meetings/{fake_meeting_id}")
     assert response.status_code == 404
     assert response.json()["detail"] == "Meeting not found"
 
 
-def test_delete_meeting(test_client: TestClient) -> None:
+def test_delete_meeting(auth_client: TestClient) -> None:
     """Test DELETE /api/meetings/{id} removes the meeting."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create a meeting
-    upload_response = test_client.post(
+    upload_response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -213,29 +213,29 @@ def test_delete_meeting(test_client: TestClient) -> None:
     meeting_id = upload_response.json()["meeting_id"]
 
     # Delete the meeting
-    delete_response = test_client.delete(f"/api/meetings/{meeting_id}")
+    delete_response = auth_client.delete(f"/api/meetings/{meeting_id}")
     assert delete_response.status_code == 204
 
     # Verify it's gone
-    get_response = test_client.get(f"/api/meetings/{meeting_id}")
+    get_response = auth_client.get(f"/api/meetings/{meeting_id}")
     assert get_response.status_code == 404
 
 
-def test_delete_meeting_404_on_missing(test_client: TestClient) -> None:
+def test_delete_meeting_404_on_missing(auth_client: TestClient) -> None:
     """Test DELETE /api/meetings/{id} returns 404 for non-existent meeting."""
     fake_meeting_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.delete(f"/api/meetings/{fake_meeting_id}")
+    response = auth_client.delete(f"/api/meetings/{fake_meeting_id}")
     assert response.status_code == 404
     assert response.json()["detail"] == "Meeting not found"
 
 
-def test_delete_meeting_removes_from_project_list(test_client: TestClient) -> None:
+def test_delete_meeting_removes_from_project_list(auth_client: TestClient) -> None:
     """Test that deleted meeting is removed from project meetings list."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create two meetings
-    test_client.post(
+    auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -244,7 +244,7 @@ def test_delete_meeting_removes_from_project_list(test_client: TestClient) -> No
             "text": "Content 1",
         },
     )
-    upload2 = test_client.post(
+    upload2 = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -256,22 +256,22 @@ def test_delete_meeting_removes_from_project_list(test_client: TestClient) -> No
     meeting_to_delete = upload2.json()["meeting_id"]
 
     # Delete one meeting
-    test_client.delete(f"/api/meetings/{meeting_to_delete}")
+    auth_client.delete(f"/api/meetings/{meeting_to_delete}")
 
     # Verify only one remains in project list
-    response = test_client.get(f"/api/projects/{project_id}/meetings")
+    response = auth_client.get(f"/api/projects/{project_id}/meetings")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
     assert data[0]["title"] == "Keep This"
 
 
-def test_retry_meeting_resets_status(test_client: TestClient, test_db: Session) -> None:
+def test_retry_meeting_resets_status(auth_client: TestClient, test_db: Session) -> None:
     """Test POST /api/meetings/{id}/retry resets a failed meeting to pending."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create a meeting
-    upload_response = test_client.post(
+    upload_response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -289,19 +289,19 @@ def test_retry_meeting_resets_status(test_client: TestClient, test_db: Session) 
     test_db.commit()
 
     # Retry the meeting
-    retry_response = test_client.post(f"/api/meetings/{meeting_id}/retry")
+    retry_response = auth_client.post(f"/api/meetings/{meeting_id}/retry")
     assert retry_response.status_code == 200
     data = retry_response.json()
     assert data["status"] == "pending"
     assert data["error_message"] is None
 
 
-def test_retry_meeting_clears_error_message(test_client: TestClient, test_db: Session) -> None:
+def test_retry_meeting_clears_error_message(auth_client: TestClient, test_db: Session) -> None:
     """Test POST /api/meetings/{id}/retry clears the error_message field."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create a meeting
-    upload_response = test_client.post(
+    upload_response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -319,28 +319,28 @@ def test_retry_meeting_clears_error_message(test_client: TestClient, test_db: Se
     test_db.commit()
 
     # Retry the meeting
-    test_client.post(f"/api/meetings/{meeting_id}/retry")
+    auth_client.post(f"/api/meetings/{meeting_id}/retry")
 
     # Verify error_message is cleared in database
     test_db.refresh(meeting)
     assert meeting.error_message is None
 
 
-def test_retry_meeting_404_on_missing(test_client: TestClient) -> None:
+def test_retry_meeting_404_on_missing(auth_client: TestClient) -> None:
     """Test POST /api/meetings/{id}/retry returns 404 for non-existent meeting."""
     fake_meeting_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.post(f"/api/meetings/{fake_meeting_id}/retry")
+    response = auth_client.post(f"/api/meetings/{fake_meeting_id}/retry")
     assert response.status_code == 404
     assert response.json()["detail"] == "Meeting not found"
 
 
-def test_retry_meeting_400_on_non_failed_status(test_client: TestClient) -> None:
+def test_retry_meeting_400_on_non_failed_status(auth_client: TestClient) -> None:
     """Test POST /api/meetings/{id}/retry returns 400 if meeting status is not failed."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create a meeting (status will be pending)
-    upload_response = test_client.post(
+    upload_response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -352,17 +352,17 @@ def test_retry_meeting_400_on_non_failed_status(test_client: TestClient) -> None
     meeting_id = upload_response.json()["meeting_id"]
 
     # Try to retry a pending meeting (should fail)
-    response = test_client.post(f"/api/meetings/{meeting_id}/retry")
+    response = auth_client.post(f"/api/meetings/{meeting_id}/retry")
     assert response.status_code == 400
     assert "Can only retry meetings with failed status" in response.json()["detail"]
 
 
-def test_retry_meeting_returns_meeting_response(test_client: TestClient, test_db: Session) -> None:
+def test_retry_meeting_returns_meeting_response(auth_client: TestClient, test_db: Session) -> None:
     """Test POST /api/meetings/{id}/retry returns a full MeetingResponse."""
-    project_id = _create_project(test_client)
+    project_id = _create_project(auth_client)
 
     # Create a meeting
-    upload_response = test_client.post(
+    upload_response = auth_client.post(
         "/api/meetings/upload",
         data={
             "project_id": project_id,
@@ -380,7 +380,7 @@ def test_retry_meeting_returns_meeting_response(test_client: TestClient, test_db
     test_db.commit()
 
     # Retry and check response has all expected fields
-    response = test_client.post(f"/api/meetings/{meeting_id}/retry")
+    response = auth_client.post(f"/api/meetings/{meeting_id}/retry")
     assert response.status_code == 200
     data = response.json()
 

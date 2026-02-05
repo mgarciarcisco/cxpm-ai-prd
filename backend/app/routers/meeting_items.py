@@ -3,8 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
 from app.models import MeetingItem, MeetingRecap
+from app.models.user import User
 from app.models.meeting_recap import MeetingStatus
 from app.schemas import MeetingItemResponse, MeetingItemUpdate
 
@@ -16,6 +18,7 @@ def update_meeting_item(
     item_id: str,
     update: MeetingItemUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> MeetingItem:
     """
     Update a meeting item's content.
@@ -39,6 +42,13 @@ def update_meeting_item(
             detail="Meeting not found",
         )
 
+    # Verify user ownership
+    if meeting.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting item not found",
+        )
+
     if meeting.status != MeetingStatus.processed:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -57,6 +67,7 @@ def update_meeting_item(
 def delete_meeting_item(
     item_id: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> None:
     """
     Soft-delete a meeting item (sets is_deleted=true).
@@ -79,6 +90,13 @@ def delete_meeting_item(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting not found",
+        )
+
+    # Verify user ownership
+    if meeting.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meeting item not found",
         )
 
     if meeting.status != MeetingStatus.processed:

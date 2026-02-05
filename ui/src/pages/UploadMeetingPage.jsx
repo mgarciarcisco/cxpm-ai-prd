@@ -84,8 +84,10 @@ function UploadMeetingPage() {
         formData.append('text', text.trim());
       }
 
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${API_BASE_URL}/api/meetings/upload`, {
         method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData,
       });
 

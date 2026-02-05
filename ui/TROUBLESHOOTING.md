@@ -52,7 +52,7 @@ This will:
 
 **Error**: `EADDRINUSE: address already in use :::3000`
 
-**Solution**: The `run_app.sh` script automatically handles this, but if running manually:
+**Solution**:
 
 ```bash
 # Find process using port 3000
@@ -60,9 +60,6 @@ lsof -ti:3000
 
 # Kill the process
 kill -9 $(lsof -ti:3000)
-
-# Or use the run_app.sh script
-./run_app.sh
 ```
 
 ### Permission Denied Errors

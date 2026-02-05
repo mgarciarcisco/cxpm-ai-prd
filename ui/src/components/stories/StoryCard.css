@@ -14,7 +14,7 @@
 }
 
 .story-card--expanded {
-  border-color: #3B82F6;
+  border-color: #4ECDC4;
 }
 
 /* Header */
@@ -79,7 +79,7 @@
   font-weight: 700;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  background-color: #3B82F6;
+  background-color: #4ECDC4;
   color: #FFFFFF;
   letter-spacing: 0.025em;
   flex-shrink: 0;
@@ -139,8 +139,8 @@
 }
 
 .story-card-size--xs {
-  background-color: #DBEAFE;
-  color: #1D4ED8;
+  background-color: var(--color-primary-light);
+  color: #3BB5AD;
 }
 
 .story-card-size--s {
@@ -191,8 +191,8 @@
 }
 
 .story-card-priority--low {
-  background-color: #DBEAFE;
-  color: #1D4ED8;
+  background-color: var(--color-primary-light);
+  color: #3BB5AD;
 }
 
 /* Expand Button */
@@ -259,8 +259,8 @@
 }
 
 .story-card-status--exported {
-  background-color: #DBEAFE;
-  color: #1D4ED8;
+  background-color: var(--color-primary-light);
+  color: #3BB5AD;
 }
 
 .story-card-format {

@@ -41,6 +41,7 @@ function formatTimeAgo(date) {
   const now = new Date();
   const then = new Date(date);
   const diffMs = now - then;
+  if (diffMs < 0) return 'just now';
   const diffSecs = Math.floor(diffMs / 1000);
   const diffMins = Math.floor(diffSecs / 60);
   const diffHours = Math.floor(diffMins / 60);

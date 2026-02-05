@@ -106,8 +106,8 @@
 }
 
 .stories-format-option:hover:not(:disabled) {
-  border-color: #3B82F6;
-  background-color: #EFF6FF;
+  border-color: #4ECDC4;
+  background-color: var(--color-primary-light);
 }
 
 .stories-format-option:disabled {
@@ -116,8 +116,8 @@
 }
 
 .stories-format-option--selected {
-  border-color: #3B82F6;
-  background-color: #EFF6FF;
+  border-color: #4ECDC4;
+  background-color: var(--color-primary-light);
 }
 
 .stories-format-icon {
@@ -131,8 +131,8 @@
 }
 
 .stories-format-icon--classic {
-  background-color: #DBEAFE;
-  color: #2563EB;
+  background-color: var(--color-primary-light);
+  color: #3BB5AD;
 }
 
 .stories-format-icon--job_story {
@@ -165,7 +165,7 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  color: #3B82F6;
+  color: #4ECDC4;
 }
 
 /* Section Filter */
@@ -192,10 +192,10 @@
 
 .stories-section-clear-btn {
   padding: 0.25rem 0.75rem;
-  background-color: #EFF6FF;
-  border: 1px solid #BFDBFE;
+  background-color: var(--color-primary-light);
+  border: 1px solid rgba(78, 205, 196, 0.3);
   border-radius: 6px;
-  color: #2563EB;
+  color: #3BB5AD;
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
@@ -203,7 +203,7 @@
 }
 
 .stories-section-clear-btn:hover {
-  background-color: #DBEAFE;
+  background-color: rgba(78, 205, 196, 0.2);
 }
 
 .stories-section-filter-dropdown {
@@ -226,7 +226,7 @@
 }
 
 .stories-section-filter-trigger:hover:not(:disabled) {
-  border-color: #3B82F6;
+  border-color: #4ECDC4;
 }
 
 .stories-section-filter-trigger:disabled {
@@ -264,7 +264,7 @@
 }
 
 .stories-section-filter-item input {
-  accent-color: #3B82F6;
+  accent-color: #4ECDC4;
   width: 16px;
   height: 16px;
 }
@@ -332,7 +332,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 1rem 2rem;
-  background-color: #3B82F6;
+  background-color: #4ECDC4;
   color: #FFFFFF;
   border: none;
   border-radius: 8px;
@@ -344,7 +344,7 @@
 }
 
 .stories-generate-btn:hover:not(:disabled) {
-  background-color: #2563EB;
+  background-color: #3BB5AD;
 }
 
 .stories-generate-btn:disabled {
@@ -402,7 +402,7 @@
 
 .stories-export-btn:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.3);
 }
 
 .stories-export-btn svg {
@@ -431,8 +431,8 @@
 .stories-existing-item-id {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #3B82F6;
-  background-color: #EFF6FF;
+  color: #4ECDC4;
+  background-color: var(--color-primary-light);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   flex-shrink: 0;
@@ -662,7 +662,7 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  background-color: #3B82F6;
+  background-color: #4ECDC4;
   color: #FFFFFF;
   font-size: 0.625rem;
   font-weight: 600;
@@ -718,8 +718,8 @@
   justify-content: center;
   width: 56px;
   height: 56px;
-  background-color: #DBEAFE;
-  color: #2563EB;
+  background-color: var(--color-primary-light);
+  color: #3BB5AD;
   border-radius: 50%;
   margin-bottom: 1rem;
 }
@@ -768,7 +768,7 @@
 
 .stories-info-confirm-btn {
   padding: 0.75rem 1.5rem;
-  background-color: #3B82F6;
+  background-color: #4ECDC4;
   border: none;
   border-radius: 8px;
   color: #FFFFFF;
@@ -779,13 +779,13 @@
 }
 
 .stories-info-confirm-btn:hover {
-  background-color: #2563EB;
+  background-color: #3BB5AD;
 }
 
 /* Retry Button (in error state) */
 .retry-btn {
   padding: 0.75rem 1.5rem;
-  background-color: #3B82F6;
+  background-color: #4ECDC4;
   color: #FFFFFF;
   border: none;
   border-radius: 8px;
@@ -796,7 +796,7 @@
 }
 
 .retry-btn:hover {
-  background-color: #2563EB;
+  background-color: #3BB5AD;
 }
 
 /* Responsive */

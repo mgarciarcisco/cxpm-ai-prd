@@ -57,7 +57,7 @@
 .task-card {
   background: white;
   border: 1px solid #E5E7EB;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -92,7 +92,7 @@
 }
 
 .task-card--blue:hover {
-  border-color: #3B82F6;
+  border-color: #4ECDC4;
 }
 
 .task-card--purple:hover {
@@ -116,28 +116,22 @@
   font-size: 0.625rem;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
-/* Disabled cards - stronger visual distinction */
+/* Disabled cards */
 .task-card--disabled {
   cursor: not-allowed;
   background: #FAFAFA;
-  opacity: 0.55;
-  filter: grayscale(40%);
+  opacity: 0.8;
 }
 
 .task-card--disabled:hover {
   transform: none;
   box-shadow: none;
   border-color: #E5E7EB;
-}
-
-.task-card--disabled .task-card__icon {
-  opacity: 0.5;
-  filter: grayscale(100%);
 }
 
 .task-card--disabled .task-card__description,
@@ -149,7 +143,7 @@
 .task-card__icon {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,8 +162,8 @@
 }
 
 .task-card__icon--blue {
-  background: #DBEAFE;
-  color: #2563EB;
+  background: var(--color-primary-light);
+  color: #3BB5AD;
 }
 
 .task-card__icon--purple {
@@ -227,13 +221,14 @@
 /* Task Card Badge */
 .task-card__badge {
   display: inline-block;
-  background: #F3F4F6;
-  color: #6B7280;
-  font-size: 0.5625rem;
-  font-weight: 600;
-  padding: 0.15rem 0.35rem;
-  border-radius: 3px;
+  background: var(--color-primary-light);
+  color: #3BB5AD;
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-xs);
   text-transform: uppercase;
+  letter-spacing: 0.03em;
   letter-spacing: 0.03em;
   white-space: nowrap;
 }
@@ -299,7 +294,7 @@
 }
 
 .progress-legend__color--active {
-  background: linear-gradient(90deg, #3B82F6, #60A5FA);
+  background: linear-gradient(90deg, #4ECDC4, #7EE0D9);
 }
 
 /* Projects List - Full width vertical layout */
@@ -318,7 +313,7 @@
   padding: 3rem;
   background-color: #FFFFFF;
   border: 1px solid #E5E7EB;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .dashboard__loading-spinner {
@@ -350,7 +345,7 @@
   padding: 3rem;
   background-color: #FEF2F2;
   border: 1px solid #FECACA;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .dashboard__error-text {
@@ -366,7 +361,7 @@
   color: #DC2626;
   background-color: #FFFFFF;
   border: 1px solid #DC2626;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -385,7 +380,7 @@
 .dashboard__projects-section .empty-state {
   background-color: #FFFFFF;
   border: 1px dashed #E5E7EB;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 /* Link styled as button for EmptyState actions */
@@ -393,13 +388,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 20px;
+  padding: 0.75rem 1.5rem;
   font-size: 14px;
   font-weight: 500;
   color: white;
   background-color: #4ECDC4;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -523,7 +518,7 @@
   /* Touch-friendly loading state */
   .dashboard__loading {
     padding: 1.5rem 1rem;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
   }
 
   .dashboard__loading-text {
@@ -533,7 +528,7 @@
   /* Touch-friendly error state */
   .dashboard__error {
     padding: 1.5rem 1rem;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
   }
 
   .dashboard__error-text {
@@ -544,7 +539,7 @@
   /* Touch-friendly empty state */
   .dashboard__projects-section .empty-state {
     padding: 1.5rem 1rem;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
   }
 }
 
@@ -567,7 +562,7 @@
   margin: 0;
   padding: 0.75rem;
   background-color: #FEF2F2;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .delete-confirmation__actions {
@@ -578,10 +573,10 @@
 }
 
 .btn {
-  padding: 0.625rem 1rem;
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;

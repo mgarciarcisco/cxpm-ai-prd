@@ -26,6 +26,7 @@ def _create_test_project(db: Session, name: str = "Test Project") -> Project:
     """Create a test project."""
     project = Project(
         name=name,
+        user_id="test-user-0000-0000-000000000001",
         description="For Stories API tests"
     )
     db.add(project)
@@ -129,7 +130,7 @@ def _get_story_id(story: UserStory) -> str:
 # =============================================================================
 
 
-def test_get_story_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_get_story_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /stories/{story_id} returns 404 when the story's project has been deleted.
     
     This verifies project access is enforced even when accessing a story by its ID.
@@ -144,13 +145,13 @@ def test_get_story_returns_404_when_project_deleted(test_client: TestClient, tes
     test_db.commit()
 
     # Now try to access the story - should get 404 because project access check fails
-    response = test_client.get(f"/api/stories/{story_id}")
+    response = auth_client.get(f"/api/stories/{story_id}")
 
     assert response.status_code == 404
     assert "Story not found" in response.json()["detail"]
 
 
-def test_update_story_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_update_story_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that PUT /stories/{story_id} returns 404 when the story's project has been deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -162,7 +163,7 @@ def test_update_story_returns_404_when_project_deleted(test_client: TestClient, 
     test_db.commit()
 
     # Try to update the story
-    response = test_client.put(
+    response = auth_client.put(
         f"/api/stories/{story_id}",
         json={"title": "New Title"}
     )
@@ -170,7 +171,7 @@ def test_update_story_returns_404_when_project_deleted(test_client: TestClient, 
     assert response.status_code == 404
 
 
-def test_delete_story_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_delete_story_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that DELETE /stories/{story_id} returns 404 when the story's project has been deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -182,12 +183,12 @@ def test_delete_story_returns_404_when_project_deleted(test_client: TestClient, 
     test_db.commit()
 
     # Try to delete the story
-    response = test_client.delete(f"/api/stories/{story_id}")
+    response = auth_client.delete(f"/api/stories/{story_id}")
 
     assert response.status_code == 404
 
 
-def test_batch_status_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_batch_status_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /stories/batches/{batch_id}/status returns 404 when project is deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -199,12 +200,12 @@ def test_batch_status_returns_404_when_project_deleted(test_client: TestClient, 
     test_db.commit()
 
     # Try to get batch status
-    response = test_client.get(f"/api/stories/batches/{batch_id}/status")
+    response = auth_client.get(f"/api/stories/batches/{batch_id}/status")
 
     assert response.status_code == 404
 
 
-def test_cancel_batch_returns_404_when_project_deleted(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_batch_returns_404_when_project_deleted(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /stories/batches/{batch_id}/cancel returns 404 when project is deleted."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -216,12 +217,12 @@ def test_cancel_batch_returns_404_when_project_deleted(test_client: TestClient, 
     test_db.commit()
 
     # Try to cancel batch
-    response = test_client.post(f"/api/stories/batches/{batch_id}/cancel")
+    response = auth_client.post(f"/api/stories/batches/{batch_id}/cancel")
 
     assert response.status_code == 404
 
 
-def test_story_accessible_when_project_exists(test_client: TestClient, test_db: Session) -> None:
+def test_story_accessible_when_project_exists(auth_client: TestClient, test_db: Session) -> None:
     """Test that story is accessible when its project exists (positive case)."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -229,13 +230,13 @@ def test_story_accessible_when_project_exists(test_client: TestClient, test_db: 
     story_id = _get_story_id(story)
 
     # Story should be accessible
-    response = test_client.get(f"/api/stories/{story_id}")
+    response = auth_client.get(f"/api/stories/{story_id}")
 
     assert response.status_code == 200
     assert response.json()["title"] == "Accessible Story"
 
 
-def test_batch_accessible_when_project_exists(test_client: TestClient, test_db: Session) -> None:
+def test_batch_accessible_when_project_exists(auth_client: TestClient, test_db: Session) -> None:
     """Test that batch is accessible when its project exists (positive case)."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -243,7 +244,7 @@ def test_batch_accessible_when_project_exists(test_client: TestClient, test_db: 
     batch_id = _get_batch_id(batch)
 
     # Batch status should be accessible
-    response = test_client.get(f"/api/stories/batches/{batch_id}/status")
+    response = auth_client.get(f"/api/stories/batches/{batch_id}/status")
 
     assert response.status_code == 200
     assert response.json()["status"] == "ready"
@@ -254,14 +255,14 @@ def test_batch_accessible_when_project_exists(test_client: TestClient, test_db: 
 # =============================================================================
 
 
-def test_generate_returns_queued_status(test_client: TestClient, test_db: Session) -> None:
+def test_generate_returns_queued_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /projects/{project_id}/stories/generate returns batch with status=queued."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     # Create a requirement so generation can proceed
     _create_test_requirement(test_db, project_id)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories/generate",
         json={"format": "classic"}
     )
@@ -274,9 +275,9 @@ def test_generate_returns_queued_status(test_client: TestClient, test_db: Sessio
     assert data["error_message"] is None
 
 
-def test_generate_returns_404_for_missing_project(test_client: TestClient, test_db: Session) -> None:
+def test_generate_returns_404_for_missing_project(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /generate returns 404 for non-existent project."""
-    response = test_client.post(
+    response = auth_client.post(
         "/api/projects/00000000-0000-0000-0000-000000000000/stories/generate",
         json={"format": "classic"}
     )
@@ -285,12 +286,12 @@ def test_generate_returns_404_for_missing_project(test_client: TestClient, test_
     assert "Project not found" in response.json()["detail"]
 
 
-def test_generate_validates_format(test_client: TestClient, test_db: Session) -> None:
+def test_generate_validates_format(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /generate validates the format field."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories/generate",
         json={"format": "invalid_format"}
     )
@@ -298,13 +299,13 @@ def test_generate_validates_format(test_client: TestClient, test_db: Session) ->
     assert response.status_code == 422
 
 
-def test_generate_with_section_filter(test_client: TestClient, test_db: Session) -> None:
+def test_generate_with_section_filter(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /generate accepts section_filter parameter."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_requirement(test_db, project_id, section=Section.functional_requirements)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories/generate",
         json={"format": "classic", "section_filter": ["functional"]}
     )
@@ -314,13 +315,13 @@ def test_generate_with_section_filter(test_client: TestClient, test_db: Session)
     assert data["status"] == "queued"
 
 
-def test_generate_with_job_story_format(test_client: TestClient, test_db: Session) -> None:
+def test_generate_with_job_story_format(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /generate accepts job_story format."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_requirement(test_db, project_id)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories/generate",
         json={"format": "job_story"}
     )
@@ -335,14 +336,14 @@ def test_generate_with_job_story_format(test_client: TestClient, test_db: Sessio
 # =============================================================================
 
 
-def test_batch_status_polling_returns_queued(test_client: TestClient, test_db: Session) -> None:
+def test_batch_status_polling_returns_queued(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /batches/{batch_id}/status returns correct queued status."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     batch = _create_test_batch(test_db, project_id, status=StoryBatchStatus.QUEUED)
     batch_id = _get_batch_id(batch)
 
-    response = test_client.get(f"/api/stories/batches/{batch_id}/status")
+    response = auth_client.get(f"/api/stories/batches/{batch_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -350,27 +351,27 @@ def test_batch_status_polling_returns_queued(test_client: TestClient, test_db: S
     assert data["id"] == batch_id
 
 
-def test_batch_status_polling_returns_generating(test_client: TestClient, test_db: Session) -> None:
+def test_batch_status_polling_returns_generating(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /batches/{batch_id}/status returns correct generating status."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     batch = _create_test_batch(test_db, project_id, status=StoryBatchStatus.GENERATING)
     batch_id = _get_batch_id(batch)
 
-    response = test_client.get(f"/api/stories/batches/{batch_id}/status")
+    response = auth_client.get(f"/api/stories/batches/{batch_id}/status")
 
     assert response.status_code == 200
     assert response.json()["status"] == "generating"
 
 
-def test_batch_status_polling_returns_ready_with_story_count(test_client: TestClient, test_db: Session) -> None:
+def test_batch_status_polling_returns_ready_with_story_count(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /batches/{batch_id}/status returns ready status with story count."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     batch = _create_test_batch(test_db, project_id, status=StoryBatchStatus.READY, story_count=5)
     batch_id = _get_batch_id(batch)
 
-    response = test_client.get(f"/api/stories/batches/{batch_id}/status")
+    response = auth_client.get(f"/api/stories/batches/{batch_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -378,7 +379,7 @@ def test_batch_status_polling_returns_ready_with_story_count(test_client: TestCl
     assert data["story_count"] == 5
 
 
-def test_batch_status_polling_returns_failed_with_error(test_client: TestClient, test_db: Session) -> None:
+def test_batch_status_polling_returns_failed_with_error(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /batches/{batch_id}/status returns failed status with error message."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -387,7 +388,7 @@ def test_batch_status_polling_returns_failed_with_error(test_client: TestClient,
     test_db.commit()
     batch_id = _get_batch_id(batch)
 
-    response = test_client.get(f"/api/stories/batches/{batch_id}/status")
+    response = auth_client.get(f"/api/stories/batches/{batch_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -395,9 +396,9 @@ def test_batch_status_polling_returns_failed_with_error(test_client: TestClient,
     assert data["error_message"] == "LLM timeout"
 
 
-def test_batch_status_returns_404_for_missing_batch(test_client: TestClient, test_db: Session) -> None:
+def test_batch_status_returns_404_for_missing_batch(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /batches/{batch_id}/status returns 404 for non-existent batch."""
-    response = test_client.get("/api/stories/batches/00000000-0000-0000-0000-000000000000/status")
+    response = auth_client.get("/api/stories/batches/00000000-0000-0000-0000-000000000000/status")
 
     assert response.status_code == 404
 
@@ -407,67 +408,67 @@ def test_batch_status_returns_404_for_missing_batch(test_client: TestClient, tes
 # =============================================================================
 
 
-def test_cancel_batch_from_queued(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_batch_from_queued(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /batches/{batch_id}/cancel sets status=cancelled from queued."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     batch = _create_test_batch(test_db, project_id, status=StoryBatchStatus.QUEUED)
     batch_id = _get_batch_id(batch)
 
-    response = test_client.post(f"/api/stories/batches/{batch_id}/cancel")
+    response = auth_client.post(f"/api/stories/batches/{batch_id}/cancel")
 
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "cancelled"
 
 
-def test_cancel_batch_from_generating(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_batch_from_generating(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /batches/{batch_id}/cancel sets status=cancelled from generating."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     batch = _create_test_batch(test_db, project_id, status=StoryBatchStatus.GENERATING)
     batch_id = _get_batch_id(batch)
 
-    response = test_client.post(f"/api/stories/batches/{batch_id}/cancel")
+    response = auth_client.post(f"/api/stories/batches/{batch_id}/cancel")
 
     assert response.status_code == 200
     assert response.json()["status"] == "cancelled"
 
 
-def test_cancel_batch_fails_for_ready(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_batch_fails_for_ready(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /batches/{batch_id}/cancel fails for already-ready batch."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     batch = _create_test_batch(test_db, project_id, status=StoryBatchStatus.READY)
     batch_id = _get_batch_id(batch)
 
-    response = test_client.post(f"/api/stories/batches/{batch_id}/cancel")
+    response = auth_client.post(f"/api/stories/batches/{batch_id}/cancel")
 
     assert response.status_code == 400
     assert "Cannot cancel" in response.json()["detail"]
 
 
-def test_cancel_batch_fails_for_cancelled(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_batch_fails_for_cancelled(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /batches/{batch_id}/cancel fails for already-cancelled batch."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     batch = _create_test_batch(test_db, project_id, status=StoryBatchStatus.CANCELLED)
     batch_id = _get_batch_id(batch)
 
-    response = test_client.post(f"/api/stories/batches/{batch_id}/cancel")
+    response = auth_client.post(f"/api/stories/batches/{batch_id}/cancel")
 
     assert response.status_code == 400
     assert "Cannot cancel" in response.json()["detail"]
 
 
-def test_cancel_batch_fails_for_failed(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_batch_fails_for_failed(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /batches/{batch_id}/cancel fails for already-failed batch."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     batch = _create_test_batch(test_db, project_id, status=StoryBatchStatus.FAILED)
     batch_id = _get_batch_id(batch)
 
-    response = test_client.post(f"/api/stories/batches/{batch_id}/cancel")
+    response = auth_client.post(f"/api/stories/batches/{batch_id}/cancel")
 
     assert response.status_code == 400
     assert "Cannot cancel" in response.json()["detail"]
@@ -478,7 +479,7 @@ def test_cancel_batch_fails_for_failed(test_client: TestClient, test_db: Session
 # =============================================================================
 
 
-def test_list_stories_pagination_default(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_pagination_default(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /projects/{project_id}/stories returns paginated results."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -487,7 +488,7 @@ def test_list_stories_pagination_default(test_client: TestClient, test_db: Sessi
     for i in range(5):
         _create_test_story(test_db, project_id, story_number=i+1, title=f"Story {i+1}")
 
-    response = test_client.get(f"/api/projects/{project_id}/stories")
+    response = auth_client.get(f"/api/projects/{project_id}/stories")
 
     assert response.status_code == 200
     data = response.json()
@@ -497,7 +498,7 @@ def test_list_stories_pagination_default(test_client: TestClient, test_db: Sessi
     assert data["limit"] == 20  # default limit
 
 
-def test_list_stories_pagination_skip(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_pagination_skip(auth_client: TestClient, test_db: Session) -> None:
     """Test that skip parameter works correctly."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -506,7 +507,7 @@ def test_list_stories_pagination_skip(test_client: TestClient, test_db: Session)
     for i in range(10):
         _create_test_story(test_db, project_id, story_number=i+1, title=f"Story {i+1}")
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?skip=5")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?skip=5")
 
     assert response.status_code == 200
     data = response.json()
@@ -515,7 +516,7 @@ def test_list_stories_pagination_skip(test_client: TestClient, test_db: Session)
     assert data["skip"] == 5
 
 
-def test_list_stories_pagination_limit(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_pagination_limit(auth_client: TestClient, test_db: Session) -> None:
     """Test that limit parameter works correctly."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -524,7 +525,7 @@ def test_list_stories_pagination_limit(test_client: TestClient, test_db: Session
     for i in range(10):
         _create_test_story(test_db, project_id, story_number=i+1, title=f"Story {i+1}")
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?limit=3")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?limit=3")
 
     assert response.status_code == 200
     data = response.json()
@@ -533,7 +534,7 @@ def test_list_stories_pagination_limit(test_client: TestClient, test_db: Session
     assert data["limit"] == 3
 
 
-def test_list_stories_pagination_skip_and_limit(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_pagination_skip_and_limit(auth_client: TestClient, test_db: Session) -> None:
     """Test that skip and limit work together correctly."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -542,7 +543,7 @@ def test_list_stories_pagination_skip_and_limit(test_client: TestClient, test_db
     for i in range(10):
         _create_test_story(test_db, project_id, story_number=i+1, title=f"Story {i+1}", order=i)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?skip=2&limit=3")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?skip=2&limit=3")
 
     assert response.status_code == 200
     data = response.json()
@@ -561,7 +562,7 @@ def test_list_stories_pagination_skip_and_limit(test_client: TestClient, test_db
 # =============================================================================
 
 
-def test_list_stories_filter_by_batch_id(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_filter_by_batch_id(auth_client: TestClient, test_db: Session) -> None:
     """Test that batch_id filter works correctly."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -575,7 +576,7 @@ def test_list_stories_filter_by_batch_id(test_client: TestClient, test_db: Sessi
     _create_test_story(test_db, project_id, batch_id=batch1_id, story_number=2, title="Batch1 Story 2")
     _create_test_story(test_db, project_id, batch_id=batch2_id, story_number=3, title="Batch2 Story 1")
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?batch_id={batch1_id}")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?batch_id={batch1_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -584,7 +585,7 @@ def test_list_stories_filter_by_batch_id(test_client: TestClient, test_db: Sessi
     assert all("Batch1" in item["title"] for item in data["items"])
 
 
-def test_list_stories_filter_by_status(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_filter_by_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that status filter works correctly."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -593,7 +594,7 @@ def test_list_stories_filter_by_status(test_client: TestClient, test_db: Session
     _create_test_story(test_db, project_id, story_number=2, title="Ready Story", status=StoryStatus.READY)
     _create_test_story(test_db, project_id, story_number=3, title="Another Draft", status=StoryStatus.DRAFT)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?status=ready")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?status=ready")
 
     assert response.status_code == 200
     data = response.json()
@@ -602,7 +603,7 @@ def test_list_stories_filter_by_status(test_client: TestClient, test_db: Session
     assert data["items"][0]["status"] == "ready"
 
 
-def test_list_stories_filter_by_labels(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_filter_by_labels(auth_client: TestClient, test_db: Session) -> None:
     """Test that labels filter works correctly."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -611,7 +612,7 @@ def test_list_stories_filter_by_labels(test_client: TestClient, test_db: Session
     _create_test_story(test_db, project_id, story_number=2, title="Feature Story", labels=["feature"])
     _create_test_story(test_db, project_id, story_number=3, title="Urgent Feature", labels=["feature", "urgent"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=urgent")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=urgent")
 
     assert response.status_code == 200
     data = response.json()
@@ -621,7 +622,7 @@ def test_list_stories_filter_by_labels(test_client: TestClient, test_db: Session
     assert "Urgent Feature" in titles
 
 
-def test_list_stories_filter_by_multiple_labels(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_filter_by_multiple_labels(auth_client: TestClient, test_db: Session) -> None:
     """Test that multiple labels filter requires ALL labels to match."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -630,7 +631,7 @@ def test_list_stories_filter_by_multiple_labels(test_client: TestClient, test_db
     _create_test_story(test_db, project_id, story_number=2, title="Feature Story", labels=["feature"])
     _create_test_story(test_db, project_id, story_number=3, title="Urgent Feature", labels=["feature", "urgent"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=feature,urgent")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=feature,urgent")
 
     assert response.status_code == 200
     data = response.json()
@@ -638,7 +639,7 @@ def test_list_stories_filter_by_multiple_labels(test_client: TestClient, test_db
     assert data["items"][0]["title"] == "Urgent Feature"
 
 
-def test_list_stories_combined_filters(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_combined_filters(auth_client: TestClient, test_db: Session) -> None:
     """Test that multiple filters work together correctly."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -652,7 +653,7 @@ def test_list_stories_combined_filters(test_client: TestClient, test_db: Session
     _create_test_story(test_db, project_id, batch_id=None, story_number=3,
                       title="S3", status=StoryStatus.READY, labels=["bug"])
 
-    response = test_client.get(
+    response = auth_client.get(
         f"/api/projects/{project_id}/stories?batch_id={batch_id}&status=ready&labels=bug"
     )
 
@@ -667,7 +668,7 @@ def test_list_stories_combined_filters(test_client: TestClient, test_db: Session
 # =============================================================================
 
 
-def test_labels_filter_does_not_match_partial_prefix(test_client: TestClient, test_db: Session) -> None:
+def test_labels_filter_does_not_match_partial_prefix(auth_client: TestClient, test_db: Session) -> None:
     """Test that filtering by 'frontend' does NOT match 'not-frontend'.
     
     US-039: Labels filter must use exact array element matching, not partial string matching.
@@ -680,7 +681,7 @@ def test_labels_filter_does_not_match_partial_prefix(test_client: TestClient, te
     # Story with exact label 'frontend' SHOULD be matched
     _create_test_story(test_db, project_id, story_number=2, title="Correct Match", labels=["frontend", "api"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
 
     assert response.status_code == 200
     data = response.json()
@@ -688,7 +689,7 @@ def test_labels_filter_does_not_match_partial_prefix(test_client: TestClient, te
     assert data["items"][0]["title"] == "Correct Match"
 
 
-def test_labels_filter_does_not_match_partial_suffix(test_client: TestClient, test_db: Session) -> None:
+def test_labels_filter_does_not_match_partial_suffix(auth_client: TestClient, test_db: Session) -> None:
     """Test that filtering by 'api' does NOT match 'api-v2' or 'legacy-api'.
     
     US-039: Labels filter must match exact label values, not substrings.
@@ -702,7 +703,7 @@ def test_labels_filter_does_not_match_partial_suffix(test_client: TestClient, te
     # Story with exact label 'api' SHOULD be matched
     _create_test_story(test_db, project_id, story_number=3, title="API Story", labels=["api", "backend"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=api")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=api")
 
     assert response.status_code == 200
     data = response.json()
@@ -710,7 +711,7 @@ def test_labels_filter_does_not_match_partial_suffix(test_client: TestClient, te
     assert data["items"][0]["title"] == "API Story"
 
 
-def test_labels_filter_matches_single_element_array(test_client: TestClient, test_db: Session) -> None:
+def test_labels_filter_matches_single_element_array(auth_client: TestClient, test_db: Session) -> None:
     """Test that labels filter matches a single-element array correctly.
     
     US-039: Verifies the pattern '["label"]' is matched.
@@ -720,7 +721,7 @@ def test_labels_filter_matches_single_element_array(test_client: TestClient, tes
 
     _create_test_story(test_db, project_id, story_number=1, title="Solo Label", labels=["frontend"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
 
     assert response.status_code == 200
     data = response.json()
@@ -728,7 +729,7 @@ def test_labels_filter_matches_single_element_array(test_client: TestClient, tes
     assert data["items"][0]["title"] == "Solo Label"
 
 
-def test_labels_filter_matches_first_element_in_array(test_client: TestClient, test_db: Session) -> None:
+def test_labels_filter_matches_first_element_in_array(auth_client: TestClient, test_db: Session) -> None:
     """Test that labels filter matches first element in multi-element array.
     
     US-039: Verifies the pattern '["label",' is matched.
@@ -738,7 +739,7 @@ def test_labels_filter_matches_first_element_in_array(test_client: TestClient, t
 
     _create_test_story(test_db, project_id, story_number=1, title="First Position", labels=["frontend", "api", "ui"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
 
     assert response.status_code == 200
     data = response.json()
@@ -746,7 +747,7 @@ def test_labels_filter_matches_first_element_in_array(test_client: TestClient, t
     assert data["items"][0]["title"] == "First Position"
 
 
-def test_labels_filter_matches_middle_element_in_array(test_client: TestClient, test_db: Session) -> None:
+def test_labels_filter_matches_middle_element_in_array(auth_client: TestClient, test_db: Session) -> None:
     """Test that labels filter matches middle element in multi-element array.
     
     US-039: Verifies the pattern ',"label",' is matched.
@@ -756,7 +757,7 @@ def test_labels_filter_matches_middle_element_in_array(test_client: TestClient, 
 
     _create_test_story(test_db, project_id, story_number=1, title="Middle Position", labels=["backend", "frontend", "ui"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
 
     assert response.status_code == 200
     data = response.json()
@@ -764,7 +765,7 @@ def test_labels_filter_matches_middle_element_in_array(test_client: TestClient, 
     assert data["items"][0]["title"] == "Middle Position"
 
 
-def test_labels_filter_matches_last_element_in_array(test_client: TestClient, test_db: Session) -> None:
+def test_labels_filter_matches_last_element_in_array(auth_client: TestClient, test_db: Session) -> None:
     """Test that labels filter matches last element in multi-element array.
     
     US-039: Verifies the pattern ',"label"]' is matched.
@@ -774,7 +775,7 @@ def test_labels_filter_matches_last_element_in_array(test_client: TestClient, te
 
     _create_test_story(test_db, project_id, story_number=1, title="Last Position", labels=["backend", "api", "frontend"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
 
     assert response.status_code == 200
     data = response.json()
@@ -782,7 +783,7 @@ def test_labels_filter_matches_last_element_in_array(test_client: TestClient, te
     assert data["items"][0]["title"] == "Last Position"
 
 
-def test_labels_filter_with_multiple_labels_all_exact(test_client: TestClient, test_db: Session) -> None:
+def test_labels_filter_with_multiple_labels_all_exact(auth_client: TestClient, test_db: Session) -> None:
     """Test that filtering by multiple labels requires ALL to match exactly.
     
     US-039: Combined with existing multi-label behavior, ensures exact matching for each.
@@ -795,7 +796,7 @@ def test_labels_filter_with_multiple_labels_all_exact(test_client: TestClient, t
     # This story SHOULD match - has both exact labels
     _create_test_story(test_db, project_id, story_number=2, title="Correct Match", labels=["frontend", "api"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=frontend,api")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=frontend,api")
 
     assert response.status_code == 200
     data = response.json()
@@ -803,7 +804,7 @@ def test_labels_filter_with_multiple_labels_all_exact(test_client: TestClient, t
     assert data["items"][0]["title"] == "Correct Match"
 
 
-def test_labels_filter_no_match_for_similar_labels(test_client: TestClient, test_db: Session) -> None:
+def test_labels_filter_no_match_for_similar_labels(auth_client: TestClient, test_db: Session) -> None:
     """Test that no stories are returned when only partial matches exist.
     
     US-039: Ensures substring matching doesn't produce false positives.
@@ -816,7 +817,7 @@ def test_labels_filter_no_match_for_similar_labels(test_client: TestClient, test
     _create_test_story(test_db, project_id, story_number=2, title="Story 2", labels=["my-frontend"])
     _create_test_story(test_db, project_id, story_number=3, title="Story 3", labels=["frontend-legacy"])
 
-    response = test_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
+    response = auth_client.get(f"/api/projects/{project_id}/stories?labels=frontend")
 
     assert response.status_code == 200
     data = response.json()
@@ -828,14 +829,14 @@ def test_labels_filter_no_match_for_similar_labels(test_client: TestClient, test
 # =============================================================================
 
 
-def test_soft_delete_story_sets_deleted_at(test_client: TestClient, test_db: Session) -> None:
+def test_soft_delete_story_sets_deleted_at(auth_client: TestClient, test_db: Session) -> None:
     """Test that DELETE /stories/{story_id} sets deleted_at timestamp."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     story = _create_test_story(test_db, project_id)
     story_id = _get_story_id(story)
 
-    response = test_client.delete(f"/api/stories/{story_id}")
+    response = auth_client.delete(f"/api/stories/{story_id}")
 
     assert response.status_code == 204
 
@@ -844,7 +845,7 @@ def test_soft_delete_story_sets_deleted_at(test_client: TestClient, test_db: Ses
     assert story.deleted_at is not None
 
 
-def test_soft_deleted_story_excluded_from_list(test_client: TestClient, test_db: Session) -> None:
+def test_soft_deleted_story_excluded_from_list(auth_client: TestClient, test_db: Session) -> None:
     """Test that soft-deleted stories don't appear in list results."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -854,10 +855,10 @@ def test_soft_deleted_story_excluded_from_list(test_client: TestClient, test_db:
     story1_id = _get_story_id(story1)
 
     # Delete story1
-    test_client.delete(f"/api/stories/{story1_id}")
+    auth_client.delete(f"/api/stories/{story1_id}")
 
     # List should only show story2
-    response = test_client.get(f"/api/projects/{project_id}/stories")
+    response = auth_client.get(f"/api/projects/{project_id}/stories")
 
     assert response.status_code == 200
     data = response.json()
@@ -865,7 +866,7 @@ def test_soft_deleted_story_excluded_from_list(test_client: TestClient, test_db:
     assert data["items"][0]["title"] == "Story 2"
 
 
-def test_soft_deleted_story_not_accessible_by_id(test_client: TestClient, test_db: Session) -> None:
+def test_soft_deleted_story_not_accessible_by_id(auth_client: TestClient, test_db: Session) -> None:
     """Test that soft-deleted stories return 404 when accessed by ID."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -873,10 +874,10 @@ def test_soft_deleted_story_not_accessible_by_id(test_client: TestClient, test_d
     story_id = _get_story_id(story)
 
     # Delete the story
-    test_client.delete(f"/api/stories/{story_id}")
+    auth_client.delete(f"/api/stories/{story_id}")
 
     # Try to access the deleted story
-    response = test_client.get(f"/api/stories/{story_id}")
+    response = auth_client.get(f"/api/stories/{story_id}")
 
     assert response.status_code == 404
 
@@ -886,7 +887,7 @@ def test_soft_deleted_story_not_accessible_by_id(test_client: TestClient, test_d
 # =============================================================================
 
 
-def test_delete_batch_deletes_all_stories_in_batch(test_client: TestClient, test_db: Session) -> None:
+def test_delete_batch_deletes_all_stories_in_batch(auth_client: TestClient, test_db: Session) -> None:
     """Test that DELETE /projects/{project_id}/stories/batch/{batch_id} deletes all stories in batch."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -902,7 +903,7 @@ def test_delete_batch_deletes_all_stories_in_batch(test_client: TestClient, test
     story3 = _create_test_story(test_db, project_id, batch_id=None, story_number=3, title="Unbatched")
     story3_id = cast(str, story3.id)
 
-    response = test_client.delete(f"/api/projects/{project_id}/stories/batch/{batch_id}")
+    response = auth_client.delete(f"/api/projects/{project_id}/stories/batch/{batch_id}")
 
     assert response.status_code == 204
 
@@ -919,12 +920,12 @@ def test_delete_batch_deletes_all_stories_in_batch(test_client: TestClient, test
     assert story3_after is not None and story3_after.deleted_at is None  # unbatched story should not be deleted
 
     # Verify only unbatched story appears in list
-    list_response = test_client.get(f"/api/projects/{project_id}/stories")
+    list_response = auth_client.get(f"/api/projects/{project_id}/stories")
     assert list_response.json()["total"] == 1
     assert list_response.json()["items"][0]["title"] == "Unbatched"
 
 
-def test_delete_batch_also_deletes_batch_record(test_client: TestClient, test_db: Session) -> None:
+def test_delete_batch_also_deletes_batch_record(auth_client: TestClient, test_db: Session) -> None:
     """Test that DELETE /batch/{batch_id} also removes the batch record."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -932,18 +933,18 @@ def test_delete_batch_also_deletes_batch_record(test_client: TestClient, test_db
     batch_id = _get_batch_id(batch)
     _create_test_story(test_db, project_id, batch_id=batch_id, story_number=1)
 
-    test_client.delete(f"/api/projects/{project_id}/stories/batch/{batch_id}")
+    auth_client.delete(f"/api/projects/{project_id}/stories/batch/{batch_id}")
 
     # Verify batch is deleted from database
     remaining_batch = test_db.query(StoryBatch).filter(StoryBatch.id == batch_id).first()
     assert remaining_batch is None
 
     # Verify batch doesn't appear in list
-    batches_response = test_client.get(f"/api/projects/{project_id}/stories/batches")
+    batches_response = auth_client.get(f"/api/projects/{project_id}/stories/batches")
     assert len(batches_response.json()) == 0
 
 
-def test_delete_batch_returns_404_for_wrong_project(test_client: TestClient, test_db: Session) -> None:
+def test_delete_batch_returns_404_for_wrong_project(auth_client: TestClient, test_db: Session) -> None:
     """Test that DELETE /batch returns 404 if batch doesn't belong to project."""
     project1 = _create_test_project(test_db, name="Project 1")
     project2 = _create_test_project(test_db, name="Project 2")
@@ -954,7 +955,7 @@ def test_delete_batch_returns_404_for_wrong_project(test_client: TestClient, tes
     batch_id = _get_batch_id(batch)
 
     # Try to delete batch using wrong project ID
-    response = test_client.delete(f"/api/projects/{project2_id}/stories/batch/{batch_id}")
+    response = auth_client.delete(f"/api/projects/{project2_id}/stories/batch/{batch_id}")
 
     assert response.status_code == 404
 
@@ -964,7 +965,7 @@ def test_delete_batch_returns_404_for_wrong_project(test_client: TestClient, tes
 # =============================================================================
 
 
-def test_reorder_stories_updates_order(test_client: TestClient, test_db: Session) -> None:
+def test_reorder_stories_updates_order(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /projects/{project_id}/stories/reorder updates story order."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -978,7 +979,7 @@ def test_reorder_stories_updates_order(test_client: TestClient, test_db: Session
     story3_id = _get_story_id(story3)
 
     # Reorder: 3, 1, 2
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories/reorder",
         json={"story_ids": [story3_id, story1_id, story2_id]}
     )
@@ -995,7 +996,7 @@ def test_reorder_stories_updates_order(test_client: TestClient, test_db: Session
     assert story2.order == 2
 
 
-def test_reorder_stories_respects_new_order_in_list(test_client: TestClient, test_db: Session) -> None:
+def test_reorder_stories_respects_new_order_in_list(auth_client: TestClient, test_db: Session) -> None:
     """Test that reordered stories appear in correct order in list."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1009,13 +1010,13 @@ def test_reorder_stories_respects_new_order_in_list(test_client: TestClient, tes
     story3_id = _get_story_id(story3)
 
     # Reorder: Third, First, Second
-    test_client.post(
+    auth_client.post(
         f"/api/projects/{project_id}/stories/reorder",
         json={"story_ids": [story3_id, story1_id, story2_id]}
     )
 
     # List should respect new order
-    response = test_client.get(f"/api/projects/{project_id}/stories")
+    response = auth_client.get(f"/api/projects/{project_id}/stories")
     data = response.json()
 
     assert data["items"][0]["title"] == "Third"
@@ -1023,7 +1024,7 @@ def test_reorder_stories_respects_new_order_in_list(test_client: TestClient, tes
     assert data["items"][2]["title"] == "Second"
 
 
-def test_reorder_stories_fails_for_invalid_story_id(test_client: TestClient, test_db: Session) -> None:
+def test_reorder_stories_fails_for_invalid_story_id(auth_client: TestClient, test_db: Session) -> None:
     """Test that reorder fails if a story ID is invalid."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1031,7 +1032,7 @@ def test_reorder_stories_fails_for_invalid_story_id(test_client: TestClient, tes
     story1 = _create_test_story(test_db, project_id, story_number=1)
     story1_id = _get_story_id(story1)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories/reorder",
         json={"story_ids": [story1_id, "00000000-0000-0000-0000-000000000000"]}
     )
@@ -1040,7 +1041,7 @@ def test_reorder_stories_fails_for_invalid_story_id(test_client: TestClient, tes
     assert "not found" in response.json()["detail"]
 
 
-def test_reorder_stories_fails_for_story_from_different_project(test_client: TestClient, test_db: Session) -> None:
+def test_reorder_stories_fails_for_story_from_different_project(auth_client: TestClient, test_db: Session) -> None:
     """Test that reorder fails if story belongs to different project."""
     project1 = _create_test_project(test_db, name="Project 1")
     project2 = _create_test_project(test_db, name="Project 2")
@@ -1053,7 +1054,7 @@ def test_reorder_stories_fails_for_story_from_different_project(test_client: Tes
     story2_id = _get_story_id(story2)
 
     # Try to reorder with story from different project
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project1_id}/stories/reorder",
         json={"story_ids": [story1_id, story2_id]}
     )
@@ -1066,13 +1067,13 @@ def test_reorder_stories_fails_for_story_from_different_project(test_client: Tes
 # =============================================================================
 
 
-def test_export_csv_has_correct_columns(test_client: TestClient, test_db: Session) -> None:
+def test_export_csv_has_correct_columns(auth_client: TestClient, test_db: Session) -> None:
     """Test that CSV export has correct column headers."""
     project = _create_test_project(test_db, name="Export Test")
     project_id = _get_project_id(project)
     _create_test_story(test_db, project_id, story_number=1, title="Test Story")
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
@@ -1089,7 +1090,7 @@ def test_export_csv_has_correct_columns(test_client: TestClient, test_db: Sessio
     assert headers == expected_headers
 
 
-def test_export_csv_pipe_separated_acceptance_criteria(test_client: TestClient, test_db: Session) -> None:
+def test_export_csv_pipe_separated_acceptance_criteria(auth_client: TestClient, test_db: Session) -> None:
     """Test that CSV export uses pipe-separated acceptance criteria."""
     project = _create_test_project(test_db, name="Export Test")
     project_id = _get_project_id(project)
@@ -1098,7 +1099,7 @@ def test_export_csv_pipe_separated_acceptance_criteria(test_client: TestClient, 
         acceptance_criteria=["Given condition", "When action", "Then result"]
     )
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
 
     content = response.content.decode("utf-8")
     reader = csv.reader(io.StringIO(content))
@@ -1110,13 +1111,13 @@ def test_export_csv_pipe_separated_acceptance_criteria(test_client: TestClient, 
     assert "Given condition | When action | Then result" == ac_column
 
 
-def test_export_csv_content_disposition(test_client: TestClient, test_db: Session) -> None:
+def test_export_csv_content_disposition(auth_client: TestClient, test_db: Session) -> None:
     """Test that CSV export has correct Content-Disposition header."""
     project = _create_test_project(test_db, name="My Test Project")
     project_id = _get_project_id(project)
     _create_test_story(test_db, project_id, story_number=1)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=csv")
 
     assert response.status_code == 200
     content_disposition = response.headers.get("content-disposition", "")
@@ -1124,7 +1125,7 @@ def test_export_csv_content_disposition(test_client: TestClient, test_db: Sessio
     assert "my-test-project-stories.csv" in content_disposition
 
 
-def test_export_csv_with_batch_filter(test_client: TestClient, test_db: Session) -> None:
+def test_export_csv_with_batch_filter(auth_client: TestClient, test_db: Session) -> None:
     """Test that CSV export respects batch_id filter."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1135,7 +1136,7 @@ def test_export_csv_with_batch_filter(test_client: TestClient, test_db: Session)
     _create_test_story(test_db, project_id, batch_id=batch1_id, story_number=1, title="Batch1 Story")
     _create_test_story(test_db, project_id, batch_id=_get_batch_id(batch2), story_number=2, title="Batch2 Story")
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=csv&batch_id={batch1_id}")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=csv&batch_id={batch1_id}")
 
     content = response.content.decode("utf-8")
     reader = csv.reader(io.StringIO(content))
@@ -1151,7 +1152,7 @@ def test_export_csv_with_batch_filter(test_client: TestClient, test_db: Session)
 # =============================================================================
 
 
-def test_export_json_matches_schema(test_client: TestClient, test_db: Session) -> None:
+def test_export_json_matches_schema(auth_client: TestClient, test_db: Session) -> None:
     """Test that JSON export matches the documented schema."""
     project = _create_test_project(test_db, name="Export Test")
     project_id = _get_project_id(project)
@@ -1165,7 +1166,7 @@ def test_export_json_matches_schema(test_client: TestClient, test_db: Session) -
         format=StoryFormat.CLASSIC
     )
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=json")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=json")
 
     assert response.status_code == 200
     assert "application/json" in response.headers["content-type"]
@@ -1189,7 +1190,7 @@ def test_export_json_matches_schema(test_client: TestClient, test_db: Session) -
     assert "updated_at" in story
 
 
-def test_export_json_multiple_stories(test_client: TestClient, test_db: Session) -> None:
+def test_export_json_multiple_stories(auth_client: TestClient, test_db: Session) -> None:
     """Test that JSON export includes all stories in correct order."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1198,7 +1199,7 @@ def test_export_json_multiple_stories(test_client: TestClient, test_db: Session)
     _create_test_story(test_db, project_id, story_number=2, title="Story 2", order=1)
     _create_test_story(test_db, project_id, story_number=3, title="Story 3", order=2)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=json")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=json")
 
     data = response.json()
     assert len(data["stories"]) == 3
@@ -1207,13 +1208,13 @@ def test_export_json_multiple_stories(test_client: TestClient, test_db: Session)
     assert data["stories"][2]["title"] == "Story 3"
 
 
-def test_export_json_content_disposition(test_client: TestClient, test_db: Session) -> None:
+def test_export_json_content_disposition(auth_client: TestClient, test_db: Session) -> None:
     """Test that JSON export has correct Content-Disposition header."""
     project = _create_test_project(test_db, name="My Project")
     project_id = _get_project_id(project)
     _create_test_story(test_db, project_id, story_number=1)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=json")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=json")
 
     content_disposition = response.headers.get("content-disposition", "")
     assert "attachment" in content_disposition
@@ -1225,7 +1226,7 @@ def test_export_json_content_disposition(test_client: TestClient, test_db: Sessi
 # =============================================================================
 
 
-def test_export_markdown_format(test_client: TestClient, test_db: Session) -> None:
+def test_export_markdown_format(auth_client: TestClient, test_db: Session) -> None:
     """Test that Markdown export has correct format."""
     project = _create_test_project(test_db, name="Export Test")
     project_id = _get_project_id(project)
@@ -1237,7 +1238,7 @@ def test_export_markdown_format(test_client: TestClient, test_db: Session) -> No
         labels=["feature"]
     )
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=markdown")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=markdown")
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/markdown; charset=utf-8"
@@ -1253,24 +1254,24 @@ def test_export_markdown_format(test_client: TestClient, test_db: Session) -> No
     assert "**Labels:** feature" in content
 
 
-def test_export_default_format_is_markdown(test_client: TestClient, test_db: Session) -> None:
+def test_export_default_format_is_markdown(auth_client: TestClient, test_db: Session) -> None:
     """Test that default export format is Markdown."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_story(test_db, project_id, story_number=1)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export")
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/markdown; charset=utf-8"
 
 
-def test_export_returns_404_when_no_stories(test_client: TestClient, test_db: Session) -> None:
+def test_export_returns_404_when_no_stories(auth_client: TestClient, test_db: Session) -> None:
     """Test that export returns 404 when there are no stories."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export")
 
     assert response.status_code == 404
     assert "No stories found" in response.json()["detail"]
@@ -1281,14 +1282,14 @@ def test_export_returns_404_when_no_stories(test_client: TestClient, test_db: Se
 # =============================================================================
 
 
-def test_update_story_title(test_client: TestClient, test_db: Session) -> None:
+def test_update_story_title(auth_client: TestClient, test_db: Session) -> None:
     """Test that PUT /stories/{story_id} updates story title."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     story = _create_test_story(test_db, project_id, title="Original Title")
     story_id = _get_story_id(story)
 
-    response = test_client.put(
+    response = auth_client.put(
         f"/api/stories/{story_id}",
         json={"title": "Updated Title"}
     )
@@ -1297,7 +1298,7 @@ def test_update_story_title(test_client: TestClient, test_db: Session) -> None:
     assert response.json()["title"] == "Updated Title"
 
 
-def test_update_story_all_fields(test_client: TestClient, test_db: Session) -> None:
+def test_update_story_all_fields(auth_client: TestClient, test_db: Session) -> None:
     """Test that PUT /stories/{story_id} can update all fields."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1313,7 +1314,7 @@ def test_update_story_all_fields(test_client: TestClient, test_db: Session) -> N
         "status": "ready"
     }
 
-    response = test_client.put(f"/api/stories/{story_id}", json=update_data)
+    response = auth_client.put(f"/api/stories/{story_id}", json=update_data)
 
     assert response.status_code == 200
     data = response.json()
@@ -1325,7 +1326,7 @@ def test_update_story_all_fields(test_client: TestClient, test_db: Session) -> N
     assert data["status"] == "ready"
 
 
-def test_update_story_partial(test_client: TestClient, test_db: Session) -> None:
+def test_update_story_partial(auth_client: TestClient, test_db: Session) -> None:
     """Test that partial updates only change provided fields."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1337,7 +1338,7 @@ def test_update_story_partial(test_client: TestClient, test_db: Session) -> None
     story_id = _get_story_id(story)
 
     # Only update description
-    response = test_client.put(
+    response = auth_client.put(
         f"/api/stories/{story_id}",
         json={"description": "Updated description"}
     )
@@ -1353,7 +1354,7 @@ def test_update_story_partial(test_client: TestClient, test_db: Session) -> None
 # =============================================================================
 
 
-def test_list_batches_returns_all_batches(test_client: TestClient, test_db: Session) -> None:
+def test_list_batches_returns_all_batches(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /projects/{project_id}/stories/batches lists all batches."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1361,14 +1362,14 @@ def test_list_batches_returns_all_batches(test_client: TestClient, test_db: Sess
     _create_test_batch(test_db, project_id, format=StoryFormat.CLASSIC, story_count=5)
     _create_test_batch(test_db, project_id, format=StoryFormat.JOB_STORY, story_count=3)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/batches")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/batches")
 
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
 
 
-def test_list_batches_sorted_by_date(test_client: TestClient, test_db: Session) -> None:
+def test_list_batches_sorted_by_date(auth_client: TestClient, test_db: Session) -> None:
     """Test that batches are sorted by creation date descending."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1378,7 +1379,7 @@ def test_list_batches_sorted_by_date(test_client: TestClient, test_db: Session) 
     batch2 = _create_test_batch(test_db, project_id)
     batch3 = _create_test_batch(test_db, project_id)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/batches")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/batches")
 
     data = response.json()
     # Newest first
@@ -1387,7 +1388,7 @@ def test_list_batches_sorted_by_date(test_client: TestClient, test_db: Session) 
     assert data[2]["id"] == _get_batch_id(batch1)
 
 
-def test_list_batches_isolated_between_projects(test_client: TestClient, test_db: Session) -> None:
+def test_list_batches_isolated_between_projects(auth_client: TestClient, test_db: Session) -> None:
     """Test that batches from other projects are not included."""
     project1 = _create_test_project(test_db, name="Project 1")
     project2 = _create_test_project(test_db, name="Project 2")
@@ -1398,11 +1399,11 @@ def test_list_batches_isolated_between_projects(test_client: TestClient, test_db
     _create_test_batch(test_db, project1_id)
     _create_test_batch(test_db, project2_id)
 
-    response = test_client.get(f"/api/projects/{project1_id}/stories/batches")
+    response = auth_client.get(f"/api/projects/{project1_id}/stories/batches")
 
     assert len(response.json()) == 2
 
-    response2 = test_client.get(f"/api/projects/{project2_id}/stories/batches")
+    response2 = auth_client.get(f"/api/projects/{project2_id}/stories/batches")
     assert len(response2.json()) == 1
 
 
@@ -1411,7 +1412,7 @@ def test_list_batches_isolated_between_projects(test_client: TestClient, test_db
 # =============================================================================
 
 
-def test_stories_isolated_between_projects(test_client: TestClient, test_db: Session) -> None:
+def test_stories_isolated_between_projects(auth_client: TestClient, test_db: Session) -> None:
     """Test that stories from other projects are not included in list."""
     project1 = _create_test_project(test_db, name="Project 1")
     project2 = _create_test_project(test_db, name="Project 2")
@@ -1422,8 +1423,8 @@ def test_stories_isolated_between_projects(test_client: TestClient, test_db: Ses
     _create_test_story(test_db, project1_id, story_number=2, title="P1 Story 2")
     _create_test_story(test_db, project2_id, story_number=1, title="P2 Story 1")
 
-    response1 = test_client.get(f"/api/projects/{project1_id}/stories")
-    response2 = test_client.get(f"/api/projects/{project2_id}/stories")
+    response1 = auth_client.get(f"/api/projects/{project1_id}/stories")
+    response2 = auth_client.get(f"/api/projects/{project2_id}/stories")
 
     assert response1.json()["total"] == 2
     assert response2.json()["total"] == 1
@@ -1436,7 +1437,7 @@ def test_stories_isolated_between_projects(test_client: TestClient, test_db: Ses
 # =============================================================================
 
 
-def test_failed_batch_includes_error_message_in_status(test_client: TestClient, test_db: Session) -> None:
+def test_failed_batch_includes_error_message_in_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that failed batch status includes helpful error message."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1445,7 +1446,7 @@ def test_failed_batch_includes_error_message_in_status(test_client: TestClient, 
     test_db.commit()
     batch_id = _get_batch_id(batch)
 
-    response = test_client.get(f"/api/stories/batches/{batch_id}/status")
+    response = auth_client.get(f"/api/stories/batches/{batch_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -1453,7 +1454,7 @@ def test_failed_batch_includes_error_message_in_status(test_client: TestClient, 
     assert "no requirements" in data["error_message"].lower()
 
 
-def test_failed_batch_with_timeout_includes_specific_message(test_client: TestClient, test_db: Session) -> None:
+def test_failed_batch_with_timeout_includes_specific_message(auth_client: TestClient, test_db: Session) -> None:
     """Test that timeout errors include specific timeout message."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1462,7 +1463,7 @@ def test_failed_batch_with_timeout_includes_specific_message(test_client: TestCl
     test_db.commit()
     batch_id = _get_batch_id(batch)
 
-    response = test_client.get(f"/api/stories/batches/{batch_id}/status")
+    response = auth_client.get(f"/api/stories/batches/{batch_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -1470,7 +1471,7 @@ def test_failed_batch_with_timeout_includes_specific_message(test_client: TestCl
     assert "timed out" in data["error_message"].lower()
 
 
-def test_failed_batch_with_parsing_error_includes_details(test_client: TestClient, test_db: Session) -> None:
+def test_failed_batch_with_parsing_error_includes_details(auth_client: TestClient, test_db: Session) -> None:
     """Test that malformed LLM response includes parsing error details."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1479,7 +1480,7 @@ def test_failed_batch_with_parsing_error_includes_details(test_client: TestClien
     test_db.commit()
     batch_id = _get_batch_id(batch)
 
-    response = test_client.get(f"/api/stories/batches/{batch_id}/status")
+    response = auth_client.get(f"/api/stories/batches/{batch_id}/status")
 
     assert response.status_code == 200
     data = response.json()
@@ -1487,23 +1488,23 @@ def test_failed_batch_with_parsing_error_includes_details(test_client: TestClien
     assert "parse" in data["error_message"].lower() or "invalid json" in data["error_message"].lower()
 
 
-def test_cancel_returns_400_not_500_for_completed_batch(test_client: TestClient, test_db: Session) -> None:
+def test_cancel_returns_400_not_500_for_completed_batch(auth_client: TestClient, test_db: Session) -> None:
     """Test that cancelling completed batch returns user-friendly 400, not 500."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     batch = _create_test_batch(test_db, project_id, status=StoryBatchStatus.READY)
     batch_id = _get_batch_id(batch)
 
-    response = test_client.post(f"/api/stories/batches/{batch_id}/cancel")
+    response = auth_client.post(f"/api/stories/batches/{batch_id}/cancel")
 
     # Should return 400 Bad Request, not 500 Internal Server Error
     assert response.status_code == 400
     assert "Cannot cancel" in response.json()["detail"]
 
 
-def test_update_non_existent_story_returns_404(test_client: TestClient, test_db: Session) -> None:
+def test_update_non_existent_story_returns_404(auth_client: TestClient, test_db: Session) -> None:
     """Test that updating non-existent story returns 404."""
-    response = test_client.put(
+    response = auth_client.put(
         "/api/stories/00000000-0000-0000-0000-000000000000",
         json={"title": "New Title"}
     )
@@ -1512,41 +1513,41 @@ def test_update_non_existent_story_returns_404(test_client: TestClient, test_db:
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_delete_non_existent_story_returns_404(test_client: TestClient, test_db: Session) -> None:
+def test_delete_non_existent_story_returns_404(auth_client: TestClient, test_db: Session) -> None:
     """Test that deleting non-existent story returns 404."""
-    response = test_client.delete("/api/stories/00000000-0000-0000-0000-000000000000")
+    response = auth_client.delete("/api/stories/00000000-0000-0000-0000-000000000000")
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_get_non_existent_batch_returns_404(test_client: TestClient, test_db: Session) -> None:
+def test_get_non_existent_batch_returns_404(auth_client: TestClient, test_db: Session) -> None:
     """Test that getting non-existent batch status returns 404."""
-    response = test_client.get("/api/stories/batches/00000000-0000-0000-0000-000000000000/status")
+    response = auth_client.get("/api/stories/batches/00000000-0000-0000-0000-000000000000/status")
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_export_with_invalid_format_returns_422(test_client: TestClient, test_db: Session) -> None:
+def test_export_with_invalid_format_returns_422(auth_client: TestClient, test_db: Session) -> None:
     """Test that invalid export format returns validation error."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_story(test_db, project_id, story_number=1)
 
-    response = test_client.get(f"/api/projects/{project_id}/stories/export?format=invalid")
+    response = auth_client.get(f"/api/projects/{project_id}/stories/export?format=invalid")
 
     # FastAPI returns 422 for validation errors
     assert response.status_code == 422
 
 
-def test_list_stories_with_invalid_batch_id_returns_empty(test_client: TestClient, test_db: Session) -> None:
+def test_list_stories_with_invalid_batch_id_returns_empty(auth_client: TestClient, test_db: Session) -> None:
     """Test that filtering by non-existent batch returns empty results, not error."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_story(test_db, project_id, story_number=1)
 
-    response = test_client.get(
+    response = auth_client.get(
         f"/api/projects/{project_id}/stories?batch_id=00000000-0000-0000-0000-000000000000"
     )
 
@@ -1555,12 +1556,12 @@ def test_list_stories_with_invalid_batch_id_returns_empty(test_client: TestClien
     assert response.json()["total"] == 0
 
 
-def test_reorder_with_empty_story_ids_returns_success(test_client: TestClient, test_db: Session) -> None:
+def test_reorder_with_empty_story_ids_returns_success(auth_client: TestClient, test_db: Session) -> None:
     """Test that reorder with empty list returns success (no-op)."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories/reorder",
         json={"story_ids": []}
     )
@@ -1679,7 +1680,7 @@ async def _mock_generate_stream_llm_error(
     yield {}  # Never reached
 
 
-def test_stream_stories_generation_returns_status_event(test_client: TestClient, test_db: Session) -> None:
+def test_stream_stories_generation_returns_status_event(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns initial status event."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1691,7 +1692,7 @@ def test_stream_stories_generation_returns_status_event(test_client: TestClient,
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream = _mock_generate_stream_success
 
-        response = test_client.get(f"/api/projects/{project_id}/stories/stream?format=classic")
+        response = auth_client.get(f"/api/projects/{project_id}/stories/stream?format=classic")
 
     assert response.status_code == 200
     events = _parse_sse_events(response.text)
@@ -1703,7 +1704,7 @@ def test_stream_stories_generation_returns_status_event(test_client: TestClient,
     assert events[0]["data"]["format"] == "classic"
 
 
-def test_stream_stories_generation_returns_story_events(test_client: TestClient, test_db: Session) -> None:
+def test_stream_stories_generation_returns_story_events(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns story events."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1715,7 +1716,7 @@ def test_stream_stories_generation_returns_story_events(test_client: TestClient,
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream = _mock_generate_stream_success
 
-        response = test_client.get(f"/api/projects/{project_id}/stories/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/stories/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1731,7 +1732,7 @@ def test_stream_stories_generation_returns_story_events(test_client: TestClient,
     assert story_events[1]["data"]["title"] == "Password Reset"
 
 
-def test_stream_stories_generation_returns_complete_event(test_client: TestClient, test_db: Session) -> None:
+def test_stream_stories_generation_returns_complete_event(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns complete event."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1743,7 +1744,7 @@ def test_stream_stories_generation_returns_complete_event(test_client: TestClien
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream = _mock_generate_stream_success
 
-        response = test_client.get(f"/api/projects/{project_id}/stories/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/stories/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1754,7 +1755,7 @@ def test_stream_stories_generation_returns_complete_event(test_client: TestClien
     assert complete_events[0]["data"]["story_count"] == 2
 
 
-def test_stream_stories_generation_returns_error_for_no_requirements(test_client: TestClient, test_db: Session) -> None:
+def test_stream_stories_generation_returns_error_for_no_requirements(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns error when no requirements."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1766,7 +1767,7 @@ def test_stream_stories_generation_returns_error_for_no_requirements(test_client
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream = _mock_generate_stream_no_requirements
 
-        response = test_client.get(f"/api/projects/{project_id}/stories/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/stories/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1776,16 +1777,16 @@ def test_stream_stories_generation_returns_error_for_no_requirements(test_client
     assert "no requirements" in error_events[0]["data"]["message"].lower()
 
 
-def test_stream_stories_generation_returns_404_for_missing_project(test_client: TestClient, test_db: Session) -> None:
+def test_stream_stories_generation_returns_404_for_missing_project(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns 404 for non-existent project."""
     fake_project_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.get(f"/api/projects/{fake_project_id}/stories/stream")
+    response = auth_client.get(f"/api/projects/{fake_project_id}/stories/stream")
 
     assert response.status_code == 404
 
 
-def test_stream_stories_generation_accepts_format_parameter(test_client: TestClient, test_db: Session) -> None:
+def test_stream_stories_generation_accepts_format_parameter(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint accepts format parameter."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1797,7 +1798,7 @@ def test_stream_stories_generation_accepts_format_parameter(test_client: TestCli
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream = _mock_generate_stream_success
 
-        response = test_client.get(f"/api/projects/{project_id}/stories/stream?format=job_story")
+        response = auth_client.get(f"/api/projects/{project_id}/stories/stream?format=job_story")
 
     events = _parse_sse_events(response.text)
 
@@ -1807,7 +1808,7 @@ def test_stream_stories_generation_accepts_format_parameter(test_client: TestCli
     assert status_events[0]["data"]["format"] == "job_story"
 
 
-def test_stream_stories_generation_returns_error_for_llm_failure(test_client: TestClient, test_db: Session) -> None:
+def test_stream_stories_generation_returns_error_for_llm_failure(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint returns error on LLM failure."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1819,7 +1820,7 @@ def test_stream_stories_generation_returns_error_for_llm_failure(test_client: Te
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream = _mock_generate_stream_llm_error
 
-        response = test_client.get(f"/api/projects/{project_id}/stories/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/stories/stream")
 
     events = _parse_sse_events(response.text)
 
@@ -1834,12 +1835,12 @@ def test_stream_stories_generation_returns_error_for_llm_failure(test_client: Te
 # =============================================================================
 
 
-def test_create_story_manually(test_client: TestClient, test_db: Session) -> None:
+def test_create_story_manually(auth_client: TestClient, test_db: Session) -> None:
     """Test that POST /projects/{project_id}/stories creates a manual story."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories",
         json={
             "title": "Manual Story",
@@ -1864,13 +1865,13 @@ def test_create_story_manually(test_client: TestClient, test_db: Session) -> Non
     assert data["batch_id"] is None  # Manual stories have no batch
 
 
-def test_create_story_assigns_incremental_story_number(test_client: TestClient, test_db: Session) -> None:
+def test_create_story_assigns_incremental_story_number(auth_client: TestClient, test_db: Session) -> None:
     """Test that creating stories assigns incremental story numbers."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
     # Create first story
-    response1 = test_client.post(
+    response1 = auth_client.post(
         f"/api/projects/{project_id}/stories",
         json={"title": "Story 1", "description": "First story"}
     )
@@ -1878,7 +1879,7 @@ def test_create_story_assigns_incremental_story_number(test_client: TestClient, 
     assert response1.json()["story_id"] == "US-001"
 
     # Create second story
-    response2 = test_client.post(
+    response2 = auth_client.post(
         f"/api/projects/{project_id}/stories",
         json={"title": "Story 2", "description": "Second story"}
     )
@@ -1886,7 +1887,7 @@ def test_create_story_assigns_incremental_story_number(test_client: TestClient, 
     assert response2.json()["story_id"] == "US-002"
 
     # Create third story
-    response3 = test_client.post(
+    response3 = auth_client.post(
         f"/api/projects/{project_id}/stories",
         json={"title": "Story 3", "description": "Third story"}
     )
@@ -1894,7 +1895,7 @@ def test_create_story_assigns_incremental_story_number(test_client: TestClient, 
     assert response3.json()["story_id"] == "US-003"
 
 
-def test_create_story_assigns_order_at_end(test_client: TestClient, test_db: Session) -> None:
+def test_create_story_assigns_order_at_end(auth_client: TestClient, test_db: Session) -> None:
     """Test that new stories are added at the end of the list."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1904,7 +1905,7 @@ def test_create_story_assigns_order_at_end(test_client: TestClient, test_db: Ses
     _create_test_story(test_db, project_id, story_number=2, title="Existing 2", order=1)
 
     # Create new story via API
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories",
         json={"title": "New Story", "description": "New"}
     )
@@ -1914,12 +1915,12 @@ def test_create_story_assigns_order_at_end(test_client: TestClient, test_db: Ses
     assert data["order"] == 2  # After existing stories
 
 
-def test_create_story_with_custom_status(test_client: TestClient, test_db: Session) -> None:
+def test_create_story_with_custom_status(auth_client: TestClient, test_db: Session) -> None:
     """Test that creating a story with custom status works."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories",
         json={
             "title": "Ready Story",
@@ -1932,11 +1933,11 @@ def test_create_story_with_custom_status(test_client: TestClient, test_db: Sessi
     assert response.json()["status"] == "ready"
 
 
-def test_create_story_returns_404_for_missing_project(test_client: TestClient, test_db: Session) -> None:
+def test_create_story_returns_404_for_missing_project(auth_client: TestClient, test_db: Session) -> None:
     """Test that creating story for non-existent project returns 404."""
     fake_project_id = "00000000-0000-0000-0000-000000000000"
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{fake_project_id}/stories",
         json={"title": "Test", "description": "Test"}
     )
@@ -1944,12 +1945,12 @@ def test_create_story_returns_404_for_missing_project(test_client: TestClient, t
     assert response.status_code == 404
 
 
-def test_create_story_validates_size_enum(test_client: TestClient, test_db: Session) -> None:
+def test_create_story_validates_size_enum(auth_client: TestClient, test_db: Session) -> None:
     """Test that invalid size value is rejected."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories",
         json={"title": "Test", "description": "Test", "size": "invalid"}
     )
@@ -1957,12 +1958,12 @@ def test_create_story_validates_size_enum(test_client: TestClient, test_db: Sess
     assert response.status_code == 422
 
 
-def test_create_story_validates_status_enum(test_client: TestClient, test_db: Session) -> None:
+def test_create_story_validates_status_enum(auth_client: TestClient, test_db: Session) -> None:
     """Test that invalid status value is rejected."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories",
         json={"title": "Test", "description": "Test", "status": "invalid"}
     )
@@ -1975,7 +1976,7 @@ def test_create_story_validates_status_enum(test_client: TestClient, test_db: Se
 # =============================================================================
 
 
-def test_get_story_returns_full_details(test_client: TestClient, test_db: Session) -> None:
+def test_get_story_returns_full_details(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /stories/{story_id} returns full story details."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -1991,7 +1992,7 @@ def test_get_story_returns_full_details(test_client: TestClient, test_db: Sessio
     )
     story_id = _get_story_id(story)
 
-    response = test_client.get(f"/api/stories/{story_id}")
+    response = auth_client.get(f"/api/stories/{story_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -2007,9 +2008,9 @@ def test_get_story_returns_full_details(test_client: TestClient, test_db: Sessio
     assert "updated_at" in data
 
 
-def test_get_story_returns_404_for_missing(test_client: TestClient, test_db: Session) -> None:
+def test_get_story_returns_404_for_missing(auth_client: TestClient, test_db: Session) -> None:
     """Test that GET /stories/{story_id} returns 404 for non-existent story."""
-    response = test_client.get("/api/stories/00000000-0000-0000-0000-000000000000")
+    response = auth_client.get("/api/stories/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404
 
 
@@ -2018,14 +2019,14 @@ def test_get_story_returns_404_for_missing(test_client: TestClient, test_db: Ses
 # =============================================================================
 
 
-def test_multiple_generation_batches_work_independently(test_client: TestClient, test_db: Session) -> None:
+def test_multiple_generation_batches_work_independently(auth_client: TestClient, test_db: Session) -> None:
     """Test that generating stories multiple times creates independent batches."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     _create_test_requirement(test_db, project_id)
 
     # Start first generation
-    response1 = test_client.post(
+    response1 = auth_client.post(
         f"/api/projects/{project_id}/stories/generate",
         json={"format": "classic"}
     )
@@ -2033,7 +2034,7 @@ def test_multiple_generation_batches_work_independently(test_client: TestClient,
     batch1_id = response1.json()["id"]
 
     # Start second generation (generates more stories)
-    response2 = test_client.post(
+    response2 = auth_client.post(
         f"/api/projects/{project_id}/stories/generate",
         json={"format": "job_story"}
     )
@@ -2044,11 +2045,11 @@ def test_multiple_generation_batches_work_independently(test_client: TestClient,
     assert batch1_id != batch2_id
 
     # List batches should show both
-    batches_response = test_client.get(f"/api/projects/{project_id}/stories/batches")
+    batches_response = auth_client.get(f"/api/projects/{project_id}/stories/batches")
     assert len(batches_response.json()) == 2
 
 
-def test_delete_single_batch_preserves_other_batches(test_client: TestClient, test_db: Session) -> None:
+def test_delete_single_batch_preserves_other_batches(auth_client: TestClient, test_db: Session) -> None:
     """Test that deleting one batch doesn't affect stories from other batches."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -2062,10 +2063,10 @@ def test_delete_single_batch_preserves_other_batches(test_client: TestClient, te
     _create_test_story(test_db, project_id, batch_id=batch2_id, story_number=2, title="Batch2 Story")
 
     # Delete batch1
-    test_client.delete(f"/api/projects/{project_id}/stories/batch/{batch1_id}")
+    auth_client.delete(f"/api/projects/{project_id}/stories/batch/{batch1_id}")
 
     # Batch2 stories should remain
-    list_response = test_client.get(f"/api/projects/{project_id}/stories")
+    list_response = auth_client.get(f"/api/projects/{project_id}/stories")
     assert list_response.json()["total"] == 1
     assert list_response.json()["items"][0]["title"] == "Batch2 Story"
 
@@ -2075,12 +2076,12 @@ def test_delete_single_batch_preserves_other_batches(test_client: TestClient, te
 # =============================================================================
 
 
-def test_create_story_with_priority(test_client: TestClient, test_db: Session) -> None:
+def test_create_story_with_priority(auth_client: TestClient, test_db: Session) -> None:
     """Test that stories can be created with priority."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    response = test_client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/stories",
         json={"title": "Priority Story", "description": "High priority", "priority": "p1"}
     )
@@ -2089,14 +2090,14 @@ def test_create_story_with_priority(test_client: TestClient, test_db: Session) -
     assert response.json()["priority"] == "p1"
 
 
-def test_update_story_priority(test_client: TestClient, test_db: Session) -> None:
+def test_update_story_priority(auth_client: TestClient, test_db: Session) -> None:
     """Test that story priority can be updated."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
     story = _create_test_story(test_db, project_id, story_number=1)
     story_id = _get_story_id(story)
 
-    response = test_client.put(f"/api/stories/{story_id}", json={"priority": "p3"})
+    response = auth_client.put(f"/api/stories/{story_id}", json={"priority": "p3"})
 
     assert response.status_code == 200
     assert response.json()["priority"] == "p3"
@@ -2132,7 +2133,7 @@ async def _mock_generate_stream_with_filter(
     }
 
 
-def test_stream_stories_with_section_filter(test_client: TestClient, test_db: Session) -> None:
+def test_stream_stories_with_section_filter(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming endpoint accepts and uses section_filter."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -2144,7 +2145,7 @@ def test_stream_stories_with_section_filter(test_client: TestClient, test_db: Se
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream = _mock_generate_stream_with_filter
 
-        response = test_client.get(
+        response = auth_client.get(
             f"/api/projects/{project_id}/stories/stream?section_filter=functional&section_filter=non_functional"
         )
 
@@ -2172,7 +2173,7 @@ async def _mock_generate_stream_parsing_error(
     yield {}  # Never reached
 
 
-def test_stream_stories_handles_parsing_error(test_client: TestClient, test_db: Session) -> None:
+def test_stream_stories_handles_parsing_error(auth_client: TestClient, test_db: Session) -> None:
     """Test that streaming handles LLM response parsing errors."""
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
@@ -2184,7 +2185,7 @@ def test_stream_stories_handles_parsing_error(test_client: TestClient, test_db: 
         mock_instance = mock_generator_class.return_value
         mock_instance.generate_stream = _mock_generate_stream_parsing_error
 
-        response = test_client.get(f"/api/projects/{project_id}/stories/stream")
+        response = auth_client.get(f"/api/projects/{project_id}/stories/stream")
 
     events = _parse_sse_events(response.text)
 

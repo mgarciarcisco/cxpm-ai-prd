@@ -1,6 +1,6 @@
 /* Requirements Page */
 .requirements-page {
-  padding: 24px 32px;
+  padding: var(--spacing-lg) var(--spacing-xl);
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -8,7 +8,7 @@
 /* Requirements Section */
 .requirements-section {
   padding: 0;
-  margin-top: 16px;
+  margin-top: var(--spacing-md);
 }
 
 /* Section Header */
@@ -16,14 +16,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--spacing-md);
+  margin-bottom: 1.25rem;
 }
 
 .section-header-title {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .section-header-title h2 {
@@ -34,7 +34,7 @@
 .requirements-count {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
+  padding: 0.25rem 0.75rem;
   background: #f1f5f9;
   color: #64748b;
   font-size: 13px;
@@ -76,7 +76,7 @@
 .requirements-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 /* Section Wrapper */
@@ -111,15 +111,15 @@
 .requirement-sources {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
   flex-wrap: wrap;
 }
 
 .requirement-source-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
   background: linear-gradient(135deg, #e0f7f6 0%, #dbeafe 100%);
   color: #0d9488;
   font-size: 12px;

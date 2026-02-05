@@ -21,6 +21,7 @@ from app.models import (
     Requirement,
     RequirementsStatus,
     StoriesStatus,
+    User,
     UserStory,
 )
 from app.models.meeting_item import Section
@@ -38,9 +39,19 @@ from app.services.stage_status import (
 # =============================================================================
 
 
+def _ensure_test_user(db: Session) -> None:
+    """Ensure the test user exists in the database."""
+    existing = db.query(User).filter(User.id == "test-user-0000-0000-000000000001").first()
+    if not existing:
+        user = User(id="test-user-0000-0000-000000000001", email="test@example.com", name="Test User", hashed_password="x", is_active=True, is_admin=False)
+        db.add(user)
+        db.commit()
+
+
 def _create_project(db: Session, name: str = "Test Project") -> Project:
     """Helper to create a project directly in the database."""
-    project = Project(name=name, description="For stage status tests")
+    _ensure_test_user(db)
+    project = Project(name=name, user_id="test-user-0000-0000-000000000001", description="For stage status tests")
     db.add(project)
     db.commit()
     db.refresh(project)

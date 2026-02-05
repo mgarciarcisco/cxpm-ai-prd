@@ -1,13 +1,31 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Outlet, Link } from 'react-router-dom'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { ToastProvider } from './contexts/ToastContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import ProtectedRoute from './components/common/ProtectedRoute'
 import OfflineIndicator from './components/common/OfflineIndicator'
 import './App.css'
 
-function App() {
+function AppContent() {
+  const { user, logout } = useAuth()
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+
   return (
-    <ToastProvider>
     <div className="app">
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <OfflineIndicator />
@@ -17,25 +35,62 @@ function App() {
             <span className="logo-icon__symbol">✦</span>
           </div>
           <div className="header-text">
-            <h1>CX AI Assistant</h1>
+            <h1>CX AIA for Product Managers</h1>
             <span className="header-subtitle">Early Access</span>
           </div>
         </Link>
 
-        <div className="header-actions">
-          <div className="header-avatar">
-            <span>U</span>
-          </div>
+        <div className="header-actions" ref={dropdownRef}>
+          <button
+            className="user-button"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            aria-expanded={dropdownOpen}
+            aria-haspopup="true"
+          >
+            <div className="header-avatar">
+              <span>{userInitial}</span>
+            </div>
+            {user && <span className="user-name">{user.name}</span>}
+            <svg className="user-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+
+          {dropdownOpen && (
+            <div className="user-dropdown">
+              <div className="dropdown-header">
+                <div className="dropdown-name">{user?.name}</div>
+                <div className="dropdown-email">{user?.email}</div>
+              </div>
+              <button className="dropdown-item dropdown-item--danger" onClick={() => { logout(); setDropdownOpen(false); }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M6 2h4M2 4h12M12.667 4l-.467 7.467a2 2 0 01-1.995 1.866H5.795a2 2 0 01-1.995-1.866L3.333 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
       <main id="main-content">
-      <ErrorBoundary>
-        <Outlet />
-      </ErrorBoundary>
+        <ErrorBoundary>
+          <ProtectedRoute>
+            <Outlet />
+          </ProtectedRoute>
+        </ErrorBoundary>
       </main>
     </div>
-    </ToastProvider>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </AuthProvider>
   )
 }
 

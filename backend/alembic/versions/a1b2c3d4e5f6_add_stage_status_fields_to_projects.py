@@ -26,10 +26,28 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Add stage status fields to projects table."""
+    # On PostgreSQL, enum types used in add_column must be created explicitly first.
+    # The create_type=False flag tells SQLAlchemy not to auto-create (we do it manually).
+    bind = op.get_bind()
+    is_pg = bind.dialect.name == 'postgresql'
+
+    requirements_enum = sa.Enum('empty', 'has_items', 'reviewed', name='requirementsstatus')
+    prd_enum = sa.Enum('empty', 'draft', 'ready', name='prdstagestatus')
+    stories_enum = sa.Enum('empty', 'generated', 'refined', name='storiesstatus')
+    mockups_enum = sa.Enum('empty', 'generated', name='mockupsstatus')
+    export_enum = sa.Enum('not_exported', 'exported', name='exportstatus')
+
+    if is_pg:
+        requirements_enum.create(bind)
+        prd_enum.create(bind)
+        stories_enum.create(bind)
+        mockups_enum.create(bind)
+        export_enum.create(bind)
+
     # Add requirements_status column
     op.add_column('projects', sa.Column(
         'requirements_status',
-        sa.Enum('empty', 'has_items', 'reviewed', name='requirementsstatus'),
+        requirements_enum,
         nullable=False,
         server_default='empty'
     ))
@@ -37,7 +55,7 @@ def upgrade() -> None:
     # Add prd_status column
     op.add_column('projects', sa.Column(
         'prd_status',
-        sa.Enum('empty', 'draft', 'ready', name='prdstagestatus'),
+        prd_enum,
         nullable=False,
         server_default='empty'
     ))
@@ -45,7 +63,7 @@ def upgrade() -> None:
     # Add stories_status column
     op.add_column('projects', sa.Column(
         'stories_status',
-        sa.Enum('empty', 'generated', 'refined', name='storiesstatus'),
+        stories_enum,
         nullable=False,
         server_default='empty'
     ))
@@ -53,7 +71,7 @@ def upgrade() -> None:
     # Add mockups_status column
     op.add_column('projects', sa.Column(
         'mockups_status',
-        sa.Enum('empty', 'generated', name='mockupsstatus'),
+        mockups_enum,
         nullable=False,
         server_default='empty'
     ))
@@ -61,7 +79,7 @@ def upgrade() -> None:
     # Add export_status column
     op.add_column('projects', sa.Column(
         'export_status',
-        sa.Enum('not_exported', 'exported', name='exportstatus'),
+        export_enum,
         nullable=False,
         server_default='not_exported'
     ))
@@ -74,3 +92,12 @@ def downgrade() -> None:
     op.drop_column('projects', 'stories_status')
     op.drop_column('projects', 'prd_status')
     op.drop_column('projects', 'requirements_status')
+
+    # Drop enum types on PostgreSQL
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        sa.Enum(name='exportstatus').drop(bind)
+        sa.Enum(name='mockupsstatus').drop(bind)
+        sa.Enum(name='storiesstatus').drop(bind)
+        sa.Enum(name='prdstagestatus').drop(bind)
+        sa.Enum(name='requirementsstatus').drop(bind)

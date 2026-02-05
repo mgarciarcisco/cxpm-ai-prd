@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
 from app.models import (
     ExportStatus,
@@ -15,6 +16,7 @@ from app.models import (
     RequirementsStatus,
     StoriesStatus,
 )
+from app.models.user import User
 from app.schemas import (
     MeetingListItemResponse,
     ProgressResponse,
@@ -32,11 +34,12 @@ router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
-def create_project(project: ProjectCreate, db: Session = Depends(get_db)) -> Project:
+def create_project(project: ProjectCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Project:
     """Create a new project."""
     db_project = Project(
         name=project.name,
         description=project.description,
+        user_id=current_user.id,
     )
     db.add(db_project)
     db.commit()
@@ -45,15 +48,15 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db)) -> Pro
 
 
 @router.get("", response_model=list[ProjectResponse])
-def list_projects(db: Session = Depends(get_db)) -> list[Project]:
+def list_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[Project]:
     """Get list of all projects."""
-    return db.query(Project).all()
+    return db.query(Project).filter(Project.user_id == current_user.id).all()
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
-def get_project(project_id: str, db: Session = Depends(get_db)) -> Project:
+def get_project(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Project:
     """Get a single project by ID."""
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     return project
@@ -64,9 +67,10 @@ def update_project(
     project_id: str,
     project_update: ProjectUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> Project:
     """Update an existing project."""
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -81,9 +85,9 @@ def update_project(
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_project(project_id: str, db: Session = Depends(get_db)) -> None:
+def delete_project(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
     """Delete a project."""
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -92,10 +96,10 @@ def delete_project(project_id: str, db: Session = Depends(get_db)) -> None:
 
 
 @router.get("/{project_id}/meetings", response_model=list[MeetingListItemResponse])
-def list_project_meetings(project_id: str, db: Session = Depends(get_db)) -> list[MeetingRecap]:
+def list_project_meetings(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[MeetingRecap]:
     """Get list of meetings for a project."""
     # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -103,10 +107,10 @@ def list_project_meetings(project_id: str, db: Session = Depends(get_db)) -> lis
 
 
 @router.get("/{project_id}/stats", response_model=ProjectStatsResponse)
-def get_project_stats(project_id: str, db: Session = Depends(get_db)) -> ProjectStatsResponse:
+def get_project_stats(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ProjectStatsResponse:
     """Get project statistics including meeting count, requirement counts, and last activity."""
     # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -159,9 +163,9 @@ def get_project_stats(project_id: str, db: Session = Depends(get_db)) -> Project
 
 
 @router.get("/{project_id}/progress", response_model=ProgressResponse)
-def get_project_progress(project_id: str, db: Session = Depends(get_db)) -> ProgressResponse:
+def get_project_progress(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ProgressResponse:
     """Get project progress with all stage statuses."""
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -197,6 +201,7 @@ def update_stage_status(
     stage: StageStatusEnum,
     update_request: StageUpdateRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> ProgressResponse:
     """Update an individual stage status.
 
@@ -208,7 +213,7 @@ def update_stage_status(
     Returns:
         Updated progress response with all stage statuses and recalculated progress
     """
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 

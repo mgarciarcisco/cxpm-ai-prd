@@ -253,10 +253,7 @@ cxpm-ai-prd/
 ├── Dockerfile                       # Docker image definition
 ├── docker-compose.yml               # Docker Compose configuration
 ├── .dockerignore                    # Docker ignore patterns
-├── docker_run.sh                    # Docker launcher script
 ├── deploy_to_vm.sh                  # Deployment script
-├── run_app.sh                       # Development launcher
-├── install_dependencies_alma.sh     # AlmaLinux setup script
 └── README.md                        # This file
 ```
 

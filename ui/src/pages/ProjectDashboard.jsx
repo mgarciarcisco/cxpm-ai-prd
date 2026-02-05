@@ -62,7 +62,10 @@ function ProjectDashboard() {
 
   const handleExport = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')}/api/projects/${id}/requirements/export`);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')}/api/projects/${id}/requirements/export`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
       if (!response.ok) {
         throw new Error('Export failed');
       }

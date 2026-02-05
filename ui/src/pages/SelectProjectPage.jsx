@@ -14,6 +14,7 @@ function formatRelativeTime(dateStr) {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now - date;
+  if (diffMs < 0) return 'Just now';
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) return 'Today';
@@ -92,9 +93,13 @@ function SelectProjectPage() {
       
       // Create new project if needed
       if (isCreatingNew && newProjectName.trim()) {
+        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${API_BASE_URL}/api/projects`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ name: newProjectName.trim() }),
         });
         
@@ -110,8 +115,10 @@ function SelectProjectPage() {
       const formData = new FormData();
       formData.append('project_id', projectId);
       
+      const patchToken = localStorage.getItem('auth_token');
       const response = await fetch(`${API_BASE_URL}/api/meetings/${mid}/project`, {
         method: 'PATCH',
+        headers: patchToken ? { 'Authorization': `Bearer ${patchToken}` } : {},
         body: formData,
       });
       
@@ -265,14 +272,6 @@ function SelectProjectPage() {
                   <span className="project-option__updated">
                     {formatRelativeTime(project.updated_at)}
                   </span>
-                  {project.requirements_count > 0 && (
-                    <span className="project-option__conflict-badge">
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M8 1.5L1 14.5h14L8 1.5zM8 5v4M8 11h.01"/>
-                      </svg>
-                      May have conflicts
-                    </span>
-                  )}
                 </div>
               </div>
             ))}

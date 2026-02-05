@@ -43,8 +43,8 @@
 }
 
 .conflict-card-classification--refinement {
-  background-color: #DBEAFE;
-  color: #1D4ED8;
+  background-color: var(--color-primary-light);
+  color: #3BB5AD;
 }
 
 .conflict-card-classification--contradiction {
@@ -203,13 +203,13 @@
 }
 
 .conflict-card-option--selected {
-  border-color: #3B82F6;
-  background-color: #EFF6FF;
+  border-color: #4ECDC4;
+  background-color: var(--color-primary-light);
 }
 
 .conflict-card-option--selected:hover {
-  border-color: #3B82F6;
-  background-color: #EFF6FF;
+  border-color: #4ECDC4;
+  background-color: var(--color-primary-light);
 }
 
 .conflict-card-option--recommended {
@@ -234,7 +234,7 @@
   width: 18px;
   height: 18px;
   margin-top: 2px;
-  accent-color: #3B82F6;
+  accent-color: #4ECDC4;
 }
 
 .conflict-card-option-content {

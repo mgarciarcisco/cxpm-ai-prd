@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import settings
 from app.routers import (
+    auth_router,
     jira_epic_router,
     jira_stories_router,
     meeting_items_router,
@@ -13,24 +15,27 @@ from app.routers import (
 )
 
 app = FastAPI(
-    title="CXPM AI PRD",
+    title="CX AIA for Product Managers",
     description="Meeting Notes to Requirements API",
     version="1.0.0",
 )
 
-# Configure CORS for local development
+# Configure CORS
+_default_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:5173",
+]
+_cors_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()] if settings.CORS_ORIGINS else _default_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:3002",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,6 +49,7 @@ async def health_check() -> dict[str, str]:
 
 
 # Register routers
+app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(meetings_router)
 app.include_router(meeting_items_router)

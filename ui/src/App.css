@@ -89,6 +89,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  position: relative;
 }
 
 .header-avatar {
@@ -353,4 +354,98 @@
   padding: 3rem;
   text-align: center;
   color: #6B7280;
+}
+
+/* User Menu */
+.user-button {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem 0.5rem 0.375rem 0.375rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.user-button:hover {
+  background-color: #F3F4F6;
+}
+
+.user-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.user-chevron {
+  color: #9CA3AF;
+  flex-shrink: 0;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+  min-width: 220px;
+  padding: 0.375rem;
+  z-index: 200;
+}
+
+.dropdown-header {
+  padding: 0.75rem 0.75rem 0.625rem;
+  border-bottom: 1px solid #F3F4F6;
+  margin-bottom: 0.375rem;
+}
+
+.dropdown-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.dropdown-email {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin-top: 0.125rem;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  text-decoration: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: #F3F4F6;
+}
+
+.dropdown-item svg {
+  color: #9CA3AF;
+  flex-shrink: 0;
+}
+
+.dropdown-item--danger {
+  color: #DC2626;
+}
+
+.dropdown-item--danger:hover {
+  background-color: #FEF2F2;
 }

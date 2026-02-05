@@ -80,7 +80,8 @@ export function useStoriesStreaming(projectId, format, sectionFilter = [], shoul
     cleanup();
 
     // Build URL with query parameters
-    let url = `${BASE_URL}/api/projects/${projectId}/stories/stream?format=${format}`;
+    const token = localStorage.getItem('auth_token');
+    let url = `${BASE_URL}/api/projects/${projectId}/stories/stream?format=${format}${token ? `&token=${token}` : ''}`;
     if (sectionFilter && sectionFilter.length > 0) {
       // Send section_filter as repeated query params (FastAPI list format)
       url += sectionFilter.map(s => `&section_filter=${encodeURIComponent(s)}`).join('');

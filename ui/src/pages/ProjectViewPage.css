@@ -74,7 +74,7 @@
   background-color: var(--color-primary, #4ECDC4);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -149,7 +149,7 @@
   padding: 0;
   background-color: white;
   border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary, #6b7280);
   cursor: pointer;
   transition: all 0.2s;
@@ -188,7 +188,7 @@
   min-height: 200px;
   background-color: var(--color-bg-subtle, #f9fafb);
   border: 1px dashed var(--color-border, #e5e7eb);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--color-text-tertiary, #9ca3af);
   font-size: 0.875rem;
 }
@@ -207,7 +207,7 @@
 .stage-card {
   background: white;
   border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -244,7 +244,7 @@
 .stage-card__icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -328,7 +328,7 @@
 .stage-card__btn {
   flex: 1;
   padding: 0.625rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;

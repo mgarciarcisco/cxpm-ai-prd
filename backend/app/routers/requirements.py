@@ -7,8 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
 from app.models import Action, Actor, Project, Requirement, RequirementHistory
+from app.models.user import User
 from app.schemas import (
     RequirementCreate,
     RequirementHistoryResponse,
@@ -47,7 +49,7 @@ def _build_requirement_response(requirement: Requirement) -> RequirementResponse
 
 @router.get("/projects/{project_id}/requirements", response_model=RequirementsListResponse)
 def list_project_requirements(
-    project_id: str, db: Session = Depends(get_db)
+    project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ) -> RequirementsListResponse:
     """Get all active requirements for a project, grouped by section.
 
@@ -56,7 +58,7 @@ def list_project_requirements(
     Each requirement includes source meeting links.
     """
     # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -97,6 +99,7 @@ def create_requirement(
     project_id: str,
     create_data: RequirementCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> RequirementResponse:
     """Create a new requirement manually.
 
@@ -104,7 +107,7 @@ def create_requirement(
     Returns the created requirement.
     """
     # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -169,7 +172,7 @@ def _slugify_filename(name: str) -> str:
 
 @router.get("/projects/{project_id}/requirements/export")
 def export_project_requirements(
-    project_id: str, db: Session = Depends(get_db)
+    project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ) -> Response:
     """Export all active requirements for a project as a Markdown document.
 
@@ -177,7 +180,7 @@ def export_project_requirements(
     The Content-Disposition header suggests a filename based on the project name.
     """
     # Verify project exists and get name for filename
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -210,6 +213,7 @@ def update_requirement(
     requirement_id: str,
     update_data: RequirementUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> RequirementResponse:
     """Update a requirement's content.
 
@@ -219,6 +223,11 @@ def update_requirement(
     # Find the requirement
     requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
     if not requirement:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
+
+    # Verify ownership through project
+    project = db.query(Project).filter(Project.id == requirement.project_id, Project.user_id == current_user.id).first()
+    if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
 
     # Store old content for history
@@ -250,6 +259,7 @@ def update_requirement(
 def delete_requirement(
     requirement_id: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> None:
     """Soft-delete a requirement by setting is_active=False.
 
@@ -259,6 +269,11 @@ def delete_requirement(
     # Find the requirement
     requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
     if not requirement:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
+
+    # Verify ownership through project
+    project = db.query(Project).filter(Project.id == requirement.project_id, Project.user_id == current_user.id).first()
+    if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
 
     # Store project_id before soft-delete for status update
@@ -293,6 +308,7 @@ def reorder_requirements(
     project_id: str,
     reorder_data: RequirementReorderRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
     """Reorder requirements within a section.
 
@@ -300,7 +316,7 @@ def reorder_requirements(
     Returns 200 OK with success message.
     """
     # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -335,6 +351,7 @@ def reorder_requirements(
 def get_requirement_history(
     requirement_id: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> list[RequirementHistoryResponse]:
     """Get the change history for a requirement.
 
@@ -344,6 +361,11 @@ def get_requirement_history(
     # Find the requirement
     requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
     if not requirement:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
+
+    # Verify ownership through project
+    project = db.query(Project).filter(Project.id == requirement.project_id, Project.user_id == current_user.id).first()
+    if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
 
     # Query history entries ordered by created_at descending

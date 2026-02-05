@@ -25,6 +25,7 @@ from app.models import (
     RequirementHistory,
     RequirementSource,
     StoryBatch,
+    User,
     UserStory,
 )
 from app.models.meeting_item import Section
@@ -63,6 +64,15 @@ from app.schemas import (
 # =============================================================================
 
 
+def _ensure_test_user(db: Session) -> None:
+    """Ensure the test user exists in the database."""
+    existing = db.query(User).filter(User.id == "test-user-0000-0000-000000000001").first()
+    if not existing:
+        user = User(id="test-user-0000-0000-000000000001", email="test@example.com", name="Test User", hashed_password="x", is_active=True, is_admin=False)
+        db.add(user)
+        db.commit()
+
+
 def _create_test_project(
     db: Session,
     name: str = "Test Project",
@@ -75,8 +85,10 @@ def _create_test_project(
     export_status: ExportStatus = ExportStatus.not_exported,
 ) -> Project:
     """Create a test project with specified attributes."""
+    _ensure_test_user(db)
     project = Project(
         name=name,
+        user_id="test-user-0000-0000-000000000001",
         description=description,
         archived=archived,
         requirements_status=requirements_status,
@@ -124,6 +136,7 @@ def _create_test_meeting(
 
     meeting = MeetingRecap(
         project_id=project_id,
+        user_id="test-user-0000-0000-000000000001",
         title=title,
         meeting_date=date.today(),
         raw_input="Test meeting content",

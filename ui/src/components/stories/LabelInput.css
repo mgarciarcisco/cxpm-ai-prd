@@ -77,9 +77,9 @@
 }
 
 .label-input__add-btn:hover {
-  color: #3B82F6;
-  border-color: #93C5FD;
-  background-color: #EFF6FF;
+  color: #4ECDC4;
+  border-color: rgba(78, 205, 196, 0.5);
+  background-color: var(--color-primary-light);
 }
 
 .label-input__add-text {
@@ -99,10 +99,10 @@
   font-size: 0.75rem;
   color: #1F2937;
   background-color: #FFFFFF;
-  border: 1px solid #3B82F6;
+  border: 1px solid #4ECDC4;
   border-radius: 9999px;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.1);
 }
 
 .label-input__input::placeholder {
@@ -147,8 +147,8 @@
 
 .label-input__suggestion:hover,
 .label-input__suggestion--selected {
-  background-color: #EFF6FF;
-  color: #3B82F6;
+  background-color: var(--color-primary-light);
+  color: #4ECDC4;
 }
 
 /* Small Size Variant */

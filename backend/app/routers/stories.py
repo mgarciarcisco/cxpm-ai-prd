@@ -14,6 +14,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
+from app.auth import get_current_user, get_current_user_from_query
 from app.database import SessionLocal, get_db
 from app.exceptions import LLMResponseError, NoRequirementsError
 from app.models import (
@@ -24,6 +25,7 @@ from app.models import (
     StoryStatus,
     UserStory,
 )
+from app.models.user import User
 from app.schemas import (
     PaginatedResponse,
     ReorderRequest,
@@ -42,25 +44,22 @@ from app.services.stories_generator import StoriesGenerator
 router = APIRouter(prefix="/api", tags=["stories"])
 
 
-def _get_project_or_404(project_id: str, db: Session) -> Project:
+def _get_project_or_404(project_id: str, db: Session, current_user: User) -> Project:
     """Get a project by ID or raise 404."""
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     return project
 
 
-def _get_batch_or_404(batch_id: str, db: Session, verify_project_access: bool = True) -> StoryBatch:
+def _get_batch_or_404(batch_id: str, db: Session, current_user: User | None = None) -> StoryBatch:
     """Get a story batch by ID or raise 404.
-    
+
     Args:
         batch_id: The batch's unique identifier.
         db: Database session.
-        verify_project_access: If True (default), also verify the batch's project exists
-            and is accessible. This ensures users can only access batches belonging to
-            projects they have access to. When authentication is implemented, this
-            will also verify the current user has permission to access the project.
-    
+        current_user: If provided, verify the batch's project belongs to this user.
+
     Raises:
         HTTPException: 404 if batch not found or project not accessible.
     """
@@ -68,12 +67,9 @@ def _get_batch_or_404(batch_id: str, db: Session, verify_project_access: bool = 
     if not batch:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Story batch not found")
 
-    # Verify project access - ensures the batch's project exists and is accessible
-    # When authentication is implemented, this would also verify user permissions
-    if verify_project_access:
-        project = db.query(Project).filter(Project.id == batch.project_id).first()
+    if current_user:
+        project = db.query(Project).filter(Project.id == batch.project_id, Project.user_id == current_user.id).first()
         if not project:
-            # Project was deleted but batch still exists - treat as inaccessible
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Story batch not found"
@@ -82,17 +78,14 @@ def _get_batch_or_404(batch_id: str, db: Session, verify_project_access: bool = 
     return batch
 
 
-def _get_story_or_404(story_id: str, db: Session, verify_project_access: bool = True) -> UserStory:
+def _get_story_or_404(story_id: str, db: Session, current_user: User | None = None) -> UserStory:
     """Get a story by ID or raise 404. Excludes soft-deleted stories.
-    
+
     Args:
         story_id: The story's unique identifier.
         db: Database session.
-        verify_project_access: If True (default), also verify the story's project exists
-            and is accessible. This ensures users can only access stories belonging to
-            projects they have access to. When authentication is implemented, this
-            will also verify the current user has permission to access the project.
-    
+        current_user: If provided, verify the story's project belongs to this user.
+
     Raises:
         HTTPException: 404 if story not found or project not accessible.
     """
@@ -100,12 +93,9 @@ def _get_story_or_404(story_id: str, db: Session, verify_project_access: bool = 
     if not story:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Story not found")
 
-    # Verify project access - ensures the story's project exists and is accessible
-    # When authentication is implemented, this would also verify user permissions
-    if verify_project_access:
-        project = db.query(Project).filter(Project.id == story.project_id).first()
+    if current_user:
+        project = db.query(Project).filter(Project.id == story.project_id, Project.user_id == current_user.id).first()
         if not project:
-            # Project was deleted but story still exists - treat as inaccessible
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Story not found"
@@ -195,6 +185,7 @@ def generate_stories(
     request: StoriesGenerateRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> StoryBatchStatusResponse:
     """Start user stories generation for a project.
 
@@ -204,7 +195,7 @@ def generate_stories(
     Note: Each generation creates NEW stories. Stories are appended, not replaced.
     """
     # Verify project exists
-    _get_project_or_404(project_id, db)
+    _get_project_or_404(project_id, db, current_user)
 
     # Create batch record with queued status
     batch = StoryBatch(
@@ -212,7 +203,7 @@ def generate_stories(
         format=request.format,
         section_filter=request.section_filter,
         status=StoryBatchStatus.QUEUED,
-        created_by=None,  # Would be set from auth context
+        created_by=current_user.name,
     )
     db.add(batch)
     db.commit()
@@ -222,7 +213,7 @@ def generate_stories(
     background_tasks.add_task(
         _run_generate_stories_task,
         batch_id=str(batch.id),
-        created_by=None,  # Would be set from auth context
+        created_by=current_user.name,
     )
 
     return StoryBatchStatusResponse(
@@ -240,6 +231,7 @@ async def stream_stories_generation(
     format: StoryFormat = Query(default=StoryFormat.CLASSIC, description="Story format (classic or job_story)"),
     section_filter: list[str] | None = Query(default=None, description="Optional sections to filter requirements"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_query),
 ) -> EventSourceResponse:
     """Stream user story generation as Server-Sent Events (SSE).
 
@@ -264,7 +256,7 @@ async def stream_stories_generation(
         EventSourceResponse streaming the generation events.
     """
     # Verify project exists
-    project = _get_project_or_404(project_id, db)
+    project = _get_project_or_404(project_id, db, current_user)
 
     async def event_generator() -> AsyncIterator[dict[str, Any]]:
         """Generate SSE events for story streaming."""
@@ -285,7 +277,7 @@ async def stream_stories_generation(
                 project_id=project_id,
                 format=format,
                 section_filter=section_filter,
-                created_by=None,  # Would be set from auth context
+                created_by=current_user.name,
             ):
                 # Check if client disconnected
                 if await request.is_disconnected():
@@ -342,13 +334,13 @@ async def stream_stories_generation(
 
 
 @router.get("/stories/batches/{batch_id}/status", response_model=StoryBatchStatusResponse)
-def get_batch_status(batch_id: str, db: Session = Depends(get_db)) -> StoryBatchStatusResponse:
+def get_batch_status(batch_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> StoryBatchStatusResponse:
     """Get the current generation status of a story batch.
 
     Use this endpoint to poll for generation completion.
     Returns status=ready when generation is complete.
     """
-    batch = _get_batch_or_404(batch_id, db)
+    batch = _get_batch_or_404(batch_id, db, current_user)
 
     return StoryBatchStatusResponse(
         id=str(batch.id),
@@ -359,13 +351,13 @@ def get_batch_status(batch_id: str, db: Session = Depends(get_db)) -> StoryBatch
 
 
 @router.post("/stories/batches/{batch_id}/cancel", response_model=StoryBatchStatusResponse)
-def cancel_batch_generation(batch_id: str, db: Session = Depends(get_db)) -> StoryBatchStatusResponse:
+def cancel_batch_generation(batch_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> StoryBatchStatusResponse:
     """Cancel story batch generation if still in progress.
 
     Only works if status is queued or generating.
     Returns the updated status.
     """
-    batch = _get_batch_or_404(batch_id, db)
+    batch = _get_batch_or_404(batch_id, db, current_user)
 
     if batch.status not in (StoryBatchStatus.QUEUED, StoryBatchStatus.GENERATING):
         raise HTTPException(
@@ -397,13 +389,14 @@ def cancel_batch_generation(batch_id: str, db: Session = Depends(get_db)) -> Sto
 def list_project_batches(
     project_id: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> list[StoryBatchResponse]:
     """List all story generation batches for a project.
 
     Batches are sorted by creation date descending (newest first).
     """
     # Verify project exists
-    _get_project_or_404(project_id, db)
+    _get_project_or_404(project_id, db, current_user)
 
     batches = (
         db.query(StoryBatch)
@@ -432,6 +425,7 @@ def list_project_stories(
     status_filter: StoryStatus | None = Query(None, alias="status"),
     labels: str | None = Query(None, description="Comma-separated list of labels to filter by"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> PaginatedResponse[UserStoryResponse]:
     """List all user stories for a project with pagination.
 
@@ -439,7 +433,7 @@ def list_project_stories(
     Supports filtering by batch_id, status, and labels.
     """
     # Verify project exists
-    _get_project_or_404(project_id, db)
+    _get_project_or_404(project_id, db, current_user)
 
     # Build query
     query = db.query(UserStory).filter(
@@ -496,9 +490,9 @@ def list_project_stories(
 
 
 @router.get("/stories/{story_id}", response_model=UserStoryResponse)
-def get_story(story_id: str, db: Session = Depends(get_db)) -> UserStoryResponse:
+def get_story(story_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> UserStoryResponse:
     """Get a single user story with all details."""
-    story = _get_story_or_404(story_id, db)
+    story = _get_story_or_404(story_id, db, current_user)
     return _story_to_response(story)
 
 
@@ -507,6 +501,7 @@ def create_story(
     project_id: str,
     request: StoryCreateRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> UserStoryResponse:
     """Create a new user story manually.
 
@@ -514,7 +509,7 @@ def create_story(
     The story is added to the end of the list (highest order value).
     """
     # Verify project exists
-    project = _get_project_or_404(project_id, db)
+    project = _get_project_or_404(project_id, db, current_user)
 
     # Get the next story number for this project
     max_story_number = db.query(UserStory.story_number).filter(
@@ -545,7 +540,7 @@ def create_story(
         priority=request.priority,
         status=request.status or StoryStatus.DRAFT,
         order=next_order,
-        created_by=None,  # Would be set from auth context
+        created_by=current_user.name,
     )
 
     db.add(story)
@@ -566,13 +561,14 @@ def update_story(
     story_id: str,
     update_data: StoryUpdateRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> UserStoryResponse:
     """Update a user story's details.
 
     Only the provided fields will be updated.
     Returns the updated story.
     """
-    story = _get_story_or_404(story_id, db)
+    story = _get_story_or_404(story_id, db, current_user)
 
     # Update fields if provided
     if update_data.title is not None:
@@ -597,7 +593,7 @@ def update_story(
         story.status = update_data.status
 
     story.updated_at = datetime.utcnow()
-    story.updated_by = None  # Would be set from auth context
+    story.updated_by = current_user.name
     db.commit()
     db.refresh(story)
 
@@ -605,12 +601,12 @@ def update_story(
 
 
 @router.delete("/stories/{story_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_story(story_id: str, db: Session = Depends(get_db)) -> None:
+def delete_story(story_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
     """Soft delete a user story by setting deleted_at timestamp.
 
     The story will no longer appear in list results.
     """
-    story = _get_story_or_404(story_id, db)
+    story = _get_story_or_404(story_id, db, current_user)
 
     story.deleted_at = datetime.utcnow()
     db.commit()
@@ -628,6 +624,7 @@ def reorder_stories(
     project_id: str,
     request: ReorderRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict:
     """Reorder stories by providing the new order of story IDs.
 
@@ -635,7 +632,7 @@ def reorder_stories(
     in the story_ids array.
     """
     # Verify project exists
-    _get_project_or_404(project_id, db)
+    _get_project_or_404(project_id, db, current_user)
 
     # Verify all stories exist and belong to this project
     for i, story_id in enumerate(request.story_ids):
@@ -672,6 +669,7 @@ def delete_batch_stories(
     project_id: str,
     batch_id: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> None:
     """Delete all stories in a batch.
 
@@ -679,7 +677,7 @@ def delete_batch_stories(
     The batch record itself is also deleted.
     """
     # Verify project exists
-    _get_project_or_404(project_id, db)
+    _get_project_or_404(project_id, db, current_user)
 
     # Verify batch exists and belongs to project
     batch = db.query(StoryBatch).filter(
@@ -721,6 +719,7 @@ def export_stories(
     format: StoryExportFormat = Query(StoryExportFormat.MARKDOWN),
     batch_id: str | None = Query(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> Response:
     """Export stories in the specified format.
 
@@ -733,7 +732,7 @@ def export_stories(
     Returns a downloadable file with appropriate content-type.
     """
     # Verify project exists
-    project = _get_project_or_404(project_id, db)
+    project = _get_project_or_404(project_id, db, current_user)
 
     # Build query for stories
     query = db.query(UserStory).filter(
