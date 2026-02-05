@@ -7,9 +7,10 @@ Create Date: 2026-02-05
 Creates a default 'system' user, assigns all existing rows to it,
 then makes user_id NOT NULL.
 """
+from datetime import datetime, timezone
+
 from alembic import op
 import sqlalchemy as sa
-import uuid
 
 
 # revision identifiers, used by Alembic.
@@ -23,6 +24,7 @@ SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 def upgrade() -> None:
     # Create system user for existing data
+    now = datetime.now(timezone.utc)
     users_table = sa.table(
         "users",
         sa.column("id", sa.CHAR(36)),
@@ -41,8 +43,8 @@ def upgrade() -> None:
         "hashed_password": "!not-a-valid-hash",
         "is_active": False,
         "is_admin": False,
-        "created_at": sa.func.now(),
-        "updated_at": sa.func.now(),
+        "created_at": now,
+        "updated_at": now,
     }])
 
     # Add user_id to projects (nullable first)

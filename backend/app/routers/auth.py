@@ -24,8 +24,8 @@ def register(payload: UserRegister, db: Session = Depends(get_db)) -> TokenRespo
             detail="Email already registered",
         )
 
-    # First user becomes admin
-    is_first_user = db.query(User).count() == 0
+    # First real user becomes admin (ignore system user with is_active=False)
+    is_first_user = db.query(User).filter(User.is_active == True).count() == 0  # noqa: E712
 
     user = User(
         email=payload.email,

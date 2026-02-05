@@ -20,12 +20,22 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Add priority column to user_stories table."""
+    priority_enum = sa.Enum('p1', 'p2', 'p3', name='storypriority')
+
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        priority_enum.create(bind)
+
     op.add_column(
         'user_stories',
-        sa.Column('priority', sa.Enum('p1', 'p2', 'p3', name='storypriority'), nullable=True)
+        sa.Column('priority', priority_enum, nullable=True)
     )
 
 
 def downgrade() -> None:
     """Remove priority column from user_stories table."""
     op.drop_column('user_stories', 'priority')
+
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        sa.Enum(name='storypriority').drop(bind)

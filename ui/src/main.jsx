@@ -23,11 +23,12 @@ import NotFoundPage from './pages/NotFoundPage'
 import JiraEpicPage from './pages/jira_epic/JiraEpicPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import { AuthProvider } from './contexts/AuthContext'
 
 // Create data router with all routes
 const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage /> },
-  { path: '/register', element: <RegisterPage /> },
+  { path: '/login', element: <AuthProvider><LoginPage /></AuthProvider> },
+  { path: '/register', element: <AuthProvider><RegisterPage /></AuthProvider> },
   {
     path: '/',
     element: <App />,
