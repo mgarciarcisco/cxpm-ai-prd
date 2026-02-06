@@ -11,6 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
+from app.activity import log_activity_safe
 from app.auth import get_current_user, get_current_user_from_query
 from app.database import get_db
 from app.models import (
@@ -57,6 +58,7 @@ router = APIRouter(prefix="/api/meetings", tags=["meetings"])
 
 @router.post("/upload", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_meeting(
+    request: Request,
     title: str = Form(...),
     meeting_date: date = Form(...),
     file: Optional[UploadFile] = File(default=None),
@@ -116,6 +118,7 @@ async def upload_meeting(
     db.add(meeting)
     db.commit()
     db.refresh(meeting)
+    log_activity_safe(db, current_user.id, "meeting.uploaded", "meeting", str(meeting.id), {"filename": file.filename if file else "text_input"}, request)
 
     return {"job_id": meeting.id, "meeting_id": meeting.id}
 
@@ -263,7 +266,7 @@ def get_meeting(meeting_id: str, db: Session = Depends(get_db), current_user: Us
 
 
 @router.delete("/{meeting_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_meeting(meeting_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
+def delete_meeting(meeting_id: str, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
     """
     Delete a meeting and its associated items.
 
@@ -276,9 +279,11 @@ def delete_meeting(meeting_id: str, db: Session = Depends(get_db), current_user:
             detail="Meeting not found",
         )
 
+    meeting_filename = meeting.title
     # Delete the meeting (cascade delete will remove associated items)
     db.delete(meeting)
     db.commit()
+    log_activity_safe(db, current_user.id, "meeting.deleted", "meeting", meeting_id, {"filename": meeting_filename}, request)
 
 
 @router.post("/{meeting_id}/items", response_model=MeetingItemResponse, status_code=status.HTTP_201_CREATED)

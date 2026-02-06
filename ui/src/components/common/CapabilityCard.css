@@ -1,0 +1,212 @@
+/* CapabilityCard — shared by dashboard (info) and project workspace */
+
+.capability-card {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-left: 3px solid var(--card-color, #4ECDC4);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+/* Info mode — non-interactive */
+.capability-card--info {
+  opacity: 0.85;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Workspace mode — interactive */
+.capability-card--workspace {
+  cursor: pointer;
+}
+
+.capability-card--workspace:hover {
+  border-color: var(--card-color, #4ECDC4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.capability-card--workspace:focus-visible {
+  outline: 2px solid var(--card-color, #4ECDC4);
+  outline-offset: 2px;
+}
+
+/* Coming Soon — non-interactive */
+.capability-card--coming-soon {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.capability-card--coming-soon:hover {
+  border-color: #E5E7EB;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Top row: icon + badge */
+.capability-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.capability-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--card-color, #4ECDC4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--card-color, #4ECDC4);
+  flex-shrink: 0;
+}
+
+.capability-card__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.capability-card__coming-soon-badge {
+  display: inline-block;
+  background: var(--color-primary-light, #e0f7f6);
+  color: #3BB5AD;
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+/* Title + description */
+.capability-card__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 0.25rem 0;
+}
+
+.capability-card__description {
+  font-size: 0.8125rem;
+  color: #4B5563;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+/* Input / Output section */
+.capability-card__io {
+  background: #F9FAFB;
+  border-radius: var(--radius-sm);
+  padding: 0.625rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.capability-card__io-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.capability-card__io-row + .capability-card__io-row {
+  margin-top: 0.5rem;
+}
+
+.capability-card__io-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #4B5563;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+  min-width: 3rem;
+}
+
+.capability-card__io-text {
+  font-size: 0.75rem;
+  color: #6B7280;
+  line-height: 1.4;
+}
+
+/* Workspace footer: status, tip, actions */
+.capability-card__workspace-footer {
+  margin-top: auto;
+}
+
+.capability-card__status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.capability-card__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #D1D5DB;
+  flex-shrink: 0;
+}
+
+.capability-card__status-dot--active {
+  background: #10B981;
+}
+
+.capability-card__status-text {
+  font-size: 0.8125rem;
+  color: #6B7280;
+}
+
+.capability-card__tip {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  font-style: italic;
+  margin: 0 0 0.75rem 0;
+}
+
+.capability-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.capability-card__btn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  border: none;
+}
+
+.capability-card__btn--primary {
+  background: var(--card-color, #4ECDC4);
+  color: white;
+}
+
+.capability-card__btn--primary:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+.capability-card__btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.capability-card__btn--secondary {
+  background: white;
+  color: #4B5563;
+  border: 1px solid #E5E7EB;
+}
+
+.capability-card__btn--secondary:hover {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+}

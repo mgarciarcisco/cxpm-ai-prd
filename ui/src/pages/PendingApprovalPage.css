@@ -1,0 +1,105 @@
+/* PendingApprovalPage.css — matches login/register page design */
+
+.pending-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F7F8FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.pending-container {
+  width: 100%;
+  max-width: 420px;
+  padding: 2rem;
+}
+
+.pending-branding {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.pending-logo {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+  margin-bottom: 1.25rem;
+}
+
+.pending-logo span {
+  color: white;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.pending-branding h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.pending-branding p {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.pending-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  text-align: center;
+}
+
+.pending-icon {
+  margin-bottom: 1.5rem;
+}
+
+.pending-card h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 0.75rem;
+}
+
+.pending-message {
+  font-size: 0.875rem;
+  color: #6B7280;
+  line-height: 1.6;
+}
+
+.pending-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.pending-footer a {
+  color: #4ECDC4;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.pending-footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .pending-container {
+    padding: 1.5rem 1rem;
+  }
+  .pending-card {
+    padding: 2rem 1.5rem;
+  }
+}

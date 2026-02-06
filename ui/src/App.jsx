@@ -5,11 +5,13 @@ import { ToastProvider } from './contexts/ToastContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import OfflineIndicator from './components/common/OfflineIndicator'
+import ProfileModal from './components/common/ProfileModal'
 import './App.css'
 
 function AppContent() {
   const { user, logout } = useAuth()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
   const dropdownRef = useRef(null)
 
   // Close dropdown on outside click
@@ -62,6 +64,21 @@ function AppContent() {
                 <div className="dropdown-name">{user?.name}</div>
                 <div className="dropdown-email">{user?.email}</div>
               </div>
+              {user?.is_admin && (
+                <Link to="/admin" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 1l2 3h3l-1 3 2 2-3 1-1 3-2-2-2 2-1-3-3-1 2-2-1-3h3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Admin
+                </Link>
+              )}
+              <button className="dropdown-item" onClick={() => { setShowProfile(true); setDropdownOpen(false); }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="5.5" r="3" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M2 14c0-2.761 2.686-5 6-5s6 2.239 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                Profile
+              </button>
               <button className="dropdown-item dropdown-item--danger" onClick={() => { logout(); setDropdownOpen(false); }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M6 2h4M2 4h12M12.667 4l-.467 7.467a2 2 0 01-1.995 1.866H5.795a2 2 0 01-1.995-1.866L3.333 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -80,6 +97,7 @@ function AppContent() {
           </ProtectedRoute>
         </ErrorBoundary>
       </main>
+      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     </div>
   )
 }

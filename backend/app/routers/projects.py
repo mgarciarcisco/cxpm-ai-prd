@@ -1,9 +1,10 @@
 """Project CRUD API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.activity import log_activity_safe
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import (
@@ -34,7 +35,7 @@ router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
-def create_project(project: ProjectCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Project:
+def create_project(project: ProjectCreate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Project:
     """Create a new project."""
     db_project = Project(
         name=project.name,
@@ -44,6 +45,7 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db), curren
     db.add(db_project)
     db.commit()
     db.refresh(db_project)
+    log_activity_safe(db, current_user.id, "project.created", "project", db_project.id, {"name": db_project.name}, request)
     return db_project
 
 
@@ -66,6 +68,7 @@ def get_project(project_id: str, db: Session = Depends(get_db), current_user: Us
 def update_project(
     project_id: str,
     project_update: ProjectUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Project:
@@ -81,18 +84,21 @@ def update_project(
 
     db.commit()
     db.refresh(project)
+    log_activity_safe(db, current_user.id, "project.updated", "project", project_id, {"changed_fields": list(update_data.keys())}, request)
     return project
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_project(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
+def delete_project(project_id: str, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
     """Delete a project."""
     project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
+    project_name = project.name
     db.delete(project)
     db.commit()
+    log_activity_safe(db, current_user.id, "project.deleted", "project", project_id, {"name": project_name}, request)
 
 
 @router.get("/{project_id}/meetings", response_model=list[MeetingListItemResponse])
@@ -139,20 +145,29 @@ def get_project_stats(project_id: str, db: Session = Depends(get_db), current_us
         for section, count in section_counts
     ]
 
-    # Find last activity - most recent applied_at from meetings, or created_at if none applied
-    last_applied = db.query(func.max(MeetingRecap.applied_at)).filter(
+    # Find last activity — most recent timestamp across meetings, requirements, and project
+    candidates = [project.updated_at, project.created_at]
+
+    last_meeting_applied = db.query(func.max(MeetingRecap.applied_at)).filter(
         MeetingRecap.project_id == project_id,
         MeetingRecap.applied_at.isnot(None)
     ).scalar()
+    if last_meeting_applied:
+        candidates.append(last_meeting_applied)
 
-    if last_applied:
-        last_activity = last_applied
-    else:
-        # Fall back to most recent meeting created_at or project created_at
-        last_meeting_created = db.query(func.max(MeetingRecap.created_at)).filter(
-            MeetingRecap.project_id == project_id
-        ).scalar()
-        last_activity = last_meeting_created or project.created_at
+    last_meeting_created = db.query(func.max(MeetingRecap.created_at)).filter(
+        MeetingRecap.project_id == project_id
+    ).scalar()
+    if last_meeting_created:
+        candidates.append(last_meeting_created)
+
+    last_requirement_updated = db.query(func.max(Requirement.updated_at)).filter(
+        Requirement.project_id == project_id
+    ).scalar()
+    if last_requirement_updated:
+        candidates.append(last_requirement_updated)
+
+    last_activity = max(candidates)
 
     return ProjectStatsResponse(
         meeting_count=meeting_count,

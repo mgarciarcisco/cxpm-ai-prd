@@ -3,10 +3,11 @@
 import re
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.activity import log_activity_safe
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Action, Actor, Project, Requirement, RequirementHistory
@@ -98,6 +99,7 @@ def list_project_requirements(
 def create_requirement(
     project_id: str,
     create_data: RequirementCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> RequirementResponse:
@@ -147,6 +149,7 @@ def create_requirement(
 
     db.commit()
     db.refresh(requirement)
+    log_activity_safe(db, current_user.id, "requirement.created", "requirement", str(requirement.id), {"project_id": str(project_id)}, request)
 
     # Auto-update requirements stage status
     update_requirements_status(project_id, db)
@@ -212,6 +215,7 @@ def export_project_requirements(
 def update_requirement(
     requirement_id: str,
     update_data: RequirementUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> RequirementResponse:
@@ -248,6 +252,7 @@ def update_requirement(
 
     db.commit()
     db.refresh(requirement)
+    log_activity_safe(db, current_user.id, "requirement.updated", "requirement", requirement_id, {}, request)
 
     return _build_requirement_response(requirement)
 
@@ -258,6 +263,7 @@ def update_requirement(
 )
 def delete_requirement(
     requirement_id: str,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> None:
@@ -293,6 +299,7 @@ def delete_requirement(
     db.add(history_entry)
 
     db.commit()
+    log_activity_safe(db, current_user.id, "requirement.deleted", "requirement", requirement_id, {}, request)
 
     # Auto-update requirements stage status based on remaining requirements count
     update_requirements_status(project_id, db)

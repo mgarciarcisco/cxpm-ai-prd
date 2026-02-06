@@ -1,5 +1,6 @@
 """API routers package."""
 
+from app.routers.admin import router as admin_router
 from app.routers.auth import router as auth_router
 from app.routers.jira_epic import router as jira_epic_router
 from app.routers.jira_stories import router as jira_stories_router
@@ -11,6 +12,7 @@ from app.routers.requirements import router as requirements_router
 from app.routers.stories import router as stories_router
 
 __all__ = [
+    "admin_router",
     "auth_router",
     "projects_router",
     "meetings_router",
