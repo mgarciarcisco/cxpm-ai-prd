@@ -34,6 +34,18 @@
   outline-offset: 2px;
 }
 
+/* Coming Soon — non-interactive */
+.capability-card--coming-soon {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.capability-card--coming-soon:hover {
+  border-color: #E5E7EB;
+  box-shadow: none;
+  transform: none;
+}
+
 /* Top row: icon + badge */
 .capability-card__top {
   display: flex;
@@ -85,7 +97,6 @@
   color: #4B5563;
   margin: 0 0 0.75rem 0;
   line-height: 1.4;
-  flex-grow: 1;
 }
 
 /* Input / Output section */
@@ -98,8 +109,8 @@
 
 .capability-card__io-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .capability-card__io-row + .capability-card__io-row {
@@ -112,6 +123,8 @@
   color: #4B5563;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  flex-shrink: 0;
+  min-width: 3rem;
 }
 
 .capability-card__io-text {

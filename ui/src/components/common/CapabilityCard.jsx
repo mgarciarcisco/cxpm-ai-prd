@@ -13,8 +13,8 @@ function getStatusText(capability, stats, project) {
       const meetCount = stats?.meeting_count ?? 0;
       if (reqCount === 0 && meetCount === 0) return { text: 'Not started yet', active: false };
       const parts = [];
-      if (reqCount > 0) parts.push(`${reqCount} requirement${reqCount !== 1 ? 's' : ''}`);
       if (meetCount > 0) parts.push(`${meetCount} meeting${meetCount !== 1 ? 's' : ''}`);
+      if (reqCount > 0) parts.push(`${reqCount} requirement${reqCount !== 1 ? 's' : ''}`);
       return { text: parts.join(' \u00b7 '), active: true };
     }
     default:
@@ -60,6 +60,7 @@ function CapabilityCard({ capability, mode = 'info', stats, project, onAction })
     `capability-card--${capability.colorName}`,
     isInfo && 'capability-card--info',
     isWorkspace && 'capability-card--workspace',
+    capability.comingSoon && 'capability-card--coming-soon',
   ].filter(Boolean).join(' ');
 
   const handlePrimaryClick = (e) => {
@@ -150,7 +151,7 @@ function CapabilityCard({ capability, mode = 'info', stats, project, onAction })
                 className="capability-card__btn capability-card__btn--secondary"
                 onClick={handleUploadClick}
               >
-                Upload Meeting Notes
+                Create Requirements
               </button>
             )}
           </div>
