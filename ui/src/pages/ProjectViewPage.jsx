@@ -5,6 +5,8 @@ import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { StageStepper } from '../components/common/StageStepper';
 import ProjectSettingsModal from '../components/project/ProjectSettingsModal';
 import ProjectViewSkeleton from '../components/project/ProjectViewSkeleton';
+import CapabilityCard from '../components/common/CapabilityCard';
+import { CAPABILITIES } from '../constants/capabilities.jsx';
 import {
   RequirementsStage,
   PRDStage,
@@ -13,12 +15,6 @@ import {
   ExportStage,
 } from '../components/stages';
 import './ProjectViewPage.css';
-
-/**
- * Project detail view page.
- * Shows dashboard with stage cards at /projects/:id
- * Shows individual stage content at /projects/:id/:stage
- */
 
 // Stage labels for breadcrumb display
 const STAGE_LABELS = {
@@ -38,163 +34,35 @@ const STAGE_COMPONENTS = {
   export: ExportStage,
 };
 
-// Stage card configuration
-const STAGE_CONFIG = [
-  {
-    id: 'requirements',
-    title: 'Requirements',
-    subtitle: 'Gathered from meetings and manual input',
-    icon: '📝',
-    iconClass: 'stage-card__icon--requirements',
-    statusMap: { empty: 'empty', has_items: 'in_progress', reviewed: 'complete' },
-    getMetaText: (stats, project) => {
-      const count = stats?.requirement_count ?? project?.requirements_count ?? 0;
-      return `${count} item${count !== 1 ? 's' : ''}`;
-    },
-    getPrimaryAction: (status) => status === 'empty' ? 'Get Started' : 'View',
-    getSecondaryAction: (status) => status !== 'empty' ? 'Add More' : null,
-  },
-  {
-    id: 'prd',
-    title: 'PRD',
-    subtitle: 'Product Requirements Document',
-    icon: '📄',
-    iconClass: 'stage-card__icon--prd',
-    statusMap: { empty: 'empty', draft: 'in_progress', ready: 'complete' },
-    getMetaText: (stats, project, prdData) => {
-      if (!prdData || prdData.total === 0) return 'Not generated';
-      const latest = prdData.items?.[0];
-      return latest ? `Draft v${latest.version}` : 'Draft';
-    },
-    getPrimaryAction: (status) => {
-      if (status === 'empty') return 'Generate';
-      if (status === 'in_progress') return 'Continue';
-      return 'View';
-    },
-    getSecondaryAction: (status) => status !== 'empty' ? 'Regenerate' : null,
-  },
-  {
-    id: 'stories',
-    title: 'User Stories',
-    subtitle: 'Actionable development tasks',
-    icon: '📋',
-    iconClass: 'stage-card__icon--stories',
-    statusMap: { empty: 'empty', generated: 'in_progress', refined: 'complete' },
-    getMetaText: (stats, project, prdData, storiesData) => {
-      const count = storiesData?.total ?? 0;
-      return `${count} stor${count === 1 ? 'y' : 'ies'}`;
-    },
-    getPrimaryAction: (status) => status === 'empty' ? 'Generate' : 'View',
-    getSecondaryAction: () => null,
-  },
-  {
-    id: 'mockups',
-    title: 'Mockups',
-    subtitle: 'UI/UX visual designs',
-    icon: '🎨',
-    iconClass: 'stage-card__icon--mockups',
-    statusMap: { empty: 'empty', generated: 'complete' },
-    getMetaText: () => '0 mockups', // TODO: implement mockups count
-    getPrimaryAction: (status) => status === 'empty' ? 'Create' : 'View',
-    getSecondaryAction: () => null,
-  },
-  {
-    id: 'export',
-    title: 'Export',
-    subtitle: 'Download or sync to external tools',
-    icon: '📦',
-    iconClass: 'stage-card__icon--export',
-    statusMap: { not_exported: 'empty', exported: 'complete' },
-    getMetaText: (stats, project) => {
-      return project?.export_status === 'exported' ? 'Exported' : 'Not exported';
-    },
-    getPrimaryAction: () => 'Export',
-    getSecondaryAction: () => null,
-  },
-];
-
-/**
- * Format relative time from a date
- */
-function formatRelativeTime(dateString) {
-  if (!dateString) return '—';
-
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now - date;
-  if (diffMs < 0) return 'Just now';
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-
-  return date.toLocaleDateString();
-}
-
-/**
- * Get the status badge text based on status
- */
-function getStatusBadgeText(status) {
-  switch (status) {
-    case 'empty': return 'Not Started';
-    case 'in_progress': return 'In Progress';
-    case 'complete': return 'Complete';
-    default: return 'Unknown';
-  }
-}
-
-/**
- * Maps backend stage statuses to unified status format (for single stage).
- */
-function mapStageStatus(project, stageId) {
-  if (!project) return 'empty';
-
-  const config = STAGE_CONFIG.find(s => s.id === stageId);
-  if (!config) return 'empty';
-
-  const backendStatus = project[`${stageId === 'stories' ? 'stories' : stageId}_status`];
-  return config.statusMap[backendStatus] || 'empty';
-}
-
 /**
  * Maps backend stage statuses to StageStepper status format (all stages).
  */
 function mapStageStatuses(project) {
   if (!project) return {};
 
-  // Map requirements status
   const requirementsMap = {
     empty: 'empty',
     has_items: 'in_progress',
     reviewed: 'complete',
   };
 
-  // Map PRD status
   const prdMap = {
     empty: 'empty',
     draft: 'in_progress',
     ready: 'complete',
   };
 
-  // Map stories status
   const storiesMap = {
     empty: 'empty',
     generated: 'in_progress',
     refined: 'complete',
   };
 
-  // Map mockups status
   const mockupsMap = {
     empty: 'empty',
     generated: 'complete',
   };
 
-  // Map export status
   const exportMap = {
     not_exported: 'empty',
     exported: 'complete',
@@ -217,8 +85,6 @@ function ProjectViewPage() {
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [stats, setStats] = useState(null);
-  const [prdData, setPrdData] = useState(null);
-  const [storiesData, setStoriesData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -249,36 +115,16 @@ function ProjectViewPage() {
     }
   }, [id]);
 
-  const fetchPrdData = useCallback(async () => {
-    try {
-      const data = await get(`/api/projects/${id}/prds?limit=1`);
-      setPrdData(data);
-    } catch (err) {
-      console.warn('Failed to fetch PRD data:', err);
-    }
-  }, [id]);
-
-  const fetchStoriesData = useCallback(async () => {
-    try {
-      const data = await get(`/api/projects/${id}/stories?limit=1`);
-      setStoriesData(data);
-    } catch (err) {
-      console.warn('Failed to fetch stories data:', err);
-    }
-  }, [id]);
-
   useEffect(() => {
     fetchProject();
   }, [fetchProject]);
 
-  // Fetch additional data when on dashboard view
+  // Fetch stats when on dashboard view
   useEffect(() => {
     if (isDashboard && project) {
       fetchStats();
-      fetchPrdData();
-      fetchStoriesData();
     }
-  }, [isDashboard, project, fetchStats, fetchPrdData, fetchStoriesData]);
+  }, [isDashboard, project, fetchStats]);
 
   const handleSettingsClick = () => {
     setShowSettingsModal(true);
@@ -297,10 +143,16 @@ function ProjectViewPage() {
     navigate(`/projects/${id}/${stageId}`);
   };
 
-  // Handle action button click
-  const handleActionClick = (e, stageId) => {
-    e.stopPropagation(); // Prevent card click
-    navigate(`/projects/${id}/${stageId}`);
+  // Handle workspace capability card actions
+  const handleWorkspaceAction = (capabilityId, action) => {
+    if (action === 'upload') {
+      navigate(`/app/projects/${id}/meetings/new`);
+    } else {
+      const cap = CAPABILITIES.find((c) => c.id === capabilityId);
+      if (cap?.stageRoute) {
+        navigate(`/projects/${id}/${cap.stageRoute}`);
+      }
+    }
   };
 
   // Build breadcrumb items dynamically
@@ -311,11 +163,9 @@ function ProjectViewPage() {
 
     if (project) {
       if (currentStage) {
-        // On stage detail page, project name links to dashboard
         items.push({ label: project.name, href: `/projects/${id}` });
         items.push({ label: STAGE_LABELS[currentStage] });
       } else {
-        // On project dashboard, project name is current (no link)
         items.push({ label: project.name });
       }
     }
@@ -334,78 +184,6 @@ function ProjectViewPage() {
       );
     }
     return <StageComponent project={project} onProjectUpdate={fetchProject} />;
-  };
-
-  // Render a single stage card
-  const renderStageCard = (config) => {
-    const status = mapStageStatus(project, config.id);
-    const metaText = config.getMetaText(stats, project, prdData, storiesData);
-    const primaryAction = config.getPrimaryAction(status);
-    const secondaryAction = config.getSecondaryAction(status);
-    const lastActivity = stats?.last_activity;
-
-    return (
-      <div
-        key={config.id}
-        className={`stage-card ${status === 'empty' ? 'stage-card--empty' : ''}`}
-        onClick={() => handleStageClick(config.id)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleStageClick(config.id);
-          }
-        }}
-      >
-        <div className="stage-card__header">
-          <div className={`stage-card__icon ${config.iconClass}`}>
-            {config.icon}
-          </div>
-          <span className={`stage-card__badge stage-card__badge--${status.replace('_', '-')}`}>
-            {getStatusBadgeText(status)}
-          </span>
-        </div>
-
-        <h3 className="stage-card__title">{config.title}</h3>
-        <p className="stage-card__subtitle">{config.subtitle}</p>
-
-        <div className="stage-card__meta">
-          <span className="stage-card__meta-item">
-            <svg viewBox="0 0 16 16" fill="none">
-              <path d="M4 6h8M4 10h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            {metaText}
-          </span>
-          <span className="stage-card__meta-item">
-            <svg viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            {config.id === 'requirements' ? formatRelativeTime(lastActivity) : '—'}
-          </span>
-        </div>
-
-        <div className="stage-card__actions">
-          <button
-            className="stage-card__btn stage-card__btn--primary"
-            onClick={(e) => handleActionClick(e, config.id)}
-          >
-            {primaryAction}
-          </button>
-          {secondaryAction && (
-            <button
-              className="stage-card__btn stage-card__btn--secondary"
-              onClick={(e) => handleActionClick(e, config.id)}
-            >
-              {secondaryAction}
-            </button>
-          )}
-        </div>
-
-        <span className="stage-card__arrow">→</span>
-      </div>
-    );
   };
 
   // Loading state - show skeleton
@@ -476,7 +254,6 @@ function ProjectViewPage() {
     return (
       <main className="main-content main-content--full">
         <RequirementsStage project={project} onProjectUpdate={fetchProject} />
-        {/* Project Settings Modal */}
         {showSettingsModal && (
           <ProjectSettingsModal
             project={project}
@@ -516,12 +293,34 @@ function ProjectViewPage() {
           </button>
         </header>
 
-        {/* Dashboard View - Stage Cards Grid */}
+        {/* Dashboard View - Capability Cards */}
         {isDashboard && (
-          <section className="project-view__stages">
-            <h2 className="project-view__section-title">Project Stages</h2>
-            <div className="stages-grid">
-              {STAGE_CONFIG.map(renderStageCard)}
+          <section className="project-view__workspace">
+            <div className="workspace-grid">
+              <div className="workspace-grid__top">
+                {CAPABILITIES.slice(0, 3).map((cap) => (
+                  <CapabilityCard
+                    key={cap.id}
+                    capability={cap}
+                    mode="workspace"
+                    stats={stats}
+                    project={project}
+                    onAction={(action) => handleWorkspaceAction(cap.id, action)}
+                  />
+                ))}
+              </div>
+              <div className="workspace-grid__bottom">
+                {CAPABILITIES.slice(3).map((cap) => (
+                  <CapabilityCard
+                    key={cap.id}
+                    capability={cap}
+                    mode="workspace"
+                    stats={stats}
+                    project={project}
+                    onAction={(action) => handleWorkspaceAction(cap.id, action)}
+                  />
+                ))}
+              </div>
             </div>
           </section>
         )}
