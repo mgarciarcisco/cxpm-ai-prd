@@ -17,6 +17,11 @@ function getStatusText(capability, stats, project) {
       if (reqCount > 0) parts.push(`${reqCount} requirement${reqCount !== 1 ? 's' : ''}`);
       return { text: parts.join(' \u00b7 '), active: true };
     }
+    case 'stories': {
+      const count = stats?.jira_story_count ?? 0;
+      if (count === 0) return { text: 'Not started yet', active: false };
+      return { text: `${count} Jira Epic${count !== 1 ? 's' : ''}`, active: true };
+    }
     default:
       return { text: 'Not started yet', active: false };
   }
@@ -130,7 +135,7 @@ function CapabilityCard({ capability, mode = 'info', stats, project, onAction })
         <div className="capability-card__workspace-footer">
           <div className="capability-card__status">
             <span className={`capability-card__status-dot ${statusInfo.active ? 'capability-card__status-dot--active' : ''}`} />
-            <span className="capability-card__status-text">{statusInfo.text}</span>
+            <span className={`capability-card__status-text ${statusInfo.active ? 'capability-card__status-text--active' : ''}`}>{statusInfo.text}</span>
           </div>
 
           {/* Tip line - show when not started and tip exists */}

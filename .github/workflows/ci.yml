@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -52,6 +52,15 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Check Alembic single head
+        run: |
+          HEADS=$(alembic heads 2>&1 | grep -c '(head)' || true)
+          if [ "$HEADS" -ne 1 ]; then
+            echo "::error::Alembic has $HEADS head(s). Create a merge: cd backend && alembic merge -m 'merge_heads' heads (see backend/docs/MIGRATIONS.md)"
+            alembic heads
+            exit 1
+          fi
 
       - name: Run Ruff linter
         run: ruff check .

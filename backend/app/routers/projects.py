@@ -9,6 +9,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models import (
     ExportStatus,
+    JiraStory,
     MeetingRecap,
     MockupsStatus,
     PRDStageStatus,
@@ -169,11 +170,17 @@ def get_project_stats(project_id: str, db: Session = Depends(get_db), current_us
 
     last_activity = max(candidates)
 
+    # Count Jira stories (epics) for this project
+    jira_story_count = db.query(func.count(JiraStory.id)).filter(
+        JiraStory.project_id == project_id
+    ).scalar() or 0
+
     return ProjectStatsResponse(
         meeting_count=meeting_count,
         requirement_count=total_requirement_count,
         requirement_counts_by_section=requirement_counts_by_section,
-        last_activity=last_activity
+        last_activity=last_activity,
+        jira_story_count=jira_story_count,
     )
 
 

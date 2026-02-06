@@ -177,6 +177,7 @@ def test_get_project_stats_empty_project(auth_client: TestClient) -> None:
     assert data["meeting_count"] == 0
     assert data["requirement_count"] == 0
     assert data["requirement_counts_by_section"] == []
+    assert data["jira_story_count"] == 0
     assert data["last_activity"] is not None  # Falls back to project created_at
 
 

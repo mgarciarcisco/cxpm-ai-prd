@@ -47,11 +47,17 @@ function JiraEpicPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedEpics]);
 
-  // Breadcrumb items
-  const breadcrumbItems = [
-    { label: 'Dashboard', href: '/dashboard' },
-    { label: 'User Stories' },
-  ];
+  // Breadcrumb items: include Project View link when we have a project (e.g. opened from Project View)
+  const breadcrumbItems = selectedProject
+    ? [
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Project View', href: `/projects/${selectedProject.id}` },
+        { label: 'User Stories' },
+      ]
+    : [
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'User Stories' },
+      ];
 
   // On mount: load selected project (from localStorage or first active) so existing Jira Epics can be shown
   useEffect(() => {

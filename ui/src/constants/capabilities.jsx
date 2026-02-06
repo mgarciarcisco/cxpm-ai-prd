@@ -48,10 +48,10 @@ export const CAPABILITIES = [
     description: 'Generate actionable user stories from your requirements',
     colorHex: '#3B82F6',
     colorName: 'blue',
-    comingSoon: true,
+    comingSoon: false,
     inputText: 'Requirements from meeting recap',
     outputText: 'User stories with acceptance criteria',
-    stageRoute: null,
+    stageRoute: 'user-stories',
     tip: null,
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

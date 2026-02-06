@@ -162,6 +162,10 @@
   color: #6B7280;
 }
 
+.capability-card__status-text--active {
+  color: #10B981;
+}
+
 .capability-card__tip {
   font-size: 0.75rem;
   color: #9CA3AF;

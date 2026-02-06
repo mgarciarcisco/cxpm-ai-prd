@@ -160,6 +160,7 @@ class ProjectStatsResponse(BaseModel):
     requirement_count: int
     requirement_counts_by_section: list[SectionCount]
     last_activity: datetime | None = None
+    jira_story_count: int = 0
 
 
 class StageStatusEnum(str, Enum):
