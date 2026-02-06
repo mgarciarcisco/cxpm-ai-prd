@@ -30,11 +30,11 @@ export const CAPABILITIES = [
     description: 'Create an early PRD designed to surface clarity and gaps',
     colorHex: '#F97316',
     colorName: 'orange',
-    comingSoon: false,
+    comingSoon: true,
     inputText: 'Meeting recap, notes, or prompt',
     outputText: 'Draft PRD for review and iteration',
-    stageRoute: 'prd',
-    tip: 'Tip: Adding requirements first gives better results',
+    stageRoute: null,
+    tip: null,
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
@@ -48,11 +48,11 @@ export const CAPABILITIES = [
     description: 'Generate actionable user stories from your requirements',
     colorHex: '#3B82F6',
     colorName: 'blue',
-    comingSoon: false,
+    comingSoon: true,
     inputText: 'Requirements from meeting recap',
     outputText: 'User stories with acceptance criteria',
-    stageRoute: 'stories',
-    tip: 'Tip: A PRD helps generate more accurate stories',
+    stageRoute: null,
+    tip: null,
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -72,7 +72,7 @@ export const CAPABILITIES = [
     inputText: 'Feedback, support tickets, notes',
     outputText: 'Clustered themes and recommendations',
     stageRoute: null,
-    tip: 'Tip: Works best with multiple feedback sources',
+    tip: null,
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M9 18V5l12-2v13"/>
@@ -87,11 +87,11 @@ export const CAPABILITIES = [
     description: 'Create screen flows and UI specifications for features',
     colorHex: '#EC4899',
     colorName: 'pink',
-    comingSoon: false,
+    comingSoon: true,
     inputText: 'Feature idea or PRD',
     outputText: 'Screen flows and UI specs',
-    stageRoute: 'mockups',
-    tip: 'Tip: User stories help define what to mock up',
+    stageRoute: null,
+    tip: null,
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="3" y="3" width="18" height="18" rx="2"/>

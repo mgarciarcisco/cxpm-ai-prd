@@ -57,19 +57,6 @@ function HeroProjectCard({ project }) {
     badges.push({ color: 'teal', text: parts.join(' \u00b7 ') });
   }
 
-  if (project.prd_status && project.prd_status !== 'empty') {
-    const label = project.prd_status === 'draft' ? 'PRD draft' : 'PRD complete';
-    badges.push({ color: 'orange', text: label });
-  }
-
-  if (project.stories_status && project.stories_status !== 'empty') {
-    badges.push({ color: 'blue', text: 'User stories' });
-  }
-
-  if (project.mockups_status && project.mockups_status !== 'empty') {
-    badges.push({ color: 'pink', text: 'Mockups' });
-  }
-
   const lastActive = project.lastActivity || project.updated_at;
 
   return (

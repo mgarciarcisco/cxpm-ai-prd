@@ -5,6 +5,8 @@ import './CapabilityCard.css';
  * Derive status text for a capability in workspace mode.
  */
 function getStatusText(capability, stats, project) {
+  if (capability.comingSoon) return { text: 'Coming soon', active: false };
+
   switch (capability.id) {
     case 'requirements': {
       const reqCount = stats?.requirement_count ?? 0;
@@ -15,24 +17,6 @@ function getStatusText(capability, stats, project) {
       if (meetCount > 0) parts.push(`${meetCount} meeting${meetCount !== 1 ? 's' : ''}`);
       return { text: parts.join(' \u00b7 '), active: true };
     }
-    case 'prd': {
-      const status = project?.prd_status || 'empty';
-      if (status === 'empty') return { text: 'Not started yet', active: false };
-      if (status === 'draft') return { text: 'PRD draft', active: true };
-      return { text: 'PRD complete', active: true };
-    }
-    case 'stories': {
-      const status = project?.stories_status || 'empty';
-      if (status === 'empty') return { text: 'Not started yet', active: false };
-      return { text: 'Stories generated', active: true };
-    }
-    case 'mockups': {
-      const status = project?.mockups_status || 'empty';
-      if (status === 'empty') return { text: 'Not started yet', active: false };
-      return { text: 'Mockups generated', active: true };
-    }
-    case 'features':
-      return { text: 'Coming soon', active: false };
     default:
       return { text: 'Not started yet', active: false };
   }
@@ -48,18 +32,6 @@ function getButtonLabel(capability, project) {
     case 'requirements': {
       const status = project?.requirements_status || 'empty';
       return status === 'empty' ? 'Get Started' : 'View Requirements';
-    }
-    case 'prd': {
-      const status = project?.prd_status || 'empty';
-      return status === 'empty' ? 'Generate PRD' : 'View PRD';
-    }
-    case 'stories': {
-      const status = project?.stories_status || 'empty';
-      return status === 'empty' ? 'Generate Stories' : 'View Stories';
-    }
-    case 'mockups': {
-      const status = project?.mockups_status || 'empty';
-      return status === 'empty' ? 'Create Mockups' : 'View Mockups';
     }
     default:
       return 'Open';

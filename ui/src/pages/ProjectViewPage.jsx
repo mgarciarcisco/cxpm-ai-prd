@@ -2,83 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { get } from '../services/api';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
-import { StageStepper } from '../components/common/StageStepper';
 import ProjectSettingsModal from '../components/project/ProjectSettingsModal';
 import ProjectViewSkeleton from '../components/project/ProjectViewSkeleton';
 import CapabilityCard from '../components/common/CapabilityCard';
 import { CAPABILITIES } from '../constants/capabilities.jsx';
-import {
-  RequirementsStage,
-  PRDStage,
-  UserStoriesStage,
-  MockupsStage,
-  ExportStage,
-} from '../components/stages';
+import { RequirementsStage } from '../components/stages';
 import './ProjectViewPage.css';
 
 // Stage labels for breadcrumb display
 const STAGE_LABELS = {
   requirements: 'Requirements',
-  prd: 'PRD',
-  stories: 'User Stories',
-  mockups: 'Mockups',
-  export: 'Export',
 };
-
-// Map stage IDs to their corresponding components
-const STAGE_COMPONENTS = {
-  requirements: RequirementsStage,
-  prd: PRDStage,
-  stories: UserStoriesStage,
-  mockups: MockupsStage,
-  export: ExportStage,
-};
-
-/**
- * Maps backend stage statuses to StageStepper status format (all stages).
- */
-function mapStageStatuses(project) {
-  if (!project) return {};
-
-  const requirementsMap = {
-    empty: 'empty',
-    has_items: 'in_progress',
-    reviewed: 'complete',
-  };
-
-  const prdMap = {
-    empty: 'empty',
-    draft: 'in_progress',
-    ready: 'complete',
-  };
-
-  const storiesMap = {
-    empty: 'empty',
-    generated: 'in_progress',
-    refined: 'complete',
-  };
-
-  const mockupsMap = {
-    empty: 'empty',
-    generated: 'complete',
-  };
-
-  const exportMap = {
-    not_exported: 'empty',
-    exported: 'complete',
-  };
-
-  return {
-    requirements: requirementsMap[project.requirements_status] || 'empty',
-    prd: prdMap[project.prd_status] || 'empty',
-    stories: storiesMap[project.stories_status] || 'empty',
-    mockups: mockupsMap[project.mockups_status] || 'empty',
-    export: exportMap[project.export_status] || 'empty',
-  };
-}
 
 // Valid stage IDs for URL validation
-const VALID_STAGES = ['requirements', 'prd', 'stories', 'mockups', 'export'];
+const VALID_STAGES = ['requirements'];
 
 function ProjectViewPage() {
   const { id, stage: urlStage } = useParams();
@@ -138,11 +75,6 @@ function ProjectViewPage() {
     // Navigation to dashboard is handled by the modal
   }, []);
 
-  // Handle stage card click - navigate to stage URL
-  const handleStageClick = (stageId) => {
-    navigate(`/projects/${id}/${stageId}`);
-  };
-
   // Handle workspace capability card actions
   const handleWorkspaceAction = (capabilityId, action) => {
     if (action === 'upload') {
@@ -171,19 +103,6 @@ function ProjectViewPage() {
     }
 
     return items;
-  };
-
-  // Render the current stage component (for stage detail view)
-  const renderStageContent = () => {
-    const StageComponent = STAGE_COMPONENTS[currentStage];
-    if (!StageComponent) {
-      return (
-        <div className="project-view__placeholder">
-          <p>Unknown stage: {currentStage}</p>
-        </div>
-      );
-    }
-    return <StageComponent project={project} onProjectUpdate={fetchProject} />;
   };
 
   // Loading state - show skeleton
@@ -325,19 +244,6 @@ function ProjectViewPage() {
           </section>
         )}
 
-        {/* Stage Detail View - shows StageStepper and stage content */}
-        {!isDashboard && (
-          <>
-            <StageStepper
-              statuses={mapStageStatuses(project)}
-              currentStage={currentStage}
-              onStageClick={handleStageClick}
-            />
-            <div className="project-view__content">
-              {renderStageContent()}
-            </div>
-          </>
-        )}
       </div>
 
       {/* Project Settings Modal */}

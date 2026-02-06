@@ -14,10 +14,6 @@ import UploadMeetingPage from './pages/UploadMeetingPage'
 import RecapEditorPage from './pages/RecapEditorPage'
 import ConflictResolverPage from './pages/ConflictResolverPage'
 import RequirementsPage from './pages/RequirementsPage'
-import PRDGeneratorPage from './pages/PRDGeneratorPage'
-import PRDStreamingPage from './pages/PRDStreamingPage'
-import PRDEditorPage from './pages/PRDEditorPage'
-import UserStoriesPage from './pages/UserStoriesPage'
 import SelectProjectPage from './pages/SelectProjectPage'
 import NotFoundPage from './pages/NotFoundPage'
 import JiraEpicPage from './pages/jira_epic/JiraEpicPage'
@@ -59,12 +55,12 @@ const router = createBrowserRouter([
       { path: 'app/projects/:id/meetings/:mid', element: <RecapEditorPage /> },
       { path: 'app/projects/:id/meetings/:mid/apply', element: <ConflictResolverPage /> },
       { path: 'app/projects/:id/requirements', element: <RequirementsPage /> },
-      { path: 'app/prd', element: <DashboardPage /> },
-      { path: 'app/projects/:projectId/prd/generate', element: <PRDGeneratorPage /> },
-      { path: 'app/projects/:projectId/prd/streaming', element: <PRDStreamingPage /> },
-      { path: 'app/prds/:prdId', element: <PRDEditorPage /> },
-      { path: 'app/stories', element: <DashboardPage /> },
-      { path: 'app/projects/:projectId/stories', element: <UserStoriesPage /> },
+      { path: 'app/prd', element: <Navigate to="/dashboard" replace /> },
+      { path: 'app/projects/:projectId/prd/generate', element: <Navigate to="/dashboard" replace /> },
+      { path: 'app/projects/:projectId/prd/streaming', element: <Navigate to="/dashboard" replace /> },
+      { path: 'app/prds/:prdId', element: <Navigate to="/dashboard" replace /> },
+      { path: 'app/stories', element: <Navigate to="/dashboard" replace /> },
+      { path: 'app/projects/:projectId/stories', element: <Navigate to="/dashboard" replace /> },
       { path: 'app/jira-epic', element: <JiraEpicPage /> },
       { path: 'app/*', element: <ProjectsPage /> },
       // Admin routes

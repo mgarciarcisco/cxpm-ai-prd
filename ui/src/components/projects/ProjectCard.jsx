@@ -64,19 +64,6 @@ function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
     badges.push({ color: 'teal', text: parts.join(' \u00b7 ') });
   }
 
-  if (project.prd_status && project.prd_status !== 'empty') {
-    const label = project.prd_status === 'draft' ? 'PRD draft' : 'PRD complete';
-    badges.push({ color: 'orange', text: label });
-  }
-
-  if (project.stories_status && project.stories_status !== 'empty') {
-    badges.push({ color: 'blue', text: 'User stories' });
-  }
-
-  if (project.mockups_status && project.mockups_status !== 'empty') {
-    badges.push({ color: 'pink', text: 'Mockups' });
-  }
-
   return (
     <div
       className={`project-card${isArchived ? ' project-card--archived' : ''}`}
