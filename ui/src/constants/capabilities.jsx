@@ -44,13 +44,13 @@ export const CAPABILITIES = [
   },
   {
     id: 'stories',
-    title: 'User Stories',
-    description: 'Generate actionable user stories from your requirements',
+    title: 'Jira Epics',
+    description: 'Generate actionable Jira Epics from your requirements',
     colorHex: '#3B82F6',
     colorName: 'blue',
     comingSoon: false,
     inputText: 'Requirements from meeting recap',
-    outputText: 'User stories with acceptance criteria',
+    outputText: 'Jira Epics with acceptance criteria',
     stageRoute: 'user-stories',
     tip: null,
     icon: (

@@ -52,11 +52,11 @@ function JiraEpicPage() {
     ? [
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Project View', href: `/projects/${selectedProject.id}` },
-        { label: 'User Stories' },
+        { label: 'Jira Epics' },
       ]
     : [
         { label: 'Dashboard', href: '/dashboard' },
-        { label: 'User Stories' },
+        { label: 'Jira Epics' },
       ];
 
   // On mount: load selected project (from localStorage or first active) so existing Jira Epics can be shown
@@ -280,7 +280,7 @@ function JiraEpicPage() {
       console.log('Parsed epics:', generatedEpics.length, generatedEpics);
       
       if (generatedEpics.length === 0) {
-        throw new Error('No valid stories were generated. Please check your requirements file.');
+        throw new Error('No valid Jira Epics were generated. Please check your requirements file.');
       }
       
       setEpics(generatedEpics);
@@ -307,7 +307,7 @@ function JiraEpicPage() {
           setEpicsLoadedFromDB(true);
           setSavedCount(saveResponse.saved_count);
         } catch (saveErr) {
-          setError(`Failed to save JIRA stories: ${saveErr.message}`);
+          setError(`Failed to save Jira Epics: ${saveErr.message}`);
           // Epics remain visible; epicsLoadedFromDB stays false so user is warned if they leave
         }
       }
@@ -325,14 +325,14 @@ function JiraEpicPage() {
       setSelectedEpic(null);
       
       // Handle different error types
-      const errorMessage = err.message || 'Failed to generate JIRA Stories';
+      const errorMessage = err.message || 'Failed to generate Jira Epics';
       
       if (errorMessage.includes('503') || errorMessage.includes('unavailable')) {
         setError('LLM service is not available. Please ensure Ollama is running and try again.');
       } else if (errorMessage.includes('400')) {
         setError('Invalid requirements. Please check your file content and try again.');
       } else {
-        setError(`Failed to generate JIRA Stories: ${errorMessage}`);
+        setError(`Failed to generate Jira Epics: ${errorMessage}`);
       }
     } finally {
       setIsGenerating(false);
@@ -352,7 +352,7 @@ function JiraEpicPage() {
         console.log('Deleted existing JIRA stories from database');
       } catch (err) {
         console.error('Error deleting existing stories:', err);
-        setError('Failed to delete existing stories. Please try again.');
+        setError('Failed to delete existing Jira Epics. Please try again.');
         return;
       }
     }
@@ -699,9 +699,9 @@ function JiraEpicPage() {
       <section className="upload-section">
         {/* Page Header */}
         <div className="upload-header">
-          <h1>User Stories{selectedProject ? `: ${selectedProject.name}` : ''}</h1>
+          <h1>Jira Epics{selectedProject ? `: ${selectedProject.name}` : ''}</h1>
           <p className="upload-header__subtitle">
-            Generate actionable user stories from your requirements
+            Generate actionable Jira Epics from your requirements
           </p>
         </div>
 
@@ -731,7 +731,7 @@ function JiraEpicPage() {
               {/* Left Side - Epics Table */}
               <div className="epics-table-container">
                 <div className="epics-table-header">
-                  <h2>Generated Stories ({epics.length})</h2>
+                  <h2>Generated Jira Epics ({epics.length})</h2>
                 </div>
                 
                 <div className="epics-table-wrapper">
@@ -739,7 +739,7 @@ function JiraEpicPage() {
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Story Name</th>
+                        <th>Epic Name</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -792,7 +792,7 @@ function JiraEpicPage() {
               {/* Right Side - Story Details */}
               <div className="epic-details-container">
                 <div className="epic-details-header">
-                  <h2>{selectedEpic ? selectedEpic.name : 'Select a Story'}</h2>
+                  <h2>{selectedEpic ? selectedEpic.name : 'Select an Epic'}</h2>
                   {selectedEpic && (
                     <button
                       onClick={() => {
@@ -892,7 +892,7 @@ function JiraEpicPage() {
                         <line x1="9" y1="13" x2="15" y2="13"/>
                         <line x1="9" y1="17" x2="13" y2="17"/>
                       </svg>
-                      <p>Select a story from the table to view details</p>
+                      <p>Select an epic from the table to view details</p>
                     </div>
                   )}
                 </div>
@@ -910,7 +910,7 @@ function JiraEpicPage() {
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                 <polyline points="22 4 12 14.01 9 11.01"/>
               </svg>
-              <span>JIRA Stories successfully generated</span>
+              <span>Jira Epics successfully generated</span>
             </div>
           </div>
         )}
@@ -1005,7 +1005,7 @@ function JiraEpicPage() {
       {/* Replace Confirmation Modal */}
       {showReplaceConfirmation && (
         <Modal
-          title="Replace Existing JIRA Stories?"
+          title="Replace Existing Jira Epics?"
           subtitle="This action cannot be undone"
           onClose={handleCancelReplace}
           size="medium"
@@ -1019,8 +1019,8 @@ function JiraEpicPage() {
               </svg>
             </div>
             <p className="confirmation-message">
-              All previous JIRA stories will be completely replaced. 
-              {epicsLoadedFromDB && ' Existing stories in the database will be permanently deleted.'}
+              All previous Jira Epics will be completely replaced. 
+              {epicsLoadedFromDB && ' Existing epics in the database will be permanently deleted.'}
             </p>
             <p className="confirmation-question">Do you want to continue?</p>
           </div>
@@ -1045,7 +1045,7 @@ function JiraEpicPage() {
       {/* Save Success Modal */}
       {showSaveSuccess && (
         <Modal
-          title="Jira Stories Successfully Created"
+          title="Jira Epics Successfully Created"
           onClose={() => setShowSaveSuccess(false)}
           size="medium"
         >
@@ -1057,7 +1057,7 @@ function JiraEpicPage() {
               </svg>
             </div>
             <p className="success-message">
-              {savedCount} JIRA {savedCount === 1 ? 'story' : 'stories'} successfully saved to the database with unique IDs.
+              {savedCount} Jira Epic{savedCount === 1 ? '' : 's'} successfully saved to the database with unique IDs.
             </p>
           </div>
           <div className="modal-footer">

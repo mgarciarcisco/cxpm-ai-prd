@@ -12,7 +12,7 @@ import './ProjectViewPage.css';
 // Stage labels for breadcrumb display
 const STAGE_LABELS = {
   requirements: 'Requirements',
-  'user-stories': 'User Stories',
+  'user-stories': 'Jira Epics',
 };
 
 // Valid stage IDs for URL validation
@@ -81,7 +81,7 @@ function ProjectViewPage() {
     if (action === 'upload') {
       navigate(`/app/projects/${id}/meetings/new`);
     } else if (capabilityId === 'stories') {
-      // User Stories card opens Jira Epic page with current project pre-selected
+      // Jira Epics card opens Jira Epic page with current project pre-selected
       if (project) {
         localStorage.setItem('jiraEpic_selectedProject', JSON.stringify(project));
       }
@@ -219,10 +219,10 @@ function ProjectViewPage() {
           </button>
         </header>
 
-        {/* User Stories stage */}
+        {/* Jira Epics stage */}
         {currentStage === 'user-stories' && (
           <section className="project-view__workspace">
-            <h2 className="project-view__section-title">User Stories</h2>
+            <h2 className="project-view__section-title">Jira Epics</h2>
             <div className="project-view__content">
               <p className="project-view__placeholder">User stories content will appear here.</p>
             </div>
