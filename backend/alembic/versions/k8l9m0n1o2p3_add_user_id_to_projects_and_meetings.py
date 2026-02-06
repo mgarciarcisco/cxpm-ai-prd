@@ -47,18 +47,20 @@ def upgrade() -> None:
         "updated_at": now,
     }])
 
-    # Add user_id to projects (nullable first)
+    # Add user_id to projects (nullable first, then backfill, then make NOT NULL)
     op.add_column("projects", sa.Column("user_id", sa.CHAR(36), nullable=True))
     op.execute(f"UPDATE projects SET user_id = '{SYSTEM_USER_ID}'")
-    op.alter_column("projects", "user_id", nullable=False)
-    op.create_foreign_key("fk_projects_user_id", "projects", "users", ["user_id"], ["id"])
+    with op.batch_alter_table("projects") as batch_op:
+        batch_op.alter_column("user_id", nullable=False)
+        batch_op.create_foreign_key("fk_projects_user_id", "users", ["user_id"], ["id"])
     op.create_index("ix_projects_user_id", "projects", ["user_id"])
 
-    # Add user_id to meeting_recaps (nullable first)
+    # Add user_id to meeting_recaps (nullable first, then backfill, then make NOT NULL)
     op.add_column("meeting_recaps", sa.Column("user_id", sa.CHAR(36), nullable=True))
     op.execute(f"UPDATE meeting_recaps SET user_id = '{SYSTEM_USER_ID}'")
-    op.alter_column("meeting_recaps", "user_id", nullable=False)
-    op.create_foreign_key("fk_meeting_recaps_user_id", "meeting_recaps", "users", ["user_id"], ["id"])
+    with op.batch_alter_table("meeting_recaps") as batch_op:
+        batch_op.alter_column("user_id", nullable=False)
+        batch_op.create_foreign_key("fk_meeting_recaps_user_id", "users", ["user_id"], ["id"])
     op.create_index("ix_meeting_recaps_user_id", "meeting_recaps", ["user_id"])
 
 

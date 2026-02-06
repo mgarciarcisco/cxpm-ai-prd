@@ -26,25 +26,25 @@ def upgrade() -> None:
     # -- Approval workflow columns --
     op.add_column(
         "users",
-        sa.Column("is_approved", sa.Boolean(), nullable=False, server_default="0"),
+        sa.Column("is_approved", sa.Boolean(), nullable=False, server_default=sa.text("false")),
     )
     op.create_index("ix_users_is_approved", "users", ["is_approved"])
 
     # Backfill: all existing active users should be approved
-    op.execute("UPDATE users SET is_approved = 1 WHERE is_active = 1")
+    op.execute("UPDATE users SET is_approved = true WHERE is_active = true")
 
     op.add_column(
         "users",
         sa.Column("approved_by", sa.CHAR(36), nullable=True),
     )
-    op.create_foreign_key(
-        "fk_users_approved_by",
-        "users",
-        "users",
-        ["approved_by"],
-        ["id"],
-        ondelete="SET NULL",
-    )
+    with op.batch_alter_table("users") as batch_op:
+        batch_op.create_foreign_key(
+            "fk_users_approved_by",
+            "users",
+            ["approved_by"],
+            ["id"],
+            ondelete="SET NULL",
+        )
 
     op.add_column(
         "users",
@@ -67,14 +67,14 @@ def upgrade() -> None:
         "users",
         sa.Column("deactivated_by", sa.CHAR(36), nullable=True),
     )
-    op.create_foreign_key(
-        "fk_users_deactivated_by",
-        "users",
-        "users",
-        ["deactivated_by"],
-        ["id"],
-        ondelete="SET NULL",
-    )
+    with op.batch_alter_table("users") as batch_op:
+        batch_op.create_foreign_key(
+            "fk_users_deactivated_by",
+            "users",
+            ["deactivated_by"],
+            ["id"],
+            ondelete="SET NULL",
+        )
 
     # -- Security columns --
     op.add_column(
