@@ -14,9 +14,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Install sqlite3 for easy debugging of db
-RUN apt-get update && apt-get install -y sqlite3
-
 # Install bash
 RUN apt-get update && apt-get install -y bash
 
