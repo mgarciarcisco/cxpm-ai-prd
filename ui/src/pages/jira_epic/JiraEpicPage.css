@@ -34,13 +34,7 @@
   align-items: center;
 }
 
-.add-requirements-row__buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Icon-only Add Requirements and Save Jira Stories buttons */
+/* Icon-only Add Requirements button */
 .form-btn--icon-only {
   flex-shrink: 0;
   padding: 0.625rem;
@@ -70,34 +64,6 @@ button.add-requirements-btn:hover:not(:disabled) {
 button.add-requirements-btn svg {
   display: block;
   flex-shrink: 0;
-}
-
-button.save-jira-epic-btn {
-  border-radius: 10px;
-  background-color: #FFFFFF;
-  border: 1px solid #D1D5DB;
-  color: #374151;
-}
-
-button.save-jira-epic-btn:hover:not(:disabled) {
-  background-color: #F9FAFB;
-  border-color: #9CA3AF;
-}
-
-button.save-jira-epic-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-button.save-jira-epic-btn svg {
-  display: block;
-  flex-shrink: 0;
-}
-
-button.save-jira-epic-btn .btn-spinner {
-  width: 20px;
-  height: 20px;
-  border-width: 2px;
 }
 
 /* Loading overlay when creating Jira Epics */

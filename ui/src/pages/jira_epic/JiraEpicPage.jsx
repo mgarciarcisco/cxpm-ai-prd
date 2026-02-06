@@ -10,7 +10,6 @@ function JiraEpicPage() {
   const [epics, setEpics] = useState([]);
   const [selectedEpic, setSelectedEpic] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [epicsLoadedFromDB, setEpicsLoadedFromDB] = useState(false);
   const [loadingExistingEpics, setLoadingExistingEpics] = useState(false);
@@ -279,25 +278,39 @@ function JiraEpicPage() {
       }
       
       setEpics(generatedEpics);
-      
-      // Select the first epic by default
       setSelectedEpic(generatedEpics[0]);
 
-      // Show success notification
-      setShowGenerateSuccess(true);
-      
-      // Auto-hide notification after 4 seconds
-      setTimeout(() => {
-        setShowGenerateSuccess(false);
-      }, 4000);
+      // Save to database right after generation (selectedProject is set from modal/init flow)
+      const project = selectedProject;
+      if (project?.id) {
+        try {
+          const epicData = generatedEpics.map(epic => ({
+            title: epic.title || epic.name || 'Untitled Epic',
+            description: epic.description || null,
+            problem_statement: epic.problemStatement || null,
+            target_user_roles: epic.targetUserRoles || null,
+            data_sources: epic.dataSources || null,
+            business_rules: epic.businessRules || null,
+            response_example: epic.responseExample || null,
+            acceptance_criteria: epic.acceptanceCriteria || null,
+            reporter: null,
+            notes: null,
+            parent_jira_id: null,
+          }));
+          const saveResponse = await saveJiraStories(project.id, epicData);
+          setEpicsLoadedFromDB(true);
+          setSavedCount(saveResponse.saved_count);
+        } catch (saveErr) {
+          setError(`Failed to save JIRA stories: ${saveErr.message}`);
+          // Epics remain visible; epicsLoadedFromDB stays false so user is warned if they leave
+        }
+      }
 
-      // Scroll to the epics section after a brief delay to ensure DOM update
+      setShowGenerateSuccess(true);
+      setTimeout(() => setShowGenerateSuccess(false), 4000);
       setTimeout(() => {
         if (epicsDisplayRef.current) {
-          epicsDisplayRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-          });
+          epicsDisplayRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 100);
     } catch (err) {
@@ -352,58 +365,6 @@ function JiraEpicPage() {
 
   const handleLeaveConfirm = () => {
     if (blocker.state === 'blocked') blocker.proceed();
-  };
-
-  const handleSaveJiraStories = async () => {
-    if (!epics || epics.length === 0) {
-      setError('No stories to save.');
-      return;
-    }
-
-    if (!selectedProject) {
-      setError('Please select a project before saving JIRA stories.');
-      return;
-    }
-
-    setIsSaving(true);
-    setError(null);
-
-    try {
-      // Map epics to the format expected by the API
-      const epicData = epics.map(epic => ({
-        title: epic.title || epic.name || 'Untitled Epic',
-        description: epic.description || null,
-        problem_statement: epic.problemStatement || null,
-        target_user_roles: epic.targetUserRoles || null,
-        data_sources: epic.dataSources || null,
-        business_rules: epic.businessRules || null,
-        response_example: epic.responseExample || null,
-        acceptance_criteria: epic.acceptanceCriteria || null,
-        reporter: null, // Can be set if you have user info
-        notes: null, // Can be set if needed
-        parent_jira_id: null, // Can be set if there's a parent JIRA
-      }));
-
-      // Call the API to save JIRA stories
-      const response = await saveJiraStories(selectedProject.id, epicData);
-
-      // Mark epics as loaded from database (so save button will be disabled)
-      setEpicsLoadedFromDB(true);
-
-      // Show success modal
-      setError(null);
-      setSavedCount(response.saved_count);
-      setShowSaveSuccess(true);
-      
-      console.log('Saved JIRA stories:', response.saved_stories);
-      
-    } catch (err) {
-      const errorMessage = err.message || 'Failed to save JIRA stories';
-      setError(`Failed to save JIRA stories: ${errorMessage}`);
-      console.error('Error saving JIRA stories:', err);
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   // Parse the response into multiple epics with structured sections
@@ -738,40 +699,21 @@ function JiraEpicPage() {
           </p>
         </div>
 
-        {/* Add Requirements and Save Jira Stories buttons - right above Jira Epics table */}
+        {/* Add Requirements button - right above Jira Epics table */}
         <div className="add-requirements-row">
           <div className="add-requirements-row__inner">
-            <div className="add-requirements-row__buttons">
-              <button
-                type="button"
-                className="form-btn form-btn--icon-only add-requirements-btn"
-                onClick={handleAddFunctionalRequirements}
-                disabled={isGenerating}
-                title="Add Functional Requirements"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                className="form-btn form-btn--icon-only save-jira-epic-btn"
-                onClick={handleSaveJiraStories}
-                disabled={isSaving || !selectedProject || epics.length === 0 || epicsLoadedFromDB}
-                title="Save Jira Stories"
-              >
-                {isSaving ? (
-                  <span className="btn-spinner" aria-hidden="true" />
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                  </svg>
-                )}
-              </button>
-            </div>
+            <button
+              type="button"
+              className="form-btn form-btn--icon-only add-requirements-btn"
+              onClick={handleAddFunctionalRequirements}
+              disabled={isGenerating}
+              title="Add Functional Requirements"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
           </div>
         </div>
 
