@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useBlocker } from 'react-router-dom';
 import Breadcrumbs from '../../components/common/Breadcrumbs';
 import Modal from '../../components/common/Modal';
 import { generateJiraEpic, saveJiraStories, listJiraStories, deleteJiraStories, get } from '../../services/api';
@@ -18,10 +18,9 @@ function JiraEpicPage() {
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
   const [showGenerateSuccess, setShowGenerateSuccess] = useState(false);
-  const rowsPerPage = 30;
+  const rowsPerPage = 10;
   
-  // Project and requirements selection state
-  const [showProjectSelector, setShowProjectSelector] = useState(false);
+  // Requirements selection state (project is always selected - from localStorage or first active)
   const [showRequirementsSelector, setShowRequirementsSelector] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -29,10 +28,25 @@ function JiraEpicPage() {
   const [selectedRequirements, setSelectedRequirements] = useState(new Set());
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingRequirements, setLoadingRequirements] = useState(false);
-  const [projectRequirementsText, setProjectRequirementsText] = useState('');
 
   // Ref for scrolling to epics section
   const epicsDisplayRef = useRef(null);
+  // When generation is triggered from the modal, pass content to use after replace confirmation
+  const pendingGenerationContentRef = useRef(null);
+
+  // Block navigation when there are unsaved Jira Epics (generated but not saved to DB)
+  const hasUnsavedEpics = epics.length > 0 && !epicsLoadedFromDB;
+  const blocker = useBlocker(hasUnsavedEpics);
+
+  // Browser tab close/refresh warning when unsaved
+  useEffect(() => {
+    if (!hasUnsavedEpics) return;
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedEpics]);
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -40,18 +54,37 @@ function JiraEpicPage() {
     { label: 'User Stories' },
   ];
 
-  // Load selected project from localStorage on mount
+  // On mount: load selected project (from localStorage or first active) so existing Jira Epics can be shown
   useEffect(() => {
-    const savedProject = localStorage.getItem('jiraEpic_selectedProject');
-    if (savedProject) {
-      try {
-        const project = JSON.parse(savedProject);
-        setSelectedProject(project);
-      } catch (err) {
-        console.error('Failed to load saved project:', err);
-        localStorage.removeItem('jiraEpic_selectedProject');
+    const initProject = async () => {
+      const savedProject = localStorage.getItem('jiraEpic_selectedProject');
+      if (savedProject) {
+        try {
+          const project = JSON.parse(savedProject);
+          setSelectedProject(project);
+          return;
+        } catch (err) {
+          console.error('Failed to load saved project:', err);
+          localStorage.removeItem('jiraEpic_selectedProject');
+        }
       }
-    }
+      // No saved project: fetch and use first active project so we can show its existing epics if any
+      try {
+        const projectsData = await get('/api/projects');
+        const activeProjects = (projectsData || [])
+          .filter((p) => !p.archived)
+          .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        if (activeProjects.length > 0) {
+          const project = activeProjects[0];
+          setSelectedProject(project);
+          setProjects(activeProjects);
+          localStorage.setItem('jiraEpic_selectedProject', JSON.stringify(project));
+        }
+      } catch (err) {
+        console.error('Failed to load projects on init:', err);
+      }
+    };
+    initProject();
   }, []);
 
   // Load existing JIRA stories when project is selected
@@ -115,18 +148,19 @@ function JiraEpicPage() {
     loadExistingStories();
   }, [selectedProject]);
 
-  // Fetch projects list
+  // Fetch projects list; returns active projects (for use when auto-selecting)
   const fetchProjects = async () => {
     try {
       setLoadingProjects(true);
       const projectsData = await get('/api/projects');
-      // Filter out archived projects and sort by updated_at desc
       const activeProjects = projectsData
         .filter(p => !p.archived)
         .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
       setProjects(activeProjects);
+      return activeProjects;
     } catch (err) {
       setError('Failed to load projects: ' + err.message);
+      return [];
     } finally {
       setLoadingProjects(false);
     }
@@ -148,33 +182,27 @@ function JiraEpicPage() {
     }
   };
 
-  // Handle Add Project Functional Requirements button click
+  // Handle Add Requirements button: assume project is always selected; go straight to Select Requirements
   const handleAddFunctionalRequirements = async () => {
     setError(null);
-    
-    // If no project is selected, show project selector
-    if (!selectedProject) {
-      await fetchProjects();
-      setShowProjectSelector(true);
-    } else {
-      // If project is selected, show requirements selector
-      await fetchFunctionalRequirements(selectedProject.id);
+
+    let project = selectedProject;
+    if (!project) {
+      const activeProjects = await fetchProjects();
+      if (activeProjects.length > 0) {
+        project = activeProjects[0];
+        setSelectedProject(project);
+        localStorage.setItem('jiraEpic_selectedProject', JSON.stringify(project));
+      } else {
+        setError('No projects found. Create a project first.');
+        return;
+      }
+    }
+
+    if (project?.id) {
+      await fetchFunctionalRequirements(project.id);
       setShowRequirementsSelector(true);
     }
-  };
-
-  // Handle project selection from modal
-  const handleProjectSelect = async (project) => {
-    setSelectedProject(project);
-    
-    // Save selected project to localStorage
-    localStorage.setItem('jiraEpic_selectedProject', JSON.stringify(project));
-    
-    setShowProjectSelector(false);
-    
-    // Fetch requirements for selected project
-    await fetchFunctionalRequirements(project.id);
-    setShowRequirementsSelector(true);
   };
 
   // Handle requirement checkbox toggle
@@ -190,48 +218,41 @@ function JiraEpicPage() {
     });
   };
 
-  // Handle Apply button in requirements selector
-  const handleApplyRequirements = () => {
+  // Handle Create Jira Epics button in requirements selector: generate Jira Epics from selected requirements (no textarea)
+  const handleApplyRequirements = async () => {
     const selectedReqs = functionalRequirements.filter(req => selectedRequirements.has(req.id));
-    
+
     if (selectedReqs.length === 0) {
       setError('Please select at least one requirement');
       return;
     }
-    
-    // Format requirements as text
+
     const requirementsText = selectedReqs
       .map((req, index) => `${index + 1}. ${req.content}`)
       .join('\n\n');
-    
-    // Replace project requirements textbox content with new requirements
-    setProjectRequirementsText(`--- Functional Requirements from ${selectedProject.name} ---\n\n${requirementsText}`);
-    
+
+    const fullText = `--- Functional Requirements from ${selectedProject.name} ---\n\n${requirementsText}`;
     setShowRequirementsSelector(false);
-  };
+    setError(null);
 
-  const handleGenerate = async () => {
-    // Check if there are existing epics (either loaded from DB or newly generated)
     if (epics.length > 0) {
-      // Show confirmation modal
+      pendingGenerationContentRef.current = fullText;
       setShowReplaceConfirmation(true);
-      return;
+    } else {
+      await performGeneration(fullText);
     }
-
-    // No existing epics, proceed with generation
-    await performGeneration();
   };
 
-  const performGeneration = async () => {
-    // Clear all previous epics, selections, and pagination immediately when button is clicked
+
+  const performGeneration = async (content) => {
     setEpics([]);
     setSelectedEpic(null);
     setCurrentPage(1);
     setError(null);
     setEpicsLoadedFromDB(false);
-    
-    // Validate input
-    if (!projectRequirementsText.trim()) {
+
+    const combinedContent = (content ?? '').trim();
+    if (!combinedContent) {
       setError('Please add project functional requirements to continue.');
       return;
     }
@@ -239,7 +260,6 @@ function JiraEpicPage() {
     setIsGenerating(true);
 
     try {
-      const combinedContent = projectRequirementsText.trim();
       
       // Call backend API to generate JIRA Epic
       const response = await generateJiraEpic(combinedContent);
@@ -302,6 +322,9 @@ function JiraEpicPage() {
 
   const handleConfirmReplace = async () => {
     setShowReplaceConfirmation(false);
+    const contentToUse = pendingGenerationContentRef.current ?? '';
+    pendingGenerationContentRef.current = null;
+    if (!contentToUse.trim()) return;
 
     // Delete existing stories if they were loaded from database
     if (epicsLoadedFromDB && selectedProject) {
@@ -315,12 +338,20 @@ function JiraEpicPage() {
       }
     }
 
-    // Proceed with generation
-    await performGeneration();
+    await performGeneration(contentToUse);
   };
 
   const handleCancelReplace = () => {
     setShowReplaceConfirmation(false);
+    pendingGenerationContentRef.current = null;
+  };
+
+  const handleLeaveCancel = () => {
+    if (blocker.state === 'blocked') blocker.reset();
+  };
+
+  const handleLeaveConfirm = () => {
+    if (blocker.state === 'blocked') blocker.proceed();
   };
 
   const handleSaveJiraStories = async () => {
@@ -669,8 +700,6 @@ function JiraEpicPage() {
     return html;
   };
 
-  const isSubmitDisabled = isGenerating || !projectRequirementsText.trim();
-
   // Calculate pagination
   const totalPages = Math.ceil(epics.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -687,6 +716,17 @@ function JiraEpicPage() {
 
   return (
     <main className="main-content">
+      {/* Loading overlay when Jira Epics are being created */}
+      {isGenerating && (
+        <div className="jira-epic-loading-overlay" aria-live="polite" aria-busy="true">
+          <div className="jira-epic-loading-card">
+            <div className="jira-epic-loading-spinner" aria-hidden="true" />
+            <h3 className="jira-epic-loading-title">Creating Jira Epics</h3>
+            <p className="jira-epic-loading-message">This may take a few minutes. Please wait…</p>
+          </div>
+        </div>
+      )}
+
       <Breadcrumbs items={breadcrumbItems} />
 
       <section className="upload-section">
@@ -698,158 +738,44 @@ function JiraEpicPage() {
           </p>
         </div>
 
-        <div className="upload-layout">
-          {/* Form */}
-          <div className="upload-form">
-            {/* Add Project Functional Requirements Button */}
-            <div className="form-group">
+        {/* Add Requirements and Save Jira Stories buttons - right above Jira Epics table */}
+        <div className="add-requirements-row">
+          <div className="add-requirements-row__inner">
+            <div className="add-requirements-row__buttons">
               <button
                 type="button"
-                className="form-btn form-btn--outline requirements-btn"
+                className="form-btn form-btn--icon-only add-requirements-btn"
                 onClick={handleAddFunctionalRequirements}
                 disabled={isGenerating}
+                title="Add Functional Requirements"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 12h6M12 9v6M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                Add Project Functional Requirements
               </button>
-              {selectedProject && (
-                <p className="form-hint form-hint--info">
-                  Using requirements from: <strong>{selectedProject.name}</strong>
-                </p>
-              )}
-            </div>
-
-            {/* Project Requirements Textbox - Only visible when requirements are added */}
-            {projectRequirementsText && (
-              <div className="form-group">
-                <label htmlFor="project-requirements" className="form-label">
-                  Project Functional Requirements
-                  <span className="form-label-hint"> (from {selectedProject?.name})</span>
-                </label>
-                <textarea
-                  id="project-requirements"
-                  className="form-textarea"
-                  value={projectRequirementsText}
-                  onChange={(e) => setProjectRequirementsText(e.target.value)}
-                  placeholder="Project functional requirements will appear here..."
-                  rows={8}
-                />
-                <p className="form-hint">
-                  These requirements were loaded from your project. You can edit them or click "Add Project Functional Requirements" to load different ones.
-                </p>
-              </div>
-            )}
-
-            {error && (
-              <div className="form-error">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12zM8 5v3M8 11h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-
-            <div className="form-actions">
-              <Link to="/dashboard" className="form-btn form-btn--secondary">
-                Cancel
-              </Link>
-              <div
-                className="btn-wrapper"
-                title={isSubmitDisabled ? 'Add project functional requirements to continue' : ''}
+              <button
+                type="button"
+                className="form-btn form-btn--icon-only save-jira-epic-btn"
+                onClick={handleSaveJiraStories}
+                disabled={isSaving || !selectedProject || epics.length === 0 || epicsLoadedFromDB}
+                title="Save Jira Stories"
               >
-                <button
-                  type="button"
-                  onClick={handleGenerate}
-                  className="form-btn form-btn--primary"
-                  disabled={isSubmitDisabled}
-                >
-                  {isGenerating ? (
-                    <>
-                      <span className="btn-spinner"></span>
-                      Generating (may take up to 5 min)...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="16 18 22 12 16 6"/>
-                        <polyline points="8 6 2 12 8 18"/>
-                      </svg>
-                      Generate JIRA Stories
-                    </>
-                  )}
-                </button>
-              </div>
+                {isSaving ? (
+                  <span className="btn-spinner" aria-hidden="true" />
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
-
-          {/* Tips Panel */}
-          <aside className="tips-panel">
-            <div className="tips-panel__header">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 16v-4M12 8h.01"/>
-              </svg>
-              Tips for Best Results
-            </div>
-            <ul className="tips-panel__list">
-              <li>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M13.5 4.5L6 12L2.5 8.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>Focus on user value and benefits, not implementation</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M13.5 4.5L6 12L2.5 8.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>Keep stories small, independent, and deliverable</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M13.5 4.5L6 12L2.5 8.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>Include specific, testable acceptance criteria</span>
-              </li>
-              <li>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M13.5 4.5L6 12L2.5 8.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>Describe the "who," "what," and "why" clearly</span>
-              </li>
-            </ul>
-            <div className="tips-panel__example">
-              <div className="tips-panel__example-label">Expected Format</div>
-              <div className="tips-panel__example-text">
-                Your requirements should describe:{'\n'}
-                {'\n'}
-                • The user persona or role{'\n'}
-                • The specific action or capability needed{'\n'}
-                • The business value or benefit{'\n'}
-                • Clear acceptance criteria{'\n'}
-                • Any relevant context or constraints{'\n'}
-                {'\n'}
-                The AI will structure these into proper JIRA User Stories.
-              </div>
-            </div>
-          </aside>
         </div>
 
-        {/* Success Notification Banner */}
-        {showGenerateSuccess && (
-          <div className="success-banner">
-            <div className="success-banner-content">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-              <span>✓ {epics.length} JIRA {epics.length === 1 ? 'Story' : 'Stories'} successfully generated! Scroll down to view.</span>
-            </div>
-          </div>
-        )}
-
-        {/* Generated Stories Display */}
+        {/* Generated Stories Display - at top */}
         {epics.length > 0 && (
           <>
           <div className="epics-display" ref={epicsDisplayRef}>
@@ -883,8 +809,8 @@ function JiraEpicPage() {
                   </table>
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
+                {/* Pagination - show when more epics than fit on one page */}
+                {epics.length > rowsPerPage && (
                   <div className="pagination">
                     <button
                       className="pagination-btn"
@@ -1025,95 +951,33 @@ function JiraEpicPage() {
               </div>
             </div>
           </div>
-
-          {/* Save Jira Stories Button */}
-          <div className="save-jira-stories-container">
-            <button
-              className="form-btn form-btn--primary save-jira-stories-btn"
-              onClick={handleSaveJiraStories}
-              disabled={isSaving || !selectedProject || epicsLoadedFromDB}
-            >
-              {isSaving ? (
-                <>
-                  <div className="btn-spinner"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                    <polyline points="17 21 17 13 7 13 7 21"/>
-                    <polyline points="7 3 7 8 15 8"/>
-                  </svg>
-                  Save Jira Stories
-                </>
-              )}
-            </button>
-            {!selectedProject && (
-              <p className="save-hint">Please select a project to save JIRA stories</p>
-            )}
-          </div>
           </>
+        )}
+
+        {/* Success Notification Banner */}
+        {showGenerateSuccess && (
+          <div className="success-banner">
+            <div className="success-banner-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span>JIRA Stories successfully generated</span>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="form-error">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12zM8 5v3M8 11h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>{error}</span>
+          </div>
         )}
       </section>
 
-      {/* Project Selector Modal */}
-      {showProjectSelector && (
-        <Modal
-          title="Select Project"
-          subtitle="Choose a project to load functional requirements from"
-          onClose={() => setShowProjectSelector(false)}
-          size="large"
-        >
-          <div className="project-selector-modal">
-            {loadingProjects ? (
-              <div className="modal-loading">
-                <div className="loading-spinner"></div>
-                <p>Loading projects...</p>
-              </div>
-            ) : projects.length === 0 ? (
-              <div className="modal-empty">
-                <p>No projects found. Create a project first.</p>
-              </div>
-            ) : (
-              <div className="project-list">
-                {projects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="project-option"
-                    onClick={() => handleProjectSelect(project)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && handleProjectSelect(project)}
-                  >
-                    <div className="project-option__icon project-option__icon--folder">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                      </svg>
-                    </div>
-                    <div className="project-option__info">
-                      <h3>{project.name}</h3>
-                      <p>
-                        {project.requirements_count > 0
-                          ? `${project.requirements_count} requirements`
-                          : 'Empty project'
-                        }
-                      </p>
-                    </div>
-                    <div className="project-option__meta">
-                      <span className="project-option__count">
-                        {project.requirements_count || 0} reqs
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </Modal>
-      )}
-
-      {/* Functional Requirements Selector Modal */}
+      {/* Select Functional Requirements Modal */}
       {showRequirementsSelector && (
         <Modal
           title="Select Functional Requirements"
@@ -1181,7 +1045,7 @@ function JiraEpicPage() {
                     onClick={handleApplyRequirements}
                     disabled={selectedRequirements.size === 0}
                   >
-                    Add {selectedRequirements.size} Requirements
+                    Create Jira Epics
                   </button>
                 </div>
               </>
@@ -1255,6 +1119,32 @@ function JiraEpicPage() {
               autoFocus
             >
               Done
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Leave without saving confirmation */}
+      {blocker.state === 'blocked' && (
+        <Modal
+          title="Unsaved changes"
+          subtitle="Changes on Jira Epics have not been saved. Are you sure you want to leave?"
+          onClose={handleLeaveCancel}
+          size="medium"
+        >
+          <div className="modal-footer">
+            <button
+              className="form-btn form-btn--secondary"
+              onClick={handleLeaveCancel}
+              autoFocus
+            >
+              Cancel
+            </button>
+            <button
+              className="form-btn form-btn--primary"
+              onClick={handleLeaveConfirm}
+            >
+              Confirm
             </button>
           </div>
         </Modal>

@@ -285,7 +285,7 @@ function DashboardPage() {
                 <div className="task-card__io-label">Output</div>
                 User stories with acceptance criteria
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* Row 2: 2 cards */}
