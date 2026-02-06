@@ -723,6 +723,22 @@ function JiraEpicPage() {
           </div>
         </div>
 
+        {/* Empty state when no Jira Epics exist */}
+        {!loadingExistingEpics && epics.length === 0 && (
+          <div className="jira-epic-empty-state" aria-live="polite">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            <p className="jira-epic-empty-state__title">No Jira Epics exist</p>
+            <p className="jira-epic-empty-state__text">
+              Add functional requirements above, then generate Jira Epics to see them here.
+            </p>
+          </div>
+        )}
+
         {/* Generated Stories Display - at top */}
         {epics.length > 0 && (
           <>

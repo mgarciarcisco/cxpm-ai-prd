@@ -1,5 +1,6 @@
 """Application configuration using pydantic-settings."""
 
+from typing import Optional
 
 from pydantic_settings import BaseSettings
 
@@ -16,14 +17,14 @@ class Settings(BaseSettings):
     # Circuit API (Cisco's AI platform - primary LLM provider)
     CIRCUIT_BASE_URL: str = "https://chat-ai.cisco.com/openai/deployments/{model}/chat/completions"
     CIRCUIT_MODEL: str = "gpt-4.1"
-    CIRCUIT_CLIENT_ID: str | None = None
-    CIRCUIT_CLIENT_SECRET: str | None = None
-    CIRCUIT_APP_KEY: str | None = None
+    CIRCUIT_CLIENT_ID: Optional[str] = None
+    CIRCUIT_CLIENT_SECRET: Optional[str] = None
+    CIRCUIT_APP_KEY: Optional[str] = None
 
     # JIRA Configuration (optional - only required when using Jira API integration)
     JIRA_BASE_URL: str = "https://cisco-cxe.atlassian.net/"
-    JIRA_API_KEY: str | None = None
-    JIRA_USER: str | None = None
+    JIRA_API_KEY: Optional[str] = None
+    JIRA_USER: Optional[str] = None
     
 
     # Ollama LLM settings (fallback)
