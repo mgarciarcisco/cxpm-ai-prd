@@ -14,6 +14,13 @@ class JiraService:
         self.jira_api_key = settings.JIRA_API_KEY
         self.jira_user = settings.JIRA_USER
 
+    def _require_credentials(self) -> None:
+        """Raise if Jira credentials are not configured."""
+        if not self.jira_api_key or not self.jira_user:
+            raise ValueError(
+                "Jira integration is not configured. Set JIRA_API_KEY and JIRA_USER in the environment."
+            )
+
     def get_projects(self) -> dict:
         """
         Connect to Jira and retrieve all projects.
@@ -34,6 +41,7 @@ class JiraService:
                       ]
                   }
         """
+        self._require_credentials()
         # Create Jira client with basic auth
         jira = JIRA(
             server=self.jira_base_url,

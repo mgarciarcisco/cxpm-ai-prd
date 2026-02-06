@@ -20,10 +20,10 @@ class Settings(BaseSettings):
     CIRCUIT_CLIENT_SECRET: str | None = None
     CIRCUIT_APP_KEY: str | None = None
 
-    # JIRA Configuration
+    # JIRA Configuration (optional - only required when using Jira API integration)
     JIRA_BASE_URL: str = "https://cisco-cxe.atlassian.net/"
-    JIRA_API_KEY: str  # Required - set in .env file
-    JIRA_USER: str  # Required - set in .env file
+    JIRA_API_KEY: str | None = None
+    JIRA_USER: str | None = None
     
 
     # Ollama LLM settings (fallback)
