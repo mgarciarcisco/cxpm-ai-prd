@@ -145,20 +145,29 @@ def get_project_stats(project_id: str, db: Session = Depends(get_db), current_us
         for section, count in section_counts
     ]
 
-    # Find last activity - most recent applied_at from meetings, or created_at if none applied
-    last_applied = db.query(func.max(MeetingRecap.applied_at)).filter(
+    # Find last activity — most recent timestamp across meetings, requirements, and project
+    candidates = [project.updated_at, project.created_at]
+
+    last_meeting_applied = db.query(func.max(MeetingRecap.applied_at)).filter(
         MeetingRecap.project_id == project_id,
         MeetingRecap.applied_at.isnot(None)
     ).scalar()
+    if last_meeting_applied:
+        candidates.append(last_meeting_applied)
 
-    if last_applied:
-        last_activity = last_applied
-    else:
-        # Fall back to most recent meeting created_at or project created_at
-        last_meeting_created = db.query(func.max(MeetingRecap.created_at)).filter(
-            MeetingRecap.project_id == project_id
-        ).scalar()
-        last_activity = last_meeting_created or project.created_at
+    last_meeting_created = db.query(func.max(MeetingRecap.created_at)).filter(
+        MeetingRecap.project_id == project_id
+    ).scalar()
+    if last_meeting_created:
+        candidates.append(last_meeting_created)
+
+    last_requirement_updated = db.query(func.max(Requirement.updated_at)).filter(
+        Requirement.project_id == project_id
+    ).scalar()
+    if last_requirement_updated:
+        candidates.append(last_requirement_updated)
+
+    last_activity = max(candidates)
 
     return ProjectStatsResponse(
         meeting_count=meeting_count,
