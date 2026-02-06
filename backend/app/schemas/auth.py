@@ -28,6 +28,18 @@ class UserResponse(BaseModel):
     email: str
     name: str
     is_admin: bool
+    is_approved: bool
 
     class Config:
         from_attributes = True
+
+
+class ProfileUpdate(BaseModel):
+    """Schema for profile update."""
+    name: str = Field(..., min_length=1, max_length=255)
+
+
+class PasswordChange(BaseModel):
+    """Schema for password change."""
+    current_password: str
+    new_password: str = Field(..., min_length=8, max_length=128)

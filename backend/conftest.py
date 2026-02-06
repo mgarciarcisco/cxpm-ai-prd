@@ -15,6 +15,7 @@ from app.main import app
 # Import models so that Base.metadata knows about them
 from app.models import (  # noqa: F401
     PRD,
+    ActivityLog,
     MeetingItem,
     MeetingItemDecision,
     MeetingRecap,
@@ -71,6 +72,7 @@ def test_user(test_db: Session) -> User:
         hashed_password="!not-a-real-hash",
         is_active=True,
         is_admin=False,
+        is_approved=True,
     )
     test_db.add(user)
     test_db.commit()

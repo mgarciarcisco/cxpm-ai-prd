@@ -1,0 +1,134 @@
+.profile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.profile-modal {
+  background: #FFFFFF;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.profile-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.profile-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #9CA3AF;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.profile-close:hover { color: #374151; }
+
+.profile-tabs {
+  display: flex;
+  border-bottom: 1px solid #E5E7EB;
+  padding: 0 1.5rem;
+}
+
+.profile-tab {
+  padding: 0.75rem 0;
+  margin-right: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6B7280;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.profile-tab:hover { color: #374151; }
+.profile-tab.active { color: #0D9488; border-bottom-color: #4ECDC4; }
+
+.profile-form {
+  padding: 1.5rem;
+}
+
+.profile-field {
+  margin-bottom: 1.25rem;
+}
+
+.profile-field label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.375rem;
+}
+
+.profile-field input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #111827;
+  background: #FFFFFF;
+}
+
+.profile-field input:focus {
+  outline: none;
+  border-color: #4ECDC4;
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.15);
+}
+
+.profile-field input:disabled {
+  background: #F3F4F6;
+  color: #9CA3AF;
+}
+
+.profile-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin-top: 0.25rem;
+}
+
+.profile-btn-primary {
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.profile-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.4);
+}
+
+.profile-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}

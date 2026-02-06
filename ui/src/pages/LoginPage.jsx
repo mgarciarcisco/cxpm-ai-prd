@@ -25,6 +25,10 @@ export default function LoginPage() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
+      if (err.message === 'pending_approval') {
+        navigate('/pending-approval');
+        return;
+      }
       setError(err.message || 'Invalid email or password');
     } finally {
       setSubmitting(false);

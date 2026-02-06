@@ -57,8 +57,12 @@ export default function RegisterPage() {
     setSubmitting(true);
 
     try {
-      await register(name, email, password);
-      navigate('/dashboard');
+      const result = await register(name, email, password);
+      if (result.status === 'pending_approval') {
+        navigate('/pending-approval');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -137,12 +141,13 @@ export default function RegisterPage() {
               <input
                 type="email"
                 id="register-email"
-                placeholder="jane@company.com"
+                placeholder="jane@cisco.com"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+              <span className="register-hint register-hint--info">Only @cisco.com email addresses are allowed</span>
             </div>
 
             <div className="register-form-group">

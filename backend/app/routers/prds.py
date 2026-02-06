@@ -15,6 +15,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
+from app.activity import log_activity_safe
 from app.auth import get_current_user, get_current_user_from_query
 from app.database import SessionLocal, get_db
 from app.exceptions import LLMResponseError, NoRequirementsError
@@ -149,6 +150,7 @@ def _slugify_filename(name: str) -> str:
 def generate_prd(
     project_id: str,
     request: PRDGenerateRequest,
+    http_request: Request,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -181,6 +183,8 @@ def generate_prd(
     db.commit()
     db.refresh(prd)
 
+    log_activity_safe(db, current_user.id, "prd.generation_started", "prd", str(prd.id), {"project_id": str(project_id)}, http_request)
+
     # Schedule background generation task
     background_tasks.add_task(
         _run_generate_prd_task,
@@ -206,6 +210,7 @@ def generate_prd(
 def create_prd(
     project_id: str,
     request: PRDCreateRequest,
+    http_request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> PRDResponse:
@@ -260,6 +265,7 @@ def create_prd(
 
     db.commit()
     db.refresh(prd)
+    log_activity_safe(db, current_user.id, "prd.generation_started", "prd", str(prd.id), {"project_id": str(project_id)}, http_request)
 
     return _prd_to_response(prd)
 
@@ -596,6 +602,7 @@ def get_prd(prd_id: str, db: Session = Depends(get_db), current_user: User = Dep
 def update_prd(
     prd_id: str,
     update_data: PRDUpdateRequest,
+    http_request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> PRDResponse:
@@ -628,6 +635,7 @@ def update_prd(
     prd.updated_by = current_user.name
     db.commit()
     db.refresh(prd)
+    log_activity_safe(db, current_user.id, "prd.edited", "prd", prd_id, {"section_name": update_data.title or "unknown"}, http_request)
 
     return _prd_to_response(prd)
 

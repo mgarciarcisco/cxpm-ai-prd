@@ -70,6 +70,15 @@ export function AuthProvider({ children }) {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
+      if (res.status === 403 && errorData.detail === 'pending_approval') {
+        throw new Error('pending_approval');
+      }
+      if (res.status === 403 && errorData.detail === 'account_deactivated') {
+        throw new Error('Your account has been deactivated. Please contact an administrator.');
+      }
+      if (res.status === 429) {
+        throw new Error(errorData.detail || 'Too many requests. Please try again later.');
+      }
       throw new Error(errorData.detail || errorData.message || 'Invalid email or password');
     }
 
@@ -98,6 +107,12 @@ export function AuthProvider({ children }) {
     }
 
     const data = await res.json();
+
+    // If pending approval (non-first user), don't try to login
+    if (data.status === 'pending_approval') {
+      return data;
+    }
+
     const newToken = data.access_token || data.token;
     localStorage.setItem('auth_token', newToken);
     setToken(newToken);

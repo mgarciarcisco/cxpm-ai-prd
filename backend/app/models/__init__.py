@@ -1,5 +1,6 @@
 """Models package for database models."""
 
+from app.models.activity_log import ActivityLog
 from app.models.meeting_item import MeetingItem, Section
 from app.models.meeting_item_decision import Decision, MeetingItemDecision
 from app.models.meeting_recap import InputType, MeetingRecap, MeetingStatus
@@ -49,4 +50,5 @@ __all__ = [
     "StoryBatch",
     "StoryBatchStatus",
     "User",
+    "ActivityLog",
 ]

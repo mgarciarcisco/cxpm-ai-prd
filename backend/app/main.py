@@ -1,8 +1,13 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.activity import RequestIdMiddleware, purge_old_activity_logs
 from app.config import settings
+from app.database import SessionLocal
 from app.routers import (
+    admin_router,
     auth_router,
     jira_epic_router,
     meeting_items_router,
@@ -40,6 +45,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(RequestIdMiddleware)
+
 
 @app.get("/api/health")
 async def health_check() -> dict[str, str]:
@@ -47,7 +54,24 @@ async def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 
+logger = logging.getLogger(__name__)
+
+
+@app.on_event("startup")
+async def startup_purge_activity_logs():
+    """Purge activity logs older than 90 days on startup."""
+    try:
+        db = SessionLocal()
+        try:
+            await purge_old_activity_logs(db)
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error(f"Failed to purge activity logs on startup: {e}")
+
+
 # Register routers
+app.include_router(admin_router)
 app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(meetings_router)

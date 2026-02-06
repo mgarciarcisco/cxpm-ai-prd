@@ -23,12 +23,19 @@ import NotFoundPage from './pages/NotFoundPage'
 import JiraEpicPage from './pages/jira_epic/JiraEpicPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import PendingApprovalPage from './pages/PendingApprovalPage'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUserManagement from './pages/admin/AdminUserManagement'
+import AdminActivityLog from './pages/admin/AdminActivityLog'
+import AccessDeniedPage from './pages/admin/AccessDeniedPage'
 import { AuthProvider } from './contexts/AuthContext'
 
 // Create data router with all routes
 const router = createBrowserRouter([
   { path: '/login', element: <AuthProvider><LoginPage /></AuthProvider> },
   { path: '/register', element: <AuthProvider><RegisterPage /></AuthProvider> },
+  { path: '/pending-approval', element: <AuthProvider><PendingApprovalPage /></AuthProvider> },
   {
     path: '/',
     element: <App />,
@@ -60,6 +67,17 @@ const router = createBrowserRouter([
       { path: 'app/projects/:projectId/stories', element: <UserStoriesPage /> },
       { path: 'app/jira-epic', element: <JiraEpicPage /> },
       { path: 'app/*', element: <ProjectsPage /> },
+      // Admin routes
+      { path: 'admin/access-denied', element: <AccessDeniedPage /> },
+      {
+        path: 'admin',
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <AdminDashboard /> },
+          { path: 'users', element: <AdminUserManagement /> },
+          { path: 'activity', element: <AdminActivityLog /> },
+        ],
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

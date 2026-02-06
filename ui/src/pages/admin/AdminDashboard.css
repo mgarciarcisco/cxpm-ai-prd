@@ -1,0 +1,107 @@
+/* Admin Dashboard */
+.admin-dashboard h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.admin-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 1.5rem 0 0.75rem 0;
+}
+
+.admin-section-title:first-of-type {
+  margin-top: 0;
+}
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.admin-stat-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.admin-stat-card:hover {
+  border-color: #D1D5DB;
+}
+
+.admin-stat-card--highlight {
+  border-color: #4ECDC4;
+  background: rgba(78, 205, 196, 0.04);
+}
+
+.admin-stat-card--highlight:hover {
+  border-color: #44A08D;
+  box-shadow: 0 2px 8px rgba(78, 205, 196, 0.15);
+}
+
+.admin-stat-card__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6B7280;
+  margin-bottom: 0.375rem;
+}
+
+.admin-stat-card__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.admin-stat-card__value--change {
+  color: #059669;
+}
+
+/* Skeleton loading */
+.admin-stat-card--skeleton {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-line {
+  height: 12px;
+  background: #E5E7EB;
+  border-radius: 4px;
+}
+
+.skeleton-line--short {
+  width: 60%;
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-line--long {
+  width: 40%;
+  height: 24px;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.admin-error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 1rem;
+  color: #DC2626;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

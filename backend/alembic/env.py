@@ -11,6 +11,7 @@ from app.database import Base
 # Import all models so Alembic can detect them for autogenerate
 from app.models import (  # noqa: F401
     PRD,
+    ActivityLog,
     MeetingItem,
     MeetingItemDecision,
     MeetingRecap,

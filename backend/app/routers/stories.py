@@ -14,6 +14,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
+from app.activity import log_activity_safe
 from app.auth import get_current_user, get_current_user_from_query
 from app.database import SessionLocal, get_db
 from app.exceptions import LLMResponseError, NoRequirementsError
@@ -500,6 +501,7 @@ def get_story(story_id: str, db: Session = Depends(get_db), current_user: User =
 def create_story(
     project_id: str,
     request: StoryCreateRequest,
+    http_request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> UserStoryResponse:
@@ -552,6 +554,7 @@ def create_story(
 
     db.commit()
     db.refresh(story)
+    log_activity_safe(db, current_user.id, "story.created", "story", str(story.id), {"project_id": str(project_id)}, http_request)
 
     return _story_to_response(story)
 
@@ -560,6 +563,7 @@ def create_story(
 def update_story(
     story_id: str,
     update_data: StoryUpdateRequest,
+    http_request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> UserStoryResponse:
@@ -596,12 +600,13 @@ def update_story(
     story.updated_by = current_user.name
     db.commit()
     db.refresh(story)
+    log_activity_safe(db, current_user.id, "story.updated", "story", story_id, {}, http_request)
 
     return _story_to_response(story)
 
 
 @router.delete("/stories/{story_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_story(story_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
+def delete_story(story_id: str, http_request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
     """Soft delete a user story by setting deleted_at timestamp.
 
     The story will no longer appear in list results.
@@ -610,6 +615,7 @@ def delete_story(story_id: str, db: Session = Depends(get_db), current_user: Use
 
     story.deleted_at = datetime.utcnow()
     db.commit()
+    log_activity_safe(db, current_user.id, "story.deleted", "story", story_id, {}, http_request)
 
     return None
 
