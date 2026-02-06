@@ -1,7 +1,7 @@
 """Create users table for email/password authentication.
 
-Revision ID: j7k8l9m0n1o2
-Revises: i6j7k8l9m0n1
+Revision ID: j7k8l9m0n1o2a
+Revises: j7k8l9m0n1o2
 Create Date: 2026-02-05
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "j7k8l9m0n1o2"
-down_revision = "i6j7k8l9m0n1"
+revision = "j7k8l9m0n1o2a"
+down_revision = "j7k8l9m0n1o2"
 branch_labels = None
 depends_on = None
 

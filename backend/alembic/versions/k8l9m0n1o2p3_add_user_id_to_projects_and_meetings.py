@@ -1,7 +1,7 @@
 """Add user_id to projects and meeting_recaps for user isolation.
 
-Revision ID: k8l9m0n1o2p3
-Revises: j7k8l9m0n1o2
+Revision ID: k8l9m0n1o2p3a
+Revises: k8l9m0n1o2p3
 Create Date: 2026-02-05
 
 Creates a default 'system' user, assigns all existing rows to it,
@@ -14,8 +14,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "k8l9m0n1o2p3"
-down_revision = "j7k8l9m0n1o2"
+revision = "k8l9m0n1o2p3a"
+down_revision = "k8l9m0n1o2p3"
 branch_labels = None
 depends_on = None
 
