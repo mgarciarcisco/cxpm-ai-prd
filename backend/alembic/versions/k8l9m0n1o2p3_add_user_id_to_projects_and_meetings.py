@@ -7,8 +7,6 @@ Create Date: 2026-02-05
 Creates a default 'system' user, assigns all existing rows to it,
 then makes user_id NOT NULL.
 """
-from datetime import datetime, timezone
-
 from alembic import op
 import sqlalchemy as sa
 
@@ -23,29 +21,23 @@ SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000"
 
 
 def upgrade() -> None:
-    # Create system user for existing data
-    now = datetime.now(timezone.utc)
-    users_table = sa.table(
-        "users",
-        sa.column("id", sa.CHAR(36)),
-        sa.column("email", sa.String(255)),
-        sa.column("name", sa.String(255)),
-        sa.column("hashed_password", sa.String(255)),
-        sa.column("is_active", sa.Boolean()),
-        sa.column("is_admin", sa.Boolean()),
-        sa.column("created_at", sa.DateTime()),
-        sa.column("updated_at", sa.DateTime()),
+    # Create system user for existing data (idempotent: skip if already exists)
+    op.execute(
+        f"""
+        INSERT INTO users (id, email, name, hashed_password, is_active, is_admin, created_at, updated_at)
+        VALUES (
+            '{SYSTEM_USER_ID}',
+            'system@localhost',
+            'System',
+            '!not-a-valid-hash',
+            false,
+            false,
+            NOW(),
+            NOW()
+        )
+        ON CONFLICT (id) DO NOTHING
+        """
     )
-    op.bulk_insert(users_table, [{
-        "id": SYSTEM_USER_ID,
-        "email": "system@localhost",
-        "name": "System",
-        "hashed_password": "!not-a-valid-hash",
-        "is_active": False,
-        "is_admin": False,
-        "created_at": now,
-        "updated_at": now,
-    }])
 
     # Add user_id to projects (nullable first, then backfill, then make NOT NULL)
     op.add_column("projects", sa.Column("user_id", sa.CHAR(36), nullable=True))
