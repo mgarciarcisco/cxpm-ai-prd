@@ -3,99 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import './ProjectCard.css'
 
 /**
- * Stage definitions with action-oriented labels
- */
-const STAGES = [
-  { id: 'requirements', label: 'Gathering Requirements' },
-  { id: 'prd', label: 'Writing Specification' },
-  { id: 'stories', label: 'Breaking into Tasks' },
-  { id: 'mockups', label: 'Designing Screens' },
-  { id: 'export', label: 'Exporting & Sharing' },
-];
-
-/**
- * Maps stage status to a normalized status for display
- */
-function getStageStatus(stageId, project) {
-  const statusMap = {
-    requirements: {
-      empty: 'empty',
-      has_items: 'in_progress',
-      reviewed: 'complete',
-    },
-    prd: {
-      empty: 'empty',
-      draft: 'in_progress',
-      ready: 'complete',
-    },
-    stories: {
-      empty: 'empty',
-      generated: 'in_progress',
-      refined: 'complete',
-    },
-    mockups: {
-      empty: 'empty',
-      generated: 'complete',
-    },
-    export: {
-      not_exported: 'empty',
-      exported: 'complete',
-    },
-  };
-
-  const fieldMap = {
-    requirements: 'requirements_status',
-    prd: 'prd_status',
-    stories: 'stories_status',
-    mockups: 'mockups_status',
-    export: 'export_status',
-  };
-
-  const fieldName = fieldMap[stageId];
-  const rawStatus = project[fieldName] || 'empty';
-  return statusMap[stageId]?.[rawStatus] || 'empty';
-}
-
-/**
- * Calculate progress info - completed count, active stage, etc.
- */
-function getProgressInfo(project) {
-  let completedCount = 0;
-  let activeStageIndex = -1;
-  let activeStageLabel = '';
-
-  for (let i = 0; i < STAGES.length; i++) {
-    const status = getStageStatus(STAGES[i].id, project);
-    if (status === 'complete') {
-      completedCount++;
-    } else if (activeStageIndex === -1) {
-      activeStageIndex = i;
-      activeStageLabel = STAGES[i].label;
-    }
-  }
-
-  const isComplete = completedCount === STAGES.length;
-  if (isComplete) {
-    activeStageIndex = -1;
-    activeStageLabel = '';
-  }
-
-  const progressPercent = (completedCount / STAGES.length) * 100;
-  // Add partial progress for active stage
-  const activePercent = activeStageIndex >= 0 ? (1 / STAGES.length) * 100 : 0;
-
-  return {
-    completedCount,
-    activeStageIndex,
-    activeStageLabel,
-    progressPercent,
-    activePercent,
-    isComplete,
-    totalStages: STAGES.length,
-  };
-}
-
-/**
  * Formats a date as "Updated X ago"
  */
 function formatTimeAgo(dateString) {
@@ -120,35 +27,8 @@ function formatTimeAgo(dateString) {
   return date.toLocaleDateString();
 }
 
-/**
- * Progress bar component with tooltip
- */
-function ProgressBar({ progressPercent, activePercent, completedCount, activeStageLabel }) {
-  const tooltipText = activeStageLabel
-    ? `${completedCount} stage${completedCount !== 1 ? 's' : ''} completed • ${activeStageLabel} in progress`
-    : `${completedCount} stage${completedCount !== 1 ? 's' : ''} completed`;
-
-  return (
-    <div className="project-card__progress-container">
-      <div className="project-card__progress-bar" title={tooltipText}>
-        <div
-          className="project-card__progress-segment project-card__progress-segment--complete"
-          style={{ width: `${progressPercent}%` }}
-        />
-        {activePercent > 0 && (
-          <div
-            className="project-card__progress-segment project-card__progress-segment--active"
-            style={{ width: `${activePercent}%` }}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
 function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
   const navigate = useNavigate()
-  const progressInfo = getProgressInfo(project);
   const isArchived = project.archived === true;
 
   const handleCardClick = () => {
@@ -172,24 +52,29 @@ function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
     }
   }
 
-  // Build the stage label
-  let stageLabel;
-  if (progressInfo.isComplete) {
-    stageLabel = (
-      <span className="project-card__stage-label project-card__stage-label--complete">
-        <span className="project-card__stage-icon">✓</span>
-        Complete
-      </span>
-    );
-  } else {
-    stageLabel = (
-      <span className="project-card__stage-label project-card__stage-label--active">
-        <span className="project-card__stage-step">
-          Step {progressInfo.activeStageIndex + 1}/{progressInfo.totalStages}:
-        </span>
-        {progressInfo.activeStageLabel}
-      </span>
-    );
+  // Build artifact badges
+  const badges = [];
+  const meetingCount = project.meetingCount || 0;
+  const requirementCount = project.requirementCount || 0;
+
+  if (meetingCount > 0 || requirementCount > 0) {
+    const parts = [];
+    if (meetingCount > 0) parts.push(`${meetingCount} meeting${meetingCount !== 1 ? 's' : ''}`);
+    if (requirementCount > 0) parts.push(`${requirementCount} req${requirementCount !== 1 ? 's' : ''}`);
+    badges.push({ color: 'teal', text: parts.join(' \u00b7 ') });
+  }
+
+  if (project.prd_status && project.prd_status !== 'empty') {
+    const label = project.prd_status === 'draft' ? 'PRD draft' : 'PRD complete';
+    badges.push({ color: 'orange', text: label });
+  }
+
+  if (project.stories_status && project.stories_status !== 'empty') {
+    badges.push({ color: 'blue', text: 'User stories' });
+  }
+
+  if (project.mockups_status && project.mockups_status !== 'empty') {
+    badges.push({ color: 'pink', text: 'Mockups' });
   }
 
   return (
@@ -243,17 +128,15 @@ function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
         </div>
       </div>
 
-      <div className="project-card__progress-section">
-        <ProgressBar
-          progressPercent={progressInfo.progressPercent}
-          activePercent={progressInfo.activePercent}
-          completedCount={progressInfo.completedCount}
-          activeStageLabel={progressInfo.activeStageLabel}
-        />
-        <div className="project-card__progress-info">
-          {stageLabel}
+      {badges.length > 0 && (
+        <div className="project-card__badges">
+          {badges.map((badge) => (
+            <span key={badge.color} className={`project-card__badge project-card__badge--${badge.color}`}>
+              {badge.text}
+            </span>
+          ))}
         </div>
-      </div>
+      )}
     </div>
   )
 }
