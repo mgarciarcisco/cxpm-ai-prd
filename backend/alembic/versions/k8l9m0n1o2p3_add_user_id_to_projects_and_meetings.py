@@ -8,7 +8,6 @@ Creates a default 'system' user, assigns all existing rows to it,
 then makes user_id NOT NULL.
 """
 from alembic import op
-import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
@@ -39,30 +38,42 @@ def upgrade() -> None:
         """
     )
 
-    # Add user_id to projects (nullable first, then backfill, then make NOT NULL)
-    op.add_column("projects", sa.Column("user_id", sa.CHAR(36), nullable=True))
-    op.execute(f"UPDATE projects SET user_id = '{SYSTEM_USER_ID}'")
-    with op.batch_alter_table("projects") as batch_op:
-        batch_op.alter_column("user_id", nullable=False)
-        batch_op.create_foreign_key("fk_projects_user_id", "users", ["user_id"], ["id"])
-    op.create_index("ix_projects_user_id", "projects", ["user_id"])
+    # Add user_id to projects (idempotent: skip if column/constraint/index exist)
+    op.execute(f"ALTER TABLE projects ADD COLUMN IF NOT EXISTS user_id CHAR(36)")
+    op.execute(f"UPDATE projects SET user_id = '{SYSTEM_USER_ID}' WHERE user_id IS NULL")
+    op.execute("ALTER TABLE projects ALTER COLUMN user_id SET NOT NULL")
+    op.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_projects_user_id') THEN
+                ALTER TABLE projects ADD CONSTRAINT fk_projects_user_id
+                FOREIGN KEY (user_id) REFERENCES users(id);
+            END IF;
+        END $$
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_projects_user_id ON projects (user_id)")
 
-    # Add user_id to meeting_recaps (nullable first, then backfill, then make NOT NULL)
-    op.add_column("meeting_recaps", sa.Column("user_id", sa.CHAR(36), nullable=True))
-    op.execute(f"UPDATE meeting_recaps SET user_id = '{SYSTEM_USER_ID}'")
-    with op.batch_alter_table("meeting_recaps") as batch_op:
-        batch_op.alter_column("user_id", nullable=False)
-        batch_op.create_foreign_key("fk_meeting_recaps_user_id", "users", ["user_id"], ["id"])
-    op.create_index("ix_meeting_recaps_user_id", "meeting_recaps", ["user_id"])
+    # Add user_id to meeting_recaps (idempotent)
+    op.execute(f"ALTER TABLE meeting_recaps ADD COLUMN IF NOT EXISTS user_id CHAR(36)")
+    op.execute(f"UPDATE meeting_recaps SET user_id = '{SYSTEM_USER_ID}' WHERE user_id IS NULL")
+    op.execute("ALTER TABLE meeting_recaps ALTER COLUMN user_id SET NOT NULL")
+    op.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_meeting_recaps_user_id') THEN
+                ALTER TABLE meeting_recaps ADD CONSTRAINT fk_meeting_recaps_user_id
+                FOREIGN KEY (user_id) REFERENCES users(id);
+            END IF;
+        END $$
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_meeting_recaps_user_id ON meeting_recaps (user_id)")
 
 
 def downgrade() -> None:
-    op.drop_index("ix_meeting_recaps_user_id", table_name="meeting_recaps")
-    op.drop_constraint("fk_meeting_recaps_user_id", "meeting_recaps", type_="foreignkey")
-    op.drop_column("meeting_recaps", "user_id")
+    op.execute("DROP INDEX IF EXISTS ix_meeting_recaps_user_id")
+    op.execute("ALTER TABLE meeting_recaps DROP CONSTRAINT IF EXISTS fk_meeting_recaps_user_id")
+    op.execute("ALTER TABLE meeting_recaps DROP COLUMN IF EXISTS user_id")
 
-    op.drop_index("ix_projects_user_id", table_name="projects")
-    op.drop_constraint("fk_projects_user_id", "projects", type_="foreignkey")
-    op.drop_column("projects", "user_id")
+    op.execute("DROP INDEX IF EXISTS ix_projects_user_id")
+    op.execute("ALTER TABLE projects DROP CONSTRAINT IF EXISTS fk_projects_user_id")
+    op.execute("ALTER TABLE projects DROP COLUMN IF EXISTS user_id")
 
     op.execute(f"DELETE FROM users WHERE id = '{SYSTEM_USER_ID}'")
