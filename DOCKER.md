@@ -226,10 +226,45 @@ docker exec cxpm-ollama ollama rm <model-name>
 docker system prune -a
 ```
 
+## Database migrations
+
+The backend runs **Alembic migrations** on startup (`alembic upgrade head` then uvicorn). If the backend fails to start or you see errors like **"relation jira_story does not exist"**, the database schema is missing or incomplete.
+
+### Run migrations explicitly (recommended on first deploy or after errors)
+
+1. Start Postgres and wait for it to be healthy:
+   ```bash
+   docker-compose up -d postgres
+   docker-compose ps   # wait until postgres is healthy
+   ```
+
+2. Run migrations in a one-off container (same image and env as backend):
+   ```bash
+   docker-compose run --rm migrate
+   ```
+   Fix any errors shown (e.g. Python version, duplicate key/column — see `backend/docs/MIGRATIONS.md`).
+
+3. Start the rest of the stack:
+   ```bash
+   docker-compose up -d backend frontend
+   ```
+
+### Why use the migrate service?
+
+- You see migration output directly; failures don’t get lost in backend restart loops.
+- You can run migrations once, then start the backend without re-running them on every restart.
+- The backend still runs migrations on start by default (with retries), so normal `docker-compose up -d` works if the DB is already ready.
+
+### VM / different machine
+
+- Use the same `DATABASE_URL` the backend uses (e.g. in `docker-compose` or `backend/.env`).
+- Ensure the backend image is built from the repo that contains all migration files under `backend/alembic/versions/`.
+- If the VM uses Python 3.9 to run Alembic outside Docker, use Python 3.10+ or run migrations inside the container: `docker-compose run --rm migrate`.
+
 ## First-Time Setup Checklist
 
 1. [ ] Docker and Docker Compose installed
-2. [ ] Run `docker-compose up --build -d`
-3. [ ] Pull Ollama model: `docker exec cxpm-ollama ollama pull llama3.2`
+2. [ ] Run `docker-compose up -d postgres`, then `docker-compose run --rm migrate`
+3. [ ] Run `docker-compose up -d backend frontend` (or `docker-compose up --build -d`)
 4. [ ] Open http://localhost:3000
 5. [ ] Create a project and test extraction

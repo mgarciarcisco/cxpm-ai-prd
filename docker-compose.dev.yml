@@ -21,6 +21,23 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Run migrations (run once: docker-compose -f docker-compose.dev.yml run --rm migrate)
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql://cxpm:cxpm_dev@postgres:5432/cxpm
+    volumes:
+      - ./backend/alembic:/app/alembic:ro
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   # Backend - FastAPI application with hot-reload
   backend:
     build:

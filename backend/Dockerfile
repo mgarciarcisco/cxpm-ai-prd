@@ -27,8 +27,11 @@ COPY . .
 # Create data directory for SQLite database
 RUN mkdir -p /app/data
 
+# Entrypoint: retry migrations then start server (handles slow DB on first start)
+COPY scripts/entrypoint.sh /app/scripts/entrypoint.sh
+RUN chmod +x /app/scripts/entrypoint.sh
+
 # Expose port
 EXPOSE 8000
 
-# Run migrations and start server
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["/app/scripts/entrypoint.sh"]

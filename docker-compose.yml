@@ -18,7 +18,22 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # Backend - FastAPI application
+  # Run migrations (run once before backend: docker-compose run --rm migrate)
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql://cxpm:cxpm_dev@postgres:5432/cxpm
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # Backend - FastAPI application (runs migrations on start, then uvicorn)
   backend:
     build:
       context: ./backend
