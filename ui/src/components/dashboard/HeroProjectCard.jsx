@@ -49,11 +49,13 @@ function HeroProjectCard({ project }) {
   const badges = [];
   const meetingCount = project.meetingCount || 0;
   const requirementCount = project.requirementCount || 0;
+  const jiraEpicCount = project.jiraEpicCount ?? 0;
 
-  if (meetingCount > 0 || requirementCount > 0) {
+  if (meetingCount > 0 || requirementCount > 0 || jiraEpicCount > 0) {
     const parts = [];
     if (meetingCount > 0) parts.push(`${meetingCount} meeting${meetingCount !== 1 ? 's' : ''}`);
     if (requirementCount > 0) parts.push(`${requirementCount} requirement${requirementCount !== 1 ? 's' : ''}`);
+    if (jiraEpicCount > 0) parts.push(`${jiraEpicCount} Jira Epic${jiraEpicCount !== 1 ? 's' : ''}`);
     badges.push({ color: 'teal', text: parts.join(' \u00b7 ') });
   }
 

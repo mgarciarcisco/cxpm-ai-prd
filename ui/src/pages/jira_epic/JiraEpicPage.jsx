@@ -47,11 +47,11 @@ function JiraEpicPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedEpics]);
 
-  // Breadcrumb items: include Project View link when we have a project (e.g. opened from Project View)
+  // Breadcrumb items: include project name link when we have a project (e.g. opened from Project View)
   const breadcrumbItems = selectedProject
     ? [
         { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Project View', href: `/projects/${selectedProject.id}` },
+        { label: selectedProject.name || 'Project', href: `/projects/${selectedProject.id}` },
         { label: 'Jira Epics' },
       ]
     : [

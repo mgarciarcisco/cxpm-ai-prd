@@ -39,6 +39,7 @@ function DashboardPage() {
               ...project,
               meetingCount: stats.meeting_count,
               requirementCount: stats.requirement_count,
+              jiraEpicCount: stats.jira_story_count ?? 0,
               lastActivity: stats.last_activity,
             };
           } catch {
@@ -46,6 +47,7 @@ function DashboardPage() {
               ...project,
               meetingCount: 0,
               requirementCount: 0,
+              jiraEpicCount: 0,
               lastActivity: project.updated_at,
             };
           }
