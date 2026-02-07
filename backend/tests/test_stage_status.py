@@ -11,6 +11,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.models import (
+    JiraStory,
     PRD,
     ExportStatus,
     MockupsStatus,
@@ -22,10 +23,8 @@ from app.models import (
     RequirementsStatus,
     StoriesStatus,
     User,
-    UserStory,
 )
 from app.models.meeting_item import Section
-from app.models.user_story import StoryFormat, StoryStatus
 from app.services.stage_status import (
     update_export_status,
     update_mockups_status,
@@ -102,22 +101,15 @@ def _create_prd(
     return prd
 
 
-def _create_user_story(
+def _create_jira_story(
     db: Session,
     project_id: str,
-    story_number: int = 1,
-    title: str = "Test Story",
-    deleted: bool = False,
-) -> UserStory:
-    """Helper to create a user story in the database."""
-    from datetime import datetime
-    story = UserStory(
+    title: str = "Test Jira Story",
+) -> JiraStory:
+    """Helper to create a Jira story in the database."""
+    story = JiraStory(
         project_id=project_id,
-        story_number=story_number,
-        format=StoryFormat.CLASSIC,
         title=title,
-        status=StoryStatus.DRAFT,
-        deleted_at=datetime.utcnow() if deleted else None,
     )
     db.add(story)
     db.commit()
@@ -465,10 +457,10 @@ class TestUpdateStoriesStatus:
         test_db.refresh(project)
         assert project.stories_status == StoriesStatus.empty
 
-    def test_generated_when_has_stories(self, test_db: Session) -> None:
-        """Test status is 'generated' when project has stories."""
+    def test_generated_when_has_jira_stories(self, test_db: Session) -> None:
+        """Test status is 'generated' when project has Jira stories."""
         project = _create_project(test_db)
-        _create_user_story(test_db, project.id, story_number=1)
+        _create_jira_story(test_db, project.id, title="Story 1")
 
         result = update_stories_status(project.id, test_db)
 
@@ -481,7 +473,7 @@ class TestUpdateStoriesStatus:
         project = _create_project(test_db)
         project.stories_status = StoriesStatus.refined
         test_db.commit()
-        _create_user_story(test_db, project.id, story_number=1)
+        _create_jira_story(test_db, project.id, title="Story 1")
 
         result = update_stories_status(project.id, test_db)
 
@@ -489,26 +481,15 @@ class TestUpdateStoriesStatus:
         test_db.refresh(project)
         assert project.stories_status == StoriesStatus.refined
 
-    def test_becomes_empty_when_all_stories_deleted(self, test_db: Session) -> None:
-        """Test status becomes 'empty' when all stories are deleted."""
+    def test_becomes_empty_when_no_jira_stories(self, test_db: Session) -> None:
+        """Test status is 'empty' when project has no Jira stories."""
         project = _create_project(test_db)
-        _create_user_story(test_db, project.id, story_number=1, deleted=True)
 
         result = update_stories_status(project.id, test_db)
 
         assert result == StoriesStatus.empty
         test_db.refresh(project)
         assert project.stories_status == StoriesStatus.empty
-
-    def test_ignores_deleted_stories(self, test_db: Session) -> None:
-        """Test that deleted stories are not counted."""
-        project = _create_project(test_db)
-        _create_user_story(test_db, project.id, story_number=1)
-        _create_user_story(test_db, project.id, story_number=2, deleted=True)
-
-        result = update_stories_status(project.id, test_db)
-
-        assert result == StoriesStatus.generated
 
     def test_nonexistent_project_returns_empty(self, test_db: Session) -> None:
         """Test that nonexistent project ID returns empty status."""

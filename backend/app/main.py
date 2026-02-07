@@ -16,7 +16,6 @@ from app.routers import (
     prds_router,
     projects_router,
     requirements_router,
-    stories_router,
 )
 
 app = FastAPI(
@@ -79,6 +78,5 @@ app.include_router(meetings_router)
 app.include_router(meeting_items_router)
 app.include_router(requirements_router)
 app.include_router(prds_router)
-app.include_router(stories_router)
 app.include_router(jira_epic_router)
 app.include_router(jira_stories_router)

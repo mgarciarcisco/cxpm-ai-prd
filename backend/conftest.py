@@ -23,9 +23,7 @@ from app.models import (  # noqa: F401
     Requirement,
     RequirementHistory,
     RequirementSource,
-    StoryBatch,
     User,
-    UserStory,
 )
 
 # Create in-memory SQLite database for testing

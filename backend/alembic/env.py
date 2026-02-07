@@ -20,9 +20,7 @@ from app.models import (  # noqa: F401
     Requirement,
     RequirementHistory,
     RequirementSource,
-    StoryBatch,
     User,
-    UserStory,
 )
 
 # this is the Alembic Config object, which provides

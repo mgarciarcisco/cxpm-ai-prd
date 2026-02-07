@@ -21,7 +21,6 @@ from app.models.prd import PRD
 from app.models.meeting_recap import MeetingRecap
 from app.models.project import Project
 from app.models.user import User
-from app.models.user_story import UserStory
 from app.schemas.admin import (
     ActivityLogListResponse,
     ActivityLogResponse,
@@ -552,7 +551,7 @@ def get_stats(
     # Content stats
     total_projects = db.query(Project).count()
     total_prds = db.query(PRD).count()
-    total_stories = db.query(UserStory).count()
+    total_stories = 0  # UserStory table removed
     total_meetings = db.query(MeetingRecap).count()
 
     # Engagement stats
@@ -570,7 +569,7 @@ def get_stats(
     new_users_week = base_users.filter(User.created_at >= week_start).count()
     new_projects_week = db.query(Project).filter(Project.created_at >= week_start).count()
     new_prds_week = db.query(PRD).filter(PRD.created_at >= week_start).count()
-    new_stories_week = db.query(UserStory).filter(UserStory.created_at >= week_start).count()
+    new_stories_week = 0  # UserStory table removed
     new_meetings_week = db.query(MeetingRecap).filter(MeetingRecap.created_at >= week_start).count()
 
     result = DashboardStatsResponse(

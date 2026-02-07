@@ -9,8 +9,6 @@ from app.routers.meetings import router as meetings_router
 from app.routers.prds import router as prds_router
 from app.routers.projects import router as projects_router
 from app.routers.requirements import router as requirements_router
-from app.routers.stories import router as stories_router
-
 __all__ = [
     "admin_router",
     "auth_router",
@@ -19,7 +17,6 @@ __all__ = [
     "meeting_items_router",
     "requirements_router",
     "prds_router",
-    "stories_router",
     "jira_epic_router",
     "jira_stories_router",
 ]

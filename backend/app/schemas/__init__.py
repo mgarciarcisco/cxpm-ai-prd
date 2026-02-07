@@ -69,20 +69,6 @@ from app.schemas.requirement import (
     RequirementSourceResponse,
     RequirementUpdate,
 )
-from app.schemas.user_story import (
-    STORIES_CSV_COLUMNS,
-    ReorderRequest,
-    StoriesExportJSON,
-    StoriesGenerateRequest,
-    StoryBatchResponse,
-    StoryBatchStatusResponse,
-    StoryCreateRequest,
-    StoryExportFormat,
-    StoryExportItem,
-    StoryUpdateRequest,
-    UserStoryResponse,
-)
-
 __all__ = [
     # Auth schemas
     "UserRegister",
@@ -142,18 +128,6 @@ __all__ = [
     "PRDStatusResponse",
     "PRDSummary",
     "PRDUpdateRequest",
-    # User Story schemas
-    "ReorderRequest",
-    "STORIES_CSV_COLUMNS",
-    "StoriesExportJSON",
-    "StoriesGenerateRequest",
-    "StoryBatchResponse",
-    "StoryBatchStatusResponse",
-    "StoryCreateRequest",
-    "StoryExportFormat",
-    "StoryExportItem",
-    "StoryUpdateRequest",
-    "UserStoryResponse",
     # JIRA Story schemas
     "JiraStoryCreate",
     "JiraStoryResponse",

@@ -94,8 +94,6 @@ class Project(Base):
     meetings = relationship("MeetingRecap", back_populates="project", cascade="all, delete-orphan")
     requirements = relationship("Requirement", back_populates="project", cascade="all, delete-orphan")
     prds = relationship("PRD", back_populates="project", cascade="all, delete-orphan")
-    user_stories = relationship("UserStory", back_populates="project", cascade="all, delete-orphan")
-    story_batches = relationship("StoryBatch", back_populates="project", cascade="all, delete-orphan")
     jira_stories = relationship("JiraStory", back_populates="project", cascade="all, delete-orphan")
     owner = relationship("User", backref="projects")
 

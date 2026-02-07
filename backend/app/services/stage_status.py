@@ -7,6 +7,7 @@ when content changes, ensuring the stage indicators stay in sync with actual con
 from sqlalchemy.orm import Session
 
 from app.models import (
+    JiraStory,
     PRD,
     ExportStatus,
     MockupsStatus,
@@ -16,7 +17,6 @@ from app.models import (
     Requirement,
     RequirementsStatus,
     StoriesStatus,
-    UserStory,
 )
 
 
@@ -94,10 +94,10 @@ def update_prd_status(project_id: str, db: Session) -> PRDStageStatus:
 
 
 def update_stories_status(project_id: str, db: Session) -> StoriesStatus:
-    """Update stories_status based on user stories state.
+    """Update stories_status based on Jira stories (epic stories) for this project.
 
-    - No stories: 'empty'
-    - Has stories: 'generated' (unless already 'refined')
+    - No Jira stories: 'empty'
+    - Has Jira stories: 'generated' (unless already 'refined')
 
     Args:
         project_id: The project UUID.
@@ -110,18 +110,15 @@ def update_stories_status(project_id: str, db: Session) -> StoriesStatus:
     if not project:
         return StoriesStatus.empty
 
-    # Count non-deleted stories for this project
     story_count = (
-        db.query(UserStory)
-        .filter(UserStory.project_id == project_id, UserStory.deleted_at.is_(None))
+        db.query(JiraStory)
+        .filter(JiraStory.project_id == project_id)
         .count()
     )
 
     if story_count == 0:
         project.stories_status = StoriesStatus.empty
     elif project.stories_status == StoriesStatus.empty:
-        # Only update to generated if currently empty
-        # Don't downgrade from 'refined' to 'generated'
         project.stories_status = StoriesStatus.generated
 
     db.commit()
