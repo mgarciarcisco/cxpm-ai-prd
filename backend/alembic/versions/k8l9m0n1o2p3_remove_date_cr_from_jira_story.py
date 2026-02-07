@@ -19,28 +19,28 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Upgrade schema - remove date_cr column and its index, add created_at index."""
-    # Drop the date_cr index
-    op.drop_index('ix_jira_story_date_cr', table_name='jira_story')
-    
-    # Drop the date_cr column
-    # Note: SQLite requires special handling for dropping columns
-    # We need to recreate the table without the date_cr column
-    with op.batch_alter_table('jira_story', schema=None) as batch_op:
-        batch_op.drop_column('date_cr')
-    
-    # Create index on created_at
-    op.create_index('ix_jira_story_created_at', 'jira_story', ['created_at'], unique=False)
+    """Upgrade schema - remove date_cr column and its index, add created_at index. Idempotent on PostgreSQL."""
+    conn = op.get_bind()
+    if conn.dialect.name == "postgresql":
+        op.execute("DROP INDEX IF EXISTS ix_jira_story_date_cr")
+        op.execute("ALTER TABLE jira_story DROP COLUMN IF EXISTS date_cr")
+        op.execute("CREATE INDEX IF NOT EXISTS ix_jira_story_created_at ON jira_story (created_at)")
+    else:
+        op.drop_index('ix_jira_story_date_cr', table_name='jira_story')
+        with op.batch_alter_table('jira_story', schema=None) as batch_op:
+            batch_op.drop_column('date_cr')
+        op.create_index('ix_jira_story_created_at', 'jira_story', ['created_at'], unique=False)
 
 
 def downgrade() -> None:
     """Downgrade schema - restore date_cr column and its index."""
-    # Drop the created_at index
-    op.drop_index('ix_jira_story_created_at', table_name='jira_story')
-    
-    # Add back the date_cr column
-    with op.batch_alter_table('jira_story', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('date_cr', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')))
-    
-    # Create index on date_cr
-    op.create_index('ix_jira_story_date_cr', 'jira_story', ['date_cr'], unique=False)
+    conn = op.get_bind()
+    if conn.dialect.name == "postgresql":
+        op.execute("DROP INDEX IF EXISTS ix_jira_story_created_at")
+        op.execute("ALTER TABLE jira_story ADD COLUMN IF NOT EXISTS date_cr TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP")
+        op.execute("CREATE INDEX IF NOT EXISTS ix_jira_story_date_cr ON jira_story (date_cr)")
+    else:
+        op.drop_index('ix_jira_story_created_at', table_name='jira_story')
+        with op.batch_alter_table('jira_story', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('date_cr', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')))
+        op.create_index('ix_jira_story_date_cr', 'jira_story', ['date_cr'], unique=False)
