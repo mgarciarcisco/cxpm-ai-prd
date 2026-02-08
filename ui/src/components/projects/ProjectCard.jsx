@@ -56,7 +56,7 @@ function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
   const badges = [];
   const meetingCount = project.meetingCount || 0;
   const requirementCount = project.requirementCount || 0;
-  const epicCount = project.epicCount || 0;
+  const epicCount = project.jiraEpicCount ?? 0;
 
   if (meetingCount > 0 || requirementCount > 0 || epicCount > 0) {
     const parts = [];

@@ -29,7 +29,7 @@ function formatRelativeTime(dateString) {
  * HeroProjectCard — "Continue where you left off" card for the most recent project.
  *
  * Props:
- *   project  - project object with merged stats (meetingCount, requirementCount, epicCount, lastActivity)
+ *   project  - project object with merged stats (meetingCount, requirementCount, jiraEpicCount, lastActivity)
  */
 function HeroProjectCard({ project }) {
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ function HeroProjectCard({ project }) {
   const badges = [];
   const meetingCount = project.meetingCount || 0;
   const requirementCount = project.requirementCount || 0;
-  const epicCount = project.jiraEpicCount ?? project.epicCount ?? 0;
+  const epicCount = project.jiraEpicCount ?? 0;
 
   if (meetingCount > 0 || requirementCount > 0 || epicCount > 0) {
     const parts = [];
