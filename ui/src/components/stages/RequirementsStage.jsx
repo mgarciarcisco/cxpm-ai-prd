@@ -268,7 +268,9 @@ function RequirementsStage({ project, onProjectUpdate }) {
 
   // Handle Add Meeting button click - navigate to dedicated upload page
   const handleAddMeeting = () => {
-    navigate(`/app/projects/${project.id}/meetings/new`);
+    navigate(`/app/projects/${project.id}/meetings/new`, {
+      state: { projectName: project.name }
+    });
   };
 
   // Handle Add button click from a specific section

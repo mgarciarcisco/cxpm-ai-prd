@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import Breadcrumbs from '../components/common/Breadcrumbs';
 import { FileDropzone } from '../components/common/FileDropzone';
 import './UploadMeetingPage.css';
@@ -10,13 +10,17 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' 
 function UploadMeetingPage() {
   const { id: projectId } = useParams(); // projectId may be undefined for dashboard flow
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
 
   // Determine if we're in project context or standalone (dashboard) flow
   const hasProjectContext = Boolean(projectId);
 
+  // Project name passed via navigation state (from RequirementsStage, ProjectDashboard, etc.)
+  const projectName = location.state?.projectName || 'Project';
+
   // Support returnTo param for navigating back to the originating page
-  const returnTo = searchParams.get('returnTo') || (hasProjectContext ? `/app/projects/${projectId}` : '/dashboard');
+  const returnTo = searchParams.get('returnTo') || (hasProjectContext ? `/projects/${projectId}` : '/dashboard');
   const [title, setTitle] = useState('');
   const [meetingDate, setMeetingDate] = useState(new Date().toISOString().split('T')[0]);
   const [file, setFile] = useState(null);
@@ -27,8 +31,8 @@ function UploadMeetingPage() {
   // Breadcrumb items
   const breadcrumbItems = hasProjectContext
     ? [
-        { label: 'Projects', href: '/projects' },
-        { label: 'Project', href: `/app/projects/${projectId}` },
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: projectName, href: `/projects/${projectId}` },
         { label: 'Add Meeting' },
       ]
     : [

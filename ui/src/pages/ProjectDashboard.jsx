@@ -174,7 +174,7 @@ function ProjectDashboard() {
           </div>
 
         <div className="dashboard-actions">
-          <Link to={`/app/projects/${id}/meetings/new`} className="dashboard-btn dashboard-btn--primary">
+          <Link to={`/app/projects/${id}/meetings/new`} state={{ projectName: project?.name }} className="dashboard-btn dashboard-btn--primary">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 3.33334V12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M3.33334 8H12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -209,7 +209,7 @@ function ProjectDashboard() {
               meetings={meetings}
               onMeetingClick={handleMeetingClick}
               emptyActionButton={
-                <Link to={`/app/projects/${id}/meetings/new`} className="empty-state-link-btn">
+                <Link to={`/app/projects/${id}/meetings/new`} state={{ projectName: project?.name }} className="empty-state-link-btn">
                   Add Meeting
                 </Link>
               }

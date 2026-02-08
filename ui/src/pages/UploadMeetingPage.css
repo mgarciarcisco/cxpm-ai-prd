@@ -24,7 +24,7 @@
 /* Two-Column Layout */
 .upload-layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 280px;
   gap: 2rem;
   align-items: start;
 }
@@ -303,7 +303,7 @@
 }
 
 /* Responsive - Tablet */
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .upload-layout {
     grid-template-columns: 1fr;
   }

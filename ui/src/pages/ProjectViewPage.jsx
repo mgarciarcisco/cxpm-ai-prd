@@ -79,7 +79,9 @@ function ProjectViewPage() {
   // Handle workspace capability card actions
   const handleWorkspaceAction = (capabilityId, action) => {
     if (action === 'upload' && capabilityId === 'requirements') {
-      navigate(`/app/projects/${id}/meetings/new`);
+      navigate(`/app/projects/${id}/meetings/new`, {
+        state: { projectName: project?.name }
+      });
     } else if (action === 'upload' && capabilityId === 'stories') {
       if (project) {
         localStorage.setItem('jiraEpic_selectedProject', JSON.stringify(project));
