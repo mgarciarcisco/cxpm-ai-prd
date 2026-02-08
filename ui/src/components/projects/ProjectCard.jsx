@@ -56,11 +56,13 @@ function ProjectCard({ project, lastActivity, onEdit, onDelete }) {
   const badges = [];
   const meetingCount = project.meetingCount || 0;
   const requirementCount = project.requirementCount || 0;
+  const epicCount = project.epicCount || 0;
 
-  if (meetingCount > 0 || requirementCount > 0) {
+  if (meetingCount > 0 || requirementCount > 0 || epicCount > 0) {
     const parts = [];
     if (meetingCount > 0) parts.push(`${meetingCount} meeting${meetingCount !== 1 ? 's' : ''}`);
     if (requirementCount > 0) parts.push(`${requirementCount} req${requirementCount !== 1 ? 's' : ''}`);
+    if (epicCount > 0) parts.push(`${epicCount} epic${epicCount !== 1 ? 's' : ''}`);
     badges.push({ color: 'teal', text: parts.join(' \u00b7 ') });
   }
 
