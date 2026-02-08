@@ -111,16 +111,15 @@ function CapabilityCard({ capability, mode = 'info', stats, project, onAction })
     >
       {/* Left color border is done via CSS border-left */}
 
-      <div className="capability-card__top">
+      <div className="capability-card__header">
         <div className="capability-card__icon" style={{ borderColor: capability.colorHex }}>
           {capability.icon}
         </div>
+        <h3 className="capability-card__title">{capability.title}</h3>
         {capability.comingSoon && (
           <span className="capability-card__coming-soon-badge">Coming Soon</span>
         )}
       </div>
-
-      <h3 className="capability-card__title">{capability.title}</h3>
       <p className="capability-card__description">{capability.description}</p>
 
       <div className="capability-card__io">
