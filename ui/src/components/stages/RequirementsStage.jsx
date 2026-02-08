@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmationDialog } from '../common/ConfirmationDialog';
 import { StageLoader } from './StageLoader';
 import AddManuallyModal from '../requirements/AddManuallyModal';
-import AddMeetingModal from '../requirements/AddMeetingModal';
 import { SECTION_ORDER, SECTION_LABELS } from '../requirements/RequirementSection';
 import { get, put, patch, del } from '../../services/api';
 import './RequirementsStage.css';
@@ -157,7 +156,6 @@ function formatDate(dateString) {
 function RequirementsStage({ project, onProjectUpdate }) {
   const navigate = useNavigate();
   const [showAddManuallyModal, setShowAddManuallyModal] = useState(false);
-  const [showAddMeetingModal, setShowAddMeetingModal] = useState(false);
   const [addToSection, setAddToSection] = useState(null);
   const [requirements, setRequirements] = useState(null);
   const [meetings, setMeetings] = useState([]);
@@ -268,19 +266,9 @@ function RequirementsStage({ project, onProjectUpdate }) {
   const totalCount = allRequirements.length;
   const filteredCount = filteredRequirements.length;
 
-  // Handle Add Meeting button click - opens modal
+  // Handle Add Meeting button click - navigate to dedicated upload page
   const handleAddMeeting = () => {
-    setShowAddMeetingModal(true);
-  };
-
-  // Handle meeting added from modal
-  const handleMeetingAdded = () => {
-    setShowAddMeetingModal(false);
-    fetchRequirements();
-    fetchMeetings();
-    if (onProjectUpdate) {
-      onProjectUpdate();
-    }
+    navigate(`/app/projects/${project.id}/meetings/new`);
   };
 
   // Handle Add button click from a specific section
@@ -815,13 +803,6 @@ function RequirementsStage({ project, onProjectUpdate }) {
             setAddToSection(null);
           }}
           onAdd={handleRequirementAdded}
-        />
-      )}
-      {showAddMeetingModal && (
-        <AddMeetingModal
-          projectId={project?.id}
-          onClose={() => setShowAddMeetingModal(false)}
-          onSave={handleMeetingAdded}
         />
       )}
       {/* Delete Confirmation Dialog */}
