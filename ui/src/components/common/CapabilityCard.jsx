@@ -30,13 +30,17 @@ function getStatusText(capability, stats, project) {
 /**
  * Get button label for workspace mode.
  */
-function getButtonLabel(capability, project) {
+function getButtonLabel(capability, project, stats) {
   if (capability.comingSoon) return 'Coming Soon';
 
   switch (capability.id) {
     case 'requirements': {
       const status = project?.requirements_status || 'empty';
       return status === 'empty' ? 'Get Started' : 'View Requirements';
+    }
+    case 'stories': {
+      const count = stats?.jira_story_count ?? 0;
+      return count === 0 ? 'Get Started' : 'View Epics';
     }
     default:
       return 'Open';
@@ -58,7 +62,7 @@ function CapabilityCard({ capability, mode = 'info', stats, project, onAction })
   const isInfo = mode === 'info';
   const isWorkspace = mode === 'workspace';
   const statusInfo = isWorkspace ? getStatusText(capability, stats, project) : null;
-  const buttonLabel = isWorkspace ? getButtonLabel(capability, project) : null;
+  const buttonLabel = isWorkspace ? getButtonLabel(capability, project, stats) : null;
 
   const cardClasses = [
     'capability-card',
@@ -157,6 +161,14 @@ function CapabilityCard({ capability, mode = 'info', stats, project, onAction })
                 onClick={handleUploadClick}
               >
                 Create Requirements
+              </button>
+            )}
+            {capability.id === 'stories' && (
+              <button
+                className="capability-card__btn capability-card__btn--secondary"
+                onClick={handleUploadClick}
+              >
+                Create Epics
               </button>
             )}
           </div>

@@ -37,13 +37,56 @@
 /* Coming Soon — non-interactive */
 .capability-card--coming-soon {
   cursor: default;
-  opacity: 0.75;
+  opacity: 0.7;
+  padding: 1rem;
 }
 
 .capability-card--coming-soon:hover {
   border-color: #E5E7EB;
   box-shadow: none;
   transform: none;
+}
+
+.capability-card--coming-soon .capability-card__title {
+  font-size: 0.8125rem;
+}
+
+.capability-card--coming-soon .capability-card__description {
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.capability-card--coming-soon .capability-card__io {
+  padding: 0.5rem 0.625rem;
+  margin-bottom: 0.5rem;
+}
+
+.capability-card--coming-soon .capability-card__io-label {
+  font-size: 0.5625rem;
+}
+
+.capability-card--coming-soon .capability-card__io-text {
+  font-size: 0.6875rem;
+}
+
+.capability-card--coming-soon .capability-card__icon {
+  width: 34px;
+  height: 34px;
+}
+
+.capability-card--coming-soon .capability-card__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.capability-card--coming-soon .capability-card__coming-soon-badge {
+  font-size: 0.5625rem;
+  padding: 0.15rem 0.4rem;
+}
+
+.capability-card--coming-soon .capability-card__btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
 }
 
 /* Top row: icon + badge */

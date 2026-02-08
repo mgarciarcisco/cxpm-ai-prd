@@ -25,24 +25,6 @@ export const CAPABILITIES = [
     ),
   },
   {
-    id: 'prd',
-    title: 'Generate PRD',
-    description: 'Create an early PRD designed to surface clarity and gaps',
-    colorHex: '#F97316',
-    colorName: 'orange',
-    comingSoon: true,
-    inputText: 'Meeting recap, notes, or prompt',
-    outputText: 'Draft PRD for review and iteration',
-    stageRoute: null,
-    tip: null,
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-      </svg>
-    ),
-  },
-  {
     id: 'stories',
     title: 'Jira Epics',
     description: 'Generate actionable Jira Epics from your requirements',
@@ -59,6 +41,24 @@ export const CAPABILITIES = [
         <rect x="14" y="3" width="7" height="7" rx="1"/>
         <rect x="3" y="14" width="7" height="7" rx="1"/>
         <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'prd',
+    title: 'Generate PRD',
+    description: 'Create an early PRD designed to surface clarity and gaps',
+    colorHex: '#F97316',
+    colorName: 'orange',
+    comingSoon: true,
+    inputText: 'Meeting recap, notes, or prompt',
+    outputText: 'Draft PRD for review and iteration',
+    stageRoute: null,
+    tip: null,
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
       </svg>
     ),
   },

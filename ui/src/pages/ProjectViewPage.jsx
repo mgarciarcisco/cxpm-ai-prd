@@ -78,8 +78,13 @@ function ProjectViewPage() {
 
   // Handle workspace capability card actions
   const handleWorkspaceAction = (capabilityId, action) => {
-    if (action === 'upload') {
+    if (action === 'upload' && capabilityId === 'requirements') {
       navigate(`/app/projects/${id}/meetings/new`);
+    } else if (action === 'upload' && capabilityId === 'stories') {
+      if (project) {
+        localStorage.setItem('jiraEpic_selectedProject', JSON.stringify(project));
+      }
+      navigate('/app/jira-epic');
     } else if (capabilityId === 'stories') {
       // Jira Epics card opens Jira Epic page with current project pre-selected
       if (project) {
@@ -234,7 +239,7 @@ function ProjectViewPage() {
           <section className="project-view__workspace">
             <div className="workspace-grid">
               <div className="workspace-grid__top">
-                {CAPABILITIES.slice(0, 3).map((cap) => (
+                {CAPABILITIES.slice(0, 2).map((cap) => (
                   <CapabilityCard
                     key={cap.id}
                     capability={cap}
@@ -246,7 +251,7 @@ function ProjectViewPage() {
                 ))}
               </div>
               <div className="workspace-grid__bottom">
-                {CAPABILITIES.slice(3).map((cap) => (
+                {CAPABILITIES.slice(2).map((cap) => (
                   <CapabilityCard
                     key={cap.id}
                     capability={cap}

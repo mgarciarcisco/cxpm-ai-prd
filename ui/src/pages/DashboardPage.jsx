@@ -165,12 +165,12 @@ function DashboardPage() {
               <h2 className="dashboard__capability-label">What you can do</h2>
               <div className="dashboard__capability-grid">
                 <div className="dashboard__cap-row-top">
-                  {CAPABILITIES.slice(0, 3).map((cap) => (
+                  {CAPABILITIES.slice(0, 2).map((cap) => (
                     <CapabilityCard key={cap.id} capability={cap} mode="info" />
                   ))}
                 </div>
                 <div className="dashboard__cap-row-bottom">
-                  {CAPABILITIES.slice(3).map((cap) => (
+                  {CAPABILITIES.slice(2).map((cap) => (
                     <CapabilityCard key={cap.id} capability={cap} mode="info" />
                   ))}
                 </div>
