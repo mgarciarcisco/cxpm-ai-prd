@@ -486,7 +486,7 @@ function RequirementsStage({ project, onProjectUpdate }) {
             </svg>
           </div>
           <div className="sidebar-brand__text">
-            <span className="sidebar-brand__name">CX AIA</span>
+            <span className="sidebar-brand__name">CX AI Assistant</span>
             <span className="sidebar-brand__sub">for Product Managers</span>
           </div>
         </div>

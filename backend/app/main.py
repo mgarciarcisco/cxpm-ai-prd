@@ -19,7 +19,7 @@ from app.routers import (
 )
 
 app = FastAPI(
-    title="CX AIA for Product Managers",
+    title="CX AI Assistant for Product Managers",
     description="Meeting Notes to Requirements API",
     version="1.0.0",
 )

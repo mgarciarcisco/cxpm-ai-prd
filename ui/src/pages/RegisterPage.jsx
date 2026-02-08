@@ -103,14 +103,14 @@ export default function RegisterPage() {
           <div className="register-logo">
             <span>&#10038;</span>
           </div>
-          <h1>CX AIA for Product Managers</h1>
+          <h1>CX AI Assistant for Product Managers</h1>
           <p>Early Access</p>
         </div>
 
         {/* Register card */}
         <div className="register-card">
           <h2>Create your account</h2>
-          <p className="register-subtitle">Join your team on CX AIA</p>
+          <p className="register-subtitle">Join your team on CX AI Assistant</p>
 
           {error && (
             <div className="register-form-error">

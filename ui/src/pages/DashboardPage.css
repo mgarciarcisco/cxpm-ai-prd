@@ -27,13 +27,6 @@
   margin: 0 0 0.75rem 0;
 }
 
-.dashboard__welcome-subtitle {
-  font-size: 1.0625rem;
-  color: #6B7280;
-  margin: 0;
-  line-height: 1.5;
-}
-
 .dashboard__capability-section {
   margin-bottom: 2.5rem;
 }
@@ -299,10 +292,6 @@
 
   .dashboard__welcome-title {
     font-size: 1.5rem;
-  }
-
-  .dashboard__welcome-subtitle {
-    font-size: 0.9375rem;
   }
 
   .dashboard__cap-row-top {

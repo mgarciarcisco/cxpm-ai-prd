@@ -37,7 +37,7 @@ function AppContent() {
             <span className="logo-icon__symbol">✦</span>
           </div>
           <div className="header-text">
-            <h1>CX AIA for Product Managers</h1>
+            <h1>CX AI Assistant for Product Managers</h1>
             <span className="header-subtitle">Early Access</span>
           </div>
         </Link>

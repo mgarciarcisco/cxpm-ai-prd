@@ -92,7 +92,7 @@ class UserStats(BaseModel):
 
 class ContentStats(BaseModel):
     total_projects: int
-    total_prds: int
+    total_requirements: int
     total_stories: int
     total_meetings: int
 
@@ -106,7 +106,7 @@ class ExportStats(BaseModel):
 
 class EngagementStats(BaseModel):
     avg_projects_per_user: float
-    prd_completion_rate: float
+    requirements_per_project: float
     story_generation_rate: float
     exports: ExportStats
 
@@ -114,7 +114,7 @@ class EngagementStats(BaseModel):
 class WeeklyChangeStats(BaseModel):
     users: int
     projects: int
-    prds: int
+    requirements: int
     stories: int
     meetings: int
 

@@ -87,16 +87,16 @@ export default function AdminDashboard() {
           <div className="admin-stat-card__value">{stats.content.total_projects}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-card__label">PRDs Generated</div>
-          <div className="admin-stat-card__value">{stats.content.total_prds}</div>
+          <div className="admin-stat-card__label">Meeting Recaps</div>
+          <div className="admin-stat-card__value">{stats.content.total_meetings}</div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-card__label">Total Requirements</div>
+          <div className="admin-stat-card__value">{stats.content.total_requirements}</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-card__label">User Stories</div>
           <div className="admin-stat-card__value">{stats.content.total_stories}</div>
-        </div>
-        <div className="admin-stat-card">
-          <div className="admin-stat-card__label">Meeting Recaps</div>
-          <div className="admin-stat-card__value">{stats.content.total_meetings}</div>
         </div>
       </div>
 
@@ -108,12 +108,12 @@ export default function AdminDashboard() {
           <div className="admin-stat-card__value admin-stat-card__value--change">+{stats.weekly_change.users}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-card__label">New Projects</div>
-          <div className="admin-stat-card__value admin-stat-card__value--change">+{stats.weekly_change.projects}</div>
+          <div className="admin-stat-card__label">New Meetings</div>
+          <div className="admin-stat-card__value admin-stat-card__value--change">+{stats.weekly_change.meetings}</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-card__label">New PRDs</div>
-          <div className="admin-stat-card__value admin-stat-card__value--change">+{stats.weekly_change.prds}</div>
+          <div className="admin-stat-card__label">New Requirements</div>
+          <div className="admin-stat-card__value admin-stat-card__value--change">+{stats.weekly_change.requirements}</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-card__label">New Stories</div>

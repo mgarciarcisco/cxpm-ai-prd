@@ -43,7 +43,7 @@ export default function LoginPage() {
           <div className="login-logo">
             <span>&#10038;</span>
           </div>
-          <h1>CX AIA for Product Managers</h1>
+          <h1>CX AI Assistant for Product Managers</h1>
           <p>Early Access</p>
         </div>
 

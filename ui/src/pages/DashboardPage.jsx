@@ -158,10 +158,7 @@ function DashboardPage() {
         {isNewUser && (
           <div className="dashboard--new-user">
             <div className="dashboard__welcome-hero">
-              <h1 className="dashboard__welcome-title">Welcome to CX AIA for Product Managers</h1>
-              <p className="dashboard__welcome-subtitle">
-                Transform meetings into requirements, PRDs, user stories, and mockups — all powered by AI.
-              </p>
+              <h1 className="dashboard__welcome-title">Welcome to CX AI Assistant for Product Managers</h1>
             </div>
 
             <div className="dashboard__capability-section">

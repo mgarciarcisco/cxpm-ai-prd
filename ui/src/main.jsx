@@ -23,7 +23,6 @@ import PendingApprovalPage from './pages/PendingApprovalPage'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUserManagement from './pages/admin/AdminUserManagement'
-import AdminActivityLog from './pages/admin/AdminActivityLog'
 import AccessDeniedPage from './pages/admin/AccessDeniedPage'
 import { AuthProvider } from './contexts/AuthContext'
 
@@ -71,7 +70,6 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <AdminDashboard /> },
           { path: 'users', element: <AdminUserManagement /> },
-          { path: 'activity', element: <AdminActivityLog /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

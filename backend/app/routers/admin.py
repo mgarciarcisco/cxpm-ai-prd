@@ -17,8 +17,8 @@ from app.auth import (
 )
 from app.database import get_db
 from app.models.activity_log import ActivityLog
-from app.models.prd import PRD
 from app.models.meeting_recap import MeetingRecap
+from app.models.requirement import Requirement
 from app.models.project import Project
 from app.models.user import User
 from app.schemas.admin import (
@@ -550,14 +550,14 @@ def get_stats(
 
     # Content stats
     total_projects = db.query(Project).count()
-    total_prds = db.query(PRD).count()
+    total_requirements = db.query(Requirement).filter(Requirement.is_active == True).count()
     total_stories = 0  # UserStory table removed
     total_meetings = db.query(MeetingRecap).count()
 
     # Engagement stats
     avg_projects = round(total_projects / max(active, 1), 1)
-    prd_rate = round(total_prds / max(total_projects, 1), 2)
-    story_rate = round(total_prds / max(total_projects, 1), 2) if total_prds > 0 else 0.0
+    req_per_project = round(total_requirements / max(total_projects, 1), 1)
+    story_rate = round(total_stories / max(total_projects, 1), 2)
 
     # Export counts from activity logs
     export_total = db.query(ActivityLog).filter(ActivityLog.action.like("export.%")).count()
@@ -568,7 +568,7 @@ def get_stats(
     # Weekly change
     new_users_week = base_users.filter(User.created_at >= week_start).count()
     new_projects_week = db.query(Project).filter(Project.created_at >= week_start).count()
-    new_prds_week = db.query(PRD).filter(PRD.created_at >= week_start).count()
+    new_requirements_week = db.query(Requirement).filter(Requirement.is_active == True, Requirement.created_at >= week_start).count()
     new_stories_week = 0  # UserStory table removed
     new_meetings_week = db.query(MeetingRecap).filter(MeetingRecap.created_at >= week_start).count()
 
@@ -583,13 +583,13 @@ def get_stats(
         ),
         content=ContentStats(
             total_projects=total_projects,
-            total_prds=total_prds,
+            total_requirements=total_requirements,
             total_stories=total_stories,
             total_meetings=total_meetings,
         ),
         engagement=EngagementStats(
             avg_projects_per_user=avg_projects,
-            prd_completion_rate=prd_rate,
+            requirements_per_project=req_per_project,
             story_generation_rate=story_rate,
             exports=ExportStats(
                 total=export_total,
@@ -601,7 +601,7 @@ def get_stats(
         weekly_change=WeeklyChangeStats(
             users=new_users_week,
             projects=new_projects_week,
-            prds=new_prds_week,
+            requirements=new_requirements_week,
             stories=new_stories_week,
             meetings=new_meetings_week,
         ),
