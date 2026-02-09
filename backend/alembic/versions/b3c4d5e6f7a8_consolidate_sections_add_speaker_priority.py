@@ -39,6 +39,21 @@ SECTION_MAP = {
 }
 
 
+def _is_postgres() -> bool:
+    """Check if the current database is PostgreSQL."""
+    return op.get_bind().dialect.name == "postgresql"
+
+
+# The 5 new consolidated section values
+NEW_SECTION_VALUES = (
+    "needs_and_goals",
+    "requirements",
+    "scope_and_constraints",
+    "risks_and_questions",
+    "action_items",
+)
+
+
 def upgrade() -> None:
     """Add speaker/priority columns and consolidate sections from 9 to 5."""
 
@@ -52,8 +67,15 @@ def upgrade() -> None:
         sa.Column("priority", sa.Text(), nullable=True),
     )
 
-    # 2. Remap section values in both tables
-    #    SQLite stores enum values as plain text strings, so simple UPDATEs work.
+    # 2. Remap section values in both tables.
+    #    PostgreSQL uses a strict enum type so we must convert columns to TEXT
+    #    first, remap the values, then recreate the enum with the new values.
+    #    SQLite stores enums as plain text, so simple UPDATEs work directly.
+    if _is_postgres():
+        # Convert enum columns to TEXT so we can update freely
+        op.execute("ALTER TABLE meeting_items ALTER COLUMN section TYPE TEXT")
+        op.execute("ALTER TABLE requirements ALTER COLUMN section TYPE TEXT")
+
     for old_val, new_val in SECTION_MAP.items():
         op.execute(
             f"UPDATE meeting_items SET section = '{new_val}' "
@@ -64,9 +86,25 @@ def upgrade() -> None:
             f"WHERE section = '{old_val}'"
         )
 
+    if _is_postgres():
+        # Drop the old enum type and create it with the new values
+        op.execute("DROP TYPE section")
+        enum_vals = ", ".join(f"'{v}'" for v in NEW_SECTION_VALUES)
+        op.execute(f"CREATE TYPE section AS ENUM ({enum_vals})")
+
+        # Convert columns back to the enum type
+        op.execute(
+            "ALTER TABLE meeting_items "
+            "ALTER COLUMN section TYPE section USING section::section"
+        )
+        op.execute(
+            "ALTER TABLE requirements "
+            "ALTER COLUMN section TYPE section USING section::section"
+        )
+
     # 3. Renumber `order` within merged sections to fix duplicates.
-    #    Uses a correlated subquery (SQLite-compatible) that counts how many
-    #    items in the same (scope_id, section) come before this row.
+    #    Uses a correlated subquery that counts how many items in the same
+    #    (scope_id, section) come before this row.
     op.execute("""
         UPDATE meeting_items SET "order" = (
             SELECT COUNT(*) FROM meeting_items AS mi2
@@ -106,6 +144,19 @@ def downgrade() -> None:
         "scope_and_constraints": "constraints",
         "risks_and_questions": "risks_assumptions",
     }
+
+    # Original 9-value enum
+    old_enum_values = (
+        "problems", "user_goals", "functional_requirements", "data_needs",
+        "constraints", "non_goals", "risks_assumptions", "open_questions",
+        "action_items",
+    )
+
+    if _is_postgres():
+        # Convert to TEXT for safe remapping
+        op.execute("ALTER TABLE meeting_items ALTER COLUMN section TYPE TEXT")
+        op.execute("ALTER TABLE requirements ALTER COLUMN section TYPE TEXT")
+
     for new_val, old_val in reverse_map.items():
         op.execute(
             f"UPDATE meeting_items SET section = '{old_val}' "
@@ -114,6 +165,21 @@ def downgrade() -> None:
         op.execute(
             f"UPDATE requirements SET section = '{old_val}' "
             f"WHERE section = '{new_val}'"
+        )
+
+    if _is_postgres():
+        # Recreate the original enum type
+        op.execute("DROP TYPE section")
+        enum_vals = ", ".join(f"'{v}'" for v in old_enum_values)
+        op.execute(f"CREATE TYPE section AS ENUM ({enum_vals})")
+
+        op.execute(
+            "ALTER TABLE meeting_items "
+            "ALTER COLUMN section TYPE section USING section::section"
+        )
+        op.execute(
+            "ALTER TABLE requirements "
+            "ALTER COLUMN section TYPE section USING section::section"
         )
 
     # Remove added columns
