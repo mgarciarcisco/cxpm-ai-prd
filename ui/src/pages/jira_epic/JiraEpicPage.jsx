@@ -171,15 +171,22 @@ function JiraEpicPage() {
     }
   };
 
-  // Fetch functional requirements for selected project
+  // Fetch requirements for selected project (API returns requirements grouped by section)
   const fetchFunctionalRequirements = async (projectId) => {
     try {
       setLoadingRequirements(true);
       const requirementsData = await get(`/api/projects/${projectId}/requirements`);
-      const funcReqs = requirementsData.functional_requirements || [];
-      setFunctionalRequirements(funcReqs);
+      // API returns: needs_and_goals, requirements, scope_and_constraints, risks_and_questions, action_items
+      const allReqs = [
+        ...(requirementsData.needs_and_goals || []),
+        ...(requirementsData.requirements || []),
+        ...(requirementsData.scope_and_constraints || []),
+        ...(requirementsData.risks_and_questions || []),
+        ...(requirementsData.action_items || []),
+      ];
+      setFunctionalRequirements(allReqs);
       // Select all by default
-      setSelectedRequirements(new Set(funcReqs.map(req => req.id)));
+      setSelectedRequirements(new Set(allReqs.map((req) => req.id)));
     } catch (err) {
       setError('Failed to load requirements: ' + err.message);
     } finally {
@@ -290,19 +297,29 @@ function JiraEpicPage() {
       const project = selectedProject;
       if (project?.id) {
         try {
-          const epicData = generatedEpics.map(epic => ({
-            title: epic.title || epic.name || 'Untitled Epic',
-            description: epic.description || null,
-            problem_statement: epic.problemStatement || null,
-            target_user_roles: epic.targetUserRoles || null,
-            data_sources: epic.dataSources || null,
-            business_rules: epic.businessRules || null,
-            response_example: epic.responseExample || null,
-            acceptance_criteria: epic.acceptanceCriteria || null,
-            reporter: null,
-            notes: null,
-            parent_jira_id: null,
-          }));
+          // Normalize each epic to match API schema: title max 100 chars, all text fields string | null, parent_jira_id int | null
+          const toStr = (v) => {
+            if (v == null || v === '') return null;
+            if (typeof v === 'string') return v;
+            if (Array.isArray(v)) return v.join('\n');
+            return String(v);
+          };
+          const epicData = generatedEpics.map((epic) => {
+            const title = (epic.title || epic.name || 'Untitled Epic').toString().slice(0, 100);
+            return {
+              title,
+              description: toStr(epic.description),
+              problem_statement: toStr(epic.problemStatement),
+              target_user_roles: toStr(epic.targetUserRoles),
+              data_sources: toStr(epic.dataSources),
+              business_rules: toStr(epic.businessRules),
+              response_example: toStr(epic.responseExample),
+              acceptance_criteria: toStr(epic.acceptanceCriteria),
+              reporter: null,
+              notes: null,
+              parent_jira_id: null,
+            };
+          });
           const saveResponse = await saveJiraStories(project.id, epicData);
           setEpicsLoadedFromDB(true);
           setSavedCount(saveResponse.saved_count);
