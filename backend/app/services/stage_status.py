@@ -8,11 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     JiraStory,
-    PRD,
     ExportStatus,
     MockupsStatus,
     PRDStageStatus,
-    PRDStatus,
     Project,
     Requirement,
     RequirementsStatus,
@@ -58,38 +56,18 @@ def update_requirements_status(project_id: str, db: Session) -> RequirementsStat
 def update_prd_status(project_id: str, db: Session) -> PRDStageStatus:
     """Update prd_status based on PRD state.
 
-    - No PRDs or all failed: 'empty'
-    - Has PRD with status READY: 'ready'
-    - Has PRD generating or partial: 'draft'
+    PRD feature has been removed. This is a no-op stub kept for API compatibility.
 
     Args:
         project_id: The project UUID.
         db: Database session.
 
     Returns:
-        The new PRD stage status.
+        The current PRD stage status (unchanged).
     """
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         return PRDStageStatus.empty
-
-    # Find the latest PRD for this project (excluding deleted)
-    latest_prd = (
-        db.query(PRD)
-        .filter(PRD.project_id == project_id, PRD.deleted_at.is_(None))
-        .order_by(PRD.version.desc())
-        .first()
-    )
-
-    if not latest_prd or latest_prd.status in (PRDStatus.FAILED, PRDStatus.CANCELLED):
-        project.prd_status = PRDStageStatus.empty
-    elif latest_prd.status == PRDStatus.READY:
-        project.prd_status = PRDStageStatus.ready
-    else:
-        # QUEUED, GENERATING, PARTIAL, ARCHIVED - treat as draft
-        project.prd_status = PRDStageStatus.draft
-
-    db.commit()
     return project.prd_status
 
 
