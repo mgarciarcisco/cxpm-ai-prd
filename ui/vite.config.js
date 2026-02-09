@@ -12,12 +12,6 @@ export default defineConfig({
       usePolling: true // Enable for Docker volume mounting
     }
   },
-  resolve: {
-    alias: {
-      // Fix for Node.js v24 crypto compatibility
-      crypto: 'crypto-browserify'
-    }
-  },
   define: {
     // Provide global for compatibility
     global: 'globalThis'

@@ -1,11 +1,8 @@
 """Admin API endpoints: user management, activity logs, and dashboard stats."""
 
-import csv
-import io
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import StreamingResponse
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
@@ -450,68 +447,6 @@ def list_activity(
         total=total,
         page=page,
         per_page=per_page,
-    )
-
-
-@router.get("/activity/export")
-def export_activity(
-    user_id: str | None = Query(None),
-    action: str | None = Query(None),
-    from_date: str | None = Query(None),
-    to_date: str | None = Query(None),
-    current_user: User = Depends(require_admin),
-    db: Session = Depends(get_db),
-):
-    """Export activity logs as CSV."""
-    query = db.query(ActivityLog)
-
-    if user_id:
-        query = query.filter(ActivityLog.user_id == user_id)
-    if action:
-        query = query.filter(ActivityLog.action.like(f"{action}%"))
-    if from_date:
-        try:
-            from_dt = datetime.fromisoformat(from_date.replace("Z", "+00:00"))
-            query = query.filter(ActivityLog.created_at >= from_dt)
-        except ValueError:
-            pass
-    if to_date:
-        try:
-            to_dt = datetime.fromisoformat(to_date.replace("Z", "+00:00"))
-            query = query.filter(ActivityLog.created_at <= to_dt)
-        except ValueError:
-            pass
-
-    logs = query.order_by(ActivityLog.created_at.desc()).limit(10000).all()
-
-    # Fetch user info
-    user_ids = {log.user_id for log in logs if log.user_id}
-    users_map = {}
-    if user_ids:
-        users = db.query(User).filter(User.id.in_(user_ids)).all()
-        users_map = {u.id: u for u in users}
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["Timestamp", "User Email", "User Name", "Action", "Resource Type", "Resource ID", "IP Address"])
-
-    for log in logs:
-        u = users_map.get(log.user_id)
-        writer.writerow([
-            log.created_at.isoformat() if log.created_at else "",
-            u.email if u else "",
-            u.name if u else "",
-            log.action,
-            log.resource_type or "",
-            log.resource_id or "",
-            log.ip_address or "",
-        ])
-
-    output.seek(0)
-    return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=activity_log.csv"},
     )
 
 

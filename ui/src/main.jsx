@@ -1,12 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
 
 // Import all page components
 import DashboardPage from './pages/DashboardPage'
-// Quick Convert pages removed - all flows are now project-based
 import ProjectViewPage from './pages/ProjectViewPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectDashboard from './pages/ProjectDashboard'
@@ -37,9 +36,6 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'dashboard', element: <DashboardPage /> },
-      // Quick Convert removed - redirect all to dashboard
-      { path: 'quick-convert', element: <Navigate to="/dashboard" replace /> },
-      { path: 'quick-convert/*', element: <Navigate to="/dashboard" replace /> },
       { path: 'projects/:id', element: <ProjectViewPage /> },
       { path: 'projects/:id/:stage', element: <ProjectViewPage /> },
       { path: 'app', element: <ProjectsPage /> },
@@ -54,12 +50,6 @@ const router = createBrowserRouter([
       { path: 'app/projects/:id/meetings/:mid', element: <RecapEditorPage /> },
       { path: 'app/projects/:id/meetings/:mid/apply', element: <ConflictResolverPage /> },
       { path: 'app/projects/:id/requirements', element: <RequirementsPage /> },
-      { path: 'app/prd', element: <Navigate to="/dashboard" replace /> },
-      { path: 'app/projects/:projectId/prd/generate', element: <Navigate to="/dashboard" replace /> },
-      { path: 'app/projects/:projectId/prd/streaming', element: <Navigate to="/dashboard" replace /> },
-      { path: 'app/prds/:prdId', element: <Navigate to="/dashboard" replace /> },
-      { path: 'app/stories', element: <Navigate to="/dashboard" replace /> },
-      { path: 'app/projects/:projectId/stories', element: <Navigate to="/dashboard" replace /> },
       { path: 'app/jira-epic', element: <JiraEpicPage /> },
       { path: 'app/*', element: <ProjectsPage /> },
       // Admin routes
