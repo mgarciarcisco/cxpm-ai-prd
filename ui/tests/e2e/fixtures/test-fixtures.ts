@@ -24,20 +24,16 @@ export const mockMeeting = {
   meeting_date: '2024-01-15',
   status: 'processed',
   items: [
-    { id: 'item-1', section: 'problems', content: 'Test problem', order: 1 },
-    { id: 'item-2', section: 'user_goals', content: 'Test goal', order: 1 },
+    { id: 'item-1', section: 'needs_and_goals', content: 'Test problem', order: 1 },
+    { id: 'item-2', section: 'requirements', content: 'Test goal', order: 1 },
   ],
 };
 
 export const mockRequirements = {
-  problems: [],
-  user_goals: [],
-  functional_requirements: [],
-  data_needs: [],
-  constraints: [],
-  non_goals: [],
-  risks_assumptions: [],
-  open_questions: [],
+  needs_and_goals: [],
+  requirements: [],
+  scope_and_constraints: [],
+  risks_and_questions: [],
   action_items: [],
 };
 

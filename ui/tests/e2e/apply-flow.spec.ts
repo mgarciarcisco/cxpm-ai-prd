@@ -27,9 +27,9 @@ const mockMeeting1 = {
   meeting_date: '2024-01-15',
   status: 'processed',
   items: [
-    { id: 'item-1', section: 'problems', content: 'Users cannot track their work', order: 1 },
-    { id: 'item-2', section: 'user_goals', content: 'Users want to see progress dashboards', order: 1 },
-    { id: 'item-3', section: 'functional_requirements', content: 'System must support task creation', order: 1 },
+    { id: 'item-1', section: 'needs_and_goals', content: 'Users cannot track their work', order: 1 },
+    { id: 'item-2', section: 'requirements', content: 'Users want to see progress dashboards', order: 1 },
+    { id: 'item-3', section: 'scope_and_constraints', content: 'System must support task creation', order: 1 },
   ],
 };
 
@@ -41,20 +41,20 @@ const mockMeeting2 = {
   meeting_date: '2024-01-22',
   status: 'processed',
   items: [
-    { id: 'item-4', section: 'problems', content: 'Users also need mobile access', order: 1 },
-    { id: 'item-5', section: 'user_goals', content: 'Users want to see progress dashboards', order: 2 }, // duplicate
-    { id: 'item-6', section: 'functional_requirements', content: 'System must support advanced task creation with subtasks', order: 2 }, // refinement conflict
-    { id: 'item-7', section: 'constraints', content: 'Must use PostgreSQL database', order: 1 }, // contradiction conflict
-    { id: 'item-8', section: 'data_needs', content: 'Need to store user preferences', order: 1 },
+    { id: 'item-4', section: 'needs_and_goals', content: 'Users also need mobile access', order: 1 },
+    { id: 'item-5', section: 'requirements', content: 'Users want to see progress dashboards', order: 2 }, // duplicate
+    { id: 'item-6', section: 'scope_and_constraints', content: 'System must support advanced task creation with subtasks', order: 2 }, // refinement conflict
+    { id: 'item-7', section: 'risks_and_questions', content: 'Must use PostgreSQL database', order: 1 }, // contradiction conflict
+    { id: 'item-8', section: 'action_items', content: 'Need to store user preferences', order: 1 },
   ],
 };
 
 // Mock apply results for first meeting (no conflicts)
 const mockApplyResultsNoConflicts = {
   added: [
-    { item_id: 'item-1', item_section: 'problems', item_content: 'Users cannot track their work', decision: 'added' },
-    { item_id: 'item-2', item_section: 'user_goals', item_content: 'Users want to see progress dashboards', decision: 'added' },
-    { item_id: 'item-3', item_section: 'functional_requirements', item_content: 'System must support task creation', decision: 'added' },
+    { item_id: 'item-1', item_section: 'needs_and_goals', item_content: 'Users cannot track their work', decision: 'added' },
+    { item_id: 'item-2', item_section: 'requirements', item_content: 'Users want to see progress dashboards', decision: 'added' },
+    { item_id: 'item-3', item_section: 'scope_and_constraints', item_content: 'System must support task creation', decision: 'added' },
   ],
   skipped: [],
   conflicts: [],
@@ -63,13 +63,13 @@ const mockApplyResultsNoConflicts = {
 // Mock apply results for second meeting (with conflicts)
 const mockApplyResultsWithConflicts = {
   added: [
-    { item_id: 'item-4', item_section: 'problems', item_content: 'Users also need mobile access', decision: 'added' },
-    { item_id: 'item-8', item_section: 'data_needs', item_content: 'Need to store user preferences', decision: 'added' },
+    { item_id: 'item-4', item_section: 'needs_and_goals', item_content: 'Users also need mobile access', decision: 'added' },
+    { item_id: 'item-8', item_section: 'action_items', item_content: 'Need to store user preferences', decision: 'added' },
   ],
   skipped: [
     {
       item_id: 'item-5',
-      item_section: 'user_goals',
+      item_section: 'requirements',
       item_content: 'Users want to see progress dashboards',
       reason: 'Exact duplicate of existing requirement',
       matched_requirement: { id: 'req-2', content: 'Users want to see progress dashboards' },
@@ -78,7 +78,7 @@ const mockApplyResultsWithConflicts = {
   conflicts: [
     {
       item_id: 'item-6',
-      item_section: 'functional_requirements',
+      item_section: 'scope_and_constraints',
       item_content: 'System must support advanced task creation with subtasks',
       classification: 'refinement',
       reason: 'The new item adds more specific implementation details',
@@ -86,7 +86,7 @@ const mockApplyResultsWithConflicts = {
     },
     {
       item_id: 'item-7',
-      item_section: 'constraints',
+      item_section: 'risks_and_questions',
       item_content: 'Must use PostgreSQL database',
       classification: 'contradiction',
       reason: 'The new item contradicts the existing storage approach',
@@ -97,34 +97,26 @@ const mockApplyResultsWithConflicts = {
 
 // Mock requirements after first apply
 const mockRequirementsAfterFirstApply = {
-  problems: [{ id: 'req-1', content: 'Users cannot track their work', section: 'problems', sources: [], history_count: 0 }],
-  user_goals: [{ id: 'req-2', content: 'Users want to see progress dashboards', section: 'user_goals', sources: [], history_count: 0 }],
-  functional_requirements: [{ id: 'req-3', content: 'System must support task creation', section: 'functional_requirements', sources: [], history_count: 0 }],
-  data_needs: [],
-  constraints: [{ id: 'req-existing', content: 'Must use MongoDB database', section: 'constraints', sources: [], history_count: 0 }],
-  non_goals: [],
-  risks_assumptions: [],
-  open_questions: [],
+  needs_and_goals: [{ id: 'req-1', content: 'Users cannot track their work', section: 'needs_and_goals', sources: [], history_count: 0 }],
+  requirements: [{ id: 'req-2', content: 'Users want to see progress dashboards', section: 'requirements', sources: [], history_count: 0 }],
+  scope_and_constraints: [{ id: 'req-3', content: 'System must support task creation', section: 'scope_and_constraints', sources: [], history_count: 0 }],
+  risks_and_questions: [{ id: 'req-existing', content: 'Must use MongoDB database', section: 'risks_and_questions', sources: [], history_count: 0 }],
   action_items: [],
 };
 
 // Mock requirements after second apply with conflict resolutions
 const mockRequirementsAfterSecondApply = {
-  problems: [
-    { id: 'req-1', content: 'Users cannot track their work', section: 'problems', sources: [], history_count: 0 },
-    { id: 'req-4', content: 'Users also need mobile access', section: 'problems', sources: [], history_count: 0 },
+  needs_and_goals: [
+    { id: 'req-1', content: 'Users cannot track their work', section: 'needs_and_goals', sources: [], history_count: 0 },
+    { id: 'req-4', content: 'Users also need mobile access', section: 'needs_and_goals', sources: [], history_count: 0 },
   ],
-  user_goals: [{ id: 'req-2', content: 'Users want to see progress dashboards', section: 'user_goals', sources: [], history_count: 0 }],
-  functional_requirements: [{ id: 'req-3', content: 'System must support advanced task creation with subtasks', section: 'functional_requirements', sources: [], history_count: 1 }], // replaced
-  data_needs: [{ id: 'req-5', content: 'Need to store user preferences', section: 'data_needs', sources: [], history_count: 0 }],
-  constraints: [
-    { id: 'req-existing', content: 'Must use MongoDB database', section: 'constraints', sources: [], history_count: 0 }, // kept existing
-    { id: 'req-merged', content: 'Primary database is MongoDB but PostgreSQL is acceptable for reporting', section: 'constraints', sources: [], history_count: 0 }, // merged
+  requirements: [{ id: 'req-2', content: 'Users want to see progress dashboards', section: 'requirements', sources: [], history_count: 0 }],
+  scope_and_constraints: [{ id: 'req-3', content: 'System must support advanced task creation with subtasks', section: 'scope_and_constraints', sources: [], history_count: 1 }], // replaced
+  risks_and_questions: [
+    { id: 'req-existing', content: 'Must use MongoDB database', section: 'risks_and_questions', sources: [], history_count: 0 }, // kept existing
+    { id: 'req-merged', content: 'Primary database is MongoDB but PostgreSQL is acceptable for reporting', section: 'risks_and_questions', sources: [], history_count: 0 }, // merged
   ],
-  non_goals: [],
-  risks_assumptions: [],
-  open_questions: [],
-  action_items: [],
+  action_items: [{ id: 'req-5', content: 'Need to store user preferences', section: 'action_items', sources: [], history_count: 0 }],
 };
 
 // Mock merge suggestion response
@@ -211,14 +203,10 @@ test.describe('Full Apply Flow E2E', () => {
       } else {
         await route.fulfill({
           json: {
-            problems: [],
-            user_goals: [],
-            functional_requirements: [],
-            data_needs: [],
-            constraints: [{ id: 'req-existing', content: 'Must use MongoDB database', section: 'constraints', sources: [], history_count: 0 }],
-            non_goals: [],
-            risks_assumptions: [],
-            open_questions: [],
+            needs_and_goals: [],
+            requirements: [],
+            scope_and_constraints: [],
+            risks_and_questions: [{ id: 'req-existing', content: 'Must use MongoDB database', section: 'risks_and_questions', sources: [], history_count: 0 }],
             action_items: [],
           },
         });
@@ -450,31 +438,31 @@ test.describe('Full Apply Flow E2E', () => {
     // Wait for requirements to load
     await expect(page.locator('.requirements-section')).toBeVisible();
 
-    // Verify Problems section has 2 items
-    const problemsSection = page.locator('.collapsible-section:has-text("Problems")');
-    await expect(problemsSection.locator('.requirements-item-wrapper')).toHaveCount(2);
-    await expect(problemsSection).toContainText('Users cannot track their work');
-    await expect(problemsSection).toContainText('Users also need mobile access');
+    // Verify Needs & Goals section has 2 items
+    const needsSection = page.locator('.collapsible-section:has-text("Needs & Goals")');
+    await expect(needsSection.locator('.requirements-item-wrapper')).toHaveCount(2);
+    await expect(needsSection).toContainText('Users cannot track their work');
+    await expect(needsSection).toContainText('Users also need mobile access');
 
-    // Verify User Goals section has 1 item (duplicate was skipped)
-    const userGoalsSection = page.locator('.collapsible-section:has-text("User Goals")');
-    await expect(userGoalsSection.locator('.requirements-item-wrapper')).toHaveCount(1);
-    await expect(userGoalsSection).toContainText('Users want to see progress dashboards');
+    // Verify Requirements section has 1 item (duplicate was skipped)
+    const requirementsSection = page.locator('.collapsible-section:has-text("Requirements")');
+    await expect(requirementsSection.locator('.requirements-item-wrapper')).toHaveCount(1);
+    await expect(requirementsSection).toContainText('Users want to see progress dashboards');
 
-    // Verify Functional Requirements has the replaced content
-    const funcReqSection = page.locator('.collapsible-section:has-text("Functional Requirements")');
-    await expect(funcReqSection.locator('.requirements-item-wrapper')).toHaveCount(1);
-    await expect(funcReqSection).toContainText('System must support advanced task creation with subtasks');
+    // Verify Scope & Constraints has the replaced content
+    const scopeSection = page.locator('.collapsible-section:has-text("Scope & Constraints")');
+    await expect(scopeSection.locator('.requirements-item-wrapper')).toHaveCount(1);
+    await expect(scopeSection).toContainText('System must support advanced task creation with subtasks');
 
-    // Verify Data Needs has the new item
-    const dataNeedsSection = page.locator('.collapsible-section:has-text("Data Needs")');
-    await expect(dataNeedsSection.locator('.requirements-item-wrapper')).toHaveCount(1);
-    await expect(dataNeedsSection).toContainText('Need to store user preferences');
+    // Verify Action Items has the new item
+    const actionItemsSection = page.locator('.collapsible-section:has-text("Action Items")');
+    await expect(actionItemsSection.locator('.requirements-item-wrapper')).toHaveCount(1);
+    await expect(actionItemsSection).toContainText('Need to store user preferences');
 
-    // Verify Constraints section (kept existing + added merged)
-    const constraintsSection = page.locator('.collapsible-section:has-text("Constraints")');
-    await expect(constraintsSection.locator('.requirements-item-wrapper')).toHaveCount(2);
-    await expect(constraintsSection).toContainText('Must use MongoDB database');
+    // Verify Risks & Open Questions section (kept existing + added merged)
+    const risksSection = page.locator('.collapsible-section:has-text("Risks & Open Questions")');
+    await expect(risksSection.locator('.requirements-item-wrapper')).toHaveCount(2);
+    await expect(risksSection).toContainText('Must use MongoDB database');
   });
 
   test('full flow: create project, upload meetings, resolve conflicts, verify requirements', async ({ page }) => {
@@ -546,8 +534,8 @@ test.describe('Full Apply Flow E2E', () => {
     await expect(page.locator('.requirements-section')).toBeVisible();
 
     // Verify requirements are correct
-    await expect(page.locator('.collapsible-section:has-text("Problems")')).toContainText('Users cannot track their work');
-    await expect(page.locator('.collapsible-section:has-text("Problems")')).toContainText('Users also need mobile access');
-    await expect(page.locator('.collapsible-section:has-text("Functional Requirements")')).toContainText('System must support advanced task creation with subtasks');
+    await expect(page.locator('.collapsible-section:has-text("Needs & Goals")')).toContainText('Users cannot track their work');
+    await expect(page.locator('.collapsible-section:has-text("Needs & Goals")')).toContainText('Users also need mobile access');
+    await expect(page.locator('.collapsible-section:has-text("Scope & Constraints")')).toContainText('System must support advanced task creation with subtasks');
   });
 });

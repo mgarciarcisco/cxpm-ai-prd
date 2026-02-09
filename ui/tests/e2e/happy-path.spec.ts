@@ -27,10 +27,10 @@ const mockProject = {
 
 // Mock items from first meeting
 const mockMeeting1Items = [
-  { id: 'item-1', section: 'problems', content: 'Users struggle with manual data entry', order: 1, source_quote: 'users mentioned they hate entering data' },
-  { id: 'item-2', section: 'problems', content: 'No real-time collaboration support', order: 2, source_quote: 'team cannot work together in real-time' },
-  { id: 'item-3', section: 'user_goals', content: 'Users want automated workflows', order: 1, source_quote: 'we need automation' },
-  { id: 'item-4', section: 'functional_requirements', content: 'System must support file uploads', order: 1, source_quote: 'need file upload capability' },
+  { id: 'item-1', section: 'needs_and_goals', content: 'Users struggle with manual data entry', order: 1, source_quote: 'users mentioned they hate entering data' },
+  { id: 'item-2', section: 'needs_and_goals', content: 'No real-time collaboration support', order: 2, source_quote: 'team cannot work together in real-time' },
+  { id: 'item-3', section: 'requirements', content: 'Users want automated workflows', order: 1, source_quote: 'we need automation' },
+  { id: 'item-4', section: 'scope_and_constraints', content: 'System must support file uploads', order: 1, source_quote: 'need file upload capability' },
 ];
 
 const mockMeeting1 = {
@@ -46,9 +46,9 @@ const mockMeeting1 = {
 
 // Mock items from second meeting (with a duplicate)
 const mockMeeting2Items = [
-  { id: 'item-5', section: 'problems', content: 'Mobile experience is poor', order: 1, source_quote: 'mobile app is slow' },
-  { id: 'item-6', section: 'user_goals', content: 'Users want automated workflows', order: 1, source_quote: 'automate everything' }, // Duplicate of item-3
-  { id: 'item-7', section: 'constraints', content: 'Must be GDPR compliant', order: 1, source_quote: 'we need GDPR compliance' },
+  { id: 'item-5', section: 'needs_and_goals', content: 'Mobile experience is poor', order: 1, source_quote: 'mobile app is slow' },
+  { id: 'item-6', section: 'requirements', content: 'Users want automated workflows', order: 1, source_quote: 'automate everything' }, // Duplicate of item-3
+  { id: 'item-7', section: 'scope_and_constraints', content: 'Must be GDPR compliant', order: 1, source_quote: 'we need GDPR compliance' },
 ];
 
 const mockMeeting2 = {
@@ -77,13 +77,13 @@ const mockApplyResultsFirstMeeting = {
 // Apply results for second meeting (one duplicate skipped)
 const mockApplyResultsSecondMeeting = {
   added: [
-    { item_id: 'item-5', item_section: 'problems', item_content: 'Mobile experience is poor', decision: 'added' },
-    { item_id: 'item-7', item_section: 'constraints', item_content: 'Must be GDPR compliant', decision: 'added' },
+    { item_id: 'item-5', item_section: 'needs_and_goals', item_content: 'Mobile experience is poor', decision: 'added' },
+    { item_id: 'item-7', item_section: 'scope_and_constraints', item_content: 'Must be GDPR compliant', decision: 'added' },
   ],
   skipped: [
     {
       item_id: 'item-6',
-      item_section: 'user_goals',
+      item_section: 'requirements',
       item_content: 'Users want automated workflows',
       reason: 'Exact duplicate of existing requirement',
       matched_requirement: { id: 'req-3', content: 'Users want automated workflows' },
@@ -94,51 +94,46 @@ const mockApplyResultsSecondMeeting = {
 
 // Requirements after first apply
 const mockRequirementsAfterFirstApply = {
-  problems: [
-    { id: 'req-1', content: 'Users struggle with manual data entry', section: 'problems', sources: [{ id: 'src-1', meeting_id: mockMeeting1.id, meeting_title: mockMeeting1.title }], history_count: 0 },
-    { id: 'req-2', content: 'No real-time collaboration support', section: 'problems', sources: [{ id: 'src-2', meeting_id: mockMeeting1.id, meeting_title: mockMeeting1.title }], history_count: 0 },
+  needs_and_goals: [
+    { id: 'req-1', content: 'Users struggle with manual data entry', section: 'needs_and_goals', sources: [{ id: 'src-1', meeting_id: mockMeeting1.id, meeting_title: mockMeeting1.title }], history_count: 0 },
+    { id: 'req-2', content: 'No real-time collaboration support', section: 'needs_and_goals', sources: [{ id: 'src-2', meeting_id: mockMeeting1.id, meeting_title: mockMeeting1.title }], history_count: 0 },
   ],
-  user_goals: [
-    { id: 'req-3', content: 'Users want automated workflows', section: 'user_goals', sources: [{ id: 'src-3', meeting_id: mockMeeting1.id, meeting_title: mockMeeting1.title }], history_count: 0 },
+  requirements: [
+    { id: 'req-3', content: 'Users want automated workflows', section: 'requirements', sources: [{ id: 'src-3', meeting_id: mockMeeting1.id, meeting_title: mockMeeting1.title }], history_count: 0 },
   ],
-  functional_requirements: [
-    { id: 'req-4', content: 'System must support file uploads', section: 'functional_requirements', sources: [{ id: 'src-4', meeting_id: mockMeeting1.id, meeting_title: mockMeeting1.title }], history_count: 0 },
+  scope_and_constraints: [
+    { id: 'req-4', content: 'System must support file uploads', section: 'scope_and_constraints', sources: [{ id: 'src-4', meeting_id: mockMeeting1.id, meeting_title: mockMeeting1.title }], history_count: 0 },
   ],
-  data_needs: [],
-  constraints: [],
-  non_goals: [],
-  risks_assumptions: [],
-  open_questions: [],
+  risks_and_questions: [],
   action_items: [],
 };
 
 // Requirements after second apply
 const mockRequirementsAfterSecondApply = {
   ...mockRequirementsAfterFirstApply,
-  problems: [
-    ...mockRequirementsAfterFirstApply.problems,
-    { id: 'req-5', content: 'Mobile experience is poor', section: 'problems', sources: [{ id: 'src-5', meeting_id: mockMeeting2.id, meeting_title: mockMeeting2.title }], history_count: 0 },
+  needs_and_goals: [
+    ...mockRequirementsAfterFirstApply.needs_and_goals,
+    { id: 'req-5', content: 'Mobile experience is poor', section: 'needs_and_goals', sources: [{ id: 'src-5', meeting_id: mockMeeting2.id, meeting_title: mockMeeting2.title }], history_count: 0 },
   ],
-  constraints: [
-    { id: 'req-6', content: 'Must be GDPR compliant', section: 'constraints', sources: [{ id: 'src-6', meeting_id: mockMeeting2.id, meeting_title: mockMeeting2.title }], history_count: 0 },
+  scope_and_constraints: [
+    ...mockRequirementsAfterFirstApply.scope_and_constraints,
+    { id: 'req-6', content: 'Must be GDPR compliant', section: 'scope_and_constraints', sources: [{ id: 'src-6', meeting_id: mockMeeting2.id, meeting_title: mockMeeting2.title }], history_count: 0 },
   ],
 };
 
 // Mock export markdown content
 const mockExportMarkdown = `# Happy Path Test Project - Requirements
 
-## Problems
+## Needs & Goals
 - Users struggle with manual data entry
 - No real-time collaboration support
 - Mobile experience is poor
 
-## User Goals
+## Requirements
 - Users want automated workflows
 
-## Functional Requirements
+## Scope & Constraints
 - System must support file uploads
-
-## Constraints
 - Must be GDPR compliant
 `;
 
@@ -180,10 +175,9 @@ test.describe('Happy Path E2E Test', () => {
           meeting_count: meetingCount,
           requirement_count: requirementCount,
           requirement_counts_by_section: firstMeetingApplied ? [
-            { section: 'problems', count: secondMeetingApplied ? 3 : 2 },
-            { section: 'user_goals', count: 1 },
-            { section: 'functional_requirements', count: 1 },
-            ...(secondMeetingApplied ? [{ section: 'constraints', count: 1 }] : []),
+            { section: 'needs_and_goals', count: secondMeetingApplied ? 3 : 2 },
+            { section: 'requirements', count: 1 },
+            { section: 'scope_and_constraints', count: secondMeetingApplied ? 2 : 1 },
           ] : [],
           last_activity: firstMeetingApplied ? '2024-01-15T12:00:00Z' : null,
         }
@@ -278,7 +272,7 @@ test.describe('Happy Path E2E Test', () => {
         await route.fulfill({
           json: {
             id: itemId,
-            section: 'problems',
+            section: 'needs_and_goals',
             content: body.content,
             source_quote: 'users mentioned they hate entering data',
             order: 1,
@@ -336,14 +330,10 @@ test.describe('Happy Path E2E Test', () => {
       } else {
         await route.fulfill({
           json: {
-            problems: [],
-            user_goals: [],
-            functional_requirements: [],
-            data_needs: [],
-            constraints: [],
-            non_goals: [],
-            risks_assumptions: [],
-            open_questions: [],
+            needs_and_goals: [],
+            requirements: [],
+            scope_and_constraints: [],
+            risks_and_questions: [],
             action_items: [],
           }
         });
@@ -484,22 +474,22 @@ test.describe('Happy Path E2E Test', () => {
     await page.goto(`/app/projects/${mockProject.id}/requirements`);
     await expect(page.locator('.requirements-section')).toBeVisible();
 
-    // Verify problems section has 2 items from first meeting
-    const problemsSection = page.locator('.collapsible-section:has-text("Problems")');
-    await expect(problemsSection.locator('.requirements-item-wrapper')).toHaveCount(2);
+    // Verify needs_and_goals section has 2 items from first meeting
+    const needsSection = page.locator('.collapsible-section:has-text("Needs & Goals")');
+    await expect(needsSection.locator('.requirements-item-wrapper')).toHaveCount(2);
 
     // Verify source links are present
-    await expect(problemsSection.locator('.requirement-source-link').first()).toContainText('Initial Requirements Meeting');
+    await expect(needsSection.locator('.requirement-source-link').first()).toContainText('Initial Requirements Meeting');
 
-    // Verify User Goals has 1 item
-    const userGoalsSection = page.locator('.collapsible-section:has-text("User Goals")');
-    await expect(userGoalsSection.locator('.requirements-item-wrapper')).toHaveCount(1);
-    await expect(userGoalsSection).toContainText('Users want automated workflows');
+    // Verify Requirements has 1 item
+    const requirementsSection = page.locator('.collapsible-section:has-text("Requirements")');
+    await expect(requirementsSection.locator('.requirements-item-wrapper')).toHaveCount(1);
+    await expect(requirementsSection).toContainText('Users want automated workflows');
 
-    // Verify Functional Requirements has 1 item
-    const funcReqSection = page.locator('.collapsible-section:has-text("Functional Requirements")');
-    await expect(funcReqSection.locator('.requirements-item-wrapper')).toHaveCount(1);
-    await expect(funcReqSection).toContainText('System must support file uploads');
+    // Verify Scope & Constraints has 1 item
+    const scopeSection = page.locator('.collapsible-section:has-text("Scope & Constraints")');
+    await expect(scopeSection.locator('.requirements-item-wrapper')).toHaveCount(1);
+    await expect(scopeSection).toContainText('System must support file uploads');
 
     // =========================================
     // Step 8: Upload second meeting with duplicate content
@@ -560,15 +550,15 @@ test.describe('Happy Path E2E Test', () => {
     await expect(page.locator('.requirements-section')).toBeVisible();
 
     // Verify final requirements state after second meeting
-    // Problems should now have 3 items (2 from first + 1 from second)
-    const finalProblemsSection = page.locator('.collapsible-section:has-text("Problems")');
-    await expect(finalProblemsSection.locator('.requirements-item-wrapper')).toHaveCount(3);
-    await expect(finalProblemsSection).toContainText('Mobile experience is poor');
+    // Needs & Goals should now have 3 items (2 from first + 1 from second)
+    const finalNeedsSection = page.locator('.collapsible-section:has-text("Needs & Goals")');
+    await expect(finalNeedsSection.locator('.requirements-item-wrapper')).toHaveCount(3);
+    await expect(finalNeedsSection).toContainText('Mobile experience is poor');
 
-    // Constraints should now have 1 item from second meeting
-    const constraintsSection = page.locator('.collapsible-section:has-text("Constraints")');
-    await expect(constraintsSection.locator('.requirements-item-wrapper')).toHaveCount(1);
-    await expect(constraintsSection).toContainText('Must be GDPR compliant');
+    // Scope & Constraints should now have 2 items (1 from first + 1 from second)
+    const scopeConstraintsSection = page.locator('.collapsible-section:has-text("Scope & Constraints")');
+    await expect(scopeConstraintsSection.locator('.requirements-item-wrapper')).toHaveCount(2);
+    await expect(scopeConstraintsSection).toContainText('Must be GDPR compliant');
 
     // Set up download handler before clicking export
     const downloadPromise = page.waitForEvent('download');
@@ -592,15 +582,14 @@ test.describe('Happy Path E2E Test', () => {
 
       // Verify markdown format contains expected sections
       expect(content).toContain('# Happy Path Test Project');
-      expect(content).toContain('## Problems');
+      expect(content).toContain('## Needs & Goals');
       expect(content).toContain('Users struggle with manual data entry');
       expect(content).toContain('No real-time collaboration support');
       expect(content).toContain('Mobile experience is poor');
-      expect(content).toContain('## User Goals');
+      expect(content).toContain('## Requirements');
       expect(content).toContain('Users want automated workflows');
-      expect(content).toContain('## Functional Requirements');
+      expect(content).toContain('## Scope & Constraints');
       expect(content).toContain('System must support file uploads');
-      expect(content).toContain('## Constraints');
       expect(content).toContain('Must be GDPR compliant');
     }
   });

@@ -24,6 +24,8 @@ class MeetingItemResponse(BaseModel):
     section: Section
     content: str
     source_quote: str | None = None
+    speaker: str | None = None
+    priority: str | None = None
     order: int
 
     model_config = {"from_attributes": True}

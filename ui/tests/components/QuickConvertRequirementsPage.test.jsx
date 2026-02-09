@@ -103,8 +103,8 @@ describe('QuickConvertRequirementsPage', () => {
   describe('extraction flow', () => {
     const mockExtractedItems = {
       items: [
-        { section: 'problems', content: 'Test problem 1' },
-        { section: 'functional_requirements', content: 'Test requirement 1' }
+        { section: 'needs_and_goals', content: 'Test problem 1' },
+        { section: 'requirements', content: 'Test requirement 1' }
       ]
     }
 
@@ -176,7 +176,7 @@ describe('SaveToProjectModal', () => {
           onClose={onClose}
           onSaved={onSaved}
           dataType="requirements"
-          data={{ problems: [{ content: 'Test', selected: true }] }}
+          data={{ needs_and_goals: [{ content: 'Test', selected: true }] }}
         />
       </MemoryRouter>
     )

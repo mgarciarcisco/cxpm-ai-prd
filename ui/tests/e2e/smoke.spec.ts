@@ -51,14 +51,10 @@ test.describe('Smoke Tests', () => {
     await page.route(`**/api/projects/${mockProject.id}/requirements`, async (route) => {
       await route.fulfill({
         json: {
-          problems: [],
-          user_goals: [],
-          functional_requirements: [],
-          data_needs: [],
-          constraints: [],
-          non_goals: [],
-          risks_assumptions: [],
-          open_questions: [],
+          needs_and_goals: [],
+          requirements: [],
+          scope_and_constraints: [],
+          risks_and_questions: [],
           action_items: [],
         },
       });

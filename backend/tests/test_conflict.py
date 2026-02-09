@@ -153,7 +153,7 @@ def test_exact_match_detection_skips_duplicate(test_db: Session) -> None:
     _create_test_requirement(
         test_db,
         project_id,
-        Section.functional_requirements,
+        Section.requirements,
         existing_content
     )
 
@@ -162,7 +162,7 @@ def test_exact_match_detection_skips_duplicate(test_db: Session) -> None:
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.functional_requirements,
+        Section.requirements,
         existing_content  # Exact match
     )
 
@@ -186,7 +186,7 @@ def test_exact_match_detection_with_whitespace_differences(test_db: Session) -> 
     _create_test_requirement(
         test_db,
         project_id,
-        Section.functional_requirements,
+        Section.requirements,
         "  User authentication required  "
     )
 
@@ -195,7 +195,7 @@ def test_exact_match_detection_with_whitespace_differences(test_db: Session) -> 
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.functional_requirements,
+        Section.requirements,
         "User authentication required"  # Trimmed version
     )
 
@@ -219,7 +219,7 @@ def test_llm_classification_called_for_non_exact_matches(test_db: Session) -> No
     _create_test_requirement(
         test_db,
         project_id,
-        Section.functional_requirements,
+        Section.requirements,
         "User must log in"
     )
 
@@ -228,7 +228,7 @@ def test_llm_classification_called_for_non_exact_matches(test_db: Session) -> No
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.functional_requirements,
+        Section.requirements,
         "Users should be able to authenticate"  # Different wording
     )
 
@@ -259,7 +259,7 @@ def test_duplicate_classification_skips_item(test_db: Session) -> None:
     _create_test_requirement(
         test_db,
         project_id,
-        Section.functional_requirements,
+        Section.requirements,
         "User must log in with email"
     )
 
@@ -268,7 +268,7 @@ def test_duplicate_classification_skips_item(test_db: Session) -> None:
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.functional_requirements,
+        Section.requirements,
         "Email-based login is required for users"
     )
 
@@ -303,7 +303,7 @@ def test_new_classification_adds_item(test_db: Session) -> None:
     _create_test_requirement(
         test_db,
         project_id,
-        Section.functional_requirements,
+        Section.requirements,
         "User must log in"
     )
 
@@ -312,7 +312,7 @@ def test_new_classification_adds_item(test_db: Session) -> None:
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.functional_requirements,
+        Section.requirements,
         "Dashboard should display analytics"
     )
 
@@ -342,7 +342,7 @@ def test_new_item_in_empty_section_is_added_without_llm(test_db: Session) -> Non
     _create_test_requirement(
         test_db,
         project_id,
-        Section.functional_requirements,
+        Section.requirements,
         "Some requirement"
     )
 
@@ -351,7 +351,7 @@ def test_new_item_in_empty_section_is_added_without_llm(test_db: Session) -> Non
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.problems,  # Different section, no requirements exist here
+        Section.needs_and_goals,  # Different section, no requirements exist here
         "Users are having difficulty finding features"
     )
 
@@ -378,7 +378,7 @@ def test_refinement_classification_creates_conflict(test_db: Session) -> None:
     _create_test_requirement(
         test_db,
         project_id,
-        Section.functional_requirements,
+        Section.requirements,
         "Search functionality is required"
     )
 
@@ -387,7 +387,7 @@ def test_refinement_classification_creates_conflict(test_db: Session) -> None:
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.functional_requirements,
+        Section.requirements,
         "Search must return results within 2 seconds"
     )
 
@@ -422,7 +422,7 @@ def test_contradiction_classification_creates_conflict(test_db: Session) -> None
     _create_test_requirement(
         test_db,
         project_id,
-        Section.functional_requirements,
+        Section.requirements,
         "User must log in with email only"
     )
 
@@ -431,7 +431,7 @@ def test_contradiction_classification_creates_conflict(test_db: Session) -> None
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.functional_requirements,
+        Section.requirements,
         "User must log in with social media accounts"
     )
 
@@ -505,7 +505,7 @@ def test_deleted_meeting_items_are_excluded(test_db: Session) -> None:
     # Create a deleted meeting item
     deleted_item = MeetingItem(
         meeting_id=cast(str, meeting.id),
-        section=Section.problems,
+        section=Section.needs_and_goals,
         content="This should be ignored",
         source_quote=None,
         order=0,
@@ -529,7 +529,7 @@ def test_inactive_requirements_are_excluded(test_db: Session) -> None:
     # Create an inactive requirement
     inactive_req = Requirement(
         project_id=project_id,
-        section=Section.functional_requirements,
+        section=Section.requirements,
         content="User must log in",
         order=0,
         is_active=False  # Inactive
@@ -542,7 +542,7 @@ def test_inactive_requirements_are_excluded(test_db: Session) -> None:
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.functional_requirements,
+        Section.requirements,
         "User must log in"
     )
 
@@ -562,7 +562,7 @@ def test_llm_failure_creates_conflict_for_manual_review(test_db: Session) -> Non
     _create_test_requirement(
         test_db,
         project_id,
-        Section.functional_requirements,
+        Section.requirements,
         "Existing requirement"
     )
 
@@ -570,7 +570,7 @@ def test_llm_failure_creates_conflict_for_manual_review(test_db: Session) -> Non
     _create_test_meeting_item(
         test_db,
         cast(str, meeting.id),
-        Section.functional_requirements,
+        Section.requirements,
         "New item content"
     )
 

@@ -163,14 +163,14 @@ describe('useStreaming', () => {
       act(() => {
         MockEventSource.instances[0].simulateOpen()
         MockEventSource.instances[0].simulateItem({
-          section: 'problems',
+          section: 'needs_and_goals',
           content: 'First problem',
           source_quote: 'Quote 1'
         })
       })
 
       expect(result.current.items).toHaveLength(1)
-      expect(result.current.items[0].section).toBe('problems')
+      expect(result.current.items[0].section).toBe('needs_and_goals')
       expect(result.current.items[0].content).toBe('First problem')
 
       unmount()
@@ -182,15 +182,15 @@ describe('useStreaming', () => {
       act(() => {
         MockEventSource.instances[0].simulateOpen()
         MockEventSource.instances[0].simulateItem({
-          section: 'problems',
+          section: 'needs_and_goals',
           content: 'First problem'
         })
         MockEventSource.instances[0].simulateItem({
-          section: 'user_goals',
+          section: 'requirements',
           content: 'A user goal'
         })
         MockEventSource.instances[0].simulateItem({
-          section: 'functional_requirements',
+          section: 'scope_and_constraints',
           content: 'A requirement'
         })
       })
@@ -211,7 +211,7 @@ describe('useStreaming', () => {
         MockEventSource.instances[0].simulateOpen()
         // Send valid item first
         MockEventSource.instances[0].simulateItem({
-          section: 'problems',
+          section: 'needs_and_goals',
           content: 'Valid item'
         })
         // Dispatch malformed JSON directly
@@ -221,7 +221,7 @@ describe('useStreaming', () => {
         })
         // Send another valid item
         MockEventSource.instances[0].simulateItem({
-          section: 'user_goals',
+          section: 'requirements',
           content: 'Another valid item'
         })
       })
@@ -421,7 +421,7 @@ describe('useStreaming', () => {
       act(() => {
         MockEventSource.instances[0].simulateOpen()
         MockEventSource.instances[0].simulateItem({
-          section: 'problems',
+          section: 'needs_and_goals',
           content: 'Old item'
         })
       })
@@ -535,11 +535,11 @@ describe('useStreaming', () => {
       act(() => {
         MockEventSource.instances[0].simulateOpen()
         MockEventSource.instances[0].simulateItem({
-          section: 'problems',
+          section: 'needs_and_goals',
           content: 'A problem'
         })
         MockEventSource.instances[0].simulateItem({
-          section: 'user_goals',
+          section: 'requirements',
           content: 'A goal'
         })
         MockEventSource.instances[0].simulateComplete({ item_count: 2 })

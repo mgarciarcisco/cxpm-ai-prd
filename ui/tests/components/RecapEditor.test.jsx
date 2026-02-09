@@ -5,7 +5,8 @@ import { RecapEditor } from '../../src/components/meetings/RecapEditor'
 // Mock the api module
 vi.mock('../../src/services/api', () => ({
   put: vi.fn(),
-  post: vi.fn()
+  post: vi.fn(),
+  del: vi.fn()
 }))
 
 import { put, post } from '../../src/services/api'
@@ -14,10 +15,10 @@ describe('RecapEditor', () => {
   const mockMeetingId = '123e4567-e89b-12d3-a456-426614174000'
 
   const mockItems = [
-    { id: '1', section: 'problems', content: 'Problem 1', source_quote: 'Quote for problem 1' },
-    { id: '2', section: 'problems', content: 'Problem 2', source_quote: null },
-    { id: '3', section: 'user_goals', content: 'Goal 1', source_quote: 'User said they want this' },
-    { id: '4', section: 'functional_requirements', content: 'Requirement 1', source_quote: null },
+    { id: '1', section: 'needs_and_goals', content: 'Problem 1', source_quote: 'Quote for problem 1' },
+    { id: '2', section: 'needs_and_goals', content: 'Problem 2', source_quote: null },
+    { id: '3', section: 'requirements', content: 'Goal 1', source_quote: 'User said they want this' },
+    { id: '4', section: 'scope_and_constraints', content: 'Requirement 1', source_quote: null },
   ]
 
   const defaultProps = {
@@ -25,7 +26,6 @@ describe('RecapEditor', () => {
     items: mockItems,
     onEditItem: vi.fn(),
     onDeleteItem: vi.fn(),
-    onReorderItems: vi.fn(),
     onAddItem: vi.fn()
   }
 
@@ -34,86 +34,87 @@ describe('RecapEditor', () => {
   })
 
   describe('Section Display', () => {
-    it('renders all 9 sections', () => {
+    it('renders the active section (defaults to needs_and_goals)', () => {
       render(<RecapEditor {...defaultProps} />)
 
-      expect(screen.getByText('Problems')).toBeInTheDocument()
-      expect(screen.getByText('User Goals')).toBeInTheDocument()
-      expect(screen.getByText('Functional Requirements')).toBeInTheDocument()
-      expect(screen.getByText('Data Needs')).toBeInTheDocument()
-      expect(screen.getByText('Constraints')).toBeInTheDocument()
-      expect(screen.getByText('Non-Goals')).toBeInTheDocument()
-      expect(screen.getByText('Risks & Assumptions')).toBeInTheDocument()
-      expect(screen.getByText('Open Questions')).toBeInTheDocument()
+      expect(screen.getByText('Needs & Goals')).toBeInTheDocument()
+    })
+
+    it('renders different sections when activeSection prop changes', () => {
+      const { rerender } = render(<RecapEditor {...defaultProps} activeSection="requirements" />)
+      expect(screen.getByText('Requirements')).toBeInTheDocument()
+
+      rerender(<RecapEditor {...defaultProps} activeSection="scope_and_constraints" />)
+      expect(screen.getByText('Scope & Constraints')).toBeInTheDocument()
+
+      rerender(<RecapEditor {...defaultProps} activeSection="risks_and_questions" />)
+      expect(screen.getByText('Risks & Open Questions')).toBeInTheDocument()
+
+      rerender(<RecapEditor {...defaultProps} activeSection="action_items" />)
       expect(screen.getByText('Action Items')).toBeInTheDocument()
     })
 
-    it('displays items within correct sections', () => {
-      render(<RecapEditor {...defaultProps} />)
+    it('displays items within the active section', () => {
+      render(<RecapEditor {...defaultProps} activeSection="needs_and_goals" />)
 
-      // Items should be rendered
+      // needs_and_goals items should be rendered
       expect(screen.getByText('Problem 1')).toBeInTheDocument()
       expect(screen.getByText('Problem 2')).toBeInTheDocument()
-      expect(screen.getByText('Goal 1')).toBeInTheDocument()
-      expect(screen.getByText('Requirement 1')).toBeInTheDocument()
     })
 
     it('shows empty message for sections with no items', () => {
-      render(<RecapEditor {...defaultProps} />)
+      render(<RecapEditor {...defaultProps} activeSection="risks_and_questions" />)
 
-      // Sections without items should show empty message
-      // data_needs, constraints, non_goals, risks_assumptions, open_questions, action_items are empty (6 sections)
-      const emptyMessages = screen.getAllByText('No items extracted for this section')
-      expect(emptyMessages.length).toBe(6) // 6 empty sections
+      // risks_and_questions has no items, should show empty message
+      const emptyMessage = screen.getByText('No items extracted for this section')
+      expect(emptyMessage).toBeInTheDocument()
     })
 
     it('displays item count in section headers', () => {
-      render(<RecapEditor {...defaultProps} />)
+      render(<RecapEditor {...defaultProps} activeSection="needs_and_goals" />)
 
-      // Problems has 2 items, User Goals has 1, Functional Requirements has 1
-      // The counts are displayed as badges (exact format depends on CollapsibleSection implementation)
-      const problemsSection = screen.getByText('Problems').closest('.collapsible-section')
-      expect(problemsSection).toHaveTextContent('2')
-
-      const goalsSection = screen.getByText('User Goals').closest('.collapsible-section')
-      expect(goalsSection).toHaveTextContent('1')
+      // Needs & Goals has 2 items
+      const needsSection = screen.getByText('Needs & Goals').closest('.collapsible-section')
+      expect(needsSection).toHaveTextContent('2')
     })
   })
 
   describe('Source Quote Display', () => {
-    it('displays source_quote when present', () => {
+    it('displays source_quote when present in ItemRow', () => {
       render(<RecapEditor {...defaultProps} />)
 
-      // source_quote should be displayed
-      expect(screen.getByText('"Quote for problem 1"')).toBeInTheDocument()
-      expect(screen.getByText('"User said they want this"')).toBeInTheDocument()
+      // ItemRow renders source_quote with quotes inside .item-row-source-text
+      const sourceTexts = document.querySelectorAll('.item-row-source-text')
+      const sourceContents = Array.from(sourceTexts).map(el => el.textContent)
+      expect(sourceContents.some(text => text.includes('Quote for problem 1'))).toBe(true)
     })
 
-    it('shows "Source:" label before quote', () => {
+    it('renders source section only for items with source_quote', () => {
       render(<RecapEditor {...defaultProps} />)
 
-      const sourceLabels = screen.getAllByText('Source:')
-      expect(sourceLabels.length).toBe(2) // Only 2 items have source_quote
+      // Only 1 of the 2 needs_and_goals items has a source_quote
+      const sourceSections = document.querySelectorAll('.item-row-source')
+      expect(sourceSections.length).toBe(1) // Only Problem 1 has source_quote in the active section
     })
 
     it('does not display source section when source_quote is null', () => {
       // Render with only items that have no source_quote
       const itemsWithoutQuotes = [
-        { id: '1', section: 'problems', content: 'Problem without quote', source_quote: null }
+        { id: '1', section: 'needs_and_goals', content: 'Problem without quote', source_quote: null }
       ]
       render(<RecapEditor {...defaultProps} items={itemsWithoutQuotes} />)
 
       expect(screen.getByText('Problem without quote')).toBeInTheDocument()
-      expect(screen.queryByText('Source:')).not.toBeInTheDocument()
+      expect(document.querySelector('.item-row-source')).not.toBeInTheDocument()
     })
   })
 
   describe('Add Item Functionality', () => {
-    it('shows add item button for each section', () => {
+    it('shows add item button for the active section', () => {
       render(<RecapEditor {...defaultProps} />)
 
       const addButtons = screen.getAllByText('Add item')
-      expect(addButtons.length).toBe(9) // One for each section
+      expect(addButtons.length).toBe(1) // One for the active section
     })
 
     it('opens add form when clicking add item button', () => {
@@ -128,7 +129,7 @@ describe('RecapEditor', () => {
     })
 
     it('submits new item via API and calls onAddItem', async () => {
-      const newItem = { id: '5', section: 'problems', content: 'New item content' }
+      const newItem = { id: '5', section: 'needs_and_goals', content: 'New item content' }
       post.mockResolvedValue(newItem)
 
       render(<RecapEditor {...defaultProps} />)
@@ -148,7 +149,7 @@ describe('RecapEditor', () => {
       await waitFor(() => {
         expect(post).toHaveBeenCalledWith(
           `/api/meetings/${mockMeetingId}/items`,
-          { section: 'problems', content: 'New item content' }
+          { section: 'needs_and_goals', content: 'New item content' }
         )
         expect(defaultProps.onAddItem).toHaveBeenCalledWith(newItem)
       })
@@ -196,43 +197,6 @@ describe('RecapEditor', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Network error')).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('Drag and Drop', () => {
-    it('calls onReorderItems after successful reorder', async () => {
-      const reorderedItems = [mockItems[1], mockItems[0]] // Reversed
-      put.mockResolvedValue(reorderedItems)
-
-      render(<RecapEditor {...defaultProps} />)
-
-      // Get the item rows - they should be draggable
-      const itemRows = screen.getAllByText('Problem 1').map(el => el.closest('.item-row'))
-      const draggedRow = itemRows[0]
-      const targetRow = screen.getByText('Problem 2').closest('.item-row')
-
-      // Mock dataTransfer for jsdom
-      const dataTransfer = {
-        effectAllowed: '',
-        setData: vi.fn(),
-        getData: vi.fn()
-      }
-
-      // Simulate drag start
-      fireEvent.dragStart(draggedRow, { dataTransfer })
-
-      // Simulate drag over target
-      fireEvent.dragOver(targetRow, { dataTransfer })
-
-      // Simulate drop
-      fireEvent.drop(targetRow, { dataTransfer })
-
-      await waitFor(() => {
-        expect(put).toHaveBeenCalledWith(
-          `/api/meetings/${mockMeetingId}/items/reorder`,
-          { section: 'problems', item_ids: ['2', '1'] }
-        )
       })
     })
   })

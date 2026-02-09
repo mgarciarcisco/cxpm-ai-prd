@@ -98,7 +98,7 @@ def _create_test_project(
 def _create_test_requirement(
     db: Session,
     project_id: str,
-    section: Section = Section.problems,
+    section: Section = Section.needs_and_goals,
     content: str = "Test requirement content",
     order: int = 0,
     is_active: bool = True,
@@ -380,8 +380,8 @@ class TestProjectStatsResponse:
         """Test ProjectStatsResponse with actual data."""
         now = datetime.utcnow()
         section_counts = [
-            SectionCount(section="problems", count=3),
-            SectionCount(section="user_goals", count=2),
+            SectionCount(section="needs_and_goals", count=3),
+            SectionCount(section="requirements", count=2),
         ]
 
         response = ProjectStatsResponse(
@@ -394,7 +394,7 @@ class TestProjectStatsResponse:
         assert response.meeting_count == 5
         assert response.requirement_count == 10
         assert len(response.requirement_counts_by_section) == 2
-        assert response.requirement_counts_by_section[0].section == "problems"
+        assert response.requirement_counts_by_section[0].section == "needs_and_goals"
         assert response.requirement_counts_by_section[0].count == 3
         assert response.last_activity == now
 
@@ -413,7 +413,7 @@ class TestRequirementTransformation:
         requirement = _create_test_requirement(
             test_db,
             project_id=_get_id(project),
-            section=Section.problems,
+            section=Section.needs_and_goals,
             content="User needs better search",
             order=5,
         )
@@ -421,7 +421,7 @@ class TestRequirementTransformation:
         response = RequirementResponse.model_validate(requirement)
 
         assert response.id == _get_id(requirement)
-        assert response.section == Section.problems
+        assert response.section == Section.needs_and_goals
         assert response.content == "User needs better search"
         assert response.order == 5
 
@@ -574,14 +574,10 @@ class TestRequirementsListTransformation:
         """Test empty RequirementsListResponse."""
         response = RequirementsListResponse()
 
-        assert response.problems == []
-        assert response.user_goals == []
-        assert response.functional_requirements == []
-        assert response.data_needs == []
-        assert response.constraints == []
-        assert response.non_goals == []
-        assert response.risks_assumptions == []
-        assert response.open_questions == []
+        assert response.needs_and_goals == []
+        assert response.requirements == []
+        assert response.scope_and_constraints == []
+        assert response.risks_and_questions == []
         assert response.action_items == []
 
     def test_requirements_list_with_items(self, test_db: Session) -> None:
@@ -590,20 +586,20 @@ class TestRequirementsListTransformation:
 
         # Create requirements in different sections
         req1 = _create_test_requirement(
-            test_db, project_id=_get_id(project), section=Section.problems, content="Problem 1"
+            test_db, project_id=_get_id(project), section=Section.needs_and_goals, content="Problem 1"
         )
         req2 = _create_test_requirement(
-            test_db, project_id=_get_id(project), section=Section.user_goals, content="Goal 1"
+            test_db, project_id=_get_id(project), section=Section.requirements, content="Goal 1"
         )
 
         # Convert to response format
-        problems = [RequirementResponse(
+        needs_and_goals = [RequirementResponse(
             id=_get_id(req1),
             section=req1.section,
             content=req1.content,
             order=req1.order,
         )]
-        user_goals = [RequirementResponse(
+        requirements = [RequirementResponse(
             id=_get_id(req2),
             section=req2.section,
             content=req2.content,
@@ -611,14 +607,14 @@ class TestRequirementsListTransformation:
         )]
 
         response = RequirementsListResponse(
-            problems=problems,
-            user_goals=user_goals,
+            needs_and_goals=needs_and_goals,
+            requirements=requirements,
         )
 
-        assert len(response.problems) == 1
-        assert response.problems[0].content == "Problem 1"
-        assert len(response.user_goals) == 1
-        assert response.user_goals[0].content == "Goal 1"
+        assert len(response.needs_and_goals) == 1
+        assert response.needs_and_goals[0].content == "Problem 1"
+        assert len(response.requirements) == 1
+        assert response.requirements[0].content == "Goal 1"
 
 
 # =============================================================================

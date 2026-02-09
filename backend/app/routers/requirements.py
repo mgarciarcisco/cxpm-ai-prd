@@ -54,7 +54,7 @@ def list_project_requirements(
 ) -> RequirementsListResponse:
     """Get all active requirements for a project, grouped by section.
 
-    Returns requirements grouped by the 9 sections in proper section order.
+    Returns requirements grouped by the 5 sections in proper section order.
     Only active requirements (is_active=True) are included.
     Each requirement includes source meeting links.
     """
@@ -73,14 +73,10 @@ def list_project_requirements(
 
     # Group requirements by section
     grouped: dict[str, list[RequirementResponse]] = {
-        "problems": [],
-        "user_goals": [],
-        "functional_requirements": [],
-        "data_needs": [],
-        "constraints": [],
-        "non_goals": [],
-        "risks_assumptions": [],
-        "open_questions": [],
+        "needs_and_goals": [],
+        "requirements": [],
+        "scope_and_constraints": [],
+        "risks_and_questions": [],
         "action_items": [],
     }
 

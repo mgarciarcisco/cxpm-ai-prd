@@ -41,7 +41,7 @@ const mockBatch2 = {
   id: 'batch-002',
   project_id: mockProject.id,
   format: 'job_story',
-  section_filter: ['problems', 'user_goals'],
+  section_filter: ['needs_and_goals', 'requirements'],
   story_count: 2,
   status: 'ready',
   error_message: null,
@@ -165,19 +165,15 @@ const mockStories = [
 
 // Mock requirements for the project
 const mockRequirements = {
-  problems: [
-    { id: 'req-1', content: 'Users cannot easily share files', section: 'problems', sources: [], history_count: 0 },
-    { id: 'req-2', content: 'No central file storage', section: 'problems', sources: [], history_count: 0 },
+  needs_and_goals: [
+    { id: 'req-1', content: 'Users cannot easily share files', section: 'needs_and_goals', sources: [], history_count: 0 },
+    { id: 'req-2', content: 'No central file storage', section: 'needs_and_goals', sources: [], history_count: 0 },
   ],
-  user_goals: [
-    { id: 'req-3', content: 'Users want organized file management', section: 'user_goals', sources: [], history_count: 0 },
+  requirements: [
+    { id: 'req-3', content: 'Users want organized file management', section: 'requirements', sources: [], history_count: 0 },
   ],
-  functional_requirements: [],
-  data_needs: [],
-  constraints: [],
-  non_goals: [],
-  risks_assumptions: [],
-  open_questions: [],
+  scope_and_constraints: [],
+  risks_and_questions: [],
   action_items: [],
 };
 
@@ -690,11 +686,11 @@ test.describe('User Stories Generation E2E Tests', () => {
     await page.click('.stories-section-filter-trigger, button:has-text("All sections")');
 
     // Dropdown should show section options
-    await expect(page.locator('text=Problems')).toBeVisible();
-    await expect(page.locator('text=User Goals')).toBeVisible();
+    await expect(page.locator('text=Needs & Goals')).toBeVisible();
+    await expect(page.locator('text=Requirements')).toBeVisible();
 
     // Select a section
-    await page.click('label:has-text("Problems")');
+    await page.click('label:has-text("Needs & Goals")');
 
     // Filter should update
     await expect(page.locator('text=1 section')).toBeVisible();
@@ -713,8 +709,8 @@ test.describe('User Stories Generation E2E Tests', () => {
 
     // Step 4: Select specific sections
     await page.click('.stories-section-filter-trigger');
-    await page.click('label:has-text("Problems")');
-    await page.click('label:has-text("User Goals")');
+    await page.click('label:has-text("Needs & Goals")');
+    await page.click('label:has-text("Requirements")');
     await page.keyboard.press('Escape'); // Close dropdown
 
     // Step 5: Generate stories
@@ -757,14 +753,10 @@ test.describe('User Stories Generation E2E Tests', () => {
     await page.route(`**/api/projects/${mockProject.id}/requirements`, async (route) => {
       await route.fulfill({
         json: {
-          problems: [],
-          user_goals: [],
-          functional_requirements: [],
-          data_needs: [],
-          constraints: [],
-          non_goals: [],
-          risks_assumptions: [],
-          open_questions: [],
+          needs_and_goals: [],
+          requirements: [],
+          scope_and_constraints: [],
+          risks_and_questions: [],
           action_items: [],
         },
       });

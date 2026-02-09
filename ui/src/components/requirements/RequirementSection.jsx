@@ -6,14 +6,10 @@ import './RequirementSection.css';
  * Matches the order from the backend API.
  */
 export const SECTION_LABELS = {
-  problems: 'Problems',
-  user_goals: 'User Goals',
-  functional_requirements: 'Functional Requirements',
-  data_needs: 'Data Needs',
-  constraints: 'Constraints',
-  non_goals: 'Non Goals',
-  risks_assumptions: 'Risks & Assumptions',
-  open_questions: 'Open Questions',
+  needs_and_goals: 'Needs & Goals',
+  requirements: 'Requirements',
+  scope_and_constraints: 'Scope & Constraints',
+  risks_and_questions: 'Risks & Open Questions',
   action_items: 'Action Items',
 };
 
@@ -21,14 +17,10 @@ export const SECTION_LABELS = {
  * Ordered list of section keys for consistent display order.
  */
 export const SECTION_ORDER = [
-  'problems',
-  'user_goals',
-  'functional_requirements',
-  'data_needs',
-  'constraints',
-  'non_goals',
-  'risks_assumptions',
-  'open_questions',
+  'needs_and_goals',
+  'requirements',
+  'scope_and_constraints',
+  'risks_and_questions',
   'action_items',
 ];
 

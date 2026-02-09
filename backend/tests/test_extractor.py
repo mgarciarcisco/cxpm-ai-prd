@@ -103,14 +103,18 @@ def test_successful_extraction_creates_meeting_items(test_db: Session) -> None:
     # Mock LLM response with valid JSON
     mock_response = json.dumps([
         {
-            "section": "functional_requirements",
+            "section": "requirements",
             "content": "Add user authentication",
-            "source_quote": "We need to add user authentication"
+            "source_quote": "We need to add user authentication",
+            "speaker": "John",
+            "priority": "high"
         },
         {
-            "section": "user_goals",
+            "section": "needs_and_goals",
             "content": "Users want to securely log in",
-            "source_quote": None
+            "source_quote": None,
+            "speaker": "Sarah",
+            "priority": "medium"
         }
     ])
 
@@ -121,12 +125,16 @@ def test_successful_extraction_creates_meeting_items(test_db: Session) -> None:
 
     # Verify items were created
     assert len(items) == 2
-    assert items[0].section == Section.functional_requirements
+    assert items[0].section == Section.requirements
     assert items[0].content == "Add user authentication"
     assert items[0].source_quote == "We need to add user authentication"
-    assert items[1].section == Section.user_goals
+    assert items[0].speaker == "John"
+    assert items[0].priority == "high"
+    assert items[1].section == Section.needs_and_goals
     assert items[1].content == "Users want to securely log in"
     assert items[1].source_quote is None
+    assert items[1].speaker == "Sarah"
+    assert items[1].priority == "medium"
 
     # Verify items are in database
     db_items = test_db.query(MeetingItem).filter(
@@ -145,9 +153,11 @@ def test_extraction_status_transitions_to_processed(test_db: Session) -> None:
 
     mock_response = json.dumps([
         {
-            "section": "problems",
+            "section": "needs_and_goals",
             "content": "Performance is slow",
-            "source_quote": None
+            "source_quote": None,
+            "speaker": "John",
+            "priority": "high"
         }
     ])
     mock_provider = MockLLMProvider(mock_response)
@@ -161,7 +171,7 @@ def test_extraction_status_transitions_to_processed(test_db: Session) -> None:
     # Verify final status is processed
     assert meeting.status == MeetingStatus.processed
     assert meeting.processed_at is not None
-    assert meeting.prompt_version == "extract_v1"
+    assert meeting.prompt_version == "extract_v2"
     assert meeting.error_message is None
 
 
@@ -186,7 +196,7 @@ def test_malformed_json_sets_status_to_failed(test_db: Session) -> None:
     assert meeting.status == MeetingStatus.failed
     assert meeting.failed_at is not None
     assert meeting.error_message is not None
-    assert meeting.prompt_version == "extract_v1"
+    assert meeting.prompt_version == "extract_v2"
 
 
 def test_missing_required_field_sets_status_to_failed(test_db: Session) -> None:
@@ -196,7 +206,7 @@ def test_missing_required_field_sets_status_to_failed(test_db: Session) -> None:
 
     # Mock LLM returning JSON without 'content' field
     mock_response = json.dumps([
-        {"section": "problems"}  # Missing 'content' field
+        {"section": "needs_and_goals"}  # Missing 'content' field
     ])
     mock_provider = MockLLMProvider(mock_response)
 
@@ -221,7 +231,9 @@ def test_invalid_section_sets_status_to_failed(test_db: Session) -> None:
         {
             "section": "invalid_section_name",
             "content": "Some content",
-            "source_quote": None
+            "source_quote": None,
+            "speaker": "John",
+            "priority": "high"
         }
     ])
     mock_provider = MockLLMProvider(mock_response)
@@ -275,9 +287,11 @@ def test_extraction_strips_markdown_code_blocks(test_db: Session) -> None:
     # Mock LLM returning JSON wrapped in markdown code block
     items_json = json.dumps([
         {
-            "section": "constraints",
+            "section": "scope_and_constraints",
             "content": "Must use PostgreSQL",
-            "source_quote": None
+            "source_quote": None,
+            "speaker": "John",
+            "priority": "high"
         }
     ])
     mock_response = f"```json\n{items_json}\n```"
@@ -291,18 +305,17 @@ def test_extraction_strips_markdown_code_blocks(test_db: Session) -> None:
 
 
 def test_extraction_handles_all_section_types(test_db: Session) -> None:
-    """Test that all 9 section types are correctly handled."""
+    """Test that all 5 section types are correctly handled."""
     project = _create_test_project(test_db)
     meeting = _create_test_meeting(test_db, _get_project_id(project))
 
-    # Mock LLM returning items for all 9 sections
+    # Mock LLM returning items for all 5 sections
     all_sections = [
-        "problems", "user_goals", "functional_requirements",
-        "data_needs", "constraints", "non_goals",
-        "risks_assumptions", "open_questions", "action_items"
+        "needs_and_goals", "requirements", "scope_and_constraints",
+        "risks_and_questions", "action_items"
     ]
     mock_items = [
-        {"section": section, "content": f"Item for {section}", "source_quote": None}
+        {"section": section, "content": f"Item for {section}", "source_quote": None, "speaker": "John", "priority": "high"}
         for section in all_sections
     ]
     mock_response = json.dumps(mock_items)
@@ -311,7 +324,7 @@ def test_extraction_handles_all_section_types(test_db: Session) -> None:
     with patch("app.services.extractor.get_provider", return_value=mock_provider):
         items = extract(_get_meeting_uuid(meeting), test_db)
 
-    assert len(items) == 9
+    assert len(items) == 5
 
     # Verify all sections are represented
     sections_extracted = {item.section.value for item in items}
@@ -325,27 +338,27 @@ def test_extraction_sets_order_by_section(test_db: Session) -> None:
 
     # Mock LLM returning multiple items in same section
     mock_response = json.dumps([
-        {"section": "problems", "content": "First problem", "source_quote": None},
-        {"section": "problems", "content": "Second problem", "source_quote": None},
-        {"section": "user_goals", "content": "A goal", "source_quote": None},
-        {"section": "problems", "content": "Third problem", "source_quote": None},
+        {"section": "needs_and_goals", "content": "First need", "source_quote": None, "speaker": "John", "priority": "high"},
+        {"section": "needs_and_goals", "content": "Second need", "source_quote": None, "speaker": "Sarah", "priority": "medium"},
+        {"section": "requirements", "content": "A requirement", "source_quote": None, "speaker": "Mike", "priority": "low"},
+        {"section": "needs_and_goals", "content": "Third need", "source_quote": None, "speaker": "John", "priority": "high"},
     ])
     mock_provider = MockLLMProvider(mock_response)
 
     with patch("app.services.extractor.get_provider", return_value=mock_provider):
         items = extract(_get_meeting_uuid(meeting), test_db)
 
-    # Get problems sorted by order
-    problems = [i for i in items if i.section == Section.problems]
-    problems.sort(key=lambda x: x.order)
+    # Get needs_and_goals sorted by order
+    needs = [i for i in items if i.section == Section.needs_and_goals]
+    needs.sort(key=lambda x: x.order)
 
-    assert len(problems) == 3
-    assert problems[0].order == 0
-    assert problems[0].content == "First problem"
-    assert problems[1].order == 1
-    assert problems[1].content == "Second problem"
-    assert problems[2].order == 2
-    assert problems[2].content == "Third problem"
+    assert len(needs) == 3
+    assert needs[0].order == 0
+    assert needs[0].content == "First need"
+    assert needs[1].order == 1
+    assert needs[1].content == "Second need"
+    assert needs[2].order == 2
+    assert needs[2].content == "Third need"
 
 
 def test_extraction_retries_on_failure(test_db: Session) -> None:
@@ -362,7 +375,7 @@ def test_extraction_retries_on_failure(test_db: Session) -> None:
             if call_count == 1:
                 return "invalid json"
             return json.dumps([
-                {"section": "problems", "content": "A problem", "source_quote": None}
+                {"section": "needs_and_goals", "content": "A problem", "source_quote": None, "speaker": "John", "priority": "high"}
             ])
 
     with patch("app.services.extractor.get_provider", return_value=FailingThenSucceedingProvider()):

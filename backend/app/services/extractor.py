@@ -17,8 +17,8 @@ from app.services.chunker import chunk_text
 from app.services.llm import LLMError, get_provider
 
 # Path to the extraction prompt template
-PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "extract_meeting_v1.txt"
-PROMPT_VERSION = "extract_v1"
+PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "extract_meeting_v2.txt"
+PROMPT_VERSION = "extract_v2"
 
 
 class ExtractionError(Exception):
@@ -86,6 +86,10 @@ def _parse_llm_response(response: str) -> list[dict[str, Any]]:
         # Skip items with empty content
         content = item.get("content", "")
         if isinstance(content, str) and content.strip():
+            # Validate priority field if present
+            priority = item.get("priority")
+            if priority and priority not in ("high", "medium", "low"):
+                item["priority"] = "medium"
             validated_items.append(item)
 
     return validated_items
@@ -119,6 +123,8 @@ def _create_meeting_items(
             section=Section(section),
             content=item_data["content"],
             source_quote=item_data.get("source_quote"),
+            speaker=item_data.get("speaker"),
+            priority=item_data.get("priority"),
             order=section_counts[section] - 1,  # 0-indexed
             is_deleted=False
         )
@@ -414,6 +420,8 @@ async def extract_stream(
                 "section": item.section.value if hasattr(item.section, 'value') else str(item.section),
                 "content": item.content,
                 "source_quote": item.source_quote,
+                "speaker": item.speaker,
+                "priority": item.priority,
             }
         return
 

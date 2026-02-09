@@ -14,7 +14,7 @@ describe('ItemRow', () => {
   const mockItem = {
     id: '123e4567-e89b-12d3-a456-426614174000',
     content: 'Test item content',
-    section: 'problems'
+    section: 'needs_and_goals'
   }
 
   const defaultProps = {
@@ -355,6 +355,74 @@ describe('ItemRow', () => {
 
       // Should not have any source quote element
       expect(screen.queryByText(/original quote/)).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Speaker Display', () => {
+    it('renders speaker name before source quote when speaker prop is provided', () => {
+      const itemWithSpeaker = {
+        ...mockItem,
+        speaker: 'John Doe',
+        source_quote: 'This is the original quote'
+      }
+      render(<ItemRow {...defaultProps} item={itemWithSpeaker} />)
+
+      expect(screen.getByText('John Doe:')).toBeInTheDocument()
+      expect(screen.getByText(/This is the original quote/)).toBeInTheDocument()
+
+      // Verify speaker appears before the quote in the DOM
+      const sourceText = screen.getByText('John Doe:').closest('.item-row-source-text')
+      expect(sourceText).toHaveTextContent('John Doe: "This is the original quote"')
+    })
+
+    it('renders speaker name without quote when only speaker is provided', () => {
+      const itemWithSpeakerOnly = {
+        ...mockItem,
+        speaker: 'Jane Smith',
+        source_quote: null
+      }
+      render(<ItemRow {...defaultProps} item={itemWithSpeakerOnly} />)
+
+      expect(screen.getByText('Jane Smith:')).toBeInTheDocument()
+    })
+
+    it('does not render speaker element when speaker prop is not provided', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      expect(screen.queryByText(/:$/)).not.toBeInTheDocument()
+      expect(document.querySelector('.item-row-speaker')).toBeNull()
+    })
+  })
+
+  describe('Priority Badge', () => {
+    it('renders priority badge with correct class when priority prop is provided', () => {
+      const itemWithPriority = {
+        ...mockItem,
+        priority: 'P1'
+      }
+      render(<ItemRow {...defaultProps} item={itemWithPriority} />)
+
+      const badge = screen.getByText('P1')
+      expect(badge).toBeInTheDocument()
+      expect(badge).toHaveClass('item-row-priority')
+      expect(badge).toHaveClass('item-row-priority--P1')
+    })
+
+    it('renders different priority levels with correct classes', () => {
+      const itemWithP2 = {
+        ...mockItem,
+        priority: 'P2'
+      }
+      render(<ItemRow {...defaultProps} item={itemWithP2} />)
+
+      const badge = screen.getByText('P2')
+      expect(badge).toHaveClass('item-row-priority--P2')
+    })
+
+    it('does not render priority badge when priority prop is not provided', () => {
+      render(<ItemRow {...defaultProps} />)
+
+      expect(document.querySelector('.item-row-priority')).toBeNull()
     })
   })
 

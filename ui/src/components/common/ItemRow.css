@@ -296,3 +296,37 @@
     justify-content: center;
   }
 }
+
+/* Speaker display */
+.item-row-speaker {
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+}
+
+/* Priority badge */
+.item-row-priority {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-left: 8px;
+}
+
+.item-row-priority--high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.item-row-priority--medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.item-row-priority--low {
+  background: #f1f5f9;
+  color: #64748b;
+}

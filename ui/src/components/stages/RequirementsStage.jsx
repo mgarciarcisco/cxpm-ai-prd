@@ -11,90 +11,52 @@ import './RequirementsStage.css';
  * Section icons (professional SVGs), color classes, and colors for distribution bar.
  */
 const SECTION_ICONS = {
-  problems: {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-      </svg>
-    ),
-    colorClass: 'section-icon--problems',
-    color: '#dc2626',
-  },
-  user_goals: {
+  needs_and_goals: {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
       </svg>
     ),
-    colorClass: 'section-icon--user-goals',
-    color: '#16a34a',
+    colorClass: 'section-icon--needs_and_goals',
+    color: '#2563eb',
   },
-  functional_requirements: {
+  requirements: {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
       </svg>
     ),
-    colorClass: 'section-icon--functional',
-    color: '#2563eb',
+    colorClass: 'section-icon--requirements',
+    color: '#16a34a',
   },
-  data_needs: {
+  scope_and_constraints: {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <ellipse cx="12" cy="5" rx="9" ry="3" />
-        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" />
       </svg>
     ),
-    colorClass: 'section-icon--data-needs',
-    color: '#9333ea',
-  },
-  constraints: {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-      </svg>
-    ),
-    colorClass: 'section-icon--constraints',
+    colorClass: 'section-icon--scope_and_constraints',
     color: '#d97706',
   },
-  non_goals: {
+  risks_and_questions: {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
     ),
-    colorClass: 'section-icon--non-goals',
-    color: '#6b7280',
+    colorClass: 'section-icon--risks_and_questions',
+    color: '#dc2626',
   },
-  risks_assumptions: {
+  action_items: {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
       </svg>
     ),
-    colorClass: 'section-icon--risks',
-    color: '#db2777',
-  },
-  open_questions: {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
-      </svg>
-    ),
-    colorClass: 'section-icon--questions',
-    color: '#0d9488',
-  },
-  action_items: {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-      </svg>
-    ),
-    colorClass: 'section-icon--actions',
-    color: '#ea580c',
+    colorClass: 'section-icon--action_items',
+    color: '#9333ea',
   },
 };
 
@@ -102,15 +64,11 @@ const SECTION_ICONS = {
  * Shorter labels for tab display
  */
 const TAB_LABELS = {
-  problems: 'Problems',
-  user_goals: 'Goals',
-  functional_requirements: 'Functional',
-  data_needs: 'Data',
-  constraints: 'Constraints',
-  non_goals: 'Non-Goals',
-  risks_assumptions: 'Risks',
-  open_questions: 'Questions',
-  action_items: 'Actions',
+  needs_and_goals: 'Needs & Goals',
+  requirements: 'Requirements',
+  scope_and_constraints: 'Scope & Constraints',
+  risks_and_questions: 'Risks & Questions',
+  action_items: 'Action Items',
 };
 
 /**

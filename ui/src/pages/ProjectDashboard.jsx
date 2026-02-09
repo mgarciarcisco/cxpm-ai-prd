@@ -51,9 +51,14 @@ function ProjectDashboard() {
   };
 
   const formatSectionName = (section) => {
-    return section
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase());
+    const labels = {
+      needs_and_goals: 'Needs & Goals',
+      requirements: 'Requirements',
+      scope_and_constraints: 'Scope & Constraints',
+      risks_and_questions: 'Risks & Open Questions',
+      action_items: 'Action Items',
+    };
+    return labels[section] || section.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   const handleMeetingClick = (meeting) => {

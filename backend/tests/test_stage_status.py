@@ -60,7 +60,7 @@ def _create_project(db: Session, name: str = "Test Project") -> Project:
 def _create_requirement(
     db: Session,
     project_id: str,
-    section: Section = Section.problems,
+    section: Section = Section.needs_and_goals,
     content: str = "Test requirement",
     is_active: bool = True,
 ) -> Requirement:

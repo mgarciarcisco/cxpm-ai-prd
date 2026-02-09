@@ -40,7 +40,7 @@ def _get_project_id(project: Project) -> str:
 def _create_test_requirement(
     db: Session,
     project_id: str,
-    section: Section = Section.problems,
+    section: Section = Section.needs_and_goals,
     content: str = "Test requirement content",
     is_active: bool = True,
 ) -> Requirement:

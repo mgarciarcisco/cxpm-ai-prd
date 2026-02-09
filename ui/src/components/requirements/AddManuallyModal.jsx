@@ -4,14 +4,10 @@ import './AddManuallyModal.css';
 
 // Section options matching backend API
 const SECTIONS = [
-  { value: 'problems', label: 'Problems' },
-  { value: 'user_goals', label: 'User Goals' },
-  { value: 'functional_requirements', label: 'Functional Requirements' },
-  { value: 'data_needs', label: 'Data Needs' },
-  { value: 'constraints', label: 'Constraints' },
-  { value: 'non_goals', label: 'Non Goals' },
-  { value: 'risks_assumptions', label: 'Risks & Assumptions' },
-  { value: 'open_questions', label: 'Open Questions' },
+  { value: 'needs_and_goals', label: 'Needs & Goals' },
+  { value: 'requirements', label: 'Requirements' },
+  { value: 'scope_and_constraints', label: 'Scope & Constraints' },
+  { value: 'risks_and_questions', label: 'Risks & Open Questions' },
   { value: 'action_items', label: 'Action Items' },
 ];
 

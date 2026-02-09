@@ -85,62 +85,62 @@ class TestListRequirements:
         project_id = _create_project(auth_client)
 
         # Create requirements in different sections
-        _create_requirement(test_db, project_id, Section.problems, "Problem 1", order=1)
-        _create_requirement(test_db, project_id, Section.problems, "Problem 2", order=2)
-        _create_requirement(test_db, project_id, Section.user_goals, "Goal 1", order=1)
-        _create_requirement(test_db, project_id, Section.functional_requirements, "Req 1", order=1)
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Need 1", order=1)
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Need 2", order=2)
+        _create_requirement(test_db, project_id, Section.requirements, "Req 1", order=1)
+        _create_requirement(test_db, project_id, Section.scope_and_constraints, "Constraint 1", order=1)
 
         response = auth_client.get(f"/api/projects/{project_id}/requirements")
 
         assert response.status_code == 200
         data = response.json()
 
-        # Check problems section
-        assert len(data["problems"]) == 2
-        assert data["problems"][0]["content"] == "Problem 1"
-        assert data["problems"][1]["content"] == "Problem 2"
+        # Check needs_and_goals section
+        assert len(data["needs_and_goals"]) == 2
+        assert data["needs_and_goals"][0]["content"] == "Need 1"
+        assert data["needs_and_goals"][1]["content"] == "Need 2"
 
-        # Check user_goals section
-        assert len(data["user_goals"]) == 1
-        assert data["user_goals"][0]["content"] == "Goal 1"
+        # Check requirements section
+        assert len(data["requirements"]) == 1
+        assert data["requirements"][0]["content"] == "Req 1"
 
-        # Check functional_requirements section
-        assert len(data["functional_requirements"]) == 1
-        assert data["functional_requirements"][0]["content"] == "Req 1"
+        # Check scope_and_constraints section
+        assert len(data["scope_and_constraints"]) == 1
+        assert data["scope_and_constraints"][0]["content"] == "Constraint 1"
 
         # Check empty sections
-        assert len(data["constraints"]) == 0
-        assert len(data["non_goals"]) == 0
+        assert len(data["risks_and_questions"]) == 0
+        assert len(data["action_items"]) == 0
 
     def test_list_requirements_excludes_inactive(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that inactive (soft-deleted) requirements are excluded."""
         project_id = _create_project(auth_client)
 
-        _create_requirement(test_db, project_id, Section.problems, "Active", is_active=True)
-        _create_requirement(test_db, project_id, Section.problems, "Inactive", is_active=False, order=2)
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Active", is_active=True)
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Inactive", is_active=False, order=2)
 
         response = auth_client.get(f"/api/projects/{project_id}/requirements")
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data["problems"]) == 1
-        assert data["problems"][0]["content"] == "Active"
+        assert len(data["needs_and_goals"]) == 1
+        assert data["needs_and_goals"][0]["content"] == "Active"
 
     def test_list_requirements_includes_sources(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that requirements include source meeting links."""
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(test_db, project_id, "Test Meeting")
-        req_id = _create_requirement(test_db, project_id, Section.problems, "Problem with source")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "Need with source")
         _create_requirement_source(test_db, req_id, meeting_id, "quoted from meeting")
 
         response = auth_client.get(f"/api/projects/{project_id}/requirements")
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data["problems"]) == 1
-        assert len(data["problems"][0]["sources"]) == 1
-        assert data["problems"][0]["sources"][0]["meeting_id"] == meeting_id
-        assert data["problems"][0]["sources"][0]["source_quote"] == "quoted from meeting"
+        assert len(data["needs_and_goals"]) == 1
+        assert len(data["needs_and_goals"][0]["sources"]) == 1
+        assert data["needs_and_goals"][0]["sources"][0]["meeting_id"] == meeting_id
+        assert data["needs_and_goals"][0]["sources"][0]["source_quote"] == "quoted from meeting"
 
     def test_list_requirements_404_project_not_found(self, auth_client: TestClient) -> None:
         """Test listing requirements for non-existent project returns 404."""
@@ -160,8 +160,8 @@ class TestListRequirements:
         assert response.status_code == 200
         data = response.json()
         # All sections should be empty arrays
-        for section in ["problems", "user_goals", "functional_requirements", "data_needs",
-                        "constraints", "non_goals", "risks_assumptions", "open_questions", "action_items"]:
+        for section in ["needs_and_goals", "requirements", "scope_and_constraints",
+                        "risks_and_questions", "action_items"]:
             assert data[section] == []
 
 
@@ -178,13 +178,13 @@ class TestCreateRequirement:
 
         response = auth_client.post(
             f"/api/projects/{project_id}/requirements",
-            json={"section": "problems", "content": "New problem requirement"},
+            json={"section": "needs_and_goals", "content": "New need requirement"},
         )
 
         assert response.status_code == 201
         data = response.json()
-        assert data["section"] == "problems"
-        assert data["content"] == "New problem requirement"
+        assert data["section"] == "needs_and_goals"
+        assert data["content"] == "New need requirement"
         assert data["order"] == 1
         assert data["sources"] == []
         assert data["history_count"] == 1  # Creation is recorded in history
@@ -195,7 +195,7 @@ class TestCreateRequirement:
 
         response = auth_client.post(
             f"/api/projects/{project_id}/requirements",
-            json={"section": "user_goals", "content": "User goal content"},
+            json={"section": "needs_and_goals", "content": "User goal content"},
         )
 
         req_id = response.json()["id"]
@@ -215,12 +215,12 @@ class TestCreateRequirement:
         project_id = _create_project(auth_client)
 
         # Create first requirement in section
-        _create_requirement(test_db, project_id, Section.functional_requirements, "First", order=1)
+        _create_requirement(test_db, project_id, Section.requirements, "First", order=1)
 
         # Create second via API
         response = auth_client.post(
             f"/api/projects/{project_id}/requirements",
-            json={"section": "functional_requirements", "content": "Second"},
+            json={"section": "requirements", "content": "Second"},
         )
 
         assert response.status_code == 201
@@ -231,31 +231,27 @@ class TestCreateRequirement:
         """Test that new requirements in different section start at order 1."""
         project_id = _create_project(auth_client)
 
-        # Create requirement in problems section
-        _create_requirement(test_db, project_id, Section.problems, "Problem", order=5)
+        # Create requirement in needs_and_goals section
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Need", order=5)
 
-        # Create requirement in different section (user_goals)
+        # Create requirement in different section (requirements)
         response = auth_client.post(
             f"/api/projects/{project_id}/requirements",
-            json={"section": "user_goals", "content": "Goal"},
+            json={"section": "requirements", "content": "Requirement"},
         )
 
         assert response.status_code == 201
         assert response.json()["order"] == 1
 
     def test_create_requirement_all_sections(self, auth_client: TestClient, test_db: Session) -> None:
-        """Test creating requirements in all 9 sections."""
+        """Test creating requirements in all 5 sections."""
         project_id = _create_project(auth_client)
 
         sections = [
-            "problems",
-            "user_goals",
-            "functional_requirements",
-            "data_needs",
-            "constraints",
-            "non_goals",
-            "risks_assumptions",
-            "open_questions",
+            "needs_and_goals",
+            "requirements",
+            "scope_and_constraints",
+            "risks_and_questions",
             "action_items",
         ]
 
@@ -273,7 +269,7 @@ class TestCreateRequirement:
 
         response = auth_client.post(
             f"/api/projects/{fake_project_id}/requirements",
-            json={"section": "problems", "content": "Test content"},
+            json={"section": "needs_and_goals", "content": "Test content"},
         )
 
         assert response.status_code == 404
@@ -296,7 +292,7 @@ class TestCreateRequirement:
 
         response = auth_client.post(
             f"/api/projects/{project_id}/requirements",
-            json={"section": "problems"},
+            json={"section": "needs_and_goals"},
         )
 
         assert response.status_code == 422
@@ -331,7 +327,7 @@ class TestRequirementsStatusTransitions:
         # Create a requirement
         auth_client.post(
             f"/api/projects/{project_id}/requirements",
-            json={"section": "problems", "content": "A problem"},
+            json={"section": "needs_and_goals", "content": "A need"},
         )
 
         # Refresh and check status updated
@@ -343,7 +339,7 @@ class TestRequirementsStatusTransitions:
         project_id = _create_project(auth_client)
 
         # Create a requirement directly
-        req_id = _create_requirement(test_db, project_id, Section.problems, "Only item")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "Only item")
 
         # Set status to has_items to simulate normal flow
         project = test_db.query(Project).filter(Project.id == project_id).first()
@@ -362,8 +358,8 @@ class TestRequirementsStatusTransitions:
         project_id = _create_project(auth_client)
 
         # Create two requirements
-        req1_id = _create_requirement(test_db, project_id, Section.problems, "First")
-        _create_requirement(test_db, project_id, Section.problems, "Second", order=2)
+        req1_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "First")
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Second", order=2)
 
         # Set status to has_items
         project = test_db.query(Project).filter(Project.id == project_id).first()
@@ -382,7 +378,7 @@ class TestRequirementsStatusTransitions:
         project_id = _create_project(auth_client)
 
         # Create initial requirement and set to reviewed
-        _create_requirement(test_db, project_id, Section.problems, "Initial")
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Initial")
         project = test_db.query(Project).filter(Project.id == project_id).first()
         project.requirements_status = RequirementsStatus.reviewed
         test_db.commit()
@@ -390,7 +386,7 @@ class TestRequirementsStatusTransitions:
         # Create another requirement via API
         auth_client.post(
             f"/api/projects/{project_id}/requirements",
-            json={"section": "user_goals", "content": "New goal"},
+            json={"section": "requirements", "content": "New requirement"},
         )
 
         # Status should remain reviewed
@@ -402,8 +398,8 @@ class TestRequirementsStatusTransitions:
         project_id = _create_project(auth_client)
 
         # Create two requirements
-        req1_id = _create_requirement(test_db, project_id, Section.problems, "First")
-        _create_requirement(test_db, project_id, Section.problems, "Second", order=2)
+        req1_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "First")
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Second", order=2)
 
         # Set status to reviewed
         project = test_db.query(Project).filter(Project.id == project_id).first()
@@ -428,7 +424,7 @@ class TestUpdateRequirement:
     def test_update_requirement_success(self, auth_client: TestClient, test_db: Session) -> None:
         """Test updating a requirement's content."""
         project_id = _create_project(auth_client)
-        req_id = _create_requirement(test_db, project_id, Section.problems, "Original content")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "Original content")
 
         response = auth_client.put(
             f"/api/requirements/{req_id}",
@@ -443,7 +439,7 @@ class TestUpdateRequirement:
     def test_update_requirement_records_history(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that updating a requirement records the change in history."""
         project_id = _create_project(auth_client)
-        req_id = _create_requirement(test_db, project_id, Section.problems, "Original content")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "Original content")
 
         auth_client.put(
             f"/api/requirements/{req_id}",
@@ -463,7 +459,7 @@ class TestUpdateRequirement:
     def test_update_requirement_increments_history_count(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that updating multiple times increments history_count."""
         project_id = _create_project(auth_client)
-        req_id = _create_requirement(test_db, project_id, Section.problems, "v1")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "v1")
 
         # First update
         auth_client.put(f"/api/requirements/{req_id}", json={"content": "v2"})
@@ -496,7 +492,7 @@ class TestDeleteRequirement:
     def test_delete_requirement_success(self, auth_client: TestClient, test_db: Session) -> None:
         """Test soft-deleting a requirement."""
         project_id = _create_project(auth_client)
-        req_id = _create_requirement(test_db, project_id, Section.problems, "To be deleted")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "To be deleted")
 
         response = auth_client.delete(f"/api/requirements/{req_id}")
 
@@ -510,7 +506,7 @@ class TestDeleteRequirement:
     def test_delete_requirement_records_history(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that deleting a requirement records the change in history."""
         project_id = _create_project(auth_client)
-        req_id = _create_requirement(test_db, project_id, Section.problems, "To be deleted")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "To be deleted")
 
         auth_client.delete(f"/api/requirements/{req_id}")
 
@@ -527,15 +523,15 @@ class TestDeleteRequirement:
     def test_delete_requirement_excludes_from_list(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that deleted requirement is excluded from list."""
         project_id = _create_project(auth_client)
-        _create_requirement(test_db, project_id, Section.problems, "Kept")
-        req_id = _create_requirement(test_db, project_id, Section.problems, "To be deleted", order=2)
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Kept")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "To be deleted", order=2)
 
         auth_client.delete(f"/api/requirements/{req_id}")
 
         response = auth_client.get(f"/api/projects/{project_id}/requirements")
         data = response.json()
-        assert len(data["problems"]) == 1
-        assert data["problems"][0]["content"] == "Kept"
+        assert len(data["needs_and_goals"]) == 1
+        assert data["needs_and_goals"][0]["content"] == "Kept"
 
     def test_delete_requirement_404_not_found(self, auth_client: TestClient) -> None:
         """Test deleting a non-existent requirement returns 404."""
@@ -558,14 +554,14 @@ class TestReorderRequirements:
         """Test reordering requirements within a section."""
         project_id = _create_project(auth_client)
 
-        req1_id = _create_requirement(test_db, project_id, Section.problems, "First", order=1)
-        req2_id = _create_requirement(test_db, project_id, Section.problems, "Second", order=2)
-        req3_id = _create_requirement(test_db, project_id, Section.problems, "Third", order=3)
+        req1_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "First", order=1)
+        req2_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "Second", order=2)
+        req3_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "Third", order=3)
 
         # Reorder: Third, First, Second
         response = auth_client.put(
             f"/api/projects/{project_id}/requirements/reorder",
-            json={"section": "problems", "requirement_ids": [req3_id, req1_id, req2_id]},
+            json={"section": "needs_and_goals", "requirement_ids": [req3_id, req1_id, req2_id]},
         )
 
         assert response.status_code == 200
@@ -574,7 +570,7 @@ class TestReorderRequirements:
         # Verify order in database
         reqs = test_db.query(Requirement).filter(
             Requirement.project_id == project_id,
-            Requirement.section == Section.problems,
+            Requirement.section == Section.needs_and_goals,
         ).order_by(Requirement.order).all()
 
         assert reqs[0].content == "Third"
@@ -588,40 +584,40 @@ class TestReorderRequirements:
         """Test that reordering is reflected in the list endpoint."""
         project_id = _create_project(auth_client)
 
-        req1_id = _create_requirement(test_db, project_id, Section.problems, "A", order=1)
-        req2_id = _create_requirement(test_db, project_id, Section.problems, "B", order=2)
+        req1_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "A", order=1)
+        req2_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "B", order=2)
 
         # Swap order: B, A
         auth_client.put(
             f"/api/projects/{project_id}/requirements/reorder",
-            json={"section": "problems", "requirement_ids": [req2_id, req1_id]},
+            json={"section": "needs_and_goals", "requirement_ids": [req2_id, req1_id]},
         )
 
         # Check list endpoint shows new order
         response = auth_client.get(f"/api/projects/{project_id}/requirements")
         data = response.json()
-        assert data["problems"][0]["content"] == "B"
-        assert data["problems"][1]["content"] == "A"
+        assert data["needs_and_goals"][0]["content"] == "B"
+        assert data["needs_and_goals"][1]["content"] == "A"
 
     def test_reorder_requirements_only_affects_section(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that reordering only affects items in the specified section."""
         project_id = _create_project(auth_client)
 
-        req1_id = _create_requirement(test_db, project_id, Section.problems, "P1", order=1)
-        req2_id = _create_requirement(test_db, project_id, Section.problems, "P2", order=2)
-        _create_requirement(test_db, project_id, Section.constraints, "C1", order=1)
+        req1_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "P1", order=1)
+        req2_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "P2", order=2)
+        _create_requirement(test_db, project_id, Section.scope_and_constraints, "C1", order=1)
 
-        # Reorder problems only
+        # Reorder needs_and_goals only
         auth_client.put(
             f"/api/projects/{project_id}/requirements/reorder",
-            json={"section": "problems", "requirement_ids": [req2_id, req1_id]},
+            json={"section": "needs_and_goals", "requirement_ids": [req2_id, req1_id]},
         )
 
-        # Check constraints section is unchanged
+        # Check scope_and_constraints section is unchanged
         response = auth_client.get(f"/api/projects/{project_id}/requirements")
         data = response.json()
-        assert len(data["constraints"]) == 1
-        assert data["constraints"][0]["content"] == "C1"
+        assert len(data["scope_and_constraints"]) == 1
+        assert data["scope_and_constraints"][0]["content"] == "C1"
 
     def test_reorder_requirements_404_project_not_found(self, auth_client: TestClient) -> None:
         """Test reordering requirements in non-existent project returns 404."""
@@ -629,7 +625,7 @@ class TestReorderRequirements:
 
         response = auth_client.put(
             f"/api/projects/{fake_project_id}/requirements/reorder",
-            json={"section": "problems", "requirement_ids": []},
+            json={"section": "needs_and_goals", "requirement_ids": []},
         )
 
         assert response.status_code == 404
@@ -646,7 +642,7 @@ class TestExportRequirements:
     def test_export_format_header(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that export contains proper header with project name."""
         project_id = _create_project(auth_client)
-        _create_requirement(test_db, project_id, Section.problems, "A problem")
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
         response = auth_client.get(f"/api/projects/{project_id}/requirements/export")
 
@@ -656,33 +652,29 @@ class TestExportRequirements:
         assert "*Generated on" in content
 
     def test_export_format_sections(self, auth_client: TestClient, test_db: Session) -> None:
-        """Test that export contains all 9 sections in correct order."""
+        """Test that export contains all 5 sections in correct order."""
         project_id = _create_project(auth_client)
-        _create_requirement(test_db, project_id, Section.problems, "Problem 1")
-        _create_requirement(test_db, project_id, Section.user_goals, "Goal 1")
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Need 1")
+        _create_requirement(test_db, project_id, Section.requirements, "Req 1")
 
         response = auth_client.get(f"/api/projects/{project_id}/requirements/export")
         content = response.text
 
         # Check all section headers present
-        assert "## Problems" in content
-        assert "## User Goals" in content
-        assert "## Functional Requirements" in content
-        assert "## Data Needs" in content
-        assert "## Constraints" in content
-        assert "## Non-Goals" in content
-        assert "## Risks & Assumptions" in content
-        assert "## Open Questions" in content
+        assert "## Needs & Goals" in content
+        assert "## Requirements" in content
+        assert "## Scope & Constraints" in content
+        assert "## Risks & Open Questions" in content
         assert "## Action Items" in content
 
         # Check requirement content
-        assert "- Problem 1" in content
-        assert "- Goal 1" in content
+        assert "- Need 1" in content
+        assert "- Req 1" in content
 
     def test_export_format_empty_section(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that empty sections show 'No items in this section.'"""
         project_id = _create_project(auth_client)
-        _create_requirement(test_db, project_id, Section.problems, "Problem 1")
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "Problem 1")
 
         response = auth_client.get(f"/api/projects/{project_id}/requirements/export")
         content = response.text
@@ -709,7 +701,7 @@ class TestExportRequirements:
     def test_export_format_no_sources(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that export handles no applied meetings gracefully."""
         project_id = _create_project(auth_client)
-        _create_requirement(test_db, project_id, Section.problems, "A problem")
+        _create_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
         response = auth_client.get(f"/api/projects/{project_id}/requirements/export")
         content = response.text
@@ -755,7 +747,7 @@ class TestRequirementHistory:
     def test_get_history_success(self, auth_client: TestClient, test_db: Session) -> None:
         """Test getting requirement history."""
         project_id = _create_project(auth_client)
-        req_id = _create_requirement(test_db, project_id, Section.problems, "Original")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "Original")
 
         # Create some history
         auth_client.put(f"/api/requirements/{req_id}", json={"content": "Updated"})
@@ -773,7 +765,7 @@ class TestRequirementHistory:
     def test_get_history_ordered_desc(self, auth_client: TestClient, test_db: Session) -> None:
         """Test that history is ordered by created_at descending (newest first)."""
         project_id = _create_project(auth_client)
-        req_id = _create_requirement(test_db, project_id, Section.problems, "v1")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "v1")
 
         # Create multiple history entries
         auth_client.put(f"/api/requirements/{req_id}", json={"content": "v2"})
@@ -799,7 +791,7 @@ class TestRequirementHistory:
     def test_get_history_empty(self, auth_client: TestClient, test_db: Session) -> None:
         """Test getting history for requirement with no changes."""
         project_id = _create_project(auth_client)
-        req_id = _create_requirement(test_db, project_id, Section.problems, "No changes")
+        req_id = _create_requirement(test_db, project_id, Section.needs_and_goals, "No changes")
 
         response = auth_client.get(f"/api/requirements/{req_id}/history")
 

@@ -312,26 +312,18 @@
 }
 
 /* Section Icon Colors (used in tabs, sidebar, and section detail) */
-.section-icon--problems { background: #fef2f2; color: #dc2626; }
-.section-icon--user-goals { background: #f0fdf4; color: #16a34a; }
-.section-icon--functional { background: #eff6ff; color: #2563eb; }
-.section-icon--data-needs { background: #faf5ff; color: #9333ea; }
-.section-icon--constraints { background: #fffbeb; color: #d97706; }
-.section-icon--non-goals { background: #f3f4f6; color: #6b7280; }
-.section-icon--risks { background: #fdf2f8; color: #db2777; }
-.section-icon--questions { background: #f0fdfa; color: #0d9488; }
-.section-icon--actions { background: #fff7ed; color: #ea580c; }
+.section-icon--needs_and_goals { background: #eff6ff; color: #2563eb; }
+.section-icon--requirements { background: #f0fdf4; color: #16a34a; }
+.section-icon--scope_and_constraints { background: #fffbeb; color: #d97706; }
+.section-icon--risks_and_questions { background: #fef2f2; color: #dc2626; }
+.section-icon--action_items { background: #faf5ff; color: #9333ea; }
 
 /* Ensure SVGs inside section icons render properly */
-.section-icon--problems svg,
-.section-icon--user-goals svg,
-.section-icon--functional svg,
-.section-icon--data-needs svg,
-.section-icon--constraints svg,
-.section-icon--non-goals svg,
-.section-icon--risks svg,
-.section-icon--questions svg,
-.section-icon--actions svg {
+.section-icon--needs_and_goals svg,
+.section-icon--requirements svg,
+.section-icon--scope_and_constraints svg,
+.section-icon--risks_and_questions svg,
+.section-icon--action_items svg {
   display: block;
 }
 

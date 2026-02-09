@@ -166,51 +166,43 @@ def create_all_requirements(db, projects):
 
     # AI Customer Support Chatbot (Project 1) - Complete requirements
     chatbot_reqs = {
-        Section.problems: [
+        Section.needs_and_goals: [
             "Customer support team is overwhelmed with 2,000+ tickets daily, 60% of which are repetitive tier-1 questions",
             "Average response time is 4 hours during peak periods, leading to customer frustration and churn",
             "Support agents spend 70% of their time on password resets, order status checks, and FAQ questions",
             "No 24/7 support coverage - customers in different time zones wait 8+ hours for responses",
-        ],
-        Section.user_goals: [
             "Customers want instant answers to common questions without waiting in queue",
             "Support agents want to focus on complex issues that require human judgment",
             "Operations team wants to reduce support costs while improving customer satisfaction scores",
             "IT team needs a solution that integrates with existing Zendesk ticketing system",
         ],
-        Section.functional_requirements: [
+        Section.requirements: [
             "Chatbot must understand and respond to natural language questions about products, orders, and policies",
             "System must authenticate users securely before providing account-specific information",
             "Chatbot must gracefully escalate to human agents when confidence is below 80% or customer requests it",
             "All conversations must be logged and searchable for quality assurance and training purposes",
             "System must support multiple languages (English, Spanish, French) with automatic detection",
             "Chatbot must integrate with order management system to provide real-time order status",
-        ],
-        Section.data_needs: [
             "Access to product catalog with descriptions, pricing, and availability",
             "Read-only access to customer order history and shipping status",
             "Integration with knowledge base containing 500+ FAQ articles and policies",
             "Historical chat logs for training and improving the AI model",
         ],
-        Section.constraints: [
+        Section.scope_and_constraints: [
             "Must comply with GDPR and CCPA for handling personal customer data",
             "Response latency must be under 3 seconds for 95% of queries",
             "Solution must run on existing AWS infrastructure to minimize additional cloud costs",
             "Chatbot must not hallucinate or provide incorrect product information",
-        ],
-        Section.non_goals: [
             "Processing payments or refunds through the chatbot - these require human approval",
             "Handling complex disputes or escalated complaints - always route to senior agents",
             "Replacing the entire support team - goal is augmentation, not replacement",
             "Building custom NLP from scratch - will use established LLM providers",
         ],
-        Section.risks_assumptions: [
+        Section.risks_and_questions: [
             "Assumption: Customers will accept chatbot interactions for simple queries based on industry benchmarks",
             "Risk: AI responses may occasionally be inappropriate or incorrect, requiring human oversight",
             "Assumption: Existing knowledge base content is accurate and up-to-date",
             "Risk: Integration with legacy order management system may be more complex than estimated",
-        ],
-        Section.open_questions: [
             "Which LLM provider (OpenAI, Anthropic, or Google) best fits our security and cost requirements?",
             "How should we handle the transition period - gradual rollout or big bang?",
             "What metrics should define success - CSAT scores, deflection rate, or cost savings?",
@@ -225,48 +217,40 @@ def create_all_requirements(db, projects):
 
     # Mobile Banking Redesign (Project 2)
     banking_reqs = {
-        Section.problems: [
+        Section.needs_and_goals: [
             "Current app requires 7 taps to complete a simple money transfer, competitors average 3 taps",
             "App crashes on 15% of Android devices during bill payment flow",
             "Users cannot view pending transactions, leading to overdrafts and customer complaints",
             "No biometric authentication option - customers must type full password every time",
-        ],
-        Section.user_goals: [
             "Complete transfers to saved recipients in under 10 seconds",
             "View all account activity including pending transactions in one place",
             "Set up recurring transfers and bill payments without calling customer service",
             "Receive instant notifications for all account activity with customizable thresholds",
         ],
-        Section.functional_requirements: [
+        Section.requirements: [
             "Support Face ID, Touch ID, and fingerprint authentication with password fallback",
             "Display real-time balance including pending transactions and holds",
             "Enable P2P transfers via phone number, email, or QR code scanning",
             "Allow users to freeze/unfreeze debit card instantly from the app",
             "Provide spending insights with category breakdown and month-over-month trends",
             "Support dark mode and accessibility features including screen reader compatibility",
-        ],
-        Section.data_needs: [
             "Real-time account balance and transaction feed from core banking system",
             "Customer profile data including saved payees and recurring payments",
             "Transaction categorization data for spending insights feature",
         ],
-        Section.constraints: [
+        Section.scope_and_constraints: [
             "Must pass PCI-DSS compliance audit before launch",
             "Must support iOS 14+ and Android 10+ to cover 95% of current user base",
             "Maximum app size of 50MB to ensure quick downloads on cellular networks",
             "All API calls must complete within 2 seconds under normal load",
-        ],
-        Section.non_goals: [
             "Investment and brokerage features - separate app handles wealth management",
             "Business banking features - focus is retail customers only",
             "Crypto wallet or trading capabilities - not aligned with current regulatory approach",
         ],
-        Section.risks_assumptions: [
+        Section.risks_and_questions: [
             "Assumption: Core banking APIs can handle 3x current traffic for new features",
             "Risk: Biometric authentication may not work reliably on older Android devices",
             "Assumption: Users will opt-in to push notifications for transaction alerts",
-        ],
-        Section.open_questions: [
             "Should we allow transfers to non-customers or only bank-to-bank transfers?",
             "What is the daily/monthly transfer limit for P2P payments?",
         ],
@@ -279,46 +263,38 @@ def create_all_requirements(db, projects):
 
     # Employee Onboarding Portal (Project 3)
     onboarding_reqs = {
-        Section.problems: [
+        Section.needs_and_goals: [
             "New hires spend their first day filling out paper forms instead of meeting their team",
             "HR spends 4 hours per new hire manually entering data into 5 different systems",
             "30% of new hires don't have laptop and system access ready on day one",
             "No centralized place for new employees to find company information and policies",
-        ],
-        Section.user_goals: [
             "New hires want to complete all paperwork before their start date",
             "Managers want visibility into their new hire's onboarding progress",
             "HR wants to automate repetitive data entry and focus on employee experience",
             "IT wants advance notice of equipment needs to prepare in time",
         ],
-        Section.functional_requirements: [
+        Section.requirements: [
             "Digital forms for tax documents (W-4, I-9), emergency contacts, and direct deposit",
             "Document upload for identity verification with secure storage",
             "Onboarding checklist with progress tracking visible to employee, manager, and HR",
             "Automated provisioning requests to IT for laptop, email, and system access",
             "Welcome video and company culture content before day one",
             "Virtual meet-the-team page with photos and bios of direct team members",
-        ],
-        Section.data_needs: [
             "Integration with Workday for employee master data sync",
             "Active Directory integration for account provisioning",
             "Access to org chart data for team information display",
         ],
-        Section.constraints: [
+        Section.scope_and_constraints: [
             "Must be accessible on mobile devices since many hires don't have work laptops yet",
             "Personal data handling must comply with SOC 2 and local employment laws",
             "Solution should work for both US and international hires",
-        ],
-        Section.non_goals: [
             "Performance review or goal-setting features - handled in Workday",
             "Benefits enrollment - separate benefits portal handles this",
             "Training/LMS content - focus is pre-day-one and week-one only",
         ],
-        Section.risks_assumptions: [
+        Section.risks_and_questions: [
             "Assumption: Workday APIs support the data fields we need for integration",
             "Risk: International compliance requirements may vary significantly by country",
-        ],
-        Section.open_questions: [
             "Should contractors use the same portal or a simplified version?",
             "What is the timeline for international rollout after US pilot?",
         ],
@@ -331,30 +307,26 @@ def create_all_requirements(db, projects):
 
     # Inventory Management System (Project 4) - Early stage, fewer requirements
     inventory_reqs = {
-        Section.problems: [
+        Section.needs_and_goals: [
             "Warehouse staff uses paper logs to track inventory, leading to errors and missing items",
             "No visibility into real-time stock levels - orders are placed based on weekly manual counts",
             "Frequent stockouts of popular items because reorder alerts are based on outdated data",
-        ],
-        Section.user_goals: [
             "Warehouse managers want real-time visibility into inventory across all locations",
             "Purchasing team wants automated low-stock alerts based on sales velocity",
             "Operations wants to reduce inventory holding costs while preventing stockouts",
         ],
-        Section.functional_requirements: [
+        Section.requirements: [
             "Barcode and QR code scanning for receiving, picking, and shipping operations",
             "Real-time dashboard showing stock levels, locations, and movements",
             "Automated reorder point alerts with configurable thresholds per SKU",
-        ],
-        Section.data_needs: [
             "Product master data including SKU, description, and category",
             "Historical sales data for demand forecasting and reorder calculations",
         ],
-        Section.constraints: [
+        Section.scope_and_constraints: [
             "Must work offline in warehouse areas with poor WiFi coverage",
             "Scanning devices must be rugged and suitable for warehouse environment",
         ],
-        Section.open_questions: [
+        Section.risks_and_questions: [
             "Should we build mobile app or use dedicated scanning hardware?",
             "Integration with which ERP system - SAP or NetSuite?",
         ],

@@ -13,15 +13,11 @@ from app.database import Base
 
 
 class Section(str, enum.Enum):
-    """Enum for the 9 standard requirement sections."""
-    problems = "problems"
-    user_goals = "user_goals"
-    functional_requirements = "functional_requirements"
-    data_needs = "data_needs"
-    constraints = "constraints"
-    non_goals = "non_goals"
-    risks_assumptions = "risks_assumptions"
-    open_questions = "open_questions"
+    """Enum for the 5 consolidated requirement sections."""
+    needs_and_goals = "needs_and_goals"
+    requirements = "requirements"
+    scope_and_constraints = "scope_and_constraints"
+    risks_and_questions = "risks_and_questions"
     action_items = "action_items"
 
 
@@ -36,6 +32,8 @@ class MeetingItem(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     source_quote: Mapped[str | None] = mapped_column(Text, nullable=True)
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    speaker: Mapped[str | None] = mapped_column(Text, nullable=True)
+    priority: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Timestamps

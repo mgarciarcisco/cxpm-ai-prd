@@ -451,6 +451,8 @@ async def stream_extraction(
                         "section": item["section"],
                         "content": item["content"],
                         "source_quote": item.get("source_quote"),
+                        "speaker": item.get("speaker"),
+                        "priority": item.get("priority"),
                     }),
                 }
 
@@ -896,7 +898,7 @@ async def quick_extract(
         )
     
     # Load the extraction prompt template
-    prompt_path = Path(__file__).parent.parent.parent / "prompts" / "extract_meeting_v1.txt"
+    prompt_path = Path(__file__).parent.parent.parent / "prompts" / "extract_meeting_v2.txt"
     try:
         prompt_template = prompt_path.read_text(encoding="utf-8")
     except Exception as e:

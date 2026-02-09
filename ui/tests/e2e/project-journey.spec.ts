@@ -118,14 +118,10 @@ function buildProject(config: MockConfig) {
  */
 async function setupMocks(page: Page, config: MockConfig) {
   const requirements = config.requirementsData || {
-    problems: [],
-    user_goals: [],
-    functional_requirements: [],
-    data_needs: [],
-    constraints: [],
-    non_goals: [],
-    risks_assumptions: [],
-    open_questions: [],
+    needs_and_goals: [],
+    requirements: [],
+    scope_and_constraints: [],
+    risks_and_questions: [],
     action_items: [],
   };
 
@@ -281,7 +277,7 @@ test.describe('Dashboard and Project Creation', () => {
       stories_status: 'empty',
       mockups_status: 'empty',
       export_status: 'not_exported',
-      requirementsData: { problems: [{ id: 'r1', content: 'Test', section: 'problems' }] },
+      requirementsData: { needs_and_goals: [{ id: 'r1', content: 'Test', section: 'needs_and_goals' }] },
     });
 
     await page.goto('/dashboard');
@@ -319,7 +315,7 @@ test.describe('Stage Navigation', () => {
       stories_status: 'empty',
       mockups_status: 'empty',
       export_status: 'not_exported',
-      requirementsData: { problems: [{ id: 'r1', content: 'Test', section: 'problems' }] },
+      requirementsData: { needs_and_goals: [{ id: 'r1', content: 'Test', section: 'needs_and_goals' }] },
     });
 
     await page.goto(`/projects/${mockProjectBase.id}/requirements`);
@@ -385,7 +381,7 @@ test.describe('Requirements Stage', () => {
     await expect(page.locator('.modal-container')).toBeVisible();
 
     // Fill form fields
-    await page.selectOption('select', 'problems');
+    await page.selectOption('select', 'needs_and_goals');
     await page.fill('textarea', 'Test requirement content');
 
     // Close modal
@@ -401,9 +397,9 @@ test.describe('Requirements Stage', () => {
       mockups_status: 'empty',
       export_status: 'not_exported',
       requirementsData: {
-        problems: [
-          { id: 'r1', content: 'First problem', section: 'problems' },
-          { id: 'r2', content: 'Second problem', section: 'problems' },
+        needs_and_goals: [
+          { id: 'r1', content: 'First problem', section: 'needs_and_goals' },
+          { id: 'r2', content: 'Second problem', section: 'needs_and_goals' },
         ],
       },
     });
@@ -420,7 +416,7 @@ test.describe('Requirements Stage', () => {
       stories_status: 'empty',
       mockups_status: 'empty',
       export_status: 'not_exported',
-      requirementsData: { problems: [{ id: 'r1', content: 'Test', section: 'problems' }] },
+      requirementsData: { needs_and_goals: [{ id: 'r1', content: 'Test', section: 'needs_and_goals' }] },
     });
 
     await page.goto(`/projects/${mockProjectBase.id}/requirements`);
@@ -615,7 +611,7 @@ test.describe('Status Badge Display', () => {
       stories_status: 'empty',
       mockups_status: 'empty',
       export_status: 'not_exported',
-      requirementsData: { problems: [{ id: 'r1', content: 'Test', section: 'problems' }] },
+      requirementsData: { needs_and_goals: [{ id: 'r1', content: 'Test', section: 'needs_and_goals' }] },
     });
 
     await page.goto(`/projects/${mockProjectBase.id}/requirements`);

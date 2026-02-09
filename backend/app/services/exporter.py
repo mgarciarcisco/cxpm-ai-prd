@@ -11,27 +11,19 @@ from app.models.meeting_recap import MeetingStatus
 
 # Section display names for the Markdown output
 SECTION_TITLES: dict[Section, str] = {
-    Section.problems: "Problems",
-    Section.user_goals: "User Goals",
-    Section.functional_requirements: "Functional Requirements",
-    Section.data_needs: "Data Needs",
-    Section.constraints: "Constraints",
-    Section.non_goals: "Non-Goals",
-    Section.risks_assumptions: "Risks & Assumptions",
-    Section.open_questions: "Open Questions",
+    Section.needs_and_goals: "Needs & Goals",
+    Section.requirements: "Requirements",
+    Section.scope_and_constraints: "Scope & Constraints",
+    Section.risks_and_questions: "Risks & Open Questions",
     Section.action_items: "Action Items",
 }
 
 # Section order for consistent output
 SECTION_ORDER: list[Section] = [
-    Section.problems,
-    Section.user_goals,
-    Section.functional_requirements,
-    Section.data_needs,
-    Section.constraints,
-    Section.non_goals,
-    Section.risks_assumptions,
-    Section.open_questions,
+    Section.needs_and_goals,
+    Section.requirements,
+    Section.scope_and_constraints,
+    Section.risks_and_questions,
     Section.action_items,
 ]
 

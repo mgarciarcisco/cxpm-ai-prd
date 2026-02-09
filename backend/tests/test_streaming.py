@@ -104,14 +104,18 @@ async def _mock_extract_stream_success(
 ) -> AsyncIterator[dict[str, Any]]:
     """Mock extract_stream that yields two items successfully."""
     yield {
-        "section": "problems",
-        "content": "First problem",
-        "source_quote": "Some quote"
+        "section": "needs_and_goals",
+        "content": "First need",
+        "source_quote": "Some quote",
+        "speaker": "John",
+        "priority": "high"
     }
     yield {
-        "section": "user_goals",
-        "content": "A user goal",
-        "source_quote": None
+        "section": "requirements",
+        "content": "A requirement",
+        "source_quote": None,
+        "speaker": "Sarah",
+        "priority": "medium"
     }
 
 
@@ -225,8 +229,8 @@ class TestStreamingEndpointItemEvents:
         events = _parse_sse_events(response.text)
         item_events = [e for e in events if e['event'] == 'item']
 
-        assert item_events[0]['data']['section'] == 'problems'
-        assert item_events[1]['data']['section'] == 'user_goals'
+        assert item_events[0]['data']['section'] == 'needs_and_goals'
+        assert item_events[1]['data']['section'] == 'requirements'
 
     def test_item_event_contains_content(
         self, auth_client: TestClient, test_db: Session
@@ -244,8 +248,8 @@ class TestStreamingEndpointItemEvents:
         events = _parse_sse_events(response.text)
         item_events = [e for e in events if e['event'] == 'item']
 
-        assert item_events[0]['data']['content'] == 'First problem'
-        assert item_events[1]['data']['content'] == 'A user goal'
+        assert item_events[0]['data']['content'] == 'First need'
+        assert item_events[1]['data']['content'] == 'A requirement'
 
     def test_item_event_contains_source_quote(
         self, auth_client: TestClient, test_db: Session

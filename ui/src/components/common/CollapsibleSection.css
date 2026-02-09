@@ -83,49 +83,29 @@
 }
 
 /* Color-coded badge variants */
-.collapsible-section-count--problems {
-  background: #FEE2E2;
-  color: #DC2626;
+.collapsible-section-count--needs-and-goals {
+  background: #dbeafe;
+  color: #1e40af;
 }
 
-.collapsible-section-count--user-goals {
-  background: #DCFCE7;
-  color: #16A34A;
+.collapsible-section-count--requirements {
+  background: #dcfce7;
+  color: #166534;
 }
 
-.collapsible-section-count--functional-requirements {
-  background: #DBEAFE;
-  color: #2563EB;
+.collapsible-section-count--scope-and-constraints {
+  background: #fef3c7;
+  color: #92400e;
 }
 
-.collapsible-section-count--data-needs {
-  background: #E0E7FF;
-  color: #4F46E5;
-}
-
-.collapsible-section-count--constraints {
-  background: #FEF3C7;
-  color: #D97706;
-}
-
-.collapsible-section-count--non-goals {
-  background: #F3F4F6;
-  color: #6B7280;
-}
-
-.collapsible-section-count--risks-assumptions {
-  background: #FFEDD5;
-  color: #EA580C;
-}
-
-.collapsible-section-count--open-questions {
-  background: #FCE7F3;
-  color: #DB2777;
+.collapsible-section-count--risks-and-questions {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .collapsible-section-count--action-items {
-  background: #CFFAFE;
-  color: #0891B2;
+  background: #f3e8ff;
+  color: #6b21a8;
 }
 
 .collapsible-section-count--empty {

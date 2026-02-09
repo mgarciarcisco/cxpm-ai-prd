@@ -9,14 +9,10 @@ import './RecapEditor.css';
  * Matches backend Section enum
  */
 const SECTIONS = [
-  { key: 'problems', label: 'Problems' },
-  { key: 'user_goals', label: 'User Goals' },
-  { key: 'functional_requirements', label: 'Functional Requirements' },
-  { key: 'data_needs', label: 'Data Needs' },
-  { key: 'constraints', label: 'Constraints' },
-  { key: 'non_goals', label: 'Non-Goals' },
-  { key: 'risks_assumptions', label: 'Risks & Assumptions' },
-  { key: 'open_questions', label: 'Open Questions' },
+  { key: 'needs_and_goals', label: 'Needs & Goals' },
+  { key: 'requirements', label: 'Requirements' },
+  { key: 'scope_and_constraints', label: 'Scope & Constraints' },
+  { key: 'risks_and_questions', label: 'Risks & Open Questions' },
   { key: 'action_items', label: 'Action Items' },
 ];
 
@@ -32,7 +28,7 @@ const SECTIONS = [
  * @param {Function} props.onDeleteItem - Callback when delete is clicked on an item (item) => void
  * @param {Function} props.onAddItem - Callback when a new item is added (newItem) => void
  */
-export function RecapEditor({ meetingId, items = [], activeSection = 'problems', onEditItem, onDeleteItem, onAddItem }) {
+export function RecapEditor({ meetingId, items = [], activeSection = 'needs_and_goals', onEditItem, onDeleteItem, onAddItem }) {
   const [addingToSection, setAddingToSection] = useState(null);
   const [newItemContent, setNewItemContent] = useState('');
   const [isAddingSaving, setIsAddingSaving] = useState(false);

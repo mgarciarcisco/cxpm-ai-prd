@@ -12,15 +12,11 @@ import './RecapEditorPage.css';
  * Matches the sections in RecapEditor
  */
 const SECTIONS = [
-  { key: 'problems', label: 'Problems', colorClass: 'problems' },
-  { key: 'user_goals', label: 'User Goals', colorClass: 'goals' },
-  { key: 'functional_requirements', label: 'Functional Req.', colorClass: 'requirements' },
-  { key: 'data_needs', label: 'Data Needs', colorClass: 'data' },
-  { key: 'constraints', label: 'Constraints', colorClass: 'constraints' },
-  { key: 'non_goals', label: 'Non-Goals', colorClass: 'nongoals' },
-  { key: 'risks_assumptions', label: 'Risks', colorClass: 'risks' },
-  { key: 'open_questions', label: 'Open Questions', colorClass: 'questions' },
-  { key: 'action_items', label: 'Action Items', colorClass: 'actions' },
+  { key: 'needs_and_goals', label: 'Needs & Goals', colorClass: 'needs-and-goals' },
+  { key: 'requirements', label: 'Requirements', colorClass: 'requirements' },
+  { key: 'scope_and_constraints', label: 'Scope & Constraints', colorClass: 'scope-and-constraints' },
+  { key: 'risks_and_questions', label: 'Risks & Questions', colorClass: 'risks-and-questions' },
+  { key: 'action_items', label: 'Action Items', colorClass: 'action-items' },
 ];
 
 /**
@@ -64,7 +60,7 @@ function RecapEditorPage() {
   const [error, setError] = useState(null);
   const [meetingItems, setMeetingItems] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState('problems');
+  const [activeSection, setActiveSection] = useState('needs_and_goals');
 
   // Determine if we're in project context or standalone (dashboard) flow
   const hasProjectContext = Boolean(projectId);

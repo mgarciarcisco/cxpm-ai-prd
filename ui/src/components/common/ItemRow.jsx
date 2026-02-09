@@ -171,13 +171,21 @@ export function ItemRow({
   return (
     <div className="item-row">
       <div className="item-row-content">
-        <div className="item-row-text">{item.content}</div>
-        {item.source_quote && (
+        <div className="item-row-text">
+          {item.content}
+          {item.priority && (
+            <span className={`item-row-priority item-row-priority--${item.priority}`}>{item.priority}</span>
+          )}
+        </div>
+        {(item.source_quote || item.speaker) && (
           <div className="item-row-source">
             <svg className="item-row-source-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 5h10M3 8h7M3 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span className="item-row-source-text">{item.source_quote}</span>
+            <span className="item-row-source-text">
+              {item.speaker && <span className="item-row-speaker">{item.speaker}:</span>}
+              {item.source_quote ? ` "${item.source_quote}"` : ''}
+            </span>
           </div>
         )}
       </div>

@@ -35,13 +35,13 @@ describe('ConflictResolverPage', () => {
     added: [
       {
         item_id: 'item-1',
-        item_section: 'problems',
+        item_section: 'needs_and_goals',
         item_content: 'New problem to add',
         decision: 'added'
       },
       {
         item_id: 'item-2',
-        item_section: 'user_goals',
+        item_section: 'requirements',
         item_content: 'New user goal',
         decision: 'added'
       }
@@ -49,7 +49,7 @@ describe('ConflictResolverPage', () => {
     skipped: [
       {
         item_id: 'item-3',
-        item_section: 'constraints',
+        item_section: 'scope_and_constraints',
         item_content: 'Existing constraint',
         reason: 'Exact duplicate of existing requirement',
         matched_requirement: {
@@ -59,7 +59,7 @@ describe('ConflictResolverPage', () => {
       },
       {
         item_id: 'item-4',
-        item_section: 'constraints',
+        item_section: 'scope_and_constraints',
         item_content: 'Similar constraint',
         reason: 'This is a semantic duplicate',
         matched_requirement: {
@@ -71,7 +71,7 @@ describe('ConflictResolverPage', () => {
     conflicts: [
       {
         item_id: 'item-5',
-        item_section: 'functional_requirements',
+        item_section: 'requirements',
         item_content: 'Updated feature description with more detail',
         classification: 'refinement',
         reason: 'The new item adds more specific implementation details',
@@ -82,7 +82,7 @@ describe('ConflictResolverPage', () => {
       },
       {
         item_id: 'item-6',
-        item_section: 'data_needs',
+        item_section: 'risks_and_questions',
         item_content: 'Store data in PostgreSQL',
         classification: 'contradiction',
         reason: 'The new item contradicts the existing storage approach',
@@ -98,7 +98,7 @@ describe('ConflictResolverPage', () => {
     added: [
       {
         item_id: 'item-1',
-        item_section: 'problems',
+        item_section: 'needs_and_goals',
         item_content: 'New problem',
         decision: 'added'
       }
@@ -203,10 +203,10 @@ describe('ConflictResolverPage', () => {
         expect(screen.getByText('Items to be Added')).toBeInTheDocument()
       })
 
-      // Section labels for added items are formatted (Problems, User Goals)
+      // Section labels for added items are formatted (Needs & Goals, Requirements)
       const addedSection = screen.getByText('Items to be Added').closest('.collapsible-section')
-      expect(addedSection).toHaveTextContent('Problems')
-      expect(addedSection).toHaveTextContent('User Goals')
+      expect(addedSection).toHaveTextContent('Needs & Goals')
+      expect(addedSection).toHaveTextContent('Requirements')
     })
 
     it('shows "No Items to Apply" when all categories are empty', async () => {

@@ -147,7 +147,7 @@ def test_apply_endpoint_returns_categorized_items(
     _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.problems,
+        Section.needs_and_goals,
         "Users are having difficulty finding features",
     )
 
@@ -173,7 +173,7 @@ def test_apply_endpoint_detects_exact_duplicates(
     _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "User must be able to log in",
     )
 
@@ -183,7 +183,7 @@ def test_apply_endpoint_detects_exact_duplicates(
     _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "User must be able to log in",
     )
 
@@ -230,7 +230,7 @@ def test_apply_endpoint_with_conflicts(
     _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "User must log in with email only",
     )
 
@@ -240,7 +240,7 @@ def test_apply_endpoint_with_conflicts(
     _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "User must log in with social accounts",
     )
 
@@ -275,7 +275,7 @@ def test_resolve_endpoint_creates_requirements_for_added_items(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.problems,
+        Section.needs_and_goals,
         "Users need better search functionality",
         source_quote="We need better search",
     )
@@ -305,7 +305,7 @@ def test_resolve_endpoint_creates_requirements_for_added_items(
     ).all()
     assert len(requirements) == 1
     assert requirements[0].content == "Users need better search functionality"
-    assert requirements[0].section == Section.problems
+    assert requirements[0].section == Section.needs_and_goals
     assert requirements[0].is_active is True
 
 
@@ -350,7 +350,7 @@ def test_resolve_records_added_decision(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "New feature requirement",
     )
 
@@ -382,7 +382,7 @@ def test_resolve_records_skipped_duplicate_decision(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Existing requirement",
     )
 
@@ -391,7 +391,7 @@ def test_resolve_records_skipped_duplicate_decision(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "Same content",
     )
 
@@ -428,7 +428,7 @@ def test_resolve_records_conflict_merged_decision(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Original requirement",
     )
 
@@ -437,7 +437,7 @@ def test_resolve_records_conflict_merged_decision(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "New content to merge",
     )
 
@@ -475,7 +475,7 @@ def test_resolve_records_conflict_replaced_decision(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Old content to replace",
     )
 
@@ -484,7 +484,7 @@ def test_resolve_records_conflict_replaced_decision(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "New replacement content",
     )
 
@@ -527,7 +527,7 @@ def test_resolve_creates_history_for_added_requirements(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.problems,
+        Section.needs_and_goals,
         "New problem statement",
     )
 
@@ -567,7 +567,7 @@ def test_resolve_creates_history_for_merged_requirements(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Original content",
     )
 
@@ -576,7 +576,7 @@ def test_resolve_creates_history_for_merged_requirements(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "Additional content",
     )
 
@@ -616,7 +616,7 @@ def test_resolve_creates_history_for_replaced_requirements(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Old requirement content",
     )
 
@@ -625,7 +625,7 @@ def test_resolve_creates_history_for_replaced_requirements(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "New replacement content",
     )
 
@@ -670,7 +670,7 @@ def test_resolve_creates_requirement_source_for_added_items(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.user_goals,
+        Section.scope_and_constraints,
         "Users want faster performance",
         source_quote="We need things to be faster",
     )
@@ -709,7 +709,7 @@ def test_resolve_creates_requirement_source_for_merged_items(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Original content",
     )
 
@@ -718,7 +718,7 @@ def test_resolve_creates_requirement_source_for_merged_items(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "Additional content",
         source_quote="From the meeting discussion",
     )
@@ -758,7 +758,7 @@ def test_resolve_creates_requirement_source_for_replaced_items(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Old content",
     )
 
@@ -767,7 +767,7 @@ def test_resolve_creates_requirement_source_for_replaced_items(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "New replacement content",
         source_quote="Updated requirement from meeting",
     )
@@ -812,7 +812,7 @@ def test_resolve_updates_meeting_status_to_applied(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.problems,
+        Section.needs_and_goals,
         "Test problem",
     )
 
@@ -843,7 +843,7 @@ def test_resolve_sets_applied_at_timestamp(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.problems,
+        Section.needs_and_goals,
         "Test problem",
     )
 
@@ -896,7 +896,7 @@ def test_resolve_handles_multiple_decisions(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Existing requirement",
     )
 
@@ -906,19 +906,19 @@ def test_resolve_handles_multiple_decisions(
     item1 = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.problems,
+        Section.needs_and_goals,
         "New problem",
     )
     item2 = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "Duplicate content",
     )
     item3 = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.user_goals,
+        Section.scope_and_constraints,
         "User goal to add",
     )
 
@@ -964,14 +964,14 @@ def test_resolve_returns_correct_counts(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Existing for replace",
     )
 
     existing_req2 = _create_requirement(
         test_db,
         _get_id(project),
-        Section.problems,
+        Section.needs_and_goals,
         "Existing for merge",
     )
 
@@ -979,16 +979,16 @@ def test_resolve_returns_correct_counts(
 
     # Create items for each decision type
     item_added = _create_meeting_item(
-        test_db, _get_id(meeting), Section.user_goals, "Added item"
+        test_db, _get_id(meeting), Section.scope_and_constraints, "Added item"
     )
     item_skipped = _create_meeting_item(
-        test_db, _get_id(meeting), Section.constraints, "Skipped item"
+        test_db, _get_id(meeting), Section.risks_and_questions, "Skipped item"
     )
     item_replaced = _create_meeting_item(
-        test_db, _get_id(meeting), Section.functional_requirements, "Replacement"
+        test_db, _get_id(meeting), Section.requirements, "Replacement"
     )
     item_merged = _create_meeting_item(
-        test_db, _get_id(meeting), Section.problems, "Merged content"
+        test_db, _get_id(meeting), Section.needs_and_goals, "Merged content"
     )
 
     resolve_payload = {
@@ -1033,7 +1033,7 @@ def test_resolve_conflict_kept_both_creates_new_requirement(
     existing_req = _create_requirement(
         test_db,
         _get_id(project),
-        Section.functional_requirements,
+        Section.requirements,
         "Existing requirement",
     )
 
@@ -1042,7 +1042,7 @@ def test_resolve_conflict_kept_both_creates_new_requirement(
     item = _create_meeting_item(
         test_db,
         _get_id(meeting),
-        Section.functional_requirements,
+        Section.requirements,
         "New requirement to keep alongside",
     )
 
@@ -1065,7 +1065,7 @@ def test_resolve_conflict_kept_both_creates_new_requirement(
     # Verify both requirements exist
     requirements = test_db.query(Requirement).filter(
         Requirement.project_id == _get_id(project),
-        Requirement.section == Section.functional_requirements,
+        Requirement.section == Section.requirements,
         Requirement.is_active == True,
     ).all()
     assert len(requirements) == 2

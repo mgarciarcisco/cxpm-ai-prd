@@ -67,7 +67,7 @@ class TestUpdateMeetingItem:
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(auth_client, project_id)
         _set_meeting_status(test_db, meeting_id, MeetingStatus.processed)
-        item_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Original content")
+        item_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Original content")
 
         response = auth_client.put(
             f"/api/meeting-items/{item_id}",
@@ -78,7 +78,7 @@ class TestUpdateMeetingItem:
         data = response.json()
         assert data["content"] == "Updated content"
         assert data["id"] == item_id
-        assert data["section"] == "problems"
+        assert data["section"] == "needs_and_goals"
 
     def test_update_item_404_not_found(self, auth_client: TestClient) -> None:
         """Test updating a non-existent meeting item returns 404."""
@@ -99,7 +99,7 @@ class TestUpdateMeetingItem:
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(auth_client, project_id)
         # Meeting is in pending status by default
-        item_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Content")
+        item_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Content")
 
         response = auth_client.put(
             f"/api/meeting-items/{item_id}",
@@ -122,7 +122,7 @@ class TestDeleteMeetingItem:
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(auth_client, project_id)
         _set_meeting_status(test_db, meeting_id, MeetingStatus.processed)
-        item_id = _create_meeting_item(test_db, meeting_id, Section.user_goals, "Goal content")
+        item_id = _create_meeting_item(test_db, meeting_id, Section.requirements, "Goal content")
 
         response = auth_client.delete(f"/api/meeting-items/{item_id}")
 
@@ -140,8 +140,8 @@ class TestDeleteMeetingItem:
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(auth_client, project_id)
         _set_meeting_status(test_db, meeting_id, MeetingStatus.processed)
-        item_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Deleted item")
-        _create_meeting_item(test_db, meeting_id, Section.problems, "Kept item", order=2)
+        item_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Deleted item")
+        _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Kept item", order=2)
 
         # Delete one item
         auth_client.delete(f"/api/meeting-items/{item_id}")
@@ -169,7 +169,7 @@ class TestDeleteMeetingItem:
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(auth_client, project_id)
         # Meeting is in pending status by default
-        item_id = _create_meeting_item(test_db, meeting_id, Section.constraints, "Content")
+        item_id = _create_meeting_item(test_db, meeting_id, Section.scope_and_constraints, "Content")
 
         response = auth_client.delete(f"/api/meeting-items/{item_id}")
 
@@ -192,12 +192,12 @@ class TestAddMeetingItem:
 
         response = auth_client.post(
             f"/api/meetings/{meeting_id}/items",
-            json={"section": "functional_requirements", "content": "New requirement"},
+            json={"section": "requirements", "content": "New requirement"},
         )
 
         assert response.status_code == 201
         data = response.json()
-        assert data["section"] == "functional_requirements"
+        assert data["section"] == "requirements"
         assert data["content"] == "New requirement"
         assert data["order"] == 1
         assert "id" in data
@@ -211,21 +211,21 @@ class TestAddMeetingItem:
         # Add first item
         response1 = auth_client.post(
             f"/api/meetings/{meeting_id}/items",
-            json={"section": "problems", "content": "First problem"},
+            json={"section": "needs_and_goals", "content": "First problem"},
         )
         assert response1.json()["order"] == 1
 
         # Add second item in same section
         response2 = auth_client.post(
             f"/api/meetings/{meeting_id}/items",
-            json={"section": "problems", "content": "Second problem"},
+            json={"section": "needs_and_goals", "content": "Second problem"},
         )
         assert response2.json()["order"] == 2
 
         # Add item in different section (should reset order)
         response3 = auth_client.post(
             f"/api/meetings/{meeting_id}/items",
-            json={"section": "constraints", "content": "First constraint"},
+            json={"section": "scope_and_constraints", "content": "First constraint"},
         )
         assert response3.json()["order"] == 1
 
@@ -235,7 +235,7 @@ class TestAddMeetingItem:
 
         response = auth_client.post(
             f"/api/meetings/{fake_meeting_id}/items",
-            json={"section": "problems", "content": "Content"},
+            json={"section": "needs_and_goals", "content": "Content"},
         )
 
         assert response.status_code == 404
@@ -251,7 +251,7 @@ class TestAddMeetingItem:
 
         response = auth_client.post(
             f"/api/meetings/{meeting_id}/items",
-            json={"section": "problems", "content": "Content"},
+            json={"section": "needs_and_goals", "content": "Content"},
         )
 
         assert response.status_code == 400
@@ -272,14 +272,14 @@ class TestReorderMeetingItems:
         _set_meeting_status(test_db, meeting_id, MeetingStatus.processed)
 
         # Create items with initial order
-        item1_id = _create_meeting_item(test_db, meeting_id, Section.problems, "First", order=1)
-        item2_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Second", order=2)
-        item3_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Third", order=3)
+        item1_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "First", order=1)
+        item2_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Second", order=2)
+        item3_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Third", order=3)
 
         # Reorder: Third, First, Second
         response = auth_client.put(
             f"/api/meetings/{meeting_id}/items/reorder",
-            json={"section": "problems", "item_ids": [item3_id, item1_id, item2_id]},
+            json={"section": "needs_and_goals", "item_ids": [item3_id, item1_id, item2_id]},
         )
 
         assert response.status_code == 200
@@ -302,21 +302,21 @@ class TestReorderMeetingItems:
         _set_meeting_status(test_db, meeting_id, MeetingStatus.processed)
 
         # Create items in different sections
-        item1_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Problem 1", order=1)
-        item2_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Problem 2", order=2)
-        _create_meeting_item(test_db, meeting_id, Section.constraints, "Constraint 1", order=1)
+        item1_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Problem 1", order=1)
+        item2_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Problem 2", order=2)
+        _create_meeting_item(test_db, meeting_id, Section.scope_and_constraints, "Constraint 1", order=1)
 
-        # Reorder problems only
+        # Reorder needs_and_goals only
         response = auth_client.put(
             f"/api/meetings/{meeting_id}/items/reorder",
-            json={"section": "problems", "item_ids": [item2_id, item1_id]},
+            json={"section": "needs_and_goals", "item_ids": [item2_id, item1_id]},
         )
 
         assert response.status_code == 200
-        # Should only return problems section items
+        # Should only return needs_and_goals section items
         data = response.json()
         assert len(data) == 2
-        assert all(item["section"] == "problems" for item in data)
+        assert all(item["section"] == "needs_and_goals" for item in data)
 
     def test_reorder_items_404_meeting_not_found(self, auth_client: TestClient) -> None:
         """Test reordering items in non-existent meeting returns 404."""
@@ -324,7 +324,7 @@ class TestReorderMeetingItems:
 
         response = auth_client.put(
             f"/api/meetings/{fake_meeting_id}/items/reorder",
-            json={"section": "problems", "item_ids": []},
+            json={"section": "needs_and_goals", "item_ids": []},
         )
 
         assert response.status_code == 404
@@ -337,11 +337,11 @@ class TestReorderMeetingItems:
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(auth_client, project_id)
         # Meeting is in pending status by default
-        item_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Content")
+        item_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Content")
 
         response = auth_client.put(
             f"/api/meetings/{meeting_id}/items/reorder",
-            json={"section": "problems", "item_ids": [item_id]},
+            json={"section": "needs_and_goals", "item_ids": [item_id]},
         )
 
         assert response.status_code == 400
@@ -362,7 +362,7 @@ class TestStatusValidation:
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(auth_client, project_id)
         _set_meeting_status(test_db, meeting_id, MeetingStatus.processing)
-        item_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Content")
+        item_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Content")
 
         response = auth_client.put(
             f"/api/meeting-items/{item_id}",
@@ -378,7 +378,7 @@ class TestStatusValidation:
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(auth_client, project_id)
         _set_meeting_status(test_db, meeting_id, MeetingStatus.failed)
-        item_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Content")
+        item_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Content")
 
         response = auth_client.delete(f"/api/meeting-items/{item_id}")
 
@@ -394,7 +394,7 @@ class TestStatusValidation:
 
         response = auth_client.post(
             f"/api/meetings/{meeting_id}/items",
-            json={"section": "problems", "content": "Content"},
+            json={"section": "needs_and_goals", "content": "Content"},
         )
 
         assert response.status_code == 400
@@ -406,11 +406,11 @@ class TestStatusValidation:
         project_id = _create_project(auth_client)
         meeting_id = _create_meeting(auth_client, project_id)
         # Meeting is in pending status by default
-        item_id = _create_meeting_item(test_db, meeting_id, Section.problems, "Content")
+        item_id = _create_meeting_item(test_db, meeting_id, Section.needs_and_goals, "Content")
 
         response = auth_client.put(
             f"/api/meetings/{meeting_id}/items/reorder",
-            json={"section": "problems", "item_ids": [item_id]},
+            json={"section": "needs_and_goals", "item_ids": [item_id]},
         )
 
         assert response.status_code == 400

@@ -82,20 +82,15 @@ const mockPRDFailed = {
 
 // Mock requirements for the project
 const mockRequirements = {
-  problems: [
-    { id: 'req-1', content: 'Users struggle with manual data entry', section: 'problems', sources: [], history_count: 0 },
+  needs_and_goals: [
+    { id: 'req-1', content: 'Users struggle with manual data entry', section: 'needs_and_goals', sources: [], history_count: 0 },
+    { id: 'req-2', content: 'Users want automated workflows', section: 'needs_and_goals', sources: [], history_count: 0 },
   ],
-  user_goals: [
-    { id: 'req-2', content: 'Users want automated workflows', section: 'user_goals', sources: [], history_count: 0 },
+  requirements: [
+    { id: 'req-3', content: 'System must support file uploads', section: 'requirements', sources: [], history_count: 0 },
   ],
-  functional_requirements: [
-    { id: 'req-3', content: 'System must support file uploads', section: 'functional_requirements', sources: [], history_count: 0 },
-  ],
-  data_needs: [],
-  constraints: [],
-  non_goals: [],
-  risks_assumptions: [],
-  open_questions: [],
+  scope_and_constraints: [],
+  risks_and_questions: [],
   action_items: [],
 };
 
@@ -552,14 +547,10 @@ test.describe('PRD Generation E2E Tests', () => {
     await page.route(`**/api/projects/${mockProject.id}/requirements`, async (route) => {
       await route.fulfill({
         json: {
-          problems: [],
-          user_goals: [],
-          functional_requirements: [],
-          data_needs: [],
-          constraints: [],
-          non_goals: [],
-          risks_assumptions: [],
-          open_questions: [],
+          needs_and_goals: [],
+          requirements: [],
+          scope_and_constraints: [],
+          risks_and_questions: [],
           action_items: [],
         },
       });

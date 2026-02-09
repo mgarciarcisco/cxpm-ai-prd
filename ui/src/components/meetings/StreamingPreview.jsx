@@ -5,14 +5,10 @@ import './StreamingPreview.css';
  * Section configuration for display order and labels
  */
 const SECTIONS = [
-  { key: 'problems', label: 'Problems' },
-  { key: 'user_goals', label: 'User Goals' },
-  { key: 'functional_requirements', label: 'Functional Requirements' },
-  { key: 'data_needs', label: 'Data Needs' },
-  { key: 'constraints', label: 'Constraints' },
-  { key: 'non_goals', label: 'Non-Goals' },
-  { key: 'risks_assumptions', label: 'Risks & Assumptions' },
-  { key: 'open_questions', label: 'Open Questions' },
+  { key: 'needs_and_goals', label: 'Needs & Goals' },
+  { key: 'requirements', label: 'Requirements' },
+  { key: 'scope_and_constraints', label: 'Scope & Constraints' },
+  { key: 'risks_and_questions', label: 'Risks & Open Questions' },
   { key: 'action_items', label: 'Action Items' },
 ];
 
@@ -130,7 +126,20 @@ export function StreamingPreview({ items, status, error, onRetry }) {
                 <ul className="streaming-items">
                   {sectionItems.map((item, index) => (
                     <li key={index} className="streaming-item">
-                      {item.content}
+                      <span className="streaming-item-content">
+                        {item.content}
+                        {item.priority && (
+                          <span className={`streaming-item-priority streaming-item-priority--${item.priority}`}>
+                            {item.priority}
+                          </span>
+                        )}
+                      </span>
+                      {(item.source_quote || item.speaker) && (
+                        <span className="streaming-item-quote">
+                          {item.speaker && <span className="streaming-item-speaker">{item.speaker}:</span>}
+                          {item.source_quote ? ` "${item.source_quote}"` : ''}
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>

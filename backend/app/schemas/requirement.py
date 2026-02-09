@@ -63,14 +63,10 @@ class RequirementUpdate(BaseModel):
 class RequirementsListResponse(BaseModel):
     """Schema for requirements list response grouped by section."""
 
-    problems: list[RequirementResponse] = []
-    user_goals: list[RequirementResponse] = []
-    functional_requirements: list[RequirementResponse] = []
-    data_needs: list[RequirementResponse] = []
-    constraints: list[RequirementResponse] = []
-    non_goals: list[RequirementResponse] = []
-    risks_assumptions: list[RequirementResponse] = []
-    open_questions: list[RequirementResponse] = []
+    needs_and_goals: list[RequirementResponse] = []
+    requirements: list[RequirementResponse] = []
+    scope_and_constraints: list[RequirementResponse] = []
+    risks_and_questions: list[RequirementResponse] = []
     action_items: list[RequirementResponse] = []
 
 

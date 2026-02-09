@@ -13,14 +13,10 @@ function getBadgeVariantClass(variant, itemCount) {
   }
 
   const variantMap = {
-    problems: 'collapsible-section-count--problems',
-    user_goals: 'collapsible-section-count--user-goals',
-    functional_requirements: 'collapsible-section-count--functional-requirements',
-    data_needs: 'collapsible-section-count--data-needs',
-    constraints: 'collapsible-section-count--constraints',
-    non_goals: 'collapsible-section-count--non-goals',
-    risks_assumptions: 'collapsible-section-count--risks-assumptions',
-    open_questions: 'collapsible-section-count--open-questions',
+    needs_and_goals: 'collapsible-section-count--needs-and-goals',
+    requirements: 'collapsible-section-count--requirements',
+    scope_and_constraints: 'collapsible-section-count--scope-and-constraints',
+    risks_and_questions: 'collapsible-section-count--risks-and-questions',
     action_items: 'collapsible-section-count--action-items',
   };
 

@@ -30,10 +30,10 @@ describe('RequirementsPage', () => {
   }
 
   const mockRequirements = {
-    problems: [
+    needs_and_goals: [
       {
         id: 'req-1',
-        section: 'problems',
+        section: 'needs_and_goals',
         content: 'Problem requirement 1',
         order: 1,
         sources: [
@@ -43,17 +43,17 @@ describe('RequirementsPage', () => {
       },
       {
         id: 'req-2',
-        section: 'problems',
+        section: 'needs_and_goals',
         content: 'Problem requirement 2',
         order: 2,
         sources: [],
         history_count: 0
       }
     ],
-    user_goals: [
+    requirements: [
       {
         id: 'req-3',
-        section: 'user_goals',
+        section: 'requirements',
         content: 'User goal 1',
         order: 1,
         sources: [
@@ -63,12 +63,8 @@ describe('RequirementsPage', () => {
         history_count: 1
       }
     ],
-    functional_requirements: [],
-    data_needs: [],
-    constraints: [],
-    non_goals: [],
-    risks_assumptions: [],
-    open_questions: [],
+    scope_and_constraints: [],
+    risks_and_questions: [],
     action_items: []
   }
 
@@ -98,20 +94,18 @@ describe('RequirementsPage', () => {
   })
 
   describe('Section Rendering', () => {
-    it('renders all 9 sections', async () => {
+    it('renders all 5 sections', async () => {
       renderWithRouter(<RequirementsPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Problems')).toBeInTheDocument()
+        expect(screen.getByText('Needs & Goals')).toBeInTheDocument()
       })
 
-      expect(screen.getByText('User Goals')).toBeInTheDocument()
-      expect(screen.getByText('Functional Requirements')).toBeInTheDocument()
-      expect(screen.getByText('Data Needs')).toBeInTheDocument()
-      expect(screen.getByText('Constraints')).toBeInTheDocument()
-      expect(screen.getByText('Non-Goals')).toBeInTheDocument()
-      expect(screen.getByText('Risks & Assumptions')).toBeInTheDocument()
-      expect(screen.getByText('Open Questions')).toBeInTheDocument()
+      // "Requirements" appears in breadcrumbs, h2, and collapsible section title
+      const requirementsElements = screen.getAllByText('Requirements')
+      expect(requirementsElements.length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByText('Scope & Constraints')).toBeInTheDocument()
+      expect(screen.getByText('Risks & Open Questions')).toBeInTheDocument()
       expect(screen.getByText('Action Items')).toBeInTheDocument()
     })
 
@@ -133,9 +127,9 @@ describe('RequirementsPage', () => {
         expect(screen.getByText('Problem requirement 1')).toBeInTheDocument()
       })
 
-      // 7 sections should be empty (all except problems and user_goals)
+      // 3 sections should be empty (all except needs_and_goals and requirements)
       const emptyMessages = screen.getAllByText('No requirements in this section')
-      expect(emptyMessages.length).toBe(7)
+      expect(emptyMessages.length).toBe(3)
     })
 
     it('displays item count in section headers', async () => {
@@ -145,21 +139,26 @@ describe('RequirementsPage', () => {
         expect(screen.getByText('Problem requirement 1')).toBeInTheDocument()
       })
 
-      // Problems has 2 items
-      const problemsSection = screen.getByText('Problems').closest('.collapsible-section')
-      expect(problemsSection).toHaveTextContent('2')
+      // Needs & Goals has 2 items
+      const needsSection = screen.getByText('Needs & Goals').closest('.collapsible-section')
+      expect(needsSection).toHaveTextContent('2')
 
-      // User Goals has 1 item
-      const goalsSection = screen.getByText('User Goals').closest('.collapsible-section')
-      expect(goalsSection).toHaveTextContent('1')
+      // Requirements has 1 item - use the collapsible-section-title span to avoid ambiguity
+      const requirementsSectionTitle = document.querySelector('#requirements .collapsible-section-title')
+      const requirementsSection = requirementsSectionTitle.closest('.collapsible-section')
+      expect(requirementsSection).toHaveTextContent('1')
     })
 
-    it('displays project name in header', async () => {
+    it('displays project name in breadcrumbs', async () => {
       renderWithRouter(<RequirementsPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Test Project - Requirements')).toBeInTheDocument()
+        expect(screen.getByText('Test Project')).toBeInTheDocument()
       })
+
+      // Project name should be a breadcrumb link
+      const projectLink = screen.getByText('Test Project').closest('a')
+      expect(projectLink).toHaveAttribute('href', `/app/projects/${projectId}`)
     })
   })
 
@@ -219,7 +218,7 @@ describe('RequirementsPage', () => {
 
   describe('Inline Edit Interaction', () => {
     it('allows inline editing of requirements via ItemRow', async () => {
-      const updatedRequirement = { ...mockRequirements.problems[0], content: 'Updated problem' }
+      const updatedRequirement = { ...mockRequirements.needs_and_goals[0], content: 'Updated problem' }
       put.mockResolvedValue(updatedRequirement)
 
       renderWithRouter(<RequirementsPage />)
@@ -247,7 +246,7 @@ describe('RequirementsPage', () => {
     })
 
     it('updates local state after successful edit', async () => {
-      const updatedRequirement = { ...mockRequirements.problems[0], content: 'Updated problem' }
+      const updatedRequirement = { ...mockRequirements.needs_and_goals[0], content: 'Updated problem' }
       put.mockResolvedValue(updatedRequirement)
 
       renderWithRouter(<RequirementsPage />)
@@ -414,7 +413,7 @@ describe('RequirementsPage', () => {
       renderWithRouter(<RequirementsPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Export as Markdown')).toBeInTheDocument()
+        expect(screen.getByText('Export')).toBeInTheDocument()
       })
     })
 
@@ -422,14 +421,15 @@ describe('RequirementsPage', () => {
       renderWithRouter(<RequirementsPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Export as Markdown')).toBeInTheDocument()
+        expect(screen.getByText('Export')).toBeInTheDocument()
       })
 
-      fireEvent.click(screen.getByText('Export as Markdown'))
+      fireEvent.click(screen.getByText('Export'))
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining(`/api/projects/${projectId}/requirements/export`)
+          expect.stringContaining(`/api/projects/${projectId}/requirements/export`),
+          expect.any(Object)
         )
       })
     })
@@ -440,10 +440,10 @@ describe('RequirementsPage', () => {
       renderWithRouter(<RequirementsPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Export as Markdown')).toBeInTheDocument()
+        expect(screen.getByText('Export')).toBeInTheDocument()
       })
 
-      fireEvent.click(screen.getByText('Export as Markdown'))
+      fireEvent.click(screen.getByText('Export'))
 
       await waitFor(() => {
         expect(screen.getByText('Exporting...')).toBeInTheDocument()
@@ -456,10 +456,10 @@ describe('RequirementsPage', () => {
       renderWithRouter(<RequirementsPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Export as Markdown')).toBeInTheDocument()
+        expect(screen.getByText('Export')).toBeInTheDocument()
       })
 
-      const exportButton = screen.getByText('Export as Markdown').closest('button')
+      const exportButton = screen.getByText('Export').closest('button')
       fireEvent.click(exportButton)
 
       await waitFor(() => {
@@ -474,10 +474,10 @@ describe('RequirementsPage', () => {
       renderWithRouter(<RequirementsPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Export as Markdown')).toBeInTheDocument()
+        expect(screen.getByText('Export')).toBeInTheDocument()
       })
 
-      fireEvent.click(screen.getByText('Export as Markdown'))
+      fireEvent.click(screen.getByText('Export'))
 
       await waitFor(() => {
         expect(appendChildSpy).toHaveBeenCalled()
@@ -552,7 +552,7 @@ describe('RequirementsPage', () => {
         expect(screen.getByText('Problem requirement 1')).toBeInTheDocument()
       })
 
-      // Get the item rows in the problems section
+      // Get the item rows in the needs_and_goals section
       const req1Row = screen.getByText('Problem requirement 1').closest('.item-row')
       const req2Row = screen.getByText('Problem requirement 2').closest('.item-row')
 
@@ -571,7 +571,7 @@ describe('RequirementsPage', () => {
       await waitFor(() => {
         expect(put).toHaveBeenCalledWith(
           `/api/projects/${projectId}/requirements/reorder`,
-          { section: 'problems', requirement_ids: ['req-2', 'req-1'] }
+          { section: 'needs_and_goals', requirement_ids: ['req-2', 'req-1'] }
         )
       })
     })

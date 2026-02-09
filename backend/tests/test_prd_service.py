@@ -196,8 +196,8 @@ def test_generate_prd_draft_mode(test_db: Session) -> None:
     project_id = _get_project_id(project)
 
     # Create test requirements
-    _create_test_requirement(test_db, project_id, Section.problems, "Users struggle with X")
-    _create_test_requirement(test_db, project_id, Section.user_goals, "Users want to achieve Y")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "Users struggle with X")
+    _create_test_requirement(test_db, project_id, Section.requirements, "Users want to achieve Y")
 
     # Create mock response with draft sections
     draft_sections = _create_draft_mode_sections()
@@ -233,7 +233,7 @@ def test_generate_prd_draft_mode_includes_gaps_and_questions(test_db: Session) -
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.open_questions, "What is the budget?")
+    _create_test_requirement(test_db, project_id, Section.action_items, "What is the budget?")
 
     draft_sections = _create_draft_mode_sections()
     mock_response = _create_mock_prd_response("Draft with Gaps", draft_sections)
@@ -260,8 +260,8 @@ def test_generate_prd_detailed_mode(test_db: Session) -> None:
     project_id = _get_project_id(project)
 
     # Create test requirements
-    _create_test_requirement(test_db, project_id, Section.functional_requirements, "Feature A")
-    _create_test_requirement(test_db, project_id, Section.constraints, "Must use Python")
+    _create_test_requirement(test_db, project_id, Section.scope_and_constraints, "Feature A")
+    _create_test_requirement(test_db, project_id, Section.risks_and_questions, "Must use Python")
 
     # Create mock response with detailed sections
     detailed_sections = _create_detailed_mode_sections()
@@ -305,7 +305,7 @@ def test_version_auto_increment(test_db: Session) -> None:
     project_id = _get_project_id(project)
 
     # Create requirements
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     mock_response = _create_mock_prd_response("V1 PRD", _create_draft_mode_sections())
     mock_provider = MockLLMProvider(mock_response)
@@ -334,8 +334,8 @@ def test_version_independent_across_projects(test_db: Session) -> None:
     project2 = _create_test_project(test_db, "Project 2")
 
     # Create requirements for both projects
-    _create_test_requirement(test_db, _get_project_id(project1), Section.problems, "P1 problem")
-    _create_test_requirement(test_db, _get_project_id(project2), Section.problems, "P2 problem")
+    _create_test_requirement(test_db, _get_project_id(project1), Section.needs_and_goals, "P1 problem")
+    _create_test_requirement(test_db, _get_project_id(project2), Section.needs_and_goals, "P2 problem")
 
     mock_response = _create_mock_prd_response("PRD", _create_draft_mode_sections())
     mock_provider = MockLLMProvider(mock_response)
@@ -369,7 +369,7 @@ def test_version_increment_with_concurrency(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     # Create an existing PRD with version 1
     _create_test_prd(test_db, project_id, version=1, status=PRDStatus.READY)
@@ -421,7 +421,7 @@ def test_no_active_requirements_raises_error(test_db: Session) -> None:
 
     # Create an inactive requirement
     _create_test_requirement(
-        test_db, project_id, Section.problems, "Inactive requirement", is_active=False
+        test_db, project_id, Section.needs_and_goals, "Inactive requirement", is_active=False
     )
 
     generator = PRDGenerator(test_db)
@@ -439,7 +439,7 @@ def test_malformed_llm_response_invalid_json(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     mock_provider = MockLLMProvider("This is not valid JSON at all")
 
@@ -458,7 +458,7 @@ def test_malformed_llm_response_missing_title(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     # Response with sections but no title
     mock_response = json.dumps({
@@ -480,7 +480,7 @@ def test_malformed_llm_response_empty_sections(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     mock_response = json.dumps({
         "title": "PRD Title",
@@ -502,7 +502,7 @@ def test_malformed_llm_response_section_missing_required_field(test_db: Session)
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     # Section missing 'content' field
     mock_response = json.dumps({
@@ -527,7 +527,7 @@ def test_malformed_llm_response_non_object(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     # Response is an array instead of object
     mock_response = json.dumps(["not", "an", "object"])
@@ -547,7 +547,7 @@ def test_llm_response_with_markdown_code_blocks(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     inner_json = json.dumps({
         "title": "PRD Title",
@@ -573,7 +573,7 @@ def test_generate_prd_task_success(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     # Create a queued PRD
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.QUEUED)
@@ -600,7 +600,7 @@ def test_generate_prd_task_cancelled_before_start(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     # Create a cancelled PRD
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.CANCELLED)
@@ -643,7 +643,7 @@ def test_generate_prd_task_sets_failed_on_llm_error(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.QUEUED)
     prd_id = str(prd.id)
@@ -680,15 +680,15 @@ def test_load_requirements_filters_by_project(test_db: Session) -> None:
     project1 = _create_test_project(test_db, "Project 1")
     project2 = _create_test_project(test_db, "Project 2")
 
-    _create_test_requirement(test_db, _get_project_id(project1), Section.problems, "P1 Req")
-    _create_test_requirement(test_db, _get_project_id(project2), Section.problems, "P2 Req")
+    _create_test_requirement(test_db, _get_project_id(project1), Section.needs_and_goals, "P1 Req")
+    _create_test_requirement(test_db, _get_project_id(project2), Section.needs_and_goals, "P2 Req")
 
     generator = PRDGenerator(test_db)
     reqs = generator._load_requirements(_get_project_id(project1))
 
     assert len(reqs) == 1
-    assert "problems" in reqs
-    assert reqs["problems"] == ["P1 Req"]
+    assert "needs_and_goals" in reqs
+    assert reqs["needs_and_goals"] == ["P1 Req"]
 
 
 def test_load_requirements_groups_by_section(test_db: Session) -> None:
@@ -696,18 +696,18 @@ def test_load_requirements_groups_by_section(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "Problem 1")
-    _create_test_requirement(test_db, project_id, Section.problems, "Problem 2")
-    _create_test_requirement(test_db, project_id, Section.user_goals, "Goal 1")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "Problem 1")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "Problem 2")
+    _create_test_requirement(test_db, project_id, Section.requirements, "Goal 1")
 
     generator = PRDGenerator(test_db)
     reqs = generator._load_requirements(project_id)
 
     assert len(reqs) == 2
-    assert "problems" in reqs
-    assert "user_goals" in reqs
-    assert reqs["problems"] == ["Problem 1", "Problem 2"]
-    assert reqs["user_goals"] == ["Goal 1"]
+    assert "needs_and_goals" in reqs
+    assert "requirements" in reqs
+    assert reqs["needs_and_goals"] == ["Problem 1", "Problem 2"]
+    assert reqs["requirements"] == ["Goal 1"]
 
 
 def test_format_requirements_output(test_db: Session) -> None:
@@ -715,16 +715,16 @@ def test_format_requirements_output(test_db: Session) -> None:
     generator = PRDGenerator(test_db)
 
     reqs = {
-        "problems": ["Issue A", "Issue B"],
-        "user_goals": ["Goal X"],
+        "needs_and_goals": ["Issue A", "Issue B"],
+        "requirements": ["Goal X"],
     }
 
     formatted = generator._format_requirements(reqs)
 
-    assert "### Problems & Pain Points" in formatted
+    assert "### Needs & Goals" in formatted
     assert "1. Issue A" in formatted
     assert "2. Issue B" in formatted
-    assert "### User Goals" in formatted
+    assert "### Requirements" in formatted
     assert "1. Goal X" in formatted
 
 
@@ -908,7 +908,7 @@ def test_generate_uses_atomic_version_assignment(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     # Create an existing PRD
     _create_test_prd(test_db, project_id, version=1, status=PRDStatus.READY)
@@ -930,7 +930,7 @@ def test_no_duplicate_versions_with_sequential_generations(test_db: Session) -> 
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     mock_response = _create_mock_prd_response("PRD", _create_draft_mode_sections())
     mock_provider = MockLLMProvider(mock_response)
@@ -967,7 +967,7 @@ def test_version_assignment_includes_deleted_prds(test_db: Session) -> None:
     prd2.deleted_at = datetime.utcnow()
     test_db.commit()
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     mock_response = _create_mock_prd_response("New PRD", _create_draft_mode_sections())
     mock_provider = MockLLMProvider(mock_response)
@@ -996,7 +996,7 @@ def test_generate_passes_llm_config_parameters(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     mock_response = _create_mock_prd_response("Config Test", _create_draft_mode_sections())
     mock_provider = MockLLMProvider(mock_response)
@@ -1023,7 +1023,7 @@ def test_generate_prd_task_passes_llm_config_parameters(test_db: Session) -> Non
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.QUEUED)
     prd_id = str(prd.id)
@@ -1059,7 +1059,7 @@ def test_generate_handles_llm_timeout_error(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     timeout_provider = TimeoutLLMProvider()
 
@@ -1077,7 +1077,7 @@ def test_generate_prd_task_records_timeout_error_in_status(test_db: Session) -> 
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.QUEUED)
     prd_id = str(prd.id)
@@ -1221,7 +1221,7 @@ def test_generate_prd_task_rollback_on_llm_error(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.QUEUED)
     prd_id = str(prd.id)
@@ -1242,7 +1242,7 @@ def test_generate_prd_task_rollback_on_parse_error(test_db: Session) -> None:
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.QUEUED)
     prd_id = str(prd.id)
@@ -1264,7 +1264,7 @@ def test_generate_prd_task_rollback_on_unexpected_error(test_db: Session) -> Non
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.QUEUED)
     prd_id = str(prd.id)
@@ -1293,7 +1293,7 @@ def test_generate_prd_task_rollback_cleans_up_prd_in_bad_state(test_db: Session)
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.QUEUED)
     prd_id = str(prd.id)
@@ -1324,7 +1324,7 @@ def test_generate_prd_task_only_error_status_committed_after_rollback(test_db: S
     project = _create_test_project(test_db)
     project_id = _get_project_id(project)
 
-    _create_test_requirement(test_db, project_id, Section.problems, "A problem")
+    _create_test_requirement(test_db, project_id, Section.needs_and_goals, "A problem")
 
     prd = _create_test_prd(test_db, project_id, version=0, status=PRDStatus.QUEUED)
     prd_id = str(prd.id)
