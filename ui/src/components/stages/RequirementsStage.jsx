@@ -3,9 +3,31 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ConfirmationDialog } from '../common/ConfirmationDialog';
 import { StageLoader } from './StageLoader';
 import AddManuallyModal from '../requirements/AddManuallyModal';
-import { SECTION_ORDER, SECTION_LABELS } from '../requirements/RequirementSection';
 import { get, put, patch, del } from '../../services/api';
 import './RequirementsStage.css';
+
+/**
+ * Section labels mapping from backend section values to human-readable labels.
+ * Matches the order from the backend API.
+ */
+const SECTION_LABELS = {
+  needs_and_goals: 'Needs & Goals',
+  requirements: 'Requirements',
+  scope_and_constraints: 'Scope & Constraints',
+  risks_and_questions: 'Risks & Open Questions',
+  action_items: 'Action Items',
+};
+
+/**
+ * Ordered list of section keys for consistent display order.
+ */
+const SECTION_ORDER = [
+  'needs_and_goals',
+  'requirements',
+  'scope_and_constraints',
+  'risks_and_questions',
+  'action_items',
+];
 
 /**
  * Section icons (professional SVGs), color classes, and colors for distribution bar.

@@ -30,19 +30,6 @@ from app.schemas.meeting import (
     ResolveResponse,
     UploadResponse,
 )
-from app.schemas.prd import (
-    ExportFormat,
-    PaginatedResponse,
-    PRDCreateRequest,
-    PRDExportJSON,
-    PRDExportSection,
-    PRDGenerateRequest,
-    PRDResponse,
-    PRDSection,
-    PRDStatusResponse,
-    PRDSummary,
-    PRDUpdateRequest,
-)
 from app.schemas.project import (
     ExportStatusSchema,
     MockupsStatusSchema,
@@ -116,18 +103,6 @@ __all__ = [
     "RequirementUpdate",
     "RequirementsListResponse",
     "RequirementReorderRequest",
-    # PRD schemas
-    "ExportFormat",
-    "PaginatedResponse",
-    "PRDCreateRequest",
-    "PRDExportJSON",
-    "PRDExportSection",
-    "PRDGenerateRequest",
-    "PRDResponse",
-    "PRDSection",
-    "PRDStatusResponse",
-    "PRDSummary",
-    "PRDUpdateRequest",
     # JIRA Story schemas
     "JiraStoryCreate",
     "JiraStoryResponse",

@@ -184,29 +184,6 @@ def get_project_stats(project_id: str, db: Session = Depends(get_db), current_us
     )
 
 
-@router.get("/{project_id}/progress", response_model=ProgressResponse)
-def get_project_progress(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ProgressResponse:
-    """Get project progress with all stage statuses."""
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-
-    return ProgressResponse(
-        requirements_status=project.requirements_status.value,
-        prd_status=project.prd_status.value,
-        stories_status=project.stories_status.value,
-        mockups_status=project.mockups_status.value,
-        export_status=project.export_status.value,
-        progress=calculate_progress(
-            requirements_status=project.requirements_status.value,
-            prd_status=project.prd_status.value,
-            stories_status=project.stories_status.value,
-            mockups_status=project.mockups_status.value,
-            export_status=project.export_status.value,
-        ),
-    )
-
-
 # Mapping of stage names to their model fields and valid status enums
 STAGE_STATUS_MAPPING = {
     StageStatusEnum.requirements: ("requirements_status", RequirementsStatus),

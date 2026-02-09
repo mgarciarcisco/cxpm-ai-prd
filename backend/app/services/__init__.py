@@ -7,7 +7,6 @@ from app.services.extractor import ExtractionError, extract, extract_stream
 from app.services.llm import LLMError, LLMProvider, get_provider
 from app.services.merger import MergeError, suggest_merge
 from app.services.parser import parse_file
-from app.services.prd_generator import PRDGenerator, generate_prd_task
 from app.services.stage_status import (
     update_export_status,
     update_mockups_status,
@@ -32,9 +31,6 @@ __all__ = [
     "ConflictResult",
     "suggest_merge",
     "MergeError",
-    # PRD Generation
-    "PRDGenerator",
-    "generate_prd_task",
     # Stage Status Updates
     "update_requirements_status",
     "update_prd_status",

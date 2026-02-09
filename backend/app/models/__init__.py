@@ -5,7 +5,6 @@ from app.models.activity_log import ActivityLog
 from app.models.meeting_item import MeetingItem, Section
 from app.models.meeting_item_decision import Decision, MeetingItemDecision
 from app.models.meeting_recap import InputType, MeetingRecap, MeetingStatus
-from app.models.prd import PRD, PRDMode, PRDStatus
 from app.models.project import (
     ExportStatus,
     MockupsStatus,
@@ -38,9 +37,6 @@ __all__ = [
     "Action",
     "MeetingItemDecision",
     "Decision",
-    "PRD",
-    "PRDMode",
-    "PRDStatus",
     "JiraStory",
     "User",
     "ActivityLog",
