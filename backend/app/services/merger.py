@@ -84,7 +84,14 @@ def suggest_merge(existing: str, new: str) -> str:
     for attempt in range(max_attempts):
         try:
             provider = get_provider()
-            response = provider.generate(prompt, system_prompt="")
+            response = provider.generate(
+                prompt,
+                system_prompt=(
+                    "You are an expert requirements analyst. Merge two versions of a "
+                    "requirement into a single improved version. Respond only with the "
+                    "merged text."
+                ),
+            )
             merged_text = _clean_response(response)
 
             # Validate that we got some text back

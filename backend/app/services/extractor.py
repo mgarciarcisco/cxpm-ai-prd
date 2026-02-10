@@ -182,7 +182,13 @@ def _extract_single_chunk(
     for attempt in range(max_attempts):
         try:
             provider = get_provider()
-            response = provider.generate(prompt, system_prompt="")
+            response = provider.generate(
+                prompt,
+                system_prompt=(
+                    "You are an expert at extracting structured requirements from meeting "
+                    "notes. Respond only with valid JSON."
+                ),
+            )
             items_data = _parse_llm_response(response)
             return items_data
 
