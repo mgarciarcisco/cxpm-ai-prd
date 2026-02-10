@@ -25,6 +25,7 @@ function JiraEpicPage() {
   const [projects, setProjects] = useState([]);
   const [functionalRequirements, setFunctionalRequirements] = useState([]);
   const [selectedRequirements, setSelectedRequirements] = useState(new Set());
+  const [additionalInstructions, setAdditionalInstructions] = useState('');
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [loadingRequirements, setLoadingRequirements] = useState(false);
 
@@ -243,7 +244,11 @@ function JiraEpicPage() {
       .map((req, index) => `${index + 1}. ${req.content}`)
       .join('\n\n');
 
-    const fullText = `--- Functional Requirements from ${selectedProject.name} ---\n\n${requirementsText}`;
+    let fullText = `--- Functional Requirements from ${selectedProject.name} ---\n\n${requirementsText}`;
+    const trimmedInstructions = additionalInstructions.trim();
+    if (trimmedInstructions) {
+      fullText += `\n\n--- Additional Instructions ---\n\n${trimmedInstructions}`;
+    }
     setShowRequirementsSelector(false);
     setError(null);
 
@@ -964,7 +969,7 @@ function JiraEpicPage() {
           title="Select Functional Requirements"
           subtitle={selectedProject ? `From: ${selectedProject.name}` : ''}
           onClose={() => setShowRequirementsSelector(false)}
-          size="large"
+          size="xlarge"
         >
           <div className="requirements-selector-modal">
             {loadingRequirements ? (
@@ -1013,6 +1018,23 @@ function JiraEpicPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+                <div className="requirements-additional-instructions">
+                  <label htmlFor="additional-instructions" className="requirements-additional-instructions__label">
+                    Additional Instructions
+                  </label>
+                  <textarea
+                    id="additional-instructions"
+                    className="requirements-additional-instructions__textarea"
+                    placeholder="Optional instructions for the AI (e.g. focus on security, use British English)..."
+                    maxLength={200}
+                    value={additionalInstructions}
+                    onChange={(e) => setAdditionalInstructions(e.target.value)}
+                    rows={3}
+                  />
+                  <span className="requirements-additional-instructions__count" aria-live="polite">
+                    {additionalInstructions.length}/200
+                  </span>
                 </div>
                 <div className="modal-footer">
                   <button

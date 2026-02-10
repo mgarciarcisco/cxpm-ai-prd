@@ -9,7 +9,7 @@ import './Modal.css';
  * @param {string} [props.title] - Modal title
  * @param {string} [props.subtitle] - Optional subtitle below title
  * @param {string} [props.icon] - Optional icon (emoji) for the header
- * @param {string} [props.size] - Modal size: 'default' | 'large'
+ * @param {string} [props.size] - Modal size: 'default' | 'large' | 'xlarge'
  * @param {string} [props.variant] - Modal variant: 'default' | 'form'
  */
 export function Modal({
@@ -23,13 +23,15 @@ export function Modal({
 }) {
   const modalRef = useRef(null);
   const previousActiveElement = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  // Handle ESC key press
+  // Handle ESC key press (use ref so effect doesn't re-run when parent re-renders and focus is not stolen)
   const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Escape' && onClose) {
-      onClose();
+    if (e.key === 'Escape' && onCloseRef.current) {
+      onCloseRef.current();
     }
-  }, [onClose]);
+  }, []);
 
   // Focus trap - keep focus inside modal
   const handleFocusTrap = useCallback((e) => {
@@ -100,6 +102,7 @@ export function Modal({
   const containerClasses = [
     'modal-container',
     size === 'large' && 'modal-container--large',
+    size === 'xlarge' && 'modal-container--xlarge',
     variant === 'form' && 'modal-container--form'
   ].filter(Boolean).join(' ');
 

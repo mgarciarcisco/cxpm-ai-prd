@@ -48,6 +48,11 @@
   max-width: 560px;
 }
 
+/* XLarge modal variant (50% wider than large, e.g. requirements selector) */
+.modal-container--xlarge {
+  max-width: 840px;
+}
+
 /* Form modal variant - has gray header */
 .modal-container--form .modal-header {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
