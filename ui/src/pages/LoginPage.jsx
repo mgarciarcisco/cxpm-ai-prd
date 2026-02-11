@@ -44,7 +44,7 @@ export default function LoginPage() {
             <span>&#10038;</span>
           </div>
           <h1>CX AI Assistant for Product Managers</h1>
-          <p>Early Access</p>
+          <p>Prototype</p>
         </div>
 
         {/* Login card */}

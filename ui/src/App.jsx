@@ -38,7 +38,7 @@ function AppContent() {
           </div>
           <div className="header-text">
             <h1>CX AI Assistant for Product Managers</h1>
-            <span className="header-subtitle">Early Access</span>
+            <span className="header-subtitle">Prototype</span>
           </div>
         </Link>
 
