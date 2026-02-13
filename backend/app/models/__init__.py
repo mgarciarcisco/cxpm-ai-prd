@@ -16,6 +16,15 @@ from app.models.project import (
 from app.models.requirement import Requirement
 from app.models.requirement_history import Action, Actor, RequirementHistory
 from app.models.requirement_source import RequirementSource
+from app.models.bug_report import BugReport, BugSeverity, BugStatus
+from app.models.feature_request import (
+    FeatureCategory,
+    FeatureRequest,
+    FeatureRequestComment,
+    FeatureRequestUpvote,
+    FeatureStatus,
+)
+from app.models.notification import Notification, NotificationType
 from app.models.user import User
 
 __all__ = [
@@ -40,4 +49,14 @@ __all__ = [
     "JiraStory",
     "User",
     "ActivityLog",
+    "BugReport",
+    "BugSeverity",
+    "BugStatus",
+    "FeatureRequest",
+    "FeatureRequestUpvote",
+    "FeatureRequestComment",
+    "FeatureCategory",
+    "FeatureStatus",
+    "Notification",
+    "NotificationType",
 ]

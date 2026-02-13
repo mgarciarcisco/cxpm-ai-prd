@@ -224,6 +224,10 @@ cxpm-ai-prd-key
 # SQLite databases
 *.db
 
+# Uploaded files (screenshots etc.) - except .gitkeep
+backend/uploads/*
+!backend/uploads/screenshots/.gitkeep
+
 # Ralph agent runtime artifacts
 logs/
 archive/

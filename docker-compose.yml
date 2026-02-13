@@ -48,6 +48,7 @@ services:
       - DATABASE_URL=postgresql://cxpm:cxpm_dev@postgres:5432/cxpm
     volumes:
       - backend_data:/app/data
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,4 +70,6 @@ volumes:
   postgres_data:
     driver: local
   backend_data:
+    driver: local
+  uploads_data:
     driver: local

@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # File upload limits
     MAX_FILE_SIZE_KB: int = 50
 
+    # Screenshot upload directory
+    UPLOAD_DIR: str = "uploads"
+
     # LLM settings
     LLM_TIMEOUT: int = 60  # seconds
     LLM_MAX_RETRIES: int = 1
