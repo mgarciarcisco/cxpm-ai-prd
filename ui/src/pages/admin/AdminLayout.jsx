@@ -22,6 +22,10 @@ export default function AdminLayout() {
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3.5" stroke="currentColor" strokeWidth="1.5"/><path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             Users
           </NavLink>
+          <NavLink to="/admin/bugs" className={({ isActive }) => `admin-nav-link${isActive ? ' active' : ''}`}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5"/><path d="M9 6v4M9 12h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            Bug Reports
+          </NavLink>
         </nav>
         <div className="admin-sidebar__footer">
           <NavLink to="/dashboard" className="admin-back-link">

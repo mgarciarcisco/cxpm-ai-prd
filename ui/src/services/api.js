@@ -246,3 +246,125 @@ export async function listJiraStories(projectId) {
 export async function deleteJiraStories(projectId) {
   return del(`/api/jira-stories/project/${projectId}`);
 }
+
+// ============================================================
+// Bug Report API Functions
+// ============================================================
+
+export async function submitBugReport(formData) {
+  const token = localStorage.getItem('auth_token');
+  const BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
+  const response = await fetch(`${BASE}/api/bug-reports`, {
+    method: 'POST',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    body: formData, // FormData - do NOT set Content-Type
+  });
+  if (response.status === 401) {
+    localStorage.removeItem('auth_token');
+    window.location.href = '/login';
+    throw new Error('Session expired');
+  }
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to submit bug report');
+  }
+  return response.json();
+}
+
+export async function getMyBugReports(page = 1, perPage = 20) {
+  return get(`/api/bug-reports/mine?page=${page}&per_page=${perPage}`);
+}
+
+export async function getBugReport(id) {
+  return get(`/api/bug-reports/${id}`);
+}
+
+export async function getAdminBugReports(page = 1, perPage = 20, status = '', severity = '') {
+  let url = `/api/bug-reports?page=${page}&per_page=${perPage}`;
+  if (status) url += `&status=${status}`;
+  if (severity) url += `&severity=${severity}`;
+  return get(url);
+}
+
+export async function updateBugStatus(id, status) {
+  return patch(`/api/bug-reports/${id}/status`, { status });
+}
+
+export function getBugScreenshotUrl(id) {
+  const BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
+  const token = localStorage.getItem('auth_token');
+  return `${BASE}/api/bug-reports/${id}/screenshot?token=${token}`;
+}
+
+// ============================================================
+// Feature Request API Functions
+// ============================================================
+
+export async function getFeatureRequests(page = 1, perPage = 20, sort = 'newest', status = '', category = '') {
+  let url = `/api/feature-requests?page=${page}&per_page=${perPage}&sort=${sort}`;
+  if (status) url += `&status=${status}`;
+  if (category) url += `&category=${category}`;
+  return get(url);
+}
+
+export async function getFeatureRequest(id) {
+  return get(`/api/feature-requests/${id}`);
+}
+
+export async function createFeatureRequest(data) {
+  return post('/api/feature-requests', data);
+}
+
+export async function updateFeatureRequest(id, data) {
+  return put(`/api/feature-requests/${id}`, data);
+}
+
+export async function deleteFeatureRequest(id) {
+  return del(`/api/feature-requests/${id}`);
+}
+
+export async function updateFeatureStatus(id, data) {
+  return patch(`/api/feature-requests/${id}/status`, data);
+}
+
+export async function toggleUpvote(id) {
+  return post(`/api/feature-requests/${id}/upvote`);
+}
+
+export async function getComments(featureRequestId) {
+  return get(`/api/feature-requests/${featureRequestId}/comments`);
+}
+
+export async function addComment(featureRequestId, content) {
+  return post(`/api/feature-requests/${featureRequestId}/comments`, { content });
+}
+
+export async function updateComment(featureRequestId, commentId, content) {
+  return put(`/api/feature-requests/${featureRequestId}/comments/${commentId}`, { content });
+}
+
+export async function deleteComment(featureRequestId, commentId) {
+  return del(`/api/feature-requests/${featureRequestId}/comments/${commentId}`);
+}
+
+// ============================================================
+// Notification API Functions
+// ============================================================
+
+export async function getNotifications(page = 1, perPage = 20, unreadOnly = false) {
+  let url = `/api/notifications?page=${page}&per_page=${perPage}`;
+  if (unreadOnly) url += '&unread_only=true';
+  return get(url);
+}
+
+export async function getUnreadCount() {
+  return get('/api/notifications/unread-count');
+}
+
+export async function markNotificationRead(id) {
+  return post(`/api/notifications/${id}/read`);
+}
+
+export async function markAllNotificationsRead() {
+  return post('/api/notifications/mark-all-read');
+}

@@ -3,7 +3,10 @@ import { Outlet, Link } from 'react-router-dom'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { ToastProvider } from './contexts/ToastContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { NotificationProvider } from './contexts/NotificationContext'
 import ProtectedRoute from './components/common/ProtectedRoute'
+import NotificationBell from './components/common/NotificationBell'
+import BugReportButton from './components/common/BugReportButton'
 import OfflineIndicator from './components/common/OfflineIndicator'
 import ProfileModal from './components/common/ProfileModal'
 import './App.css'
@@ -43,6 +46,7 @@ function AppContent() {
         </Link>
 
         <div className="header-actions" ref={dropdownRef}>
+          <NotificationBell />
           <button
             className="user-button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -72,6 +76,19 @@ function AppContent() {
                   Admin
                 </Link>
               )}
+              <Link to="/my-bugs" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M8 5v3M8 10h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                My Bug Reports
+              </Link>
+              <Link to="/feature-requests" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 2v12M5 5l3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Feature Requests
+              </Link>
               <button className="dropdown-item" onClick={() => { setShowProfile(true); setDropdownOpen(false); }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="5.5" r="3" stroke="currentColor" strokeWidth="1.5"/>
@@ -98,6 +115,7 @@ function AppContent() {
         </ErrorBoundary>
       </main>
       {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
+      <BugReportButton />
     </div>
   )
 }
@@ -106,7 +124,9 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <AppContent />
+        <NotificationProvider>
+          <AppContent />
+        </NotificationProvider>
       </ToastProvider>
     </AuthProvider>
   )

@@ -23,6 +23,12 @@ import AdminLayout from './pages/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUserManagement from './pages/admin/AdminUserManagement'
 import AccessDeniedPage from './pages/admin/AccessDeniedPage'
+import MyBugReportsPage from './pages/MyBugReportsPage'
+import BugReportDetailPage from './pages/BugReportDetailPage'
+import FeatureRequestsPage from './pages/FeatureRequestsPage'
+import FeatureRequestDetailPage from './pages/FeatureRequestDetailPage'
+import NotificationsPage from './pages/NotificationsPage'
+import AdminBugTriage from './pages/admin/AdminBugTriage'
 import { AuthProvider } from './contexts/AuthContext'
 
 // Create data router with all routes
@@ -51,6 +57,11 @@ const router = createBrowserRouter([
       { path: 'app/projects/:id/meetings/:mid/apply', element: <ConflictResolverPage /> },
       { path: 'app/projects/:id/requirements', element: <RequirementsPage /> },
       { path: 'app/jira-epic', element: <JiraEpicPage /> },
+      { path: 'my-bugs', element: <MyBugReportsPage /> },
+      { path: 'bugs/:id', element: <BugReportDetailPage /> },
+      { path: 'feature-requests', element: <FeatureRequestsPage /> },
+      { path: 'feature-requests/:id', element: <FeatureRequestDetailPage /> },
+      { path: 'notifications', element: <NotificationsPage /> },
       { path: 'app/*', element: <ProjectsPage /> },
       // Admin routes
       { path: 'admin/access-denied', element: <AccessDeniedPage /> },
@@ -60,6 +71,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <AdminDashboard /> },
           { path: 'users', element: <AdminUserManagement /> },
+          { path: 'bugs', element: <AdminBugTriage /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

@@ -1,0 +1,27 @@
+.bug-report-fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 50;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(78, 205, 196, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bug-report-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(78, 205, 196, 0.5);
+}
+
+.bug-report-fab:active {
+  transform: translateY(0);
+}
