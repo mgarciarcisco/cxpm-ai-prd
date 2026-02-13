@@ -50,27 +50,22 @@ from app.schemas.project import (
 from app.schemas.bug_report import (
     BugReportListResponse,
     BugReportResponse,
-    BugSeveritySchema,
-    BugStatusSchema,
     BugStatusUpdate,
 )
 from app.schemas.feature_request import (
     CommentCreate,
     CommentResponse,
     CommentUpdate,
-    FeatureCategorySchema,
     FeatureRequestCreate,
     FeatureRequestListResponse,
     FeatureRequestResponse,
     FeatureRequestUpdate,
-    FeatureStatusSchema,
     FeatureStatusUpdate,
     UpvoteResponse,
 )
 from app.schemas.notification import (
     NotificationListResponse,
     NotificationResponse,
-    NotificationTypeSchema,
     UnreadCountResponse,
 )
 from app.schemas.requirement import (
@@ -137,8 +132,6 @@ __all__ = [
     # Bug Report schemas
     "BugReportResponse",
     "BugReportListResponse",
-    "BugSeveritySchema",
-    "BugStatusSchema",
     "BugStatusUpdate",
     # Feature Request schemas
     "FeatureRequestCreate",
@@ -146,8 +139,6 @@ __all__ = [
     "FeatureRequestResponse",
     "FeatureRequestListResponse",
     "FeatureStatusUpdate",
-    "FeatureCategorySchema",
-    "FeatureStatusSchema",
     "CommentCreate",
     "CommentUpdate",
     "CommentResponse",
@@ -155,6 +146,5 @@ __all__ = [
     # Notification schemas
     "NotificationResponse",
     "NotificationListResponse",
-    "NotificationTypeSchema",
     "UnreadCountResponse",
 ]
