@@ -1,23 +1,18 @@
 """Pydantic schemas for notification endpoints."""
 
-import enum
 from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
 
-
-class NotificationTypeSchema(str, enum.Enum):
-    bug_status_change = "bug_status_change"
-    feature_status_change = "feature_status_change"
-    feature_comment = "feature_comment"
+from app.models.notification import NotificationType
 
 
 class NotificationResponse(BaseModel):
     """Response schema for a notification."""
     id: str
     user_id: str
-    type: NotificationTypeSchema
+    type: NotificationType
     title: str
     message: str
     resource_type: Optional[str] = None

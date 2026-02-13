@@ -1,5 +1,7 @@
 """Feature request API endpoints: CRUD, upvotes, comments, and admin actions."""
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -141,7 +143,7 @@ def create_feature_request(
 def list_feature_requests(
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
-    sort: str = Query(default="newest", regex="^(newest|most_upvoted)$"),
+    sort: Literal["newest", "most_upvoted"] = Query(default="newest"),
     status_filter: str | None = Query(default=None, alias="status"),
     category: str | None = Query(default=None),
     current_user: User = Depends(get_current_user),

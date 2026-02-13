@@ -69,7 +69,7 @@ def _bug_to_response(bug: BugReport, reporter_name: str | None = None) -> BugRep
 async def submit_bug_report(
     title: str = Form(..., min_length=1, max_length=255),
     description: str = Form(..., min_length=1, max_length=10000),
-    severity: str = Form("minor"),
+    severity: BugSeverity = Form(BugSeverity.minor),
     steps_to_reproduce: Optional[str] = Form(None, max_length=10000),
     page_url: Optional[str] = Form(None, max_length=500),
     browser_info: Optional[str] = Form(None, max_length=500),
@@ -78,15 +78,6 @@ async def submit_bug_report(
     db: Session = Depends(get_db),
 ) -> BugReportResponse:
     """Submit a new bug report with an optional screenshot upload."""
-
-    # Validate severity value
-    try:
-        bug_severity = BugSeverity(severity)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid severity '{severity}'. Must be one of: {', '.join(s.value for s in BugSeverity)}",
-        )
 
     screenshot_path: str | None = None
 
@@ -138,7 +129,7 @@ async def submit_bug_report(
     bug = BugReport(
         title=title,
         description=description,
-        severity=bug_severity,
+        severity=severity,
         steps_to_reproduce=steps_to_reproduce,
         screenshot_path=screenshot_path,
         page_url=page_url,

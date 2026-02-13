@@ -1,23 +1,11 @@
 """Pydantic schemas for bug report endpoints."""
 
-import enum
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-
-class BugSeveritySchema(str, enum.Enum):
-    blocker = "blocker"
-    major = "major"
-    minor = "minor"
-
-
-class BugStatusSchema(str, enum.Enum):
-    open = "open"
-    investigating = "investigating"
-    fixed = "fixed"
-    closed = "closed"
+from app.models.bug_report import BugSeverity, BugStatus
 
 
 class BugReportResponse(BaseModel):
@@ -25,8 +13,8 @@ class BugReportResponse(BaseModel):
     id: str
     title: str
     description: str
-    severity: BugSeveritySchema
-    status: BugStatusSchema
+    severity: BugSeverity
+    status: BugStatus
     steps_to_reproduce: Optional[str] = None
     has_screenshot: bool = False
     page_url: Optional[str] = None
@@ -50,4 +38,4 @@ class BugReportListResponse(BaseModel):
 
 class BugStatusUpdate(BaseModel):
     """Schema for updating bug report status."""
-    status: BugStatusSchema
+    status: BugStatus

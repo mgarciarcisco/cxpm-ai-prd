@@ -47,7 +47,7 @@ def create_notification_safe(
         # Savepoint handles rollback automatically on exception
 
 
-async def purge_old_notifications(db: Session, retention_days: int = 90) -> int:
+def purge_old_notifications(db: Session, retention_days: int = 90) -> int:
     """Delete notifications older than retention_days. Returns count deleted."""
     cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
     total_deleted = 0

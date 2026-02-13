@@ -79,7 +79,7 @@ async def startup_purge_old_notifications():
     try:
         db = SessionLocal()
         try:
-            await purge_old_notifications(db)
+            purge_old_notifications(db)
         finally:
             db.close()
     except Exception as e:
