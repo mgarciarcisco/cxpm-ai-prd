@@ -2,7 +2,7 @@
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import CHAR, Column, DateTime, Enum, Index, String, Text, ForeignKey, UniqueConstraint
 
@@ -38,8 +38,8 @@ class FeatureRequest(Base):
     status = Column(Enum(FeatureStatus), nullable=False, default=FeatureStatus.submitted)
     admin_response = Column(Text, nullable=True)
     submitter_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     __table_args__ = (
         Index("ix_feature_requests_submitter_id", "submitter_id"),
@@ -60,7 +60,7 @@ class FeatureRequestUpvote(Base):
     id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     feature_request_id = Column(CHAR(36), ForeignKey("feature_requests.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     __table_args__ = (
         UniqueConstraint("feature_request_id", "user_id", name="uq_feature_request_user_upvote"),
@@ -79,8 +79,8 @@ class FeatureRequestComment(Base):
     feature_request_id = Column(CHAR(36), ForeignKey("feature_requests.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     __table_args__ = (
         Index("ix_feature_request_comments_feature_request_id", "feature_request_id"),

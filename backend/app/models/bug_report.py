@@ -2,7 +2,7 @@
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import CHAR, Column, DateTime, Enum, Index, String, Text, ForeignKey
 
@@ -37,8 +37,8 @@ class BugReport(Base):
     page_url = Column(String(500), nullable=True)
     browser_info = Column(String(500), nullable=True)
     reporter_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     __table_args__ = (
         Index("ix_bug_reports_reporter_id", "reporter_id"),

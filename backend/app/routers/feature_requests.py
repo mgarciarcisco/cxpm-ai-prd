@@ -156,8 +156,13 @@ def list_feature_requests(
     if category:
         query = query.filter(FeatureRequest.category == category)
 
-    # Get total count before pagination
-    total = query.count()
+    # Use a simple count query without JOINs for efficiency
+    count_query = db.query(func.count(FeatureRequest.id))
+    if status_filter:
+        count_query = count_query.filter(FeatureRequest.status == status_filter)
+    if category:
+        count_query = count_query.filter(FeatureRequest.category == category)
+    total = count_query.scalar()
 
     # Apply sorting
     if sort == "most_upvoted":
@@ -410,6 +415,8 @@ def create_comment(
 @router.get("/{feature_request_id}/comments", response_model=list[CommentResponse])
 def list_comments(
     feature_request_id: str,
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=50, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[CommentResponse]:
@@ -427,6 +434,8 @@ def list_comments(
         .join(User, FeatureRequestComment.user_id == User.id)
         .filter(FeatureRequestComment.feature_request_id == feature_request_id)
         .order_by(FeatureRequestComment.created_at.asc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
         .all()
     )
 

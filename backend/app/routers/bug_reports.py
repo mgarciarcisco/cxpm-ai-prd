@@ -1,12 +1,14 @@
 """Bug report API endpoints: submit, list, view, update status, and serve screenshots."""
 
+import mimetypes
 import os
 import uuid as uuid_mod
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user, require_admin
@@ -22,6 +24,23 @@ router = APIRouter(prefix="/api/bug-reports", tags=["bug-reports"])
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024  # 5 MB
+
+# Magic byte signatures for image file validation
+MAGIC_BYTES = {
+    b'\x89PNG': 'png',
+    b'\xff\xd8\xff': 'jpg',
+    b'GIF87a': 'gif',
+    b'GIF89a': 'gif',
+    b'RIFF': 'webp',  # WebP starts with RIFF
+}
+
+
+def _validate_magic_bytes(content: bytes) -> bool:
+    """Check file content starts with valid image magic bytes."""
+    for magic in MAGIC_BYTES:
+        if content[:len(magic)] == magic:
+            return True
+    return False
 
 
 def _bug_to_response(bug: BugReport, reporter_name: str | None = None) -> BugReportResponse:
@@ -48,12 +67,12 @@ def _bug_to_response(bug: BugReport, reporter_name: str | None = None) -> BugRep
 # ---------------------------------------------------------------------------
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=BugReportResponse)
 async def submit_bug_report(
-    title: str = Form(...),
-    description: str = Form(...),
+    title: str = Form(..., min_length=1, max_length=255),
+    description: str = Form(..., min_length=1, max_length=10000),
     severity: str = Form("minor"),
-    steps_to_reproduce: Optional[str] = Form(None),
-    page_url: Optional[str] = Form(None),
-    browser_info: Optional[str] = Form(None),
+    steps_to_reproduce: Optional[str] = Form(None, max_length=10000),
+    page_url: Optional[str] = Form(None, max_length=500),
+    browser_info: Optional[str] = Form(None, max_length=500),
     screenshot: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -81,12 +100,27 @@ async def submit_bug_report(
                 detail=f"Invalid file type '.{ext}'. Allowed: {', '.join(ALLOWED_EXTENSIONS)}",
             )
 
-        # Read file content and validate size
-        file_content = await screenshot.read()
-        if len(file_content) > MAX_SCREENSHOT_BYTES:
+        # Read file content with streaming size check
+        chunks = []
+        total_size = 0
+        while True:
+            chunk = await screenshot.read(8192)
+            if not chunk:
+                break
+            total_size += len(chunk)
+            if total_size > MAX_SCREENSHOT_BYTES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Screenshot exceeds maximum size of 5 MB.",
+                )
+            chunks.append(chunk)
+        file_content = b"".join(chunks)
+
+        # Validate magic bytes to ensure the file is actually an image
+        if not _validate_magic_bytes(file_content):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Screenshot exceeds maximum size of 5 MB.",
+                detail="File content does not match a valid image format.",
             )
 
         # Save to disk with a UUID filename
@@ -97,7 +131,8 @@ async def submit_bug_report(
         file_path = screenshots_dir / filename
         file_path.write_bytes(file_content)
 
-        screenshot_path = str(file_path)
+        # Store relative path from UPLOAD_DIR
+        screenshot_path = f"screenshots/{filename}"
 
     # Create the bug report record
     bug = BugReport(
@@ -123,8 +158,8 @@ async def submit_bug_report(
 # ---------------------------------------------------------------------------
 @router.get("/mine", response_model=BugReportListResponse)
 def list_my_bugs(
-    page: int = 1,
-    per_page: int = 20,
+    page: int = Query(default=1, ge=1, le=100),
+    per_page: int = Query(default=20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> BugReportListResponse:
@@ -153,8 +188,8 @@ def list_my_bugs(
 # ---------------------------------------------------------------------------
 @router.get("", response_model=BugReportListResponse)
 def list_all_bugs(
-    page: int = 1,
-    per_page: int = 20,
+    page: int = Query(default=1, ge=1, le=100),
+    per_page: int = Query(default=20, ge=1, le=100),
     status_filter: Optional[str] = None,
     severity: Optional[str] = None,
     current_user: User = Depends(require_admin),
@@ -202,6 +237,28 @@ def list_all_bugs(
         page=page,
         per_page=per_page,
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /api/bug-reports/stats  -  Admin only: bug report counts by status
+# NOTE: This route MUST be registered BEFORE /{id} to avoid path conflicts.
+# ---------------------------------------------------------------------------
+@router.get("/stats")
+def get_bug_stats(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Admin endpoint: get bug report counts by status."""
+    rows = (
+        db.query(BugReport.status, func.count(BugReport.id))
+        .group_by(BugReport.status)
+        .all()
+    )
+    stats = {s.value: 0 for s in BugStatus}
+    for status_val, count in rows:
+        key = status_val.value if hasattr(status_val, 'value') else status_val
+        stats[key] = count
+    return stats
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +342,15 @@ def get_bug_screenshot(
     if not bug.screenshot_path:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No screenshot attached")
 
-    if not os.path.isfile(bug.screenshot_path):
+    # Reconstruct full path from relative screenshot_path
+    full_path = os.path.join(settings.UPLOAD_DIR, bug.screenshot_path)
+
+    if not os.path.isfile(full_path):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Screenshot file not found")
 
-    return FileResponse(bug.screenshot_path)
+    media_type = mimetypes.guess_type(bug.screenshot_path)[0] or "application/octet-stream"
+    return FileResponse(
+        full_path,
+        media_type=media_type,
+        headers={"X-Content-Type-Options": "nosniff"},
+    )

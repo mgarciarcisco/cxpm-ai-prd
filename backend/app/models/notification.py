@@ -2,7 +2,7 @@
 
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import CHAR, Boolean, Column, DateTime, Enum, Index, String, Text, ForeignKey
 
@@ -28,7 +28,7 @@ class Notification(Base):
     resource_type = Column(String(50), nullable=True)
     resource_id = Column(CHAR(36), nullable=True)
     is_read = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     __table_args__ = (
         Index("ix_notifications_user_id", "user_id"),

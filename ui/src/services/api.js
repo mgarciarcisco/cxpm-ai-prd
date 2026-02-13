@@ -290,10 +290,24 @@ export async function updateBugStatus(id, status) {
   return patch(`/api/bug-reports/${id}/status`, { status });
 }
 
-export function getBugScreenshotUrl(id) {
-  const BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
-  const token = localStorage.getItem('auth_token');
-  return `${BASE}/api/bug-reports/${id}/screenshot?token=${token}`;
+export async function fetchBugScreenshot(id) {
+  const response = await fetch(`${BASE_URL}/api/bug-reports/${id}/screenshot`, {
+    headers: { ...getAuthHeaders() },
+  });
+  if (response.status === 401) {
+    localStorage.removeItem('auth_token');
+    window.location.href = '/login';
+    throw new Error('Session expired');
+  }
+  if (!response.ok) {
+    throw new Error('Failed to load screenshot');
+  }
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+
+export async function getBugReportStats() {
+  return get('/api/bug-reports/stats');
 }
 
 // ============================================================

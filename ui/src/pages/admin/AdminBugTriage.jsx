@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAdminBugReports, updateBugStatus } from '../../services/api';
+import { getAdminBugReports, updateBugStatus, getBugReportStats } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import EmptyState from '../../components/common/EmptyState';
 import './AdminBugTriage.css';
@@ -40,15 +40,17 @@ export default function AdminBugTriage() {
     }
   };
 
-  // Load stats (all bugs, no filter) on mount
+  // Load stats from dedicated endpoint on mount
   useEffect(() => {
     async function loadStats() {
       try {
-        // Fetch all to calculate stats
-        const allData = await getAdminBugReports(1, 1000, '', '');
-        const s = { open: 0, investigating: 0, fixed: 0, closed: 0 };
-        allData.items.forEach(b => { if (s[b.status] !== undefined) s[b.status]++; });
-        setStats(s);
+        const data = await getBugReportStats();
+        setStats({
+          open: data.open || 0,
+          investigating: data.investigating || 0,
+          fixed: data.fixed || 0,
+          closed: data.closed || 0,
+        });
       } catch (err) {
         console.error('Failed to load stats:', err);
       }

@@ -129,3 +129,10 @@ def downgrade() -> None:
     op.drop_index("ix_bug_reports_status", table_name="bug_reports")
     op.drop_index("ix_bug_reports_reporter_id", table_name="bug_reports")
     op.drop_table("bug_reports")
+
+    # Drop PostgreSQL enum types (SQLite ignores these)
+    op.execute("DROP TYPE IF EXISTS notificationtype")
+    op.execute("DROP TYPE IF EXISTS featurestatus")
+    op.execute("DROP TYPE IF EXISTS featurecategory")
+    op.execute("DROP TYPE IF EXISTS bugstatus")
+    op.execute("DROP TYPE IF EXISTS bugseverity")

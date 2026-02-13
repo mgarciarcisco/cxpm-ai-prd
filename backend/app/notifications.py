@@ -31,6 +31,7 @@ def create_notification_safe(
         resource_id: ID of the related resource (for navigation links)
     """
     try:
+        nested = db.begin_nested()
         notification = Notification(
             user_id=user_id,
             type=notification_type,
@@ -40,13 +41,10 @@ def create_notification_safe(
             resource_id=resource_id,
         )
         db.add(notification)
-        db.commit()
+        nested.commit()
     except Exception as e:
         logger.error(f"Failed to create notification: {e}")
-        try:
-            db.rollback()
-        except Exception:
-            pass
+        # Savepoint handles rollback automatically on exception
 
 
 async def purge_old_notifications(db: Session, retention_days: int = 90) -> int:
@@ -54,9 +52,21 @@ async def purge_old_notifications(db: Session, retention_days: int = 90) -> int:
     cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
     total_deleted = 0
     while True:
-        deleted = db.query(Notification).filter(
-            Notification.created_at < cutoff
-        ).limit(1000).delete(synchronize_session=False)
+        # Use subquery to get IDs, then delete by IDs (PostgreSQL-compatible)
+        ids_to_delete = (
+            db.query(Notification.id)
+            .filter(Notification.created_at < cutoff)
+            .limit(1000)
+            .all()
+        )
+        if not ids_to_delete:
+            break
+        id_list = [row[0] for row in ids_to_delete]
+        deleted = (
+            db.query(Notification)
+            .filter(Notification.id.in_(id_list))
+            .delete(synchronize_session=False)
+        )
         db.commit()
         total_deleted += deleted
         if deleted < 1000:

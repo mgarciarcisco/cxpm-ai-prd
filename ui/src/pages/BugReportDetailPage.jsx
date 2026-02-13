@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getBugReport, updateBugStatus, getBugScreenshotUrl } from '../services/api';
+import { getBugReport, updateBugStatus, fetchBugScreenshot } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import './BugReportDetailPage.css';
 
@@ -19,6 +19,7 @@ export default function BugReportDetailPage() {
   const [bug, setBug] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [screenshotUrl, setScreenshotUrl] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -37,6 +38,17 @@ export default function BugReportDetailPage() {
     }
     load();
   }, [id]);
+
+  useEffect(() => {
+    if (bug?.has_screenshot) {
+      fetchBugScreenshot(bug.id)
+        .then(url => setScreenshotUrl(url))
+        .catch(err => console.error('Failed to load screenshot:', err));
+    }
+    return () => {
+      if (screenshotUrl) URL.revokeObjectURL(screenshotUrl);
+    };
+  }, [bug?.id, bug?.has_screenshot]);
 
   const handleStatusChange = async (newStatus) => {
     try {
@@ -94,11 +106,11 @@ export default function BugReportDetailPage() {
             </div>
           )}
 
-          {bug.has_screenshot && (
+          {bug.has_screenshot && screenshotUrl && (
             <div className="detail-card">
               <h3 className="detail-card__label">Screenshot</h3>
               <div className="detail-card__screenshot">
-                <img src={getBugScreenshotUrl(bug.id)} alt="Bug screenshot" />
+                <img src={screenshotUrl} alt="Bug screenshot" />
               </div>
             </div>
           )}
