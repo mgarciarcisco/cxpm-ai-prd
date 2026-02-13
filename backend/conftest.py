@@ -8,17 +8,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.auth import get_current_user, get_current_user_from_query
+from app.auth import get_current_user, get_current_user_from_query, require_admin
 from app.database import Base, get_db
 from app.main import app
 
 # Import models so that Base.metadata knows about them
 from app.models import (  # noqa: F401
-    PRD,
     ActivityLog,
+    BugReport,
+    FeatureRequest,
+    FeatureRequestComment,
+    FeatureRequestUpvote,
     MeetingItem,
     MeetingItemDecision,
     MeetingRecap,
+    Notification,
     Project,
     Requirement,
     RequirementHistory,
@@ -117,6 +121,51 @@ def auth_client(test_db: Session, test_user: User) -> Generator[TestClient, None
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
     app.dependency_overrides[get_current_user_from_query] = override_get_current_user
+
+    with TestClient(app) as client:
+        yield client
+
+    app.dependency_overrides.clear()
+
+
+# Fixed admin user ID for consistent test data
+ADMIN_USER_ID = "admin-user-0000-0000-000000000001"
+
+
+@pytest.fixture
+def admin_user(test_db: Session) -> User:
+    """Create an admin user for admin-only tests."""
+    user = User(
+        id=ADMIN_USER_ID,
+        email="admin@example.com",
+        name="Admin User",
+        hashed_password="!not-a-real-hash",
+        is_active=True,
+        is_admin=True,
+        is_approved=True,
+    )
+    test_db.add(user)
+    test_db.commit()
+    test_db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def admin_client(test_db: Session, admin_user: User) -> Generator[TestClient, None, None]:
+    """Create a test client with admin auth bypass."""
+    def override_get_db() -> Generator[Session, None, None]:
+        try:
+            yield test_db
+        finally:
+            pass
+
+    def override_get_current_user() -> User:
+        return admin_user
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    app.dependency_overrides[get_current_user_from_query] = override_get_current_user
+    app.dependency_overrides[require_admin] = override_get_current_user
 
     with TestClient(app) as client:
         yield client
