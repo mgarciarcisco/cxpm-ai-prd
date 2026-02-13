@@ -4,15 +4,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.activity import RequestIdMiddleware, purge_old_activity_logs
+from app.notifications import purge_old_notifications
 from app.config import settings
 from app.database import SessionLocal
 from app.routers import (
     admin_router,
     auth_router,
+    bug_reports_router,
+    feature_requests_router,
     jira_epic_router,
     jira_stories_router,
     meeting_items_router,
     meetings_router,
+    notifications_router,
     projects_router,
     requirements_router,
 )
@@ -69,6 +73,19 @@ async def startup_purge_activity_logs():
         logger.error(f"Failed to purge activity logs on startup: {e}")
 
 
+@app.on_event("startup")
+async def startup_purge_old_notifications():
+    """Purge notifications older than 90 days on startup."""
+    try:
+        db = SessionLocal()
+        try:
+            await purge_old_notifications(db)
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error(f"Failed to purge notifications on startup: {e}")
+
+
 # Register routers
 app.include_router(admin_router)
 app.include_router(auth_router)
@@ -78,3 +95,6 @@ app.include_router(meeting_items_router)
 app.include_router(requirements_router)
 app.include_router(jira_epic_router)
 app.include_router(jira_stories_router)
+app.include_router(bug_reports_router)
+app.include_router(feature_requests_router)
+app.include_router(notifications_router)

@@ -1,6 +1,7 @@
 """Notification creation helper: fire-and-forget, never raises."""
 
 import logging
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -46,3 +47,20 @@ def create_notification_safe(
             db.rollback()
         except Exception:
             pass
+
+
+async def purge_old_notifications(db: Session, retention_days: int = 90) -> int:
+    """Delete notifications older than retention_days. Returns count deleted."""
+    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    total_deleted = 0
+    while True:
+        deleted = db.query(Notification).filter(
+            Notification.created_at < cutoff
+        ).limit(1000).delete(synchronize_session=False)
+        db.commit()
+        total_deleted += deleted
+        if deleted < 1000:
+            break
+    if total_deleted > 0:
+        logger.info(f"Purged {total_deleted} notifications older than {retention_days} days")
+    return total_deleted
