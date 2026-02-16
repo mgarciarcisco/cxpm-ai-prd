@@ -29,7 +29,8 @@ function DashboardPage() {
     try {
       setLoading(true);
       setError(null);
-      const projectList = await get('/api/projects');
+      const projectData = await get('/api/projects');
+      const projectList = [...(projectData.owned || []), ...(projectData.shared || [])];
 
       const projectsWithStats = await Promise.all(
         projectList.map(async (project) => {

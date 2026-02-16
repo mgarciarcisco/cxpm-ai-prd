@@ -76,8 +76,9 @@ function JiraEpicPage() {
       }
       // No saved project: fetch and use first active project so we can show its existing epics if any
       try {
-        const projectsData = await get('/api/projects');
-        const activeProjects = (projectsData || [])
+        const projectsResponse = await get('/api/projects');
+        const projectsList = [...(projectsResponse.owned || []), ...(projectsResponse.shared || [])];
+        const activeProjects = projectsList
           .filter((p) => !p.archived)
           .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
         if (activeProjects.length > 0) {
@@ -158,8 +159,9 @@ function JiraEpicPage() {
   const fetchProjects = async () => {
     try {
       setLoadingProjects(true);
-      const projectsData = await get('/api/projects');
-      const activeProjects = projectsData
+      const projectsResponse = await get('/api/projects');
+      const projectsList = [...(projectsResponse.owned || []), ...(projectsResponse.shared || [])];
+      const activeProjects = projectsList
         .filter(p => !p.archived)
         .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
       setProjects(activeProjects);

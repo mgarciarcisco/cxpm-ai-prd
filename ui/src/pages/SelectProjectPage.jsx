@@ -55,7 +55,8 @@ function SelectProjectPage() {
         }
         
         // Fetch projects list
-        const projectsData = await get('/api/projects');
+        const projectsResponse = await get('/api/projects');
+        const projectsData = [...(projectsResponse.owned || []), ...(projectsResponse.shared || [])];
         // Filter out archived projects and sort by updated_at desc
         const activeProjects = projectsData
           .filter(p => !p.archived)
