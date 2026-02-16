@@ -161,12 +161,17 @@ def retry_meeting(meeting_id: str, db: Session = Depends(get_db), current_user: 
     Returns 404 if meeting not found.
     Returns 400 if meeting status is not 'failed'.
     """
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting not found",
         )
+    # Check access: editor on project or original uploader for orphan meetings
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
+    elif meeting.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
     # Check that meeting status is failed
     if meeting.status != MeetingStatus.failed:
@@ -216,12 +221,17 @@ def get_meeting(meeting_id: str, db: Session = Depends(get_db), current_user: Us
 
     Items filtered to exclude is_deleted=true.
     """
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting not found",
         )
+    # Check access: project member or original uploader
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db)
+    elif meeting.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
     # Get non-deleted items, ordered by section and order
     items = (
@@ -257,12 +267,17 @@ def delete_meeting(meeting_id: str, request: Request, db: Session = Depends(get_
 
     Returns 204 No Content on success, 404 if meeting not found.
     """
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting not found",
         )
+    # Check access: editor on project or original uploader for orphan meetings
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
+    elif meeting.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
     meeting_filename = meeting.title
     # Delete the meeting (cascade delete will remove associated items)
@@ -286,12 +301,17 @@ def add_meeting_item(
     Returns 400 if meeting status is not processed.
     """
     # Find the meeting
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting not found",
         )
+    # Check access: editor on project or original uploader for orphan meetings
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
+    elif meeting.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
     # Check meeting status
     if meeting.status != MeetingStatus.processed:
@@ -339,13 +359,18 @@ async def stream_extraction(
     - {type: 'complete', data: {item_count}} when done
     - {type: 'error', data: {message}} on failure
     """
-    # Verify meeting exists
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == job_id, MeetingRecap.user_id == current_user.id).first()
+    # Verify meeting exists and user has access
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == job_id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting not found",
         )
+    # Check access: project member or original uploader for orphan meetings
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db)
+    elif meeting.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
     async def event_generator() -> AsyncIterator[dict[str, Any]]:
         """Generate SSE events for extraction streaming."""
@@ -418,12 +443,17 @@ def apply_meeting(
     Returns 404 if meeting not found.
     """
     # Verify meeting exists
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting not found",
         )
+    # Check access: editor on project or original uploader for orphan meetings
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
+    elif meeting.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
     # Check meeting status
     if meeting.status != MeetingStatus.processed:
@@ -431,10 +461,6 @@ def apply_meeting(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot apply meeting unless status is processed",
         )
-
-    # Verify user still has editor access to the associated project
-    if meeting.project_id:
-        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
 
     import logging
     logger = logging.getLogger(__name__)
@@ -506,12 +532,17 @@ def resolve_meeting(
     Returns 404 if meeting not found.
     """
     # Verify meeting exists
-    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id, MeetingRecap.user_id == current_user.id).first()
+    meeting = db.query(MeetingRecap).filter(MeetingRecap.id == meeting_id).first()
     if not meeting:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting not found",
         )
+    # Check access: editor on project or original uploader for orphan meetings
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
+    elif meeting.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found")
 
     # Check meeting status
     if meeting.status != MeetingStatus.processed:
@@ -519,10 +550,6 @@ def resolve_meeting(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot resolve meeting unless status is processed",
         )
-
-    # Verify user still has editor access to the associated project
-    if meeting.project_id:
-        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
 
     # Get project_id from meeting
     project_id = meeting.project_id

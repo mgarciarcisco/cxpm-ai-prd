@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.activity import log_activity_safe
 from app.auth import get_current_user
@@ -58,30 +58,37 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
     """Get list of projects: owned and shared."""
     from app.schemas.project import ProjectResponse
 
-    # Owned projects
-    owned_projects = db.query(Project).filter(Project.user_id == current_user.id).all()
+    # Owned projects — eager-load members to avoid N+1
+    owned_projects = (
+        db.query(Project)
+        .options(selectinload(Project.members))
+        .filter(Project.user_id == current_user.id)
+        .all()
+    )
+
+    # Batch-load member users for all owned projects in one query
+    all_member_user_ids = [m.user_id for p in owned_projects for m in p.members]
+    member_users_by_id: dict[str, User] = {}
+    if all_member_user_ids:
+        member_users = db.query(User).filter(User.id.in_(all_member_user_ids)).all()
+        member_users_by_id = {u.id: u for u in member_users}
 
     owned_result = []
     for p in owned_projects:
         resp = ProjectResponse.model_validate(p).model_dump()
         resp["role"] = "owner"
-        # Include member summaries for avatar display
-        members = (
-            db.query(ProjectMember, User)
-            .join(User, ProjectMember.user_id == User.id)
-            .filter(ProjectMember.project_id == p.id)
-            .all()
-        )
         resp["members"] = [
-            {"user_id": u.id, "name": u.name, "role": m.role.value}
-            for m, u in members
+            {"user_id": m.user_id, "name": member_users_by_id[m.user_id].name, "role": m.role.value}
+            for m in p.members
+            if m.user_id in member_users_by_id
         ]
         owned_result.append(resp)
 
-    # Shared projects
+    # Shared projects — eager-load owner to avoid N+1
     shared_rows = (
         db.query(Project, ProjectMember)
         .join(ProjectMember, ProjectMember.project_id == Project.id)
+        .options(selectinload(Project.owner))
         .filter(ProjectMember.user_id == current_user.id)
         .all()
     )
