@@ -145,91 +145,90 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Apply Meeting: Sprint Planning')).toBeInTheDocument()
+        expect(screen.getByText('Apply: Sprint Planning')).toBeInTheDocument()
       })
     })
 
-    it('displays summary counts for added, skipped, and conflicts', async () => {
+    it('displays summary counts in footer', async () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('items will be added')).toBeInTheDocument()
+        expect(screen.getByText(/to add/)).toBeInTheDocument()
       })
 
-      // Verify summary labels are present with counts
-      expect(screen.getByText('duplicates skipped')).toBeInTheDocument()
-      expect(screen.getByText('conflicts need review')).toBeInTheDocument()
-
-      // Find summary section and verify counts within it
-      const summarySection = screen.getByText('items will be added').closest('.conflict-resolver-summary')
-      expect(summarySection).toBeInTheDocument()
+      expect(screen.getByText(/skipped/)).toBeInTheDocument()
+      expect(screen.getByText(/conflicts resolved/)).toBeInTheDocument()
     })
 
-    it('displays Items to be Added section with correct items', async () => {
+    it('displays new items when New Items category is selected', async () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Items to be Added')).toBeInTheDocument()
+        expect(screen.getByText('New Items')).toBeInTheDocument()
       })
 
-      expect(screen.getByText('New problem to add')).toBeInTheDocument()
+      // Click on "New Items" category in side nav
+      fireEvent.click(screen.getByText('New Items'))
+
+      await waitFor(() => {
+        expect(screen.getByText('New problem to add')).toBeInTheDocument()
+      })
       expect(screen.getByText('New user goal')).toBeInTheDocument()
     })
 
-    it('displays Skipped Duplicates section with reason and matched requirement', async () => {
+    it('displays skipped items when Duplicates category is selected', async () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Skipped Duplicates')).toBeInTheDocument()
+        expect(screen.getByText('Duplicates')).toBeInTheDocument()
       })
 
-      // Section is collapsed by default, click to expand
-      fireEvent.click(screen.getByText('Skipped Duplicates'))
+      // Click on "Duplicates" category in side nav
+      fireEvent.click(screen.getByText('Duplicates'))
 
       await waitFor(() => {
-        // The reason is displayed after expansion
-        expect(screen.getByText('Exact duplicate of existing requirement')).toBeInTheDocument()
+        expect(screen.getAllByText('Existing constraint').length).toBeGreaterThan(0)
       })
 
-      // The "Matches existing:" labels indicate the matched requirement sections (one per skipped item)
+      expect(screen.getByText('Exact duplicate of existing requirement')).toBeInTheDocument()
       const matchLabels = screen.getAllByText('Matches existing:')
       expect(matchLabels.length).toBeGreaterThan(0)
     })
 
-    it('displays section labels formatted correctly', async () => {
+    it('displays section labels in added items', async () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Items to be Added')).toBeInTheDocument()
+        expect(screen.getByText('New Items')).toBeInTheDocument()
       })
 
-      // Section labels for added items are formatted (Needs & Goals, Requirements)
-      const addedSection = screen.getByText('Items to be Added').closest('.collapsible-section')
-      expect(addedSection).toHaveTextContent('Needs & Goals')
-      expect(addedSection).toHaveTextContent('Requirements')
+      fireEvent.click(screen.getByText('New Items'))
+
+      await waitFor(() => {
+        expect(screen.getByText('Needs & Goals')).toBeInTheDocument()
+      })
+      expect(screen.getByText('Requirements')).toBeInTheDocument()
     })
 
-    it('shows "No Items to Apply" when all categories are empty', async () => {
+    it('shows empty state when all categories are empty', async () => {
       post.mockResolvedValue(mockApplyResultsEmpty)
 
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('No Items to Apply')).toBeInTheDocument()
+        expect(screen.getByText('No New Items')).toBeInTheDocument()
       })
-
-      expect(screen.getByText('No meeting items were found to apply to requirements.')).toBeInTheDocument()
     })
 
-    it('displays back to recap link', async () => {
+    it('displays cancel link', async () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Back to Recap')).toBeInTheDocument()
+        expect(screen.getByText('Cancel')).toBeInTheDocument()
       })
 
-      const backLink = screen.getByText('Back to Recap')
-      expect(backLink).toHaveAttribute('href', `/app/projects/${projectId}/meetings/${meetingId}`)
+      const cancelLink = screen.getByText('Cancel')
+      expect(cancelLink).toHaveAttribute('href', `/app/projects/${projectId}/meetings/${meetingId}`)
     })
   })
 
@@ -276,7 +275,7 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Conflicts Need Review')).toBeInTheDocument()
+        expect(screen.getAllByText('Choose resolution:').length).toBeGreaterThan(0)
       })
 
       // Check for radio options (multiple conflicts, each has 4 options)
@@ -297,7 +296,7 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Conflicts Need Review')).toBeInTheDocument()
+        expect(screen.getAllByText('Choose resolution:').length).toBeGreaterThan(0)
       })
 
       // Refinement recommends "Replace", Contradiction recommends "Keep existing"
@@ -309,7 +308,7 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Conflicts Need Review')).toBeInTheDocument()
+        expect(screen.getAllByText('Choose resolution:').length).toBeGreaterThan(0)
       })
 
       // Select "Keep existing" for first conflict
@@ -323,7 +322,7 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Conflicts Need Review')).toBeInTheDocument()
+        expect(screen.getAllByText('Choose resolution:').length).toBeGreaterThan(0)
       })
 
       // Get the label containing "Keep existing" for first conflict
@@ -361,7 +360,7 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Items to be Added')).toBeInTheDocument()
+        expect(screen.getByText('New problem')).toBeInTheDocument()
       })
 
       expect(screen.queryByText('Accept AI recommendations')).not.toBeInTheDocument()
@@ -384,7 +383,9 @@ describe('ConflictResolverPage', () => {
       })
 
       // Verify resolution count shows all conflicts resolved
-      expect(screen.getByText('2/2 conflicts resolved')).toBeInTheDocument()
+      expect(screen.getByText((content, element) => {
+        return element.classList?.contains('apply-footer-stat--conflicts') && element.textContent === '2/2 conflicts resolved'
+      })).toBeInTheDocument()
     })
   })
 
@@ -425,7 +426,9 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('0/2 conflicts resolved')).toBeInTheDocument()
+        expect(screen.getByText((content, element) => {
+          return element.classList?.contains('apply-footer-stat--conflicts') && element.textContent === '0/2 conflicts resolved'
+        })).toBeInTheDocument()
       })
     })
 
@@ -563,7 +566,7 @@ describe('ConflictResolverPage', () => {
       // Advance timer to trigger navigation
       await vi.advanceTimersByTimeAsync(1500)
 
-      expect(mockNavigate).toHaveBeenCalledWith(`/app/projects/${projectId}/requirements`)
+      expect(mockNavigate).toHaveBeenCalledWith(`/projects/${projectId}/requirements`)
 
       vi.useRealTimers()
     })
@@ -666,7 +669,7 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Error: Network error')).toBeInTheDocument()
+        expect(screen.getByText('Network error')).toBeInTheDocument()
       })
     })
 
@@ -674,7 +677,7 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument()
       })
     })
 
@@ -686,13 +689,13 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Try Again' })).toBeInTheDocument()
       })
 
-      fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }))
 
       await waitFor(() => {
-        expect(screen.getByText('Apply Meeting: Sprint Planning')).toBeInTheDocument()
+        expect(screen.getByText('Apply: Sprint Planning')).toBeInTheDocument()
       })
     })
   })
@@ -715,7 +718,7 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Items to be Added')).toBeInTheDocument()
+        expect(screen.getByText('New problem')).toBeInTheDocument()
       })
 
       const applyButton = screen.getByRole('button', { name: /apply changes/i })
@@ -726,17 +729,17 @@ describe('ConflictResolverPage', () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Items to be Added')).toBeInTheDocument()
+        expect(screen.getByText('New problem')).toBeInTheDocument()
       })
 
-      expect(screen.queryByText('Conflicts Need Review')).not.toBeInTheDocument()
+      expect(screen.queryByText('Choose resolution:')).not.toBeInTheDocument()
     })
 
     it('does not show conflict count in footer when no conflicts', async () => {
       renderWithRouter(<ConflictResolverPage />)
 
       await waitFor(() => {
-        expect(screen.getByText('Items to be Added')).toBeInTheDocument()
+        expect(screen.getByText('New problem')).toBeInTheDocument()
       })
 
       expect(screen.queryByText(/conflicts resolved/)).not.toBeInTheDocument()

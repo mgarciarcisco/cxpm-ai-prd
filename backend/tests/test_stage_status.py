@@ -12,12 +12,9 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     JiraStory,
-    PRD,
     ExportStatus,
     MockupsStatus,
-    PRDMode,
     PRDStageStatus,
-    PRDStatus,
     Project,
     Requirement,
     RequirementsStatus,
@@ -76,29 +73,6 @@ def _create_requirement(
     db.commit()
     db.refresh(requirement)
     return requirement
-
-
-def _create_prd(
-    db: Session,
-    project_id: str,
-    version: int = 1,
-    status: PRDStatus = PRDStatus.READY,
-    mode: PRDMode = PRDMode.DRAFT,
-    deleted: bool = False,
-) -> PRD:
-    """Helper to create a PRD in the database."""
-    from datetime import datetime
-    prd = PRD(
-        project_id=project_id,
-        version=version,
-        mode=mode,
-        status=status,
-        deleted_at=datetime.utcnow() if deleted else None,
-    )
-    db.add(prd)
-    db.commit()
-    db.refresh(prd)
-    return prd
 
 
 def _create_jira_story(
@@ -168,26 +142,6 @@ class TestPRDStageStatusEnum:
         assert PRDStageStatus("empty") == PRDStageStatus.empty
         assert PRDStageStatus("draft") == PRDStageStatus.draft
         assert PRDStageStatus("ready") == PRDStageStatus.ready
-
-
-class TestPRDStatusEnum:
-    """Tests for PRDStatus (generation lifecycle) enum values."""
-
-    def test_enum_values(self) -> None:
-        """Test that PRDStatus has expected values."""
-        assert PRDStatus.QUEUED.value == "queued"
-        assert PRDStatus.GENERATING.value == "generating"
-        assert PRDStatus.PARTIAL.value == "partial"
-        assert PRDStatus.READY.value == "ready"
-        assert PRDStatus.FAILED.value == "failed"
-        assert PRDStatus.CANCELLED.value == "cancelled"
-        assert PRDStatus.ARCHIVED.value == "archived"
-
-    def test_all_lifecycle_statuses_exist(self) -> None:
-        """Test that all expected lifecycle statuses exist."""
-        expected = {"queued", "generating", "partial", "ready", "failed", "cancelled", "archived"}
-        actual = {status.value for status in PRDStatus}
-        assert actual == expected
 
 
 # =============================================================================
@@ -329,11 +283,12 @@ class TestUpdateRequirementsStatus:
 
 
 class TestUpdatePRDStatus:
-    """Tests for update_prd_status function."""
+    """Tests for update_prd_status function (no-op stub, PRD feature removed)."""
 
-    def test_empty_when_no_prds(self, test_db: Session) -> None:
-        """Test status is 'empty' when project has no PRDs."""
+    def test_returns_current_status_unchanged(self, test_db: Session) -> None:
+        """Test that update_prd_status returns the current status without modification."""
         project = _create_project(test_db)
+        assert project.prd_status == PRDStageStatus.empty
 
         result = update_prd_status(project.id, test_db)
 
@@ -341,94 +296,17 @@ class TestUpdatePRDStatus:
         test_db.refresh(project)
         assert project.prd_status == PRDStageStatus.empty
 
-    def test_ready_when_prd_is_ready(self, test_db: Session) -> None:
-        """Test status is 'ready' when latest PRD has status READY."""
+    def test_preserves_non_empty_status(self, test_db: Session) -> None:
+        """Test that update_prd_status preserves whatever status is already set."""
         project = _create_project(test_db)
-        _create_prd(test_db, project.id, version=1, status=PRDStatus.READY)
+        project.prd_status = PRDStageStatus.ready
+        test_db.commit()
 
         result = update_prd_status(project.id, test_db)
 
         assert result == PRDStageStatus.ready
         test_db.refresh(project)
         assert project.prd_status == PRDStageStatus.ready
-
-    def test_draft_when_prd_is_generating(self, test_db: Session) -> None:
-        """Test status is 'draft' when PRD is generating."""
-        project = _create_project(test_db)
-        _create_prd(test_db, project.id, version=1, status=PRDStatus.GENERATING)
-
-        result = update_prd_status(project.id, test_db)
-
-        assert result == PRDStageStatus.draft
-        test_db.refresh(project)
-        assert project.prd_status == PRDStageStatus.draft
-
-    def test_draft_when_prd_is_queued(self, test_db: Session) -> None:
-        """Test status is 'draft' when PRD is queued."""
-        project = _create_project(test_db)
-        _create_prd(test_db, project.id, version=1, status=PRDStatus.QUEUED)
-
-        result = update_prd_status(project.id, test_db)
-
-        assert result == PRDStageStatus.draft
-        test_db.refresh(project)
-        assert project.prd_status == PRDStageStatus.draft
-
-    def test_draft_when_prd_is_partial(self, test_db: Session) -> None:
-        """Test status is 'draft' when PRD is partial."""
-        project = _create_project(test_db)
-        _create_prd(test_db, project.id, version=1, status=PRDStatus.PARTIAL)
-
-        result = update_prd_status(project.id, test_db)
-
-        assert result == PRDStageStatus.draft
-        test_db.refresh(project)
-        assert project.prd_status == PRDStageStatus.draft
-
-    def test_empty_when_prd_failed(self, test_db: Session) -> None:
-        """Test status is 'empty' when PRD failed."""
-        project = _create_project(test_db)
-        _create_prd(test_db, project.id, version=1, status=PRDStatus.FAILED)
-
-        result = update_prd_status(project.id, test_db)
-
-        assert result == PRDStageStatus.empty
-        test_db.refresh(project)
-        assert project.prd_status == PRDStageStatus.empty
-
-    def test_empty_when_prd_cancelled(self, test_db: Session) -> None:
-        """Test status is 'empty' when PRD is cancelled."""
-        project = _create_project(test_db)
-        _create_prd(test_db, project.id, version=1, status=PRDStatus.CANCELLED)
-
-        result = update_prd_status(project.id, test_db)
-
-        assert result == PRDStageStatus.empty
-        test_db.refresh(project)
-        assert project.prd_status == PRDStageStatus.empty
-
-    def test_uses_latest_version(self, test_db: Session) -> None:
-        """Test that it uses the latest version of PRD."""
-        project = _create_project(test_db)
-        _create_prd(test_db, project.id, version=1, status=PRDStatus.READY)
-        _create_prd(test_db, project.id, version=2, status=PRDStatus.GENERATING)
-
-        result = update_prd_status(project.id, test_db)
-
-        assert result == PRDStageStatus.draft  # Latest version is generating
-        test_db.refresh(project)
-        assert project.prd_status == PRDStageStatus.draft
-
-    def test_ignores_deleted_prds(self, test_db: Session) -> None:
-        """Test that deleted PRDs are ignored."""
-        project = _create_project(test_db)
-        _create_prd(test_db, project.id, version=1, status=PRDStatus.READY, deleted=True)
-
-        result = update_prd_status(project.id, test_db)
-
-        assert result == PRDStageStatus.empty
-        test_db.refresh(project)
-        assert project.prd_status == PRDStageStatus.empty
 
     def test_nonexistent_project_returns_empty(self, test_db: Session) -> None:
         """Test that nonexistent project ID returns empty status."""

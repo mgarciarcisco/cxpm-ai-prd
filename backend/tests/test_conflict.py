@@ -130,6 +130,7 @@ class MockLLMProvider:
         self,
         prompt: str,
         *,
+        system_prompt: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
         timeout: float | None = None,
@@ -232,11 +233,12 @@ def test_llm_classification_called_for_non_exact_matches(test_db: Session) -> No
         "Users should be able to authenticate"  # Different wording
     )
 
-    # Mock LLM to return "new" classification
-    mock_response = json.dumps({
+    # Mock LLM to return "new" classification in batch format
+    mock_response = json.dumps([{
+        "item_index": 0,
         "classification": "new",
         "reason": "Different concept"
-    })
+    }])
     mock_provider = MockLLMProvider(mock_response)
 
     with patch("app.services.conflict.get_provider", return_value=mock_provider):
@@ -272,11 +274,13 @@ def test_duplicate_classification_skips_item(test_db: Session) -> None:
         "Email-based login is required for users"
     )
 
-    # Mock LLM to return "duplicate" classification
-    mock_response = json.dumps({
+    # Mock LLM to return "duplicate" classification in batch format
+    mock_response = json.dumps([{
+        "item_index": 0,
         "classification": "duplicate",
-        "reason": "Both describe email-based login requirement"
-    })
+        "reason": "Both describe email-based login requirement",
+        "matched_requirement_index": 0
+    }])
     mock_provider = MockLLMProvider(mock_response)
 
     with patch("app.services.conflict.get_provider", return_value=mock_provider):
@@ -316,11 +320,12 @@ def test_new_classification_adds_item(test_db: Session) -> None:
         "Dashboard should display analytics"
     )
 
-    # Mock LLM to return "new" classification
-    mock_response = json.dumps({
+    # Mock LLM to return "new" classification in batch format
+    mock_response = json.dumps([{
+        "item_index": 0,
         "classification": "new",
         "reason": "Dashboard analytics is unrelated to login"
-    })
+    }])
     mock_provider = MockLLMProvider(mock_response)
 
     with patch("app.services.conflict.get_provider", return_value=mock_provider):
@@ -391,11 +396,13 @@ def test_refinement_classification_creates_conflict(test_db: Session) -> None:
         "Search must return results within 2 seconds"
     )
 
-    # Mock LLM to return "refinement" classification
-    mock_response = json.dumps({
+    # Mock LLM to return "refinement" classification in batch format
+    mock_response = json.dumps([{
+        "item_index": 0,
         "classification": "refinement",
-        "reason": "Adds performance requirement to general search feature"
-    })
+        "reason": "Adds performance requirement to general search feature",
+        "matched_requirement_index": 0
+    }])
     mock_provider = MockLLMProvider(mock_response)
 
     with patch("app.services.conflict.get_provider", return_value=mock_provider):
@@ -435,11 +442,13 @@ def test_contradiction_classification_creates_conflict(test_db: Session) -> None
         "User must log in with social media accounts"
     )
 
-    # Mock LLM to return "contradiction" classification
-    mock_response = json.dumps({
+    # Mock LLM to return "contradiction" classification in batch format
+    mock_response = json.dumps([{
+        "item_index": 0,
         "classification": "contradiction",
-        "reason": "Email-only login conflicts with social media login requirement"
-    })
+        "reason": "Email-only login conflicts with social media login requirement",
+        "matched_requirement_index": 0
+    }])
     mock_provider = MockLLMProvider(mock_response)
 
     with patch("app.services.conflict.get_provider", return_value=mock_provider):
@@ -551,7 +560,7 @@ def test_inactive_requirements_are_excluded(test_db: Session) -> None:
 
     assert len(result.added) == 1
     assert len(result.skipped) == 0
-    assert result.added[0].reason == "No existing requirements in this section"
+    assert result.added[0].reason == "No existing requirements in project"
 
 
 def test_llm_failure_creates_conflict_for_manual_review(test_db: Session) -> None:

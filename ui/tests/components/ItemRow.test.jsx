@@ -20,8 +20,7 @@ describe('ItemRow', () => {
   const defaultProps = {
     item: mockItem,
     onEdit: vi.fn(),
-    onDelete: vi.fn(),
-    draggable: false
+    onDelete: vi.fn()
   }
 
   beforeEach(() => {
@@ -42,11 +41,6 @@ describe('ItemRow', () => {
     it('renders delete button', () => {
       render(<ItemRow {...defaultProps} />)
       expect(screen.getByLabelText('Delete item')).toBeInTheDocument()
-    })
-
-    it('renders drag handle', () => {
-      render(<ItemRow {...defaultProps} />)
-      expect(screen.getByLabelText('Drag to reorder')).toBeInTheDocument()
     })
   })
 
@@ -276,69 +270,6 @@ describe('ItemRow', () => {
     })
   })
 
-  describe('Drag and Drop', () => {
-    it('applies dragging class when isDragging is true', () => {
-      render(<ItemRow {...defaultProps} isDragging={true} />)
-
-      const row = screen.getByText('Test item content').closest('.item-row')
-      expect(row).toHaveClass('item-row--dragging')
-    })
-
-    it('applies drag-over class when isDragOver is true', () => {
-      render(<ItemRow {...defaultProps} isDragOver={true} />)
-
-      const row = screen.getByText('Test item content').closest('.item-row')
-      expect(row).toHaveClass('item-row--drag-over')
-    })
-
-    it('sets draggable attribute when draggable prop is true', () => {
-      render(<ItemRow {...defaultProps} draggable={true} />)
-
-      const row = screen.getByText('Test item content').closest('.item-row')
-      expect(row).toHaveAttribute('draggable', 'true')
-    })
-
-    it('calls onDragStart when dragging starts', () => {
-      const onDragStart = vi.fn()
-      render(<ItemRow {...defaultProps} draggable={true} onDragStart={onDragStart} />)
-
-      const row = screen.getByText('Test item content').closest('.item-row')
-      fireEvent.dragStart(row)
-
-      expect(onDragStart).toHaveBeenCalled()
-    })
-
-    it('calls onDragEnd when dragging ends', () => {
-      const onDragEnd = vi.fn()
-      render(<ItemRow {...defaultProps} draggable={true} onDragEnd={onDragEnd} />)
-
-      const row = screen.getByText('Test item content').closest('.item-row')
-      fireEvent.dragEnd(row)
-
-      expect(onDragEnd).toHaveBeenCalled()
-    })
-
-    it('calls onDragOver when dragged over', () => {
-      const onDragOver = vi.fn()
-      render(<ItemRow {...defaultProps} onDragOver={onDragOver} />)
-
-      const row = screen.getByText('Test item content').closest('.item-row')
-      fireEvent.dragOver(row)
-
-      expect(onDragOver).toHaveBeenCalled()
-    })
-
-    it('calls onDrop when dropped', () => {
-      const onDrop = vi.fn()
-      render(<ItemRow {...defaultProps} onDrop={onDrop} />)
-
-      const row = screen.getByText('Test item content').closest('.item-row')
-      fireEvent.drop(row)
-
-      expect(onDrop).toHaveBeenCalled()
-    })
-  })
-
   describe('Source Quote Display', () => {
     it('renders source quote when present', () => {
       const itemWithSource = {
@@ -347,7 +278,7 @@ describe('ItemRow', () => {
       }
       render(<ItemRow {...defaultProps} item={itemWithSource} />)
 
-      expect(screen.getByText('This is the original quote from the meeting')).toBeInTheDocument()
+      expect(screen.getByText(/This is the original quote from the meeting/)).toBeInTheDocument()
     })
 
     it('does not render source quote when not present', () => {

@@ -124,6 +124,7 @@ class MockLLMProvider:
         self,
         prompt: str,
         *,
+        system_prompt: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
         timeout: float | None = None,
@@ -244,11 +245,13 @@ def test_apply_endpoint_with_conflicts(
         "User must log in with social accounts",
     )
 
-    # Mock LLM to return "contradiction" classification
-    mock_response = json.dumps({
+    # Mock LLM to return "contradiction" classification (batch format)
+    mock_response = json.dumps([{
+        "item_index": 0,
         "classification": "contradiction",
         "reason": "Email-only conflicts with social login",
-    })
+        "matched_requirement_index": 0,
+    }])
     mock_provider = MockLLMProvider(mock_response)
 
     with patch("app.services.conflict.get_provider", return_value=mock_provider):

@@ -20,6 +20,7 @@ class MockLLMProvider:
         self,
         prompt: str,
         *,
+        system_prompt: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
         timeout: float | None = None,
@@ -39,6 +40,7 @@ class FailingLLMProvider:
         self,
         prompt: str,
         *,
+        system_prompt: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
         timeout: float | None = None,
@@ -168,7 +170,7 @@ def test_llm_retry_on_failure() -> None:
     call_count = 0
 
     class FailingThenSucceedingProvider:
-        def generate(self, prompt: str) -> str:
+        def generate(self, prompt: str, *, system_prompt: str | None = None) -> str:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -190,7 +192,7 @@ def test_llm_max_retries_exhausted() -> None:
     call_count = 0
 
     class AlwaysFailingProvider:
-        def generate(self, prompt: str) -> str:
+        def generate(self, prompt: str, *, system_prompt: str | None = None) -> str:
             nonlocal call_count
             call_count += 1
             raise LLMError(f"Attempt {call_count} failed")
@@ -211,7 +213,7 @@ def test_unexpected_exception_raises_merge_error() -> None:
     new = "Another requirement"
 
     class UnexpectedErrorProvider:
-        def generate(self, prompt: str) -> str:
+        def generate(self, prompt: str, *, system_prompt: str | None = None) -> str:
             raise RuntimeError("Unexpected internal error")
 
     with patch("app.services.merger.get_provider", return_value=UnexpectedErrorProvider()):

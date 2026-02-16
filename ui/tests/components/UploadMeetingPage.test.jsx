@@ -59,7 +59,7 @@ describe('UploadMeetingPage', () => {
       renderWithRouter(<UploadMeetingPage />)
 
       const titleInput = screen.getByLabelText(/meeting title/i)
-      const textArea = screen.getByLabelText(/paste meeting notes/i)
+      const textArea = screen.getByLabelText(/paste additional notes/i)
 
       await user.type(titleInput, 'Sprint Planning')
       await user.type(textArea, 'Some meeting notes content')
@@ -199,14 +199,14 @@ describe('UploadMeetingPage', () => {
   describe('Text paste input', () => {
     it('renders text input area', () => {
       renderWithRouter(<UploadMeetingPage />)
-      expect(screen.getByLabelText(/paste meeting notes/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/paste additional notes/i)).toBeInTheDocument()
     })
 
     it('allows text input', async () => {
       const user = userEvent.setup()
       renderWithRouter(<UploadMeetingPage />)
 
-      const textArea = screen.getByLabelText(/paste meeting notes/i)
+      const textArea = screen.getByLabelText(/paste additional notes/i)
       await user.type(textArea, 'My meeting notes content')
 
       expect(textArea.value).toBe('My meeting notes content')
@@ -217,7 +217,7 @@ describe('UploadMeetingPage', () => {
       renderWithRouter(<UploadMeetingPage />)
 
       const titleInput = screen.getByLabelText(/meeting title/i)
-      const textArea = screen.getByLabelText(/paste meeting notes/i)
+      const textArea = screen.getByLabelText(/paste additional notes/i)
 
       await user.type(titleInput, 'Sprint Planning')
       await user.type(textArea, 'Some meeting notes')
@@ -231,7 +231,7 @@ describe('UploadMeetingPage', () => {
       renderWithRouter(<UploadMeetingPage />)
 
       const titleInput = screen.getByLabelText(/meeting title/i)
-      const textArea = screen.getByLabelText(/paste meeting notes/i)
+      const textArea = screen.getByLabelText(/paste additional notes/i)
 
       await user.type(titleInput, 'Sprint Planning')
       await user.type(textArea, '   ')
@@ -240,11 +240,15 @@ describe('UploadMeetingPage', () => {
       expect(submitButton).toBeDisabled()
     })
 
-    it('clears file state when text is entered', async () => {
+    it('allows both file and text input simultaneously', async () => {
       const user = userEvent.setup()
       renderWithRouter(<UploadMeetingPage />)
 
-      // First select a file
+      // Enter title
+      const titleInput = screen.getByLabelText(/meeting title/i)
+      await user.type(titleInput, 'Test Meeting')
+
+      // Select a file
       const content = 'File content'
       const file = new File([content], 'meeting.txt', { type: 'text/plain' })
       const fileInput = document.querySelector('input[type="file"]')
@@ -258,41 +262,13 @@ describe('UploadMeetingPage', () => {
         expect(screen.getByText('meeting.txt')).toBeInTheDocument()
       })
 
-      // Enter title and text - text should be used for submission, not file
-      const titleInput = screen.getByLabelText(/meeting title/i)
-      const textArea = screen.getByLabelText(/paste meeting notes/i)
-
-      // First clear the file by clicking clear button to enable textarea
-      const clearButton = screen.getByRole('button', { name: /remove file/i })
-      await user.click(clearButton)
-
-      // Now text area should be enabled and we can type
-      await user.type(titleInput, 'Test Meeting')
+      // Now also type text - both should coexist
+      const textArea = screen.getByLabelText(/paste additional notes/i)
       await user.type(textArea, 'Some text content')
 
-      // Verify submit is enabled (meaning text is being used)
+      // Submit should be enabled since we have title + file + text
       const submitButton = screen.getByRole('button', { name: /process meeting notes/i })
       expect(submitButton).not.toBeDisabled()
-
-      // File should no longer be shown
-      expect(screen.queryByText('meeting.txt')).not.toBeInTheDocument()
-    })
-
-    it('disables textarea when file is selected', async () => {
-      renderWithRouter(<UploadMeetingPage />)
-
-      // Select a file
-      const content = 'File content'
-      const file = new File([content], 'meeting.txt', { type: 'text/plain' })
-      const fileInput = document.querySelector('input[type="file"]')
-
-      await waitFor(() => {
-        fireEvent.change(fileInput, { target: { files: [file] } })
-      })
-
-      // Textarea should be disabled
-      const textArea = screen.getByLabelText(/paste meeting notes/i)
-      expect(textArea).toBeDisabled()
     })
   })
 
@@ -315,7 +291,7 @@ describe('UploadMeetingPage', () => {
       renderWithRouter(<UploadMeetingPage />)
 
       const titleInput = screen.getByLabelText(/meeting title/i)
-      const textArea = screen.getByLabelText(/paste meeting notes/i)
+      const textArea = screen.getByLabelText(/paste additional notes/i)
 
       await user.type(titleInput, 'Sprint Planning')
       await user.type(textArea, 'Some meeting notes')
@@ -325,7 +301,7 @@ describe('UploadMeetingPage', () => {
 
       // Should show loading state
       await waitFor(() => {
-        expect(screen.getByText(/uploading/i)).toBeInTheDocument()
+        expect(screen.getByText(/processing/i)).toBeInTheDocument()
       })
     })
 
@@ -340,7 +316,7 @@ describe('UploadMeetingPage', () => {
       renderWithRouter(<UploadMeetingPage />)
 
       const titleInput = screen.getByLabelText(/meeting title/i)
-      const textArea = screen.getByLabelText(/paste meeting notes/i)
+      const textArea = screen.getByLabelText(/paste additional notes/i)
 
       await user.type(titleInput, 'Sprint Planning')
       await user.type(textArea, 'Some meeting notes')

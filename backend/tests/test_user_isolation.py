@@ -121,7 +121,8 @@ class TestProjectIsolation:
 
         response = client_a.get("/api/projects")
         assert response.status_code == 200
-        projects = response.json()
+        data = response.json()
+        projects = data["owned"] + data["shared"]
         assert len(projects) == 0, "User A should see zero projects"
 
     def test_user_a_cannot_get_user_b_project_by_id(
@@ -176,7 +177,8 @@ class TestOwnProjectsVisible:
 
         response = client_a.get("/api/projects")
         assert response.status_code == 200
-        projects = response.json()
+        data = response.json()
+        projects = data["owned"]
         assert len(projects) == 2
         names = {p["name"] for p in projects}
         assert names == {"A's Project 1", "A's Project 2"}
@@ -191,7 +193,8 @@ class TestOwnProjectsVisible:
 
         response = client_b.get("/api/projects")
         assert response.status_code == 200
-        projects = response.json()
+        data = response.json()
+        projects = data["owned"]
         assert len(projects) == 2
         names = {p["name"] for p in projects}
         assert names == {"B's Project 1", "B's Project 2"}
@@ -268,7 +271,8 @@ class TestIsolationViaAPI:
             # User B should not see User A's project
             resp_list = client_b.get("/api/projects")
             assert resp_list.status_code == 200
-            assert len(resp_list.json()) == 0
+            data = resp_list.json()
+            assert len(data["owned"] + data["shared"]) == 0
 
             resp_get = client_b.get(f"/api/projects/{project_a_id}")
             assert resp_get.status_code == 404

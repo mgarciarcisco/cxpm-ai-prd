@@ -82,6 +82,7 @@ class MockLLMProvider:
         self,
         prompt: str,
         *,
+        system_prompt: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
         timeout: float | None = None,
@@ -369,7 +370,7 @@ def test_extraction_retries_on_failure(test_db: Session) -> None:
     call_count = 0
 
     class FailingThenSucceedingProvider:
-        def generate(self, prompt: str) -> str:
+        def generate(self, prompt: str, *, system_prompt: str | None = None) -> str:
             nonlocal call_count
             call_count += 1
             if call_count == 1:

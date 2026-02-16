@@ -46,8 +46,9 @@ def test_list_projects_returns_created_projects(auth_client: TestClient) -> None
     response = auth_client.get("/api/projects")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 3
-    names = [p["name"] for p in data]
+    owned = data["owned"]
+    assert len(owned) == 3
+    names = [p["name"] for p in owned]
     assert "Project 1" in names
     assert "Project 2" in names
     assert "Project 3" in names
@@ -228,9 +229,10 @@ def test_project_progress_in_list(auth_client: TestClient) -> None:
     response = auth_client.get("/api/projects")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) > 0
+    owned = data["owned"]
+    assert len(owned) > 0
     # Check that all projects have progress field
-    for project in data:
+    for project in owned:
         assert "progress" in project
         assert isinstance(project["progress"], int)
 
@@ -239,7 +241,7 @@ def test_project_progress_in_list(auth_client: TestClient) -> None:
 
 
 def test_get_project_progress(auth_client: TestClient) -> None:
-    """Test GET /api/projects/{id}/progress returns all stage statuses."""
+    """Test GET /api/projects/{id} returns all stage statuses and progress."""
     # Create a project
     create_response = auth_client.post(
         "/api/projects",
@@ -247,8 +249,8 @@ def test_get_project_progress(auth_client: TestClient) -> None:
     )
     project_id = create_response.json()["id"]
 
-    # Get progress
-    response = auth_client.get(f"/api/projects/{project_id}/progress")
+    # Get project (includes progress and stage statuses)
+    response = auth_client.get(f"/api/projects/{project_id}")
     assert response.status_code == 200
     data = response.json()
 
@@ -262,9 +264,9 @@ def test_get_project_progress(auth_client: TestClient) -> None:
 
 
 def test_get_project_progress_returns_404_for_missing(auth_client: TestClient) -> None:
-    """Test GET /api/projects/{id}/progress returns 404 for non-existent project."""
+    """Test GET /api/projects/{id} returns 404 for non-existent project."""
     fake_uuid = "00000000-0000-0000-0000-000000000000"
-    response = auth_client.get(f"/api/projects/{fake_uuid}/progress")
+    response = auth_client.get(f"/api/projects/{fake_uuid}")
     assert response.status_code == 404
     assert response.json()["detail"] == "Project not found"
 
@@ -464,10 +466,12 @@ def test_create_project_missing_name_returns_422(auth_client: TestClient) -> Non
 
 
 def test_list_projects_empty_returns_empty_list(auth_client: TestClient) -> None:
-    """Test GET /api/projects returns empty list when no projects exist."""
+    """Test GET /api/projects returns empty owned and shared lists when no projects exist."""
     response = auth_client.get("/api/projects")
     assert response.status_code == 200
-    assert response.json() == []
+    data = response.json()
+    assert data["owned"] == []
+    assert data["shared"] == []
 
 
 def test_update_project_archived_status(auth_client: TestClient) -> None:
@@ -581,7 +585,7 @@ def test_requirements_status_all_values(auth_client: TestClient) -> None:
     project_id = create_response.json()["id"]
 
     # Test empty (default)
-    response = auth_client.get(f"/api/projects/{project_id}/progress")
+    response = auth_client.get(f"/api/projects/{project_id}")
     assert response.json()["requirements_status"] == "empty"
 
     # Test has_items
@@ -691,7 +695,7 @@ def test_export_status_all_values(auth_client: TestClient) -> None:
     project_id = create_response.json()["id"]
 
     # Verify default is not_exported
-    response = auth_client.get(f"/api/projects/{project_id}/progress")
+    response = auth_client.get(f"/api/projects/{project_id}")
     assert response.json()["export_status"] == "not_exported"
 
     # Test exported
@@ -819,7 +823,7 @@ def test_list_projects_returns_updated_statuses(auth_client: TestClient) -> None
     # List projects and verify
     response = auth_client.get("/api/projects")
     assert response.status_code == 200
-    projects = response.json()
+    projects = response.json()["owned"]
     assert len(projects) == 2
 
     proj1 = next(p for p in projects if p["id"] == project_id1)

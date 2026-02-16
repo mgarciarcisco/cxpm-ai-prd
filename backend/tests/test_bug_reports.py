@@ -50,13 +50,13 @@ class TestSubmitBugReport:
         assert resp.json()["has_screenshot"] is True
 
     def test_submit_invalid_severity(self, auth_client):
-        """Submit with invalid severity returns 400."""
+        """Submit with invalid severity returns 422 (FastAPI validation error)."""
         resp = auth_client.post("/api/bug-reports", data={
             "title": "Test",
             "description": "Test desc",
-            "severity": "critical",  # Not a valid value
+            "severity": "critical",  # Not a valid BugSeverity value
         })
-        assert resp.status_code == 400
+        assert resp.status_code == 422
 
     def test_submit_invalid_file_type(self, auth_client):
         """Submit with non-image file returns 400."""

@@ -56,66 +56,9 @@ describe('ProjectCard', () => {
       expect(screen.getByText('A test project description that is quite long and should be displayed')).toBeInTheDocument()
     })
 
-    it('renders "No description" when description is undefined', () => {
-      const projectWithoutDescription = {
-        ...mockProject,
-        description: undefined
-      }
-      renderWithRouter(
-        <ProjectCard {...defaultProps} project={projectWithoutDescription} />
-      )
-      expect(screen.getByText('No description')).toBeInTheDocument()
-    })
-
     it('displays updated time', () => {
       renderWithRouter(<ProjectCard {...defaultProps} />)
       expect(screen.getByText('Updated 1w ago')).toBeInTheDocument()
-    })
-  })
-
-  describe('Progress Display', () => {
-    it('renders progress bar', () => {
-      const { container } = renderWithRouter(<ProjectCard {...defaultProps} />)
-      expect(container.querySelector('.project-card__progress-bar')).toBeInTheDocument()
-    })
-
-    it('shows current stage step', () => {
-      renderWithRouter(<ProjectCard {...defaultProps} />)
-      // With requirements reviewed and PRD draft, we should be on step 2
-      expect(screen.getByText(/Step 2\/5:/)).toBeInTheDocument()
-    })
-
-    it('shows action-oriented stage label', () => {
-      renderWithRouter(<ProjectCard {...defaultProps} />)
-      // PRD is in progress so should show "Writing Specification"
-      expect(screen.getByText('Writing Specification')).toBeInTheDocument()
-    })
-
-    it('shows Complete when all stages are done', () => {
-      const completeProject = {
-        ...mockProject,
-        requirements_status: 'reviewed',
-        prd_status: 'ready',
-        stories_status: 'refined',
-        mockups_status: 'generated',
-        export_status: 'exported'
-      }
-      renderWithRouter(<ProjectCard {...defaultProps} project={completeProject} />)
-      expect(screen.getByText('Complete')).toBeInTheDocument()
-    })
-
-    it('shows first stage when all are empty', () => {
-      const emptyProject = {
-        ...mockProject,
-        requirements_status: 'empty',
-        prd_status: 'empty',
-        stories_status: 'empty',
-        mockups_status: 'empty',
-        export_status: 'not_exported'
-      }
-      renderWithRouter(<ProjectCard {...defaultProps} project={emptyProject} />)
-      expect(screen.getByText(/Step 1\/5:/)).toBeInTheDocument()
-      expect(screen.getByText('Gathering Requirements')).toBeInTheDocument()
     })
   })
 
