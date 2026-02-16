@@ -145,6 +145,9 @@ function ProjectDashboard() {
     );
   }
 
+  const role = project?.role || 'owner';
+  const canEdit = role === 'owner' || role === 'editor';
+
   return (
     <main className="main-content">
       <div className="project-dashboard-page">
@@ -179,13 +182,15 @@ function ProjectDashboard() {
           </div>
 
         <div className="dashboard-actions">
-          <Link to={`/app/projects/${id}/meetings/new`} state={{ projectName: project?.name }} className="dashboard-btn dashboard-btn--primary">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 3.33334V12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3.33334 8H12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Add Meeting
-          </Link>
+          {canEdit && (
+            <Link to={`/app/projects/${id}/meetings/new`} state={{ projectName: project?.name }} className="dashboard-btn dashboard-btn--primary">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 3.33334V12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M3.33334 8H12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Add Meeting
+            </Link>
+          )}
           <Link to={`/app/projects/${id}/requirements`} className="dashboard-btn dashboard-btn--secondary">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M2 4.66667H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -213,11 +218,11 @@ function ProjectDashboard() {
             <MeetingsList
               meetings={meetings}
               onMeetingClick={handleMeetingClick}
-              emptyActionButton={
+              emptyActionButton={canEdit ? (
                 <Link to={`/app/projects/${id}/meetings/new`} state={{ projectName: project?.name }} className="empty-state-link-btn">
                   Add Meeting
                 </Link>
-              }
+              ) : null}
             />
           </div>
 

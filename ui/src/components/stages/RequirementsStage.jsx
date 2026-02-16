@@ -133,7 +133,7 @@ function formatDate(dateString) {
  * Left sidebar: Project link, filter indicator, section navigation, meeting filters
  * Main content: Header with breadcrumbs, collapsible requirement sections, sticky footer
  */
-function RequirementsStage({ project, onProjectUpdate }) {
+function RequirementsStage({ project, onProjectUpdate, readOnly = false }) {
   const navigate = useNavigate();
   const [showAddManuallyModal, setShowAddManuallyModal] = useState(false);
   const [addToSection, setAddToSection] = useState(null);
@@ -555,12 +555,14 @@ function RequirementsStage({ project, onProjectUpdate }) {
                   </button>
                 );
               })}
-              <button className="sidebar-add-meeting-btn" onClick={handleAddMeeting}>
-                <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
-                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-                Add Meeting
-              </button>
+              {!readOnly && (
+                <button className="sidebar-add-meeting-btn" onClick={handleAddMeeting}>
+                  <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+                    <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                  Add Meeting
+                </button>
+              )}
             </>
           )}
         </div>
@@ -629,15 +631,17 @@ function RequirementsStage({ project, onProjectUpdate }) {
                     <span className="section-detail__title">{SECTION_LABELS[activeSection]}</span>
                     <span className="section-detail__count">{items.length} items</span>
                   </div>
-                  <button
-                    className="section-detail__add-btn"
-                    onClick={() => handleAddToSection(activeSection)}
-                  >
-                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-                      <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                    Add to {SECTION_LABELS[activeSection]}
-                  </button>
+                  {!readOnly && (
+                    <button
+                      className="section-detail__add-btn"
+                      onClick={() => handleAddToSection(activeSection)}
+                    >
+                      <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                        <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                      Add to {SECTION_LABELS[activeSection]}
+                    </button>
+                  )}
                 </div>
 
                 {items.length === 0 ? (
@@ -699,38 +703,40 @@ function RequirementsStage({ project, onProjectUpdate }) {
                                 </span>
                               </div>
                             ) : (
-                              <div className="requirements-item__actions">
-                                <button
-                                  className="requirements-action-btn"
-                                  onClick={() => handleStartEdit(item)}
-                                  title="Edit"
-                                >
-                                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-                                    <path
-                                      d="M11.5 2.5l2 2M2 14l1-4 8-8 2 2-8 8-3 2z"
-                                      stroke="currentColor"
-                                      strokeWidth="1.5"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                </button>
-                                <button
-                                  className="requirements-action-btn requirements-action-btn--delete"
-                                  onClick={() => handleDeleteRequirement(item)}
-                                  title="Delete"
-                                >
-                                  <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-                                    <path
-                                      d="M2 4h12M5.5 4V2.5h5V4M6 7v5M10 7v5M3.5 4l.5 9.5a1 1 0 001 .5h6a1 1 0 001-.5l.5-9.5"
-                                      stroke="currentColor"
-                                      strokeWidth="1.5"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                </button>
-                              </div>
+                              !readOnly && (
+                                <div className="requirements-item__actions">
+                                  <button
+                                    className="requirements-action-btn"
+                                    onClick={() => handleStartEdit(item)}
+                                    title="Edit"
+                                  >
+                                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                                      <path
+                                        d="M11.5 2.5l2 2M2 14l1-4 8-8 2 2-8 8-3 2z"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    className="requirements-action-btn requirements-action-btn--delete"
+                                    onClick={() => handleDeleteRequirement(item)}
+                                    title="Delete"
+                                  >
+                                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+                                      <path
+                                        d="M2 4h12M5.5 4V2.5h5V4M6 7v5M10 7v5M3.5 4l.5 9.5a1 1 0 001 .5h6a1 1 0 001-.5l.5-9.5"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  </button>
+                                </div>
+                              )
                             )}
                           </li>
                         );
@@ -762,7 +768,7 @@ function RequirementsStage({ project, onProjectUpdate }) {
             <button className="requirements-btn requirements-btn--secondary" onClick={handleBackToProject}>
               Back to Project
             </button>
-            {!isReviewed && totalCount > 0 && (
+            {!readOnly && !isReviewed && totalCount > 0 && (
               <button
                 className="requirements-btn requirements-btn--success"
                 onClick={handleMarkAsReviewed}
