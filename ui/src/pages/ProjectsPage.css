@@ -153,6 +153,21 @@
   max-width: 320px;
 }
 
+/* Section titles for owned/shared */
+.projects-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.projects-section-title:first-of-type {
+  margin-top: 0;
+}
+
 /* Delete Confirmation Dialog */
 .delete-confirmation {
   display: flex;

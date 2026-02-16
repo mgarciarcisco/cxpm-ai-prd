@@ -6,10 +6,13 @@ import Modal from '../components/common/Modal'
 import ProjectForm from '../components/projects/ProjectForm'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import { EmptyState } from '../components/common/EmptyState'
+import ProjectSharingModal from '../components/projects/ProjectSharingModal'
 import './ProjectsPage.css'
 
 function ProjectsPage() {
-  const [projects, setProjects] = useState([])
+  const [ownedProjects, setOwnedProjects] = useState([])
+  const [sharedProjects, setSharedProjects] = useState([])
+  const [sharingProject, setSharingProject] = useState(null)
   const [projectStats, setProjectStats] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -45,9 +48,13 @@ function ProjectsPage() {
       setLoading(true)
       setError(null)
       const data = await get('/api/projects')
-      setProjects(data || [])
-      if (data && data.length > 0) {
-        await fetchProjectStats(data)
+      const owned = data?.owned || []
+      const shared = data?.shared || []
+      setOwnedProjects(owned)
+      setSharedProjects(shared)
+      const allProjects = [...owned, ...shared]
+      if (allProjects.length > 0) {
+        await fetchProjectStats(allProjects)
       }
     } catch (err) {
       setError(err.message)
@@ -78,7 +85,7 @@ function ProjectsPage() {
     setDeleteError(null)
     try {
       await del(`/api/projects/${deletingProject.id}`)
-      setProjects((prev) => prev.filter((p) => p.id !== deletingProject.id))
+      setOwnedProjects((prev) => prev.filter((p) => p.id !== deletingProject.id))
       // Clean up stats for deleted project
       setProjectStats((prev) => {
         const { [deletingProject.id]: _, ...rest } = prev
@@ -95,7 +102,7 @@ function ProjectsPage() {
   const handleCreateProject = async (projectData) => {
     const newProject = await post('/api/projects', projectData)
     handleCloseModal()
-    setProjects((prev) => [...prev, newProject])
+    setOwnedProjects((prev) => [...prev, newProject])
     // Initialize stats for new project (0 meetings)
     setProjectStats((prev) => ({
       ...prev,
@@ -106,7 +113,7 @@ function ProjectsPage() {
   const handleUpdateProject = async (projectData) => {
     const updatedProject = await put(`/api/projects/${editingProject.id}`, projectData)
     handleCloseModal()
-    setProjects((prev) =>
+    setOwnedProjects((prev) =>
       prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
     )
   }
@@ -114,6 +121,16 @@ function ProjectsPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setEditingProject(null)
+  }
+
+  const handleShare = (project) => {
+    setSharingProject(project)
+  }
+
+  const handleCloseSharingModal = () => {
+    setSharingProject(null)
+    // Refresh to update member counts
+    fetchProjects()
   }
 
   return (
@@ -185,6 +202,13 @@ function ProjectsPage() {
           </Modal>
         )}
 
+        {sharingProject && (
+          <ProjectSharingModal
+            project={sharingProject}
+            onClose={handleCloseSharingModal}
+          />
+        )}
+
         {loading && (
           <div className="projects-loading">
             <LoadingSpinner size="large" />
@@ -199,7 +223,7 @@ function ProjectsPage() {
           </div>
         )}
 
-        {!loading && !error && projects.length === 0 && (
+        {!loading && !error && ownedProjects.length === 0 && sharedProjects.length === 0 && (
           <EmptyState
             icon={
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -218,19 +242,55 @@ function ProjectsPage() {
           />
         )}
 
-        {!loading && !error && projects.length > 0 && (
-          <div className="projects-grid">
-            {projects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                meetingCount={projectStats[project.id]?.meeting_count ?? 0}
-                lastActivity={projectStats[project.id]?.last_activity || project.updated_at}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
+        {!loading && !error && (ownedProjects.length > 0 || sharedProjects.length > 0) && (
+          <>
+            {ownedProjects.length > 0 && (
+              <>
+                <div className="projects-section-title">My Projects</div>
+                <div className="projects-grid">
+                  {ownedProjects.map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={{
+                        ...project,
+                        meetingCount: projectStats[project.id]?.meeting_count ?? 0,
+                        requirementCount: projectStats[project.id]?.requirement_count ?? 0,
+                        jiraEpicCount: projectStats[project.id]?.jira_story_count ?? 0,
+                      }}
+                      lastActivity={projectStats[project.id]?.last_activity || project.updated_at}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onShare={handleShare}
+                      role={project.role || 'owner'}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            {sharedProjects.length > 0 && (
+              <>
+                <div className="projects-section-title">Shared with Me</div>
+                <div className="projects-grid">
+                  {sharedProjects.map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={{
+                        ...project,
+                        meetingCount: projectStats[project.id]?.meeting_count ?? 0,
+                        requirementCount: projectStats[project.id]?.requirement_count ?? 0,
+                        jiraEpicCount: projectStats[project.id]?.jira_story_count ?? 0,
+                      }}
+                      lastActivity={projectStats[project.id]?.last_activity || project.updated_at}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      role={project.role}
+                      ownerName={project.owner_name}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
         )}
       </section>
     </main>

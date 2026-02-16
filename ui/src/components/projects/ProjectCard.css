@@ -161,6 +161,122 @@
   color: #0D9488;
 }
 
+/* Role badge */
+.project-card__role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.project-card__role-badge--owner {
+  background: linear-gradient(135deg, #4ECDC4, #44A08D);
+  color: #fff;
+}
+
+.project-card__role-badge--editor {
+  background: #DBEAFE;
+  color: #2563EB;
+}
+
+.project-card__role-badge--viewer {
+  background: #F3F4F6;
+  color: #6B7280;
+}
+
+/* Shared by text */
+.project-card__shared-by {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin: 0.125rem 0 0 0;
+}
+
+/* Collaborator strip */
+.project-card__collaborators {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid #F3F4F6;
+}
+
+.collaborator-avatars {
+  display: flex;
+  margin-right: 0.125rem;
+}
+
+.collaborator-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: #fff;
+  border: 2px solid #fff;
+  margin-left: -6px;
+}
+
+.collaborator-avatar:first-child {
+  margin-left: 0;
+}
+
+.collaborator-avatar--teal {
+  background: linear-gradient(135deg, #4ECDC4, #44A08D);
+}
+
+.collaborator-avatar--blue {
+  background: linear-gradient(135deg, #60A5FA, #2563EB);
+}
+
+.collaborator-avatar--purple {
+  background: linear-gradient(135deg, #A78BFA, #7C3AED);
+}
+
+.collaborator-avatar--orange {
+  background: linear-gradient(135deg, #FB923C, #EA580C);
+}
+
+.collaborator-count {
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.project-card__share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  padding: 0.3rem 0.7rem;
+  background: none;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.project-card__share-btn:hover {
+  background: #F3F4F6;
+  color: #374151;
+  border-color: #D1D5DB;
+}
+
+.project-card__share-btn:focus-visible {
+  outline: 2px solid #4ECDC4;
+  outline-offset: 2px;
+}
+
 /* Responsive - Mobile */
 @media (max-width: 640px) {
   .project-card {

@@ -382,3 +382,27 @@ export async function markNotificationRead(id) {
 export async function markAllNotificationsRead() {
   return post('/api/notifications/mark-all-read');
 }
+
+// ============================================================
+// Project Sharing API Functions
+// ============================================================
+
+export async function getProjectMembers(projectId) {
+  return get(`/api/projects/${projectId}/members`);
+}
+
+export async function addProjectMember(projectId, data) {
+  return post(`/api/projects/${projectId}/members`, data);
+}
+
+export async function updateMemberRole(projectId, userId, data) {
+  return patch(`/api/projects/${projectId}/members/${userId}`, data);
+}
+
+export async function removeProjectMember(projectId, userId) {
+  return del(`/api/projects/${projectId}/members/${userId}`);
+}
+
+export async function searchUsers(query) {
+  return get(`/api/users/search?q=${encodeURIComponent(query)}`);
+}
