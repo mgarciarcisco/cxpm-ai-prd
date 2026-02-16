@@ -432,6 +432,10 @@ def apply_meeting(
             detail="Cannot apply meeting unless status is processed",
         )
 
+    # Verify user still has editor access to the associated project
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
+
     import logging
     logger = logging.getLogger(__name__)
     logger.info(f"[DEBUG Apply] Meeting {meeting_id}: project_id={meeting.project_id}")
@@ -515,6 +519,10 @@ def resolve_meeting(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot resolve meeting unless status is processed",
         )
+
+    # Verify user still has editor access to the associated project
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
 
     # Get project_id from meeting
     project_id = meeting.project_id
