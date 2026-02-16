@@ -166,12 +166,17 @@ def update_member_role(
             detail="Member not found",
         )
 
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Member not found",
+        )
+
     old_role = member.role.value
     member.role = payload.role
     db.commit()
     db.refresh(member)
-
-    target_user = db.query(User).filter(User.id == user_id).first()
 
     log_activity_safe(
         db, current_user.id, "project.member_role_changed", "project", project_id,
@@ -245,7 +250,8 @@ def search_users(
     current_user: User = Depends(get_current_user),
 ) -> list[UserSearchResponse]:
     """Search for active, approved users by name or email. Min 2 chars."""
-    search_term = f"%{q}%"
+    escaped = q.replace("%", r"\%").replace("_", r"\_")
+    search_term = f"%{escaped}%"
     users = (
         db.query(User)
         .filter(

@@ -25,6 +25,7 @@ from app.schemas import (
     MeetingListItemResponse,
     ProgressResponse,
     ProjectCreate,
+    ProjectListResponse,
     ProjectResponse,
     ProjectStatsResponse,
     ProjectUpdate,
@@ -52,8 +53,8 @@ def create_project(project: ProjectCreate, request: Request, db: Session = Depen
     return db_project
 
 
-@router.get("")
-def list_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict:
+@router.get("", response_model=ProjectListResponse)
+def list_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ProjectListResponse:
     """Get list of projects: owned and shared."""
     from app.schemas.project import ProjectResponse
 
@@ -92,7 +93,7 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
         resp["owner_name"] = p.owner.name if p.owner else None
         shared_result.append(resp)
 
-    return {"owned": owned_result, "shared": shared_result}
+    return ProjectListResponse(owned=owned_result, shared=shared_result)
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)

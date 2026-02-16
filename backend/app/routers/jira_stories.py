@@ -5,8 +5,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
-from app.models import JiraStory, Project
+from app.models import JiraStory
+from app.models.user import User
+from app.permissions import get_project_with_access
 from app.schemas import (
     JiraStoriesSaveRequest,
     JiraStoriesSaveResponse,
@@ -41,14 +44,15 @@ def _build_jira_story_response(story: JiraStory) -> JiraStoryResponse:
 def save_jira_stories(
     request: JiraStoriesSaveRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> JiraStoriesSaveResponse:
     """
     Save multiple JIRA stories to the database.
-    
+
     Each story will be assigned a unique UUID as its id.
     All stories will be associated with the specified project.
     """
-    # Verify project exists
+    # Verify project exists and user has editor access
     try:
         project_uuid = UUID(request.project_id)
     except ValueError:
@@ -56,23 +60,18 @@ def save_jira_stories(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid project_id format: {request.project_id}",
         )
-    
-    project = db.query(Project).filter(Project.id == str(project_uuid)).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project not found: {request.project_id}",
-        )
-    
+
+    project, _role = get_project_with_access(str(project_uuid), current_user, db, require_role="editor")
+
     if project.archived:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot save stories to archived project: {project.name}",
         )
-    
+
     # Create JIRA story records
     saved_stories = []
-    
+
     for epic_data in request.epics:
         story = JiraStory(
             project_id=str(project_uuid),
@@ -90,14 +89,14 @@ def save_jira_stories(
         )
         db.add(story)
         saved_stories.append(story)
-    
+
     # Commit all stories
     db.commit()
-    
+
     # Refresh to get generated IDs and timestamps
     for story in saved_stories:
         db.refresh(story)
-    
+
     return JiraStoriesSaveResponse(
         message=f"Successfully saved {len(saved_stories)} JIRA story(ies) to project '{project.name}'",
         saved_count=len(saved_stories),
@@ -109,11 +108,12 @@ def save_jira_stories(
 def list_project_jira_stories(
     project_id: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> list[JiraStoryResponse]:
     """
     List all JIRA stories for a specific project.
     """
-    # Verify project exists
+    # Verify project exists and user has access
     try:
         project_uuid = UUID(project_id)
     except ValueError:
@@ -121,14 +121,9 @@ def list_project_jira_stories(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid project_id format: {project_id}",
         )
-    
-    project = db.query(Project).filter(Project.id == str(project_uuid)).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project not found: {project_id}",
-        )
-    
+
+    get_project_with_access(str(project_uuid), current_user, db)
+
     # Query all stories for this project
     stories = (
         db.query(JiraStory)
@@ -136,7 +131,7 @@ def list_project_jira_stories(
         .order_by(JiraStory.created_at.desc())
         .all()
     )
-    
+
     return [_build_jira_story_response(story) for story in stories]
 
 
@@ -144,11 +139,12 @@ def list_project_jira_stories(
 def delete_project_jira_stories(
     project_id: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict:
     """
     Delete all JIRA stories for a specific project.
     """
-    # Verify project exists
+    # Verify project exists and user has editor access
     try:
         project_uuid = UUID(project_id)
     except ValueError:
@@ -156,23 +152,18 @@ def delete_project_jira_stories(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid project_id format: {project_id}",
         )
-    
-    project = db.query(Project).filter(Project.id == str(project_uuid)).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project not found: {project_id}",
-        )
-    
+
+    project, _role = get_project_with_access(str(project_uuid), current_user, db, require_role="editor")
+
     # Delete all stories for this project
     deleted_count = (
         db.query(JiraStory)
         .filter(JiraStory.project_id == str(project_uuid))
         .delete(synchronize_session=False)
     )
-    
+
     db.commit()
-    
+
     return {
         "message": f"Successfully deleted {deleted_count} JIRA story(ies) from project '{project.name}'",
         "deleted_count": deleted_count,
