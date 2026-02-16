@@ -3,7 +3,7 @@
 import json
 from collections.abc import AsyncIterator
 from datetime import date, datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
 from app.activity import log_activity_safe
-from app.permissions import get_project_with_access
 from app.auth import get_current_user, get_current_user_from_query
 from app.database import get_db
 from app.models import (
@@ -22,13 +21,13 @@ from app.models import (
     MeetingItem,
     MeetingItemDecision,
     MeetingRecap,
-    Project,
     Requirement,
     RequirementHistory,
     RequirementSource,
 )
 from app.models.meeting_recap import InputType, MeetingStatus
 from app.models.user import User
+from app.permissions import get_project_with_access
 from app.schemas import (
     ApplyResponse,
     ConflictResultResponse,
@@ -57,9 +56,9 @@ async def upload_meeting(
     request: Request,
     title: str = Form(...),
     meeting_date: date = Form(...),
-    file: Optional[UploadFile] = File(default=None),
-    text: Optional[str] = Form(default=None),
-    project_id: Optional[str] = Form(default=None),
+    file: UploadFile | None = File(default=None),
+    text: str | None = Form(default=None),
+    project_id: str | None = Form(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:

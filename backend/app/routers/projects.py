@@ -33,7 +33,6 @@ from app.schemas import (
     StageUpdateRequest,
     calculate_progress,
 )
-from app.schemas.project_member import ProjectMemberResponse
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -56,7 +55,7 @@ def create_project(project: ProjectCreate, request: Request, db: Session = Depen
 @router.get("")
 def list_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict:
     """Get list of projects: owned and shared."""
-    from app.schemas.project import ProjectResponse, MemberSummary
+    from app.schemas.project import ProjectResponse
 
     # Owned projects
     owned_projects = db.query(Project).filter(Project.user_id == current_user.id).all()

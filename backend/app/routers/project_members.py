@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 from app.activity import log_activity_safe
 from app.auth import get_current_user
 from app.database import get_db
-from app.models.project_member import ProjectMember, ProjectRole
 from app.models.notification import NotificationType
+from app.models.project_member import ProjectMember
 from app.models.user import User
 from app.notifications import create_notification_safe
 from app.permissions import get_project_with_access

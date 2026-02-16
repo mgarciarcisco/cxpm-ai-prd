@@ -2,9 +2,9 @@
 
 import enum
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import CHAR, Column, DateTime, ForeignKey, UniqueConstraint, Index
+from sqlalchemy import CHAR, Column, DateTime, ForeignKey, Index, UniqueConstraint
 from sqlalchemy import Enum as SAEnum
 
 from app.database import Base
@@ -25,7 +25,7 @@ class ProjectMember(Base):
     user_id = Column(CHAR(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     role = Column(SAEnum(ProjectRole), nullable=False)
     added_by = Column(CHAR(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     __table_args__ = (
         UniqueConstraint("project_id", "user_id", name="uq_project_members_project_user"),

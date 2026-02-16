@@ -10,8 +10,9 @@ from sqlalchemy.orm import Session
 from app.activity import log_activity_safe
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import Action, Actor, Project, Requirement, RequirementHistory
+from app.models import Action, Actor, Requirement, RequirementHistory
 from app.models.user import User
+from app.permissions import get_project_with_access
 from app.schemas import (
     RequirementCreate,
     RequirementHistoryResponse,
@@ -21,7 +22,6 @@ from app.schemas import (
     RequirementSourceResponse,
     RequirementUpdate,
 )
-from app.permissions import get_project_with_access
 from app.services import export_markdown, update_export_status, update_requirements_status
 
 router = APIRouter(prefix="/api", tags=["requirements"])
