@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
 from app.activity import log_activity_safe
+from app.permissions import get_project_with_access
 from app.auth import get_current_user, get_current_user_from_query
 from app.database import get_db
 from app.models import (
@@ -73,12 +74,7 @@ async def upload_meeting(
     """
     # Validate project exists if provided
     if project_id:
-        project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-        if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found",
-            )
+        project, _role = get_project_with_access(project_id, current_user, db, require_role="editor")
 
     # Validate that either file or text is provided
     if file is None and text is None:
@@ -139,13 +135,8 @@ def associate_meeting_with_project(
             detail="Meeting not found",
         )
 
-    # Validate project exists
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+    # Validate project access
+    project, _role = get_project_with_access(project_id, current_user, db, require_role="editor")
 
     # Check if meeting already has a project
     if meeting.project_id and meeting.project_id != project_id:

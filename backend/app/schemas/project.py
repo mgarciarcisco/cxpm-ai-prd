@@ -109,6 +109,13 @@ class ProjectUpdate(BaseModel):
     archived: bool | None = None
 
 
+class MemberSummary(BaseModel):
+    """Minimal member info for avatar display on project cards."""
+    user_id: str
+    name: str
+    role: str
+
+
 class ProjectResponse(BaseModel):
     """Schema for project response with all fields."""
 
@@ -124,6 +131,9 @@ class ProjectResponse(BaseModel):
     mockups_status: MockupsStatusSchema
     export_status: ExportStatusSchema
     requirements_count: int = 0
+    role: str | None = None
+    owner_name: str | None = None
+    members: list["MemberSummary"] = []
 
     model_config = {"from_attributes": True}
 
@@ -140,10 +150,10 @@ class ProjectResponse(BaseModel):
         )
 
 
-class ProjectList(BaseModel):
-    """Schema for list of projects."""
-
-    projects: list[ProjectResponse]
+class ProjectListResponse(BaseModel):
+    """Response for project list with owned and shared sections."""
+    owned: list[ProjectResponse]
+    shared: list[ProjectResponse]
 
 
 class SectionCount(BaseModel):

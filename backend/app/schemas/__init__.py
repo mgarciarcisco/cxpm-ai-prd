@@ -32,11 +32,12 @@ from app.schemas.meeting import (
 )
 from app.schemas.project import (
     ExportStatusSchema,
+    MemberSummary,
     MockupsStatusSchema,
     PRDStageStatusSchema,
     ProgressResponse,
     ProjectCreate,
-    ProjectList,
+    ProjectListResponse,
     ProjectResponse,
     ProjectStatsResponse,
     ProjectUpdate,
@@ -93,7 +94,8 @@ __all__ = [
     "ProjectCreate",
     "ProjectUpdate",
     "ProjectResponse",
-    "ProjectList",
+    "ProjectListResponse",
+    "MemberSummary",
     "SectionCount",
     "ProjectStatsResponse",
     "ProgressResponse",

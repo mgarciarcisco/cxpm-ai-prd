@@ -21,6 +21,7 @@ from app.schemas import (
     RequirementSourceResponse,
     RequirementUpdate,
 )
+from app.permissions import get_project_with_access
 from app.services import export_markdown, update_export_status, update_requirements_status
 
 router = APIRouter(prefix="/api", tags=["requirements"])
@@ -58,10 +59,7 @@ def list_project_requirements(
     Only active requirements (is_active=True) are included.
     Each requirement includes source meeting links.
     """
-    # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project, _role = get_project_with_access(project_id, current_user, db)
 
     # Query all active requirements for this project, ordered by section then order
     requirements = (
@@ -104,10 +102,7 @@ def create_requirement(
     Records the creation in RequirementHistory with actor=user, action=created.
     Returns the created requirement.
     """
-    # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project, _role = get_project_with_access(project_id, current_user, db, require_role="editor")
 
     # Get the max order for requirements in this section to append at end
     max_order = (
@@ -178,10 +173,7 @@ def export_project_requirements(
     Returns a Markdown-formatted text file with Content-Type: text/markdown.
     The Content-Disposition header suggests a filename based on the project name.
     """
-    # Verify project exists and get name for filename
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project, _role = get_project_with_access(project_id, current_user, db)
 
     try:
         markdown_content = export_markdown(UUID(project_id), db)
@@ -220,15 +212,10 @@ def update_requirement(
     Records the change in RequirementHistory with actor=user, action=modified.
     Returns the updated requirement.
     """
-    # Find the requirement
     requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
     if not requirement:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
-
-    # Verify ownership through project
-    project = db.query(Project).filter(Project.id == requirement.project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
+    project, _role = get_project_with_access(requirement.project_id, current_user, db, require_role="editor")
 
     # Store old content for history
     old_content = requirement.content
@@ -268,15 +255,10 @@ def delete_requirement(
     Records the change in RequirementHistory with actor=user, action=deactivated.
     Returns 204 No Content on success.
     """
-    # Find the requirement
     requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
     if not requirement:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
-
-    # Verify ownership through project
-    project = db.query(Project).filter(Project.id == requirement.project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
+    project, _role = get_project_with_access(requirement.project_id, current_user, db, require_role="editor")
 
     # Store project_id before soft-delete for status update
     project_id = requirement.project_id
@@ -318,10 +300,7 @@ def reorder_requirements(
     Updates the order field for each requirement based on the provided requirement_ids array.
     Returns 200 OK with success message.
     """
-    # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project, _role = get_project_with_access(project_id, current_user, db, require_role="editor")
 
     # Get all active requirements for this section and project
     requirements = (
@@ -361,15 +340,10 @@ def get_requirement_history(
     Returns history entries ordered by created_at descending (newest first).
     Includes actor, action, old_content, and new_content for each entry.
     """
-    # Find the requirement
     requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
     if not requirement:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
-
-    # Verify ownership through project
-    project = db.query(Project).filter(Project.id == requirement.project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requirement not found")
+    project, _role = get_project_with_access(requirement.project_id, current_user, db)
 
     # Query history entries ordered by created_at descending
     history_entries = (

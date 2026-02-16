@@ -18,7 +18,9 @@ from app.models import (
     RequirementsStatus,
     StoriesStatus,
 )
+from app.models.project_member import ProjectMember
 from app.models.user import User
+from app.permissions import get_project_with_access
 from app.schemas import (
     MeetingListItemResponse,
     ProgressResponse,
@@ -31,6 +33,7 @@ from app.schemas import (
     StageUpdateRequest,
     calculate_progress,
 )
+from app.schemas.project_member import ProjectMemberResponse
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -50,19 +53,58 @@ def create_project(project: ProjectCreate, request: Request, db: Session = Depen
     return db_project
 
 
-@router.get("", response_model=list[ProjectResponse])
-def list_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[Project]:
-    """Get list of all projects."""
-    return db.query(Project).filter(Project.user_id == current_user.id).all()
+@router.get("")
+def list_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> dict:
+    """Get list of projects: owned and shared."""
+    from app.schemas.project import ProjectResponse, MemberSummary
+
+    # Owned projects
+    owned_projects = db.query(Project).filter(Project.user_id == current_user.id).all()
+
+    owned_result = []
+    for p in owned_projects:
+        resp = ProjectResponse.model_validate(p).model_dump()
+        resp["role"] = "owner"
+        # Include member summaries for avatar display
+        members = (
+            db.query(ProjectMember, User)
+            .join(User, ProjectMember.user_id == User.id)
+            .filter(ProjectMember.project_id == p.id)
+            .all()
+        )
+        resp["members"] = [
+            {"user_id": u.id, "name": u.name, "role": m.role.value}
+            for m, u in members
+        ]
+        owned_result.append(resp)
+
+    # Shared projects
+    shared_rows = (
+        db.query(Project, ProjectMember)
+        .join(ProjectMember, ProjectMember.project_id == Project.id)
+        .filter(ProjectMember.user_id == current_user.id)
+        .all()
+    )
+
+    shared_result = []
+    for p, membership in shared_rows:
+        resp = ProjectResponse.model_validate(p).model_dump()
+        resp["role"] = membership.role.value
+        resp["owner_name"] = p.owner.name if p.owner else None
+        shared_result.append(resp)
+
+    return {"owned": owned_result, "shared": shared_result}
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
-def get_project(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Project:
+def get_project(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Get a single project by ID."""
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-    return project
+    project, role = get_project_with_access(project_id, current_user, db)
+    resp = ProjectResponse.model_validate(project).model_dump()
+    resp["role"] = role
+    if role != "owner":
+        resp["owner_name"] = project.owner.name if project.owner else None
+    return resp
 
 
 @router.put("/{project_id}", response_model=ProjectResponse)
@@ -74,9 +116,7 @@ def update_project(
     current_user: User = Depends(get_current_user),
 ) -> Project:
     """Update an existing project."""
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project, _role = get_project_with_access(project_id, current_user, db, require_role="owner")
 
     # Update only provided fields
     update_data = project_update.model_dump(exclude_unset=True)
@@ -92,9 +132,7 @@ def update_project(
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(project_id: str, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> None:
     """Delete a project."""
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project, _role = get_project_with_access(project_id, current_user, db, require_role="owner")
 
     project_name = project.name
     db.delete(project)
@@ -105,10 +143,7 @@ def delete_project(project_id: str, request: Request, db: Session = Depends(get_
 @router.get("/{project_id}/meetings", response_model=list[MeetingListItemResponse])
 def list_project_meetings(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[MeetingRecap]:
     """Get list of meetings for a project."""
-    # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project, _role = get_project_with_access(project_id, current_user, db)
 
     return db.query(MeetingRecap).filter(MeetingRecap.project_id == project_id).all()
 
@@ -116,10 +151,7 @@ def list_project_meetings(project_id: str, db: Session = Depends(get_db), curren
 @router.get("/{project_id}/stats", response_model=ProjectStatsResponse)
 def get_project_stats(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ProjectStatsResponse:
     """Get project statistics including meeting count, requirement counts, and last activity."""
-    # Verify project exists
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project, _role = get_project_with_access(project_id, current_user, db)
 
     # Count meetings
     meeting_count = db.query(func.count(MeetingRecap.id)).filter(
@@ -212,9 +244,7 @@ def update_stage_status(
     Returns:
         Updated progress response with all stage statuses and recalculated progress
     """
-    project = db.query(Project).filter(Project.id == project_id, Project.user_id == current_user.id).first()
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    project, _role = get_project_with_access(project_id, current_user, db, require_role="owner")
 
     field_name, status_enum = STAGE_STATUS_MAPPING[stage]
 
