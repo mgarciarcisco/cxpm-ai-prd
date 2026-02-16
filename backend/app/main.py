@@ -17,8 +17,10 @@ from app.routers import (
     meeting_items_router,
     meetings_router,
     notifications_router,
+    project_members_router,
     projects_router,
     requirements_router,
+    users_search_router,
 )
 
 app = FastAPI(
@@ -98,3 +100,5 @@ app.include_router(jira_stories_router)
 app.include_router(bug_reports_router)
 app.include_router(feature_requests_router)
 app.include_router(notifications_router)
+app.include_router(project_members_router)
+app.include_router(users_search_router)

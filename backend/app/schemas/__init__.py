@@ -68,6 +68,12 @@ from app.schemas.notification import (
     NotificationResponse,
     UnreadCountResponse,
 )
+from app.schemas.project_member import (
+    AddMemberRequest,
+    ProjectMemberResponse,
+    UpdateMemberRoleRequest,
+    UserSearchResponse,
+)
 from app.schemas.requirement import (
     RequirementCreate,
     RequirementHistoryResponse,
@@ -143,6 +149,11 @@ __all__ = [
     "CommentUpdate",
     "CommentResponse",
     "UpvoteResponse",
+    # Project member schemas
+    "AddMemberRequest",
+    "UpdateMemberRoleRequest",
+    "ProjectMemberResponse",
+    "UserSearchResponse",
     # Notification schemas
     "NotificationResponse",
     "NotificationListResponse",
