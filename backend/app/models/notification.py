@@ -13,6 +13,8 @@ class NotificationType(str, enum.Enum):
     bug_status_change = "bug_status_change"
     feature_status_change = "feature_status_change"
     feature_comment = "feature_comment"
+    project_member_added = "project_member_added"
+    project_member_removed = "project_member_removed"
 
 
 class Notification(Base):

@@ -25,6 +25,7 @@ from app.models.feature_request import (
     FeatureStatus,
 )
 from app.models.notification import Notification, NotificationType
+from app.models.project_member import ProjectMember, ProjectRole
 from app.models.user import User
 
 __all__ = [
@@ -59,4 +60,6 @@ __all__ = [
     "FeatureStatus",
     "Notification",
     "NotificationType",
+    "ProjectMember",
+    "ProjectRole",
 ]
