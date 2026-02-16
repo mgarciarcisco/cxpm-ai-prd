@@ -223,6 +223,8 @@ function DashboardPage() {
                     lastActivity={project.lastActivity}
                     onEdit={handleEditProject}
                     onDelete={handleDeleteProject}
+                    role={project.role}
+                    ownerName={project.owner_name}
                   />
                 ))}
               </div>

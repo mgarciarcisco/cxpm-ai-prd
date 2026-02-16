@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models import MeetingItem, MeetingRecap
 from app.models.user import User
 from app.models.meeting_recap import MeetingStatus
+from app.permissions import get_project_with_access
 from app.schemas import MeetingItemResponse, MeetingItemUpdate
 
 router = APIRouter(prefix="/api/meeting-items", tags=["meeting-items"])
@@ -42,8 +43,10 @@ def update_meeting_item(
             detail="Meeting not found",
         )
 
-    # Verify user ownership
-    if meeting.user_id != current_user.id:
+    # Check access: editor on project or original uploader for orphan meetings
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
+    elif meeting.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting item not found",
@@ -92,8 +95,10 @@ def delete_meeting_item(
             detail="Meeting not found",
         )
 
-    # Verify user ownership
-    if meeting.user_id != current_user.id:
+    # Check access: editor on project or original uploader for orphan meetings
+    if meeting.project_id:
+        get_project_with_access(meeting.project_id, current_user, db, require_role="editor")
+    elif meeting.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Meeting item not found",

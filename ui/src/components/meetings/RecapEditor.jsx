@@ -27,8 +27,17 @@ const SECTIONS = [
  * @param {Function} props.onEditItem - Callback when edit is clicked on an item (item) => void
  * @param {Function} props.onDeleteItem - Callback when delete is clicked on an item (item) => void
  * @param {Function} props.onAddItem - Callback when a new item is added (newItem) => void
+ * @param {boolean} props.readOnly - Whether editing controls should be hidden/disabled
  */
-export function RecapEditor({ meetingId, items = [], activeSection = 'needs_and_goals', onEditItem, onDeleteItem, onAddItem }) {
+export function RecapEditor({
+  meetingId,
+  items = [],
+  activeSection = 'needs_and_goals',
+  onEditItem,
+  onDeleteItem,
+  onAddItem,
+  readOnly = false,
+}) {
   const [addingToSection, setAddingToSection] = useState(null);
   const [newItemContent, setNewItemContent] = useState('');
   const [isAddingSaving, setIsAddingSaving] = useState(false);
@@ -127,6 +136,7 @@ export function RecapEditor({ meetingId, items = [], activeSection = 'needs_and_
                   item={item}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  readOnly={readOnly}
                 />
               ))}
             </div>
@@ -135,52 +145,54 @@ export function RecapEditor({ meetingId, items = [], activeSection = 'needs_and_
           )}
 
           {/* Add item functionality */}
-          {addingToSection === activeSectionConfig.key ? (
-            <div className="recap-editor-add-form">
-              <textarea
-                className="recap-editor-add-textarea"
-                value={newItemContent}
-                onChange={(e) => setNewItemContent(e.target.value)}
-                onKeyDown={handleAddItemKeyDown}
-                placeholder="Enter new item content..."
-                rows={3}
-                autoFocus
-                disabled={isAddingSaving}
-              />
-              {addError && (
-                <div className="recap-editor-add-error">{addError}</div>
-              )}
-              <div className="recap-editor-add-actions">
-                <button
-                  className="recap-editor-add-btn recap-editor-add-btn--cancel"
-                  onClick={handleCancelAddItem}
+          {!readOnly && (
+            addingToSection === activeSectionConfig.key ? (
+              <div className="recap-editor-add-form">
+                <textarea
+                  className="recap-editor-add-textarea"
+                  value={newItemContent}
+                  onChange={(e) => setNewItemContent(e.target.value)}
+                  onKeyDown={handleAddItemKeyDown}
+                  placeholder="Enter new item content..."
+                  rows={3}
+                  autoFocus
                   disabled={isAddingSaving}
-                  type="button"
-                >
-                  Cancel
-                </button>
-                <button
-                  className="recap-editor-add-btn recap-editor-add-btn--submit"
-                  onClick={handleSubmitAddItem}
-                  disabled={isAddingSaving || !newItemContent.trim()}
-                  type="button"
-                >
-                  {isAddingSaving ? 'Adding...' : 'Add Item'}
-                </button>
+                />
+                {addError && (
+                  <div className="recap-editor-add-error">{addError}</div>
+                )}
+                <div className="recap-editor-add-actions">
+                  <button
+                    className="recap-editor-add-btn recap-editor-add-btn--cancel"
+                    onClick={handleCancelAddItem}
+                    disabled={isAddingSaving}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="recap-editor-add-btn recap-editor-add-btn--submit"
+                    onClick={handleSubmitAddItem}
+                    disabled={isAddingSaving || !newItemContent.trim()}
+                    type="button"
+                  >
+                    {isAddingSaving ? 'Adding...' : 'Add Item'}
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <button
-              className="recap-editor-add-item-btn"
-              onClick={() => handleStartAddItem(activeSectionConfig.key)}
-              type="button"
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8 3.33334V12.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M3.33334 8H12.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Add item
-            </button>
+            ) : (
+              <button
+                className="recap-editor-add-item-btn"
+                onClick={() => handleStartAddItem(activeSectionConfig.key)}
+                type="button"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 3.33334V12.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3.33334 8H12.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Add item
+              </button>
+            )
           )}
         </CollapsibleSection>
       </div>

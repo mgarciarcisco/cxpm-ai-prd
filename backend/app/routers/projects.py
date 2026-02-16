@@ -1,6 +1,8 @@
 """Project CRUD API endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from collections import defaultdict
+
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
@@ -94,10 +96,29 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
     )
 
     shared_result = []
+    shared_project_ids = [p.id for p, _membership in shared_rows]
+    shared_members_by_project: dict[str, list[ProjectMember]] = defaultdict(list)
+    shared_member_users_by_id: dict[str, User] = {}
+
+    if shared_project_ids:
+        shared_members = db.query(ProjectMember).filter(ProjectMember.project_id.in_(shared_project_ids)).all()
+        for member in shared_members:
+            shared_members_by_project[member.project_id].append(member)
+
+        shared_member_user_ids = list({m.user_id for m in shared_members})
+        if shared_member_user_ids:
+            shared_member_users = db.query(User).filter(User.id.in_(shared_member_user_ids)).all()
+            shared_member_users_by_id = {u.id: u for u in shared_member_users}
+
     for p, membership in shared_rows:
         resp = ProjectResponse.model_validate(p).model_dump()
         resp["role"] = membership.role.value
         resp["owner_name"] = p.owner.name if p.owner else None
+        resp["members"] = [
+            {"user_id": m.user_id, "name": shared_member_users_by_id[m.user_id].name, "role": m.role.value}
+            for m in shared_members_by_project.get(p.id, [])
+            if m.user_id in shared_member_users_by_id
+        ]
         shared_result.append(resp)
 
     return ProjectListResponse(owned=owned_result, shared=shared_result)

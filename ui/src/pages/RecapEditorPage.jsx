@@ -61,6 +61,7 @@ function RecapEditorPage() {
   const [meetingItems, setMeetingItems] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('needs_and_goals');
+  const [projectRole, setProjectRole] = useState('owner');
 
   // Determine if we're in project context or standalone (dashboard) flow
   const hasProjectContext = Boolean(projectId);
@@ -97,20 +98,24 @@ function RecapEditorPage() {
     setActiveSection(sectionKey);
   }, []);
 
-  // Transition from streaming to processed state when streaming completes
   useEffect(() => {
-    if (streamStatus === 'complete' && meeting?.status !== 'processed') {
-      // Re-fetch meeting to get items with their database IDs
-      // (streaming items don't have IDs, which breaks edit/delete)
-      fetchMeeting();
-    }
-  }, [streamStatus, meeting?.status]);
+    const fetchProjectRole = async () => {
+      if (!hasProjectContext || !projectId) {
+        setProjectRole('owner');
+        return;
+      }
+      try {
+        const projectData = await get(`/api/projects/${projectId}`);
+        setProjectRole(projectData?.role || 'owner');
+      } catch {
+        // Keep owner-like default to avoid blocking edits on transient fetch errors.
+        setProjectRole('owner');
+      }
+    };
+    fetchProjectRole();
+  }, [hasProjectContext, projectId]);
 
-  useEffect(() => {
-    fetchMeeting();
-  }, [mid]);
-
-  const fetchMeeting = async () => {
+  const fetchMeeting = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -125,7 +130,20 @@ function RecapEditorPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mid]);
+
+  // Transition from streaming to processed state when streaming completes
+  useEffect(() => {
+    if (streamStatus === 'complete' && meeting?.status !== 'processed') {
+      // Re-fetch meeting to get items with their database IDs
+      // (streaming items don't have IDs, which breaks edit/delete)
+      fetchMeeting();
+    }
+  }, [streamStatus, meeting?.status, fetchMeeting]);
+
+  useEffect(() => {
+    fetchMeeting();
+  }, [fetchMeeting]);
 
   // Handle item edit callback - update the item in local state
   const handleEditItem = useCallback((updatedItem) => {
@@ -219,6 +237,7 @@ function RecapEditorPage() {
   const showRecapEditor = meeting?.status === 'processed' || meeting?.status === 'applied';
   const showFailedState = meeting?.status === 'failed';
   const isApplied = meeting?.status === 'applied';
+  const canEdit = projectRole !== 'viewer';
 
   // Format meeting date
   const formattedDate = meeting?.meeting_date
@@ -298,7 +317,7 @@ function RecapEditorPage() {
                 onEditItem={handleEditItem}
                 onDeleteItem={handleDeleteItem}
                 onAddItem={handleAddItem}
-                readOnly={isApplied}
+                readOnly={isApplied || !canEdit}
               />
             </div>
           )}
@@ -329,8 +348,8 @@ function RecapEditorPage() {
         </main>
       </div>
 
-      {/* Sticky Footer - only show when editing and not applied */}
-      {showRecapEditor && !isApplied && (
+      {/* Sticky Footer - only show when editing is allowed and meeting is not applied */}
+      {showRecapEditor && !isApplied && canEdit && (
         <footer className="recap-sticky-footer">
           <div className="recap-sticky-footer__inner">
             <div className="recap-sticky-footer__summary">
