@@ -44,7 +44,8 @@ def create_notification_safe(
         nested.commit()
     except Exception as e:
         logger.error(f"Failed to create notification: {e}")
-        # Savepoint handles rollback automatically on exception
+        # Ensure session state is usable for the rest of the request.
+        db.rollback()
 
 
 def purge_old_notifications(db: Session, retention_days: int = 90) -> int:

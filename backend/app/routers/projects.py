@@ -40,6 +40,29 @@ from app.schemas import (
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
+def _project_response_base(project: Project) -> dict:
+    """Build base ProjectResponse payload without relationship objects.
+
+    Avoid passing ORM relationship instances (e.g., ProjectMember) directly into
+    Pydantic validation, which expects serialized member summaries.
+    """
+    return {
+        "id": project.id,
+        "name": project.name,
+        "description": project.description,
+        "archived": project.archived,
+        "created_at": project.created_at,
+        "updated_at": project.updated_at,
+        "requirements_status": project.requirements_status,
+        "prd_status": project.prd_status,
+        "stories_status": project.stories_status,
+        "mockups_status": project.mockups_status,
+        "export_status": project.export_status,
+        "requirements_count": project.requirements_count,
+        "members": [],
+    }
+
+
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(project: ProjectCreate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Project:
     """Create a new project."""
@@ -58,7 +81,6 @@ def create_project(project: ProjectCreate, request: Request, db: Session = Depen
 @router.get("", response_model=ProjectListResponse)
 def list_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> ProjectListResponse:
     """Get list of projects: owned and shared."""
-    from app.schemas.project import ProjectResponse
 
     # Owned projects — eager-load members to avoid N+1
     owned_projects = (
@@ -77,7 +99,7 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
 
     owned_result = []
     for p in owned_projects:
-        resp = ProjectResponse.model_validate(p).model_dump()
+        resp = _project_response_base(p)
         resp["role"] = "owner"
         resp["members"] = [
             {"user_id": m.user_id, "name": member_users_by_id[m.user_id].name, "role": m.role.value}
@@ -111,7 +133,7 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
             shared_member_users_by_id = {u.id: u for u in shared_member_users}
 
     for p, membership in shared_rows:
-        resp = ProjectResponse.model_validate(p).model_dump()
+        resp = _project_response_base(p)
         resp["role"] = membership.role.value
         resp["owner_name"] = p.owner.name if p.owner else None
         resp["members"] = [
@@ -128,10 +150,19 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
 def get_project(project_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Get a single project by ID."""
     project, role = get_project_with_access(project_id, current_user, db)
-    resp = ProjectResponse.model_validate(project).model_dump()
+    resp = _project_response_base(project)
     resp["role"] = role
     if role != "owner":
         resp["owner_name"] = project.owner.name if project.owner else None
+    # Include current members for details page consumers.
+    if project.members:
+        member_users = db.query(User).filter(User.id.in_([m.user_id for m in project.members])).all()
+        member_users_by_id = {u.id: u for u in member_users}
+        resp["members"] = [
+            {"user_id": m.user_id, "name": member_users_by_id[m.user_id].name, "role": m.role.value}
+            for m in project.members
+            if m.user_id in member_users_by_id
+        ]
     return resp
 
 
