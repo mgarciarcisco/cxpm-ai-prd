@@ -70,7 +70,6 @@ def upgrade() -> None:
     # 2. Remap section values in both tables.
     #    PostgreSQL uses a strict enum type so we must convert columns to TEXT
     #    first, remap the values, then recreate the enum with the new values.
-    #    SQLite stores enums as plain text, so simple UPDATEs work directly.
     if _is_postgres():
         # Convert enum columns to TEXT so we can update freely
         op.execute("ALTER TABLE meeting_items ALTER COLUMN section TYPE TEXT")

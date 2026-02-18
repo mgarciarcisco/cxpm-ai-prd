@@ -137,7 +137,7 @@ docker exec cxpm-ollama ollama rm llama3.2
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | `sqlite:///./data/cxpm.db` | Database connection |
+| `DATABASE_URL` | (PostgreSQL from compose) | Database connection |
 | `CIRCUIT_BASE_URL` | `https://chat-ai.cisco.com/...` | Circuit API URL |
 | `CIRCUIT_MODEL` | `gpt-4.1` | Circuit model to use |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` | Ollama API URL (fallback) |
@@ -183,7 +183,7 @@ Data is persisted in Docker volumes:
 | Volume | Purpose |
 |--------|---------|
 | `ollama_data` | Ollama models (~2-8GB per model) |
-| `backend_data` | SQLite database |
+| `backend_data` | PostgreSQL data (when used with bind mount) |
 
 To backup:
 

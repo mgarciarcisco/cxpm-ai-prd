@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     # Cisco OAuth2 configuration
     CISCO_OAUTH2_URL: str = "https://id.cisco.com/oauth2/default/v1/token"
 
-    # Database
-    DATABASE_URL: str = "sqlite:///./cxpm.db"
+    # Database (PostgreSQL)
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/cxpm"
 
     # Circuit API (Cisco's AI platform - primary LLM provider)
     CIRCUIT_BASE_URL: str = "https://chat-ai.cisco.com/openai/deployments/{model}/chat/completions"

@@ -21,21 +21,19 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # SQLite doesn't support ALTER COLUMN, so we need to recreate the table
-    # For now, we use batch mode which handles this automatically
-    with op.batch_alter_table("meeting_recaps") as batch_op:
-        batch_op.alter_column(
-            "project_id",
-            existing_type=sa.CHAR(36),
-            nullable=True,
-        )
+    op.alter_column(
+        "meeting_recaps",
+        "project_id",
+        existing_type=sa.CHAR(36),
+        nullable=True,
+    )
 
 
 def downgrade() -> None:
     # Note: This will fail if there are any NULL project_id values
-    with op.batch_alter_table("meeting_recaps") as batch_op:
-        batch_op.alter_column(
-            "project_id",
-            existing_type=sa.CHAR(36),
-            nullable=False,
-        )
+    op.alter_column(
+        "meeting_recaps",
+        "project_id",
+        existing_type=sa.CHAR(36),
+        nullable=False,
+    )

@@ -86,7 +86,7 @@ def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)) -
     # Check account lock before password verification
     now = datetime.now(timezone.utc)
     if user and user.locked_until:
-        # SQLite stores naive datetimes, so make both comparable
+        # Normalize to UTC for comparison (DB may store naive datetimes)
         locked = user.locked_until.replace(tzinfo=timezone.utc) if user.locked_until.tzinfo is None else user.locked_until
         if locked > now:
             minutes_left = max(1, int((locked - now).total_seconds()) // 60)

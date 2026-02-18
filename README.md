@@ -45,7 +45,7 @@ The application will be available at:
 ### Development Features
 
 - **Hot-reloading**: Code changes in `ui/src/` and `backend/app/` apply automatically
-- **Database persistence**: SQLite database persists across container restarts
+- **Database persistence**: PostgreSQL database persists across container restarts
 - **LLM fallback**: Uses Circuit (Cisco AI) if configured, falls back to Ollama
 
 ### Production Deployment
@@ -290,7 +290,7 @@ docker exec -it cxpm-ai-prd-app /bin/bash
 ## Technology Stack
 
 - **Backend:** FastAPI (Python 3)
-- **Database:** SQLite (SQLAlchemy ORM, Alembic migrations)
+- **Database:** PostgreSQL (SQLAlchemy ORM, Alembic migrations)
 - **LLM:** Circuit (Cisco AI) / Ollama (local fallback)
 - **Frontend:** React 18.3.1
 - **Build Tool:** Vite 6.0.5
@@ -545,8 +545,8 @@ The system automatically tries Circuit first and falls back to Ollama if unavail
 Create a `.env` file in the `backend/` directory:
 
 ```env
-# Database (default: SQLite)
-DATABASE_URL=sqlite:///./cxpm.db
+# Database (PostgreSQL)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cxpm
 
 # Circuit (Cisco AI - primary)
 CIRCUIT_CLIENT_ID=your-client-id

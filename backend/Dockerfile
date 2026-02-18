@@ -24,7 +24,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create data directory for SQLite database
+# Create app data directory
 RUN mkdir -p /app/data
 
 # Entrypoint: retry migrations then start server (handles slow DB on first start)

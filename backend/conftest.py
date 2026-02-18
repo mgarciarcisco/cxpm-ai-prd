@@ -6,9 +6,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.auth import get_current_user, get_current_user_from_query
+from app.config import settings
 from app.database import Base, get_db
 from app.main import app
 
@@ -26,14 +26,10 @@ from app.models import (  # noqa: F401
     User,
 )
 
-# Create in-memory SQLite database for testing
-# Using StaticPool ensures all connections share the same in-memory database
-SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
-
+# Use configured DATABASE_URL for tests (PostgreSQL)
 test_engine = create_engine(
-    SQLALCHEMY_TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
+    settings.DATABASE_URL,
+    pool_pre_ping=True,
 )
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
@@ -44,7 +40,7 @@ TEST_USER_ID = "test-user-0000-0000-000000000001"
 
 @pytest.fixture
 def test_db() -> Generator[Session, None, None]:
-    """Create a test database session using in-memory SQLite.
+    """Create a test database session using the configured PostgreSQL database.
 
     Creates all tables before the test and drops them after.
     """

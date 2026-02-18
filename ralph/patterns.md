@@ -99,7 +99,7 @@ async def stream_extraction(job_id):
 
 ## Database & API
 
-- Use SQLAlchemy with SQLite, migrations via Alembic in `backend/alembic/versions/`
+- Use SQLAlchemy with PostgreSQL, migrations via Alembic in `backend/alembic/versions/`
 - For enum columns: use `str, enum.Enum` base class for proper serialization
 - Always use `server_default` in migrations for existing row defaults
 - Pydantic schemas need separate enum definitions (suffix with `Schema`) for API serialization
