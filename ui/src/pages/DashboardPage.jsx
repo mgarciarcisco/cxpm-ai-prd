@@ -7,6 +7,7 @@ import ProjectSearch from '../components/dashboard/ProjectSearch';
 import EmptyState from '../components/common/EmptyState';
 import Modal from '../components/common/Modal';
 import ProjectForm from '../components/projects/ProjectForm';
+import ProjectSharingModal from '../components/projects/ProjectSharingModal';
 import CapabilityCard from '../components/common/CapabilityCard';
 import HeroProjectCard from '../components/dashboard/HeroProjectCard';
 import { CAPABILITIES } from '../constants/capabilities.jsx';
@@ -19,6 +20,7 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [projectToDelete, setProjectToDelete] = useState(null);
+  const [sharingProject, setSharingProject] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -103,6 +105,15 @@ function DashboardPage() {
 
   const handleDeleteProject = (project) => {
     setProjectToDelete(project);
+  };
+
+  const handleShareProject = (project) => {
+    setSharingProject(project);
+  };
+
+  const handleCloseSharingModal = () => {
+    setSharingProject(null);
+    fetchProjects();
   };
 
   const confirmDelete = async () => {
@@ -223,6 +234,7 @@ function DashboardPage() {
                     lastActivity={project.lastActivity}
                     onEdit={handleEditProject}
                     onDelete={handleDeleteProject}
+                    onShare={handleShareProject}
                     role={project.role}
                     ownerName={project.owner_name}
                   />
@@ -259,6 +271,14 @@ function DashboardPage() {
               onCancel={() => setShowCreateModal(false)}
             />
           </Modal>
+        )}
+
+        {/* Project Sharing Modal */}
+        {sharingProject && (
+          <ProjectSharingModal
+            project={sharingProject}
+            onClose={handleCloseSharingModal}
+          />
         )}
 
         {/* Delete Confirmation Modal */}
