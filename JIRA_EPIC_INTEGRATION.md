@@ -8,10 +8,9 @@ Successfully integrated the JIRA Epic generation feature with full frontend-to-b
 ### 1. Backend Service (`backend/app/services/jira_epic_generator.py`)
 - ✅ **JiraEpicGenerator** class with `create_jira_epic()` method
 - ✅ Accepts requirements text up to 1 GB
-- ✅ Uses Ollama LLM service (configurable via `OLLAMA_BASE_URL` and `OLLAMA_MODEL`)
+- ✅ Uses Circuit LLM service (configurable via Circuit env vars)
 - ✅ Reads prompt template from `backend/prompts/jira_epic.txt`
 - ✅ Comprehensive error handling and validation
-- ✅ Automatic fallback to Ollama if Circuit unavailable
 
 ### 2. Backend API Router (`backend/app/routers/jira_epic.py`)
 - ✅ POST endpoint: `/api/jira-epic/generate`
@@ -77,7 +76,7 @@ Content-Type: application/json
 7. Backend:
    - Validates input
    - Loads prompt template
-   - Calls Ollama LLM with combined prompt
+   - Calls Circuit LLM with combined prompt
    - Returns generated epic
 8. Frontend displays epic in markdown format
 9. User can copy epic to clipboard
@@ -106,10 +105,6 @@ CIRCUIT_CLIENT_ID=your-client-id
 CIRCUIT_CLIENT_SECRET=your-client-secret
 CIRCUIT_APP_KEY=your-app-key
 CIRCUIT_MODEL=gpt-4.1
-
-# Ollama Configuration (fallback)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
 ```
 
 ### LLM Settings
@@ -131,14 +126,7 @@ cd ui
 npm run dev
 ```
 
-### 3. Ensure Ollama is Running
-```bash
-ollama serve
-# In another terminal:
-ollama pull llama3.2
-```
-
-### 4. Test the Feature
+### 3. Test the Feature
 1. Navigate to `http://localhost:3000/app/jira-epic`
 2. Select a text file with requirements
 3. Click "Generate Jira Epic"
@@ -172,9 +160,8 @@ ollama pull llama3.2
 ### LLM Service Not Available
 **Error**: "LLM service is not available"
 **Solution**: 
-1. Check Ollama is running: `ollama serve`
-2. Verify `OLLAMA_BASE_URL` in `.env`
-3. Test connection: `curl http://localhost:11434/api/tags`
+1. Verify Circuit credentials in `.env`: `CIRCUIT_CLIENT_ID`, `CIRCUIT_CLIENT_SECRET`, `CIRCUIT_APP_KEY`
+2. Ensure backend can reach the Circuit API
 
 ### File Validation Errors
 **Error**: "File contains binary data"
@@ -189,7 +176,7 @@ ollama pull llama3.2
 - ✅ File input accepts and validates text files up to 1 GB
 - ✅ Security: No executables can be processed
 - ✅ Generate button enabled only with valid file
-- ✅ Backend service successfully generates epics using Ollama
+- ✅ Backend service successfully generates epics using Circuit LLM
 - ✅ Generated epic displayed in markdown format
 - ✅ Proper error handling throughout the flow
 - ✅ Copy to clipboard functionality works

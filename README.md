@@ -46,11 +46,11 @@ The application will be available at:
 
 - **Hot-reloading**: Code changes in `ui/src/` and `backend/app/` apply automatically
 - **Database persistence**: PostgreSQL database persists across container restarts
-- **LLM fallback**: Uses Circuit (Cisco AI) if configured, falls back to Ollama
+- **LLM**: Circuit (Cisco AI) for extraction and generation
 
 ### Production Deployment
 
-For production deployment with Nginx and Ollama:
+For production deployment with Nginx:
 
 ```bash
 docker-compose up --build -d
@@ -210,7 +210,6 @@ cxpm-ai-prd/
 │   │       ├── markdown_export.py  # Markdown export service
 │   │       └── llm/                # LLM providers
 │   │           ├── base.py         # Abstract LLMProvider
-│   │           ├── ollama.py       # Ollama provider
 │   │           ├── circuit.py      # Circuit (Cisco AI) provider
 │   │           └── factory.py      # Provider factory with fallback
 │   ├── prompts/                    # LLM prompt templates
@@ -291,7 +290,7 @@ docker exec -it cxpm-ai-prd-app /bin/bash
 
 - **Backend:** FastAPI (Python 3)
 - **Database:** PostgreSQL (SQLAlchemy ORM, Alembic migrations)
-- **LLM:** Circuit (Cisco AI) / Ollama (local fallback)
+- **LLM:** Circuit (Cisco AI)
 - **Frontend:** React 18.3.1
 - **Build Tool:** Vite 6.0.5
 - **Testing:** pytest (backend), Vitest (frontend)
@@ -528,17 +527,10 @@ npm test
 
 ### LLM Configuration
 
-The extraction feature supports two LLM providers with automatic fallback:
+The extraction and generation features use Circuit (Cisco AI) as the LLM provider:
 
-1. **Circuit (Cisco AI)** - Primary provider
-   - Set `CIRCUIT_CLIENT_ID`, `CIRCUIT_CLIENT_SECRET`, `CIRCUIT_APP_KEY` in `.env`
-   - Optionally set `CIRCUIT_BASE_URL` and `CIRCUIT_MODEL`
-
-2. **Ollama (Local)** - Fallback, runs locally
-   - Set `OLLAMA_BASE_URL` (default: `http://localhost:11434`)
-   - Set `OLLAMA_MODEL` (default: `llama3.2`)
-
-The system automatically tries Circuit first and falls back to Ollama if unavailable.
+- Set `CIRCUIT_CLIENT_ID`, `CIRCUIT_CLIENT_SECRET`, and `CIRCUIT_APP_KEY` in `.env`
+- Optionally set `CIRCUIT_BASE_URL` and `CIRCUIT_MODEL`
 
 ### Environment Variables
 
@@ -553,10 +545,6 @@ CIRCUIT_CLIENT_ID=your-client-id
 CIRCUIT_CLIENT_SECRET=your-client-secret
 CIRCUIT_APP_KEY=your-app-key
 CIRCUIT_MODEL=gpt-4.1
-
-# Ollama (local LLM - fallback)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
 
 # File upload limit
 MAX_FILE_SIZE_KB=50

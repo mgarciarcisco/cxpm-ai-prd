@@ -10,9 +10,9 @@ The application runs as 3 containers:
 ┌─────────────────────────────────────────────────────────────┐
 │                    docker-compose.yml                        │
 ├─────────────────┬─────────────────┬─────────────────────────┤
-│    frontend     │     backend     │         ollama          │
-│  (React/Nginx)  │    (FastAPI)    │      (LLM Server)       │
-│     :3000       │      :8000      │        :11434           │
+│    frontend     │     backend     │       postgres          │
+│  (React/Nginx)  │    (FastAPI)   │     (PostgreSQL)         │
+│     :3000       │      :8000      │        :5432            │
 └─────────────────┴─────────────────┴─────────────────────────┘
 ```
 
@@ -24,13 +24,7 @@ The application runs as 3 containers:
 docker-compose up --build -d
 ```
 
-### 2. Pull the Ollama Model (First Time Only)
-
-```bash
-docker exec cxpm-ollama ollama pull llama3.2
-```
-
-### 3. Access the Application
+### 2. Access the Application
 
 - **Frontend:** http://localhost:3000
 - **Backend API:** http://localhost:8000
@@ -84,7 +78,7 @@ docker-compose logs -f
 # Specific service
 docker-compose logs -f backend
 docker-compose logs -f frontend
-docker-compose logs -f ollama
+docker-compose logs -f postgres
 ```
 
 ### Stop Services
@@ -114,23 +108,6 @@ docker exec -it cxpm-backend /bin/sh
 # Frontend
 docker exec -it cxpm-frontend /bin/sh
 
-# Ollama
-docker exec -it cxpm-ollama /bin/bash
-```
-
-### Ollama Model Management
-
-```bash
-# List models
-docker exec cxpm-ollama ollama list
-
-# Pull a model
-docker exec cxpm-ollama ollama pull llama3.2
-
-# Remove a model
-docker exec cxpm-ollama ollama rm llama3.2
-```
-
 ## Environment Variables
 
 ### Backend
@@ -140,8 +117,6 @@ docker exec cxpm-ollama ollama rm llama3.2
 | `DATABASE_URL` | (PostgreSQL from compose) | Database connection |
 | `CIRCUIT_BASE_URL` | `https://chat-ai.cisco.com/...` | Circuit API URL |
 | `CIRCUIT_MODEL` | `gpt-4.1` | Circuit model to use |
-| `OLLAMA_BASE_URL` | `http://ollama:11434` | Ollama API URL (fallback) |
-| `OLLAMA_MODEL` | `llama3.2` | Ollama model to use |
 | `LLM_TIMEOUT` | `120` | LLM request timeout (seconds) |
 | `MAX_FILE_SIZE_KB` | `50` | Max upload file size |
 
@@ -151,39 +126,14 @@ docker exec cxpm-ollama ollama rm llama3.2
 |----------|---------|-------------|
 | `VITE_API_URL` | `http://localhost:8000` | Backend API URL |
 
-## GPU Support (Optional)
-
-For faster Ollama inference with NVIDIA GPU:
-
-1. Install [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-
-2. Uncomment GPU lines in `docker-compose.yml`:
-
-```yaml
-ollama:
-  deploy:
-    resources:
-      reservations:
-        devices:
-          - driver: nvidia
-            count: 1
-            capabilities: [gpu]
-```
-
-3. Restart:
-
-```bash
-docker-compose up -d
-```
-
 ## Data Persistence
 
 Data is persisted in Docker volumes:
 
 | Volume | Purpose |
 |--------|---------|
-| `ollama_data` | Ollama models (~2-8GB per model) |
-| `backend_data` | PostgreSQL data (when used with bind mount) |
+| `postgres_data` | PostgreSQL database |
+| `backend_data` | Backend app data (when used with bind mount) |
 
 To backup:
 
@@ -199,15 +149,6 @@ docker run --rm -v cxpm-ai-prd_backend_data:/data -v $(pwd):/backup alpine tar c
 docker-compose logs <service-name>
 ```
 
-### Ollama connection refused
-
-Wait for Ollama to fully start (can take 30-60 seconds on first run):
-
-```bash
-docker-compose logs -f ollama
-# Wait for "Ollama is running"
-```
-
 ### Frontend can't reach backend
 
 In production mode, Nginx proxies `/api/*` to the backend. Check:
@@ -216,13 +157,7 @@ In production mode, Nginx proxies `/api/*` to the backend. Check:
 
 ### Out of disk space
 
-Ollama models are large. To free space:
-
 ```bash
-# Remove unused models
-docker exec cxpm-ollama ollama rm <model-name>
-
-# Clean Docker system
 docker system prune -a
 ```
 
