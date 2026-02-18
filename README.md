@@ -141,7 +141,7 @@ cxpm-ai-prd/
 
 ## Environment Notes
 
-- The backend supports Circuit as primary LLM provider and an Ollama fallback endpoint.
+- The backend uses Circuit as the LLM provider for extraction and generation.
 - In Docker, the app stack uses PostgreSQL by default.
 - Keep secrets in `backend/.env`; do not hardcode credentials in code.
 

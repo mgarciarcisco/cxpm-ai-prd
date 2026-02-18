@@ -114,8 +114,6 @@ Important values commonly overridden by compose:
 - `CIRCUIT_CLIENT_SECRET`
 - `CIRCUIT_APP_KEY`
 - `CIRCUIT_MODEL`
-- `OLLAMA_BASE_URL`
-- `OLLAMA_MODEL`
 
 ## Volumes
 

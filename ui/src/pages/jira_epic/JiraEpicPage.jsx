@@ -352,7 +352,7 @@ function JiraEpicPage() {
       const errorMessage = err.message || 'Failed to generate Jira Epics';
       
       if (errorMessage.includes('503') || errorMessage.includes('unavailable')) {
-        setError('LLM service is not available. Please ensure Ollama is running and try again.');
+        setError('LLM service is not available. Please check Circuit configuration and try again.');
       } else if (errorMessage.includes('400')) {
         setError('Invalid requirements. Please check your file content and try again.');
       } else {

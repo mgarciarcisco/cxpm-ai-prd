@@ -27,10 +27,6 @@ class Settings(BaseSettings):
     JIRA_USER: Optional[str] = None
     
 
-    # Ollama LLM settings (fallback)
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3.2"
-
     # File upload limits
     MAX_FILE_SIZE_KB: int = 50
 

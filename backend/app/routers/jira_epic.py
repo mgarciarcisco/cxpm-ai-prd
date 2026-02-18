@@ -30,7 +30,7 @@ async def generate_jira_epic(request: JiraEpicGenerateRequest) -> JiraEpicGenera
     Generate a JIRA Epic from requirements.
 
     This endpoint takes a requirements document (up to 1GB) and uses the
-    Ollama LLM service to generate a structured JIRA Epic following best practices.
+    Circuit LLM service to generate a structured JIRA Epic following best practices.
 
     Args:
         request: The generation request containing the requirements document.
