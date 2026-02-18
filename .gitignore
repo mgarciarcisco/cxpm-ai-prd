@@ -66,8 +66,6 @@ cover/
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
-db.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -221,7 +219,7 @@ cxpm-ai-prd-key
 
 # Sensitive artifacts - never commit
 
-# SQLite databases
+# Local database files
 *.db
 
 # Uploaded files (screenshots etc.) - except .gitkeep
